@@ -176,7 +176,12 @@ interface SandustryApi {
     getDefinitionById(id: string): any;
     updateDefinition(id: string, partial: Record<string, unknown>): void;
   };
-  player: { buildings: { unlockByType(id: string): void } };
+  player: {
+    getWorldPosition(): { x: number; y: number };
+    setWorldPosition(x: number, y: number): void;
+    setVelocity(x: number, y: number): void;
+    buildings: { unlockByType(id: string): void };
+  };
   raycast: {
     castFromWorld(
       startWorldX: number,

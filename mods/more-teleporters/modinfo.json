@@ -1,0 +1,12 @@
+{
+  "manifestVersion": 1,
+  "id": "sorahn.more-teleporters",
+  "name": "More Teleporters",
+  "version": "0.3.1",
+  "apiVersion": 1,
+  "author": "sorahn",
+  "entry": "entry.js",
+  "description": "Adds placeable player teleporter stations to the shared destination picker.",
+  "dependencies": [],
+  "loadOrder": 100
+}

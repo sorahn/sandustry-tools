@@ -40,6 +40,14 @@ Makefile discovers active mods and supports `make build`, `make install`,
 `make check`, and `make format`; add `MOD=<name>` to target one mod. Per-mod
 Makefiles expose the same commands.
 
+### Sandustry dev-mode loading
+
+If the Sandustry MCP server is available and can connect to the running game,
+the game is in dev mode. Use the active `make dev MOD=<name>` watcher and its
+reload path for mod changes; do not run `make install` during that session.
+The installed-mod directory may contain a competing or stale copy and should
+not be used as the dev-mode handoff path.
+
 Each package or app with tests owns a `test` script that runs its Bun tests.
 The root `test` script runs only root-level tests, while `test:all` explicitly
 runs the root test and every test-bearing workspace test command. Keep
