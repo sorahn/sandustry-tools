@@ -1,0 +1,12 @@
+{
+  "manifestVersion": 1,
+  "id": "sorahn.sandustry-labelmaker",
+  "name": "Labelmaker",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "author": "sorahn",
+  "entry": "entry.js",
+  "description": "Generates pixel-font label blueprints.",
+  "dependencies": [],
+  "loadOrder": 0
+}

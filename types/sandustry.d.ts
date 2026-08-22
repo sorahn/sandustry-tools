@@ -23,6 +23,17 @@ interface SandustryElementInfo {
   type?: number;
 }
 
+interface SandustryItemDefinition {
+  id?: string | number;
+  itemType?: number;
+  nameKey?: string;
+  descriptionKey?: string;
+  categoryKey?: string;
+  handleAction?: (...args: any[]) => unknown;
+  afterRender?: (...args: any[]) => unknown;
+  [key: string]: unknown;
+}
+
 interface SandustryUpgradeDefinition {
   itemId: string;
   itemNameKey?: string;
@@ -96,6 +107,57 @@ interface SandustryInputBindingDefinition {
   displayName: string;
   category: string;
   handlers: SandustryInputBindingHandlers;
+}
+
+interface SandustryBlueprintRecord {
+  type: string | number;
+  x: number;
+  y: number;
+  filter?: Record<string, unknown>;
+  data?: unknown;
+}
+
+interface SandustrySavedBlueprint {
+  id: string;
+  name: string;
+  timestamp?: number;
+  data: SandustryBlueprintRecord[];
+  signalLinks?: Array<{
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    on: boolean;
+  }> | null;
+}
+
+/**
+ * Observed on the running bundle through sandkit.engine.api. This is not part
+ * of the public mod API surface and may change between game builds.
+ */
+interface SandustryInternalBlueprintApi {
+  save(...args: unknown[]): unknown;
+  load(id: string): SandustrySavedBlueprint | null;
+  delete(id: string): unknown;
+  getAll(): SandustrySavedBlueprint[];
+  exportString(id: string): string;
+  importString(value: string): unknown;
+  exportAllString(): string;
+}
+
+/** Observed on the running bundle; not a supported public mod API. */
+interface SandustryInternalClipboardApi {
+  get(): unknown;
+  getSignalLinks(): unknown;
+  set(...args: unknown[]): unknown;
+  clear(): unknown;
+  getHistory(): unknown[];
+  selectFromHistory(...args: unknown[]): unknown;
+  activate(...args: unknown[]): unknown;
+}
+
+interface SandustryEngineApi {
+  [namespace: string]: unknown;
+  blueprints?: SandustryInternalBlueprintApi;
+  clipboard?: SandustryInternalClipboardApi;
 }
 
 interface SandustryPropagationOptions {
@@ -173,13 +235,25 @@ interface SandustryApi {
     getName(definition: SandustryElementDefinition): string;
   };
   items: {
-    getDefinitionById(id: string): any;
-    updateDefinition(id: string, partial: Record<string, unknown>): void;
+    register(definition: SandustryItemDefinition): void;
+    updateDefinition(id: string | number, partial: Record<string, unknown>): void;
+    getDefinitionById(id: string | number): SandustryItemDefinition | null;
+    createFromId(id: string | number): unknown;
+    getActive(): unknown;
+    isActiveById(id: string | number, item?: unknown): boolean;
   };
   player: {
     getWorldPosition(): { x: number; y: number };
     setWorldPosition(x: number, y: number): void;
     setVelocity(x: number, y: number): void;
+    setMovementSpeedMultiplier(multiplier: number): void;
+    setMovementMode(mode: unknown): void;
+    isOnGround(): boolean;
+    teleportToGround(): void;
+    isCollidingWithCell(cellX: number, cellY: number): boolean;
+    isWithinRadiusOfCell(cellX: number, cellY: number, radius: number): boolean;
+    isWorldPositionClear(worldX: number, worldY: number): boolean;
+    inventory: { addFromId(id: string | number): void };
     buildings: { unlockByType(id: string): void };
   };
   raycast: {
@@ -251,13 +325,26 @@ interface SandustryApi {
     ): void;
   };
   sound?: { play(soundId: string, options?: Record<string, unknown>): unknown };
-  action?: { getSelected(): { id?: string } | null };
+  action?: {
+    getActive(): unknown;
+    getSelected(): { id?: string } | null;
+    setCustomData(data: unknown): void;
+  };
   input: {
     registerBinding(
       bindingId: string,
       defaultKeys: string[],
       definition: SandustryInputBindingDefinition,
     ): string;
+    getMouseCellPosition(): { x: number; y: number };
+    getBoundKeys(bindingId: string): string[];
+    getDisplayKey(bindingId: string, fallback?: string): string;
+    triggerBinding(bindingId: string): void;
+    pressBinding(bindingId: string): void;
+    releaseBinding(bindingId: string): void;
+    resetMouseState(): void;
+    isCtrlHeld(): boolean;
+    isAltHeld(): boolean;
   };
 }
 
@@ -273,7 +360,7 @@ interface SandustryEngineState {
 }
 
 interface SandustryEngine {
-  api: Record<string, unknown>;
+  api: SandustryEngineApi;
   state: SandustryEngineState;
 }
 
