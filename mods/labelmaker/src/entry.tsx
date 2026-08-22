@@ -2,12 +2,15 @@ import { encodeBlueprint } from "@sandustry/blueprint-core";
 import { createLabelBlueprint } from "~shared/labelmaker-blueprint";
 
 const api = sandkit.api;
-const MOD_ID = "sorahn.sandustry-labelmaker";
 const ITEM_ID = "sorahnLabelmaker";
 const TOOL_SPRITE_ID = "sorahnLabelmakerSprite";
-const LAST_BLUEPRINT_KEY = `${MOD_ID}.lastBlueprint`;
 const ACTION_START = 1;
+const ACTION_TYPE_TOOL = 3;
+const ACTION_TYPE_MOD = 4;
+const COPIER_ID = 7;
+const COPYING_MODE = 2;
 let promptOpen = false;
+let cursorActive = false;
 
 api.i18n.register("en", {
   "mods|labelmaker|name": "Labelmaker",
@@ -39,11 +42,62 @@ async function openLabelmaker(): Promise<void> {
   }
 
   const blueprint = createLabelBlueprint(text);
-  const encoded = encodeBlueprint(blueprint);
-  api.storage.local.set(LAST_BLUEPRINT_KEY, encoded);
-  api.ui.toast(
-    `Labelmaker: generated ${blueprint.data.length} prefab Blocks. Blueprint handoff is next.`,
-  );
+  encodeBlueprint(blueprint);
+  const localizeBlueprintStructures = (sandkit.engine.api as any).prefabulator
+    ?.localizeBlueprintStructures;
+  const cursorStructures = localizeBlueprintStructures
+    ? blueprint.data.flatMap((structure) => localizeBlueprintStructures([structure]))
+    : blueprint.data;
+  if (!cursorStructures?.length) {
+    api.ui.toast("Labelmaker: could not prepare the placement cursor.");
+    return;
+  }
+
+  const minX = Math.min(...cursorStructures.map((structure: any) => structure.x));
+  const maxX = Math.max(...cursorStructures.map((structure: any) => structure.x));
+  const minY = Math.min(...cursorStructures.map((structure: any) => structure.y));
+  const maxY = Math.max(...cursorStructures.map((structure: any) => structure.y));
+  if (!api.action) {
+    api.ui.toast("Labelmaker: the placement cursor is unavailable.");
+    return;
+  }
+  api.action.setCustomData({
+    selectedStructures: cursorStructures,
+    signalLinks: null,
+    mode: COPYING_MODE,
+    marqueeSelected: true,
+    mouseOffset: {
+      x: (minX + maxX) / 2,
+      y: (minY + maxY) / 2,
+    },
+  });
+
+  // Reuse the game's native Copier placement and preview. This changes only
+  // the active action; the blueprint is not written to clipboard/history.
+  const state = sandkit.engine?.state as any;
+  if (state?.store?.player) {
+    state.store.player.action = { type: ACTION_TYPE_TOOL, id: COPIER_ID };
+    state.store.player.hotbar.activeSlotIndex = null;
+  }
+  cursorActive = true;
+  api.input.resetMouseState();
+  api.ui.toast(`Labelmaker: ${cursorStructures.length} prefab Blocks ready to place.`);
+}
+
+function clearLabelmakerCursor(restoreLabelmaker = false): void {
+  if (!cursorActive && !promptOpen) return;
+  cursorActive = false;
+  api.action?.setCustomData(null);
+  if (restoreLabelmaker) {
+    restoreLabelmakerAction(sandkit.engine?.state as any);
+  }
+}
+
+function restoreLabelmakerAction(state: any): void {
+  if (state?.store?.player) {
+    state.store.player.action = { type: ACTION_TYPE_MOD, id: ITEM_ID };
+    state.store.player.hotbar.activeSlotIndex = null;
+  }
 }
 
 api.items.register({
@@ -58,11 +112,32 @@ api.items.register({
   handleAction: (state: any) => {
     if (state?.session?.action?.state?.[ACTION_START]) void openLabelmaker();
   },
+  afterRender: (state: any) => {
+    if (!cursorActive || state?.store?.player?.action?.id !== COPIER_ID) return;
+    if (state?.session?.action?.customData) return;
+    cursorActive = false;
+    restoreLabelmakerAction(state);
+  },
 });
 
 api.i18n.register("en", {
   "items|labelmaker|name": "Labelmaker",
   "items|labelmaker|description": "Click to generate a pixel-font label blueprint.",
+});
+
+api.input.registerBinding("LabelmakerCancel", ["MouseRight"], {
+  displayName: "Labelmaker",
+  category: "utility",
+  handlers: {
+    down: () => clearLabelmakerCursor(true),
+  },
+});
+
+api.events.on("action:changed", () => {
+  const selected = api.action?.getSelected();
+  if (cursorActive && selected?.id !== ITEM_ID && String(selected?.id) !== String(COPIER_ID)) {
+    clearLabelmakerCursor();
+  }
 });
 
 api.events.on("game:ready", () => {
