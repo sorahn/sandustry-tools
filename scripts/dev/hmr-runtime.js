@@ -31,8 +31,18 @@
       source: null,
       booted: false,
       continueVisibleSince: 0,
+      continueTimer: null,
     });
   const hotReloadEval = host.installed;
+  const autoContinueStorageKey = `__sandustryDevAutoContinueDone__:${location.origin}:${location.pathname}`;
+
+  function hasAutoContinueDone() {
+    try {
+      return sessionStorage.getItem(autoContinueStorageKey) === "1";
+    } catch {
+      return false;
+    }
+  }
 
   globalThis.__sandustryDevHmrActive__ = config.modId;
   globalThis.__sandustryDevOnDispose__ = (fn) => {
@@ -160,7 +170,7 @@
   }
 
   function autoContinue() {
-    if (!config.autoContinue || host.booted) return;
+    if (!config.autoContinue || host.booted || hasAutoContinueDone()) return;
     const buttons = Array.from(
       document.querySelectorAll(
         "button, [role='button'], .cursor-pointer, [class*='cursor-pointer']",
@@ -168,29 +178,52 @@
     );
     const button = buttons.find((element) => {
       const label = (element.textContent || "").trim().toLowerCase();
-      return label === "continue" || label.endsWith(" continue");
+      return (label === "continue" || label.endsWith(" continue")) && !isPauseMenuContinue(element);
     });
     const visible = button && !button.closest("[aria-hidden='true']") && isVisible(button);
     if (!visible) {
       host.continueVisibleSince = 0;
-      setTimeout(autoContinue, 250);
+      scheduleAutoContinue();
       return;
     }
     if (host.continueVisibleSince === 0) {
       host.continueVisibleSince = Date.now();
-      setTimeout(autoContinue, 250);
+      scheduleAutoContinue();
       return;
     }
     if (Date.now() - host.continueVisibleSince < 400) {
-      setTimeout(autoContinue, 250);
+      scheduleAutoContinue();
       return;
     }
     if (button) {
-      host.booted = true;
+      finishAutoContinue();
       button.click();
       return;
     }
-    setTimeout(autoContinue, 250);
+    scheduleAutoContinue();
+  }
+
+  function scheduleAutoContinue() {
+    if (host.continueTimer !== null || host.booted) return;
+    host.continueTimer = setTimeout(() => {
+      host.continueTimer = null;
+      autoContinue();
+    }, 250);
+  }
+
+  function finishAutoContinue() {
+    try {
+      sessionStorage.setItem(autoContinueStorageKey, "1");
+    } catch {
+      // Some embedded contexts may not expose sessionStorage.
+    }
+    for (const otherHost of Object.values(hosts)) {
+      otherHost.booted = true;
+      if (otherHost.continueTimer !== null) {
+        clearTimeout(otherHost.continueTimer);
+        otherHost.continueTimer = null;
+      }
+    }
   }
 
   function isVisible(element) {
@@ -200,6 +233,14 @@
     return (
       style.display !== "none" && style.visibility !== "hidden" && parseFloat(style.opacity) >= 0.05
     );
+  }
+
+  function isPauseMenuContinue(element) {
+    const overlay = element.closest(".fixed.inset-0");
+    if (!overlay) return false;
+    if (overlay.classList.contains("z-[10010]")) return true;
+    const text = (overlay.textContent || "").toLowerCase();
+    return ["unstuck", "save", "load", "options", "exit"].every((label) => text.includes(label));
   }
 
   host.installed = true;
