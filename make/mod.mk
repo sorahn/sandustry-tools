@@ -44,7 +44,9 @@ install: $(ARCHIVE)
 	@cp -R "$(PACKAGE_DIR)/." "$(INSTALL_DIR)/"
 	@echo "Installed unzipped $(MOD_ID) mod to $(INSTALL_DIR)"
 
-publish: $(ARCHIVE)
+publish:
+	@$(MAKE) check
+	@$(MAKE) -B build
 	@node "$(REPO_ROOT)/scripts/publish-workshop.mjs" "$(MOD_DIR)" "$(PACKAGE_DIR)"
 
 check: $(ARCHIVE)

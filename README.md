@@ -40,6 +40,8 @@ make publish MOD=zoom-hotkeys
 ```
 
 `publish` requires exactly one `MOD=<name>` and uses `steamcmd` from your PATH.
+Before publishing, it runs the selected mod's `check` target and then forces a
+fresh build so the uploaded package is produced after validation.
 It reads the most recent account from Steam's `loginusers.vdf` and passes that
 account to SteamCMD with `+login`. Steam client login and SteamCMD credentials
 are separate; the first publish may prompt for the Steam password and Steam
