@@ -9,67 +9,77 @@ const ACTION_TYPE_TOOL = 3;
 const ACTION_TYPE_MOD = 4;
 const COPIER_ID = 7;
 const COPYING_MODE = 2;
+const LABELMAKER_NAME = "Labelmaker";
+const LABEL_PROMPT =
+  "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):";
+const MOD_TRANSLATIONS = {
+  "mods|labelmaker|name": LABELMAKER_NAME,
+  "mods|labelmaker|description": "Generate pixel-font label blueprints.",
+  "mods|labelmaker|prompt": LABEL_PROMPT,
+};
+const ITEM_TRANSLATIONS = {
+  "items|labelmaker|name": LABELMAKER_NAME,
+  "items|labelmaker|description":
+    "Click to generate a label blueprint using letters A–Z and spaces.",
+};
 let promptOpen = false;
 let cursorActive = false;
 
 async function openLabelmaker(): Promise<void> {
   if (promptOpen) return;
   promptOpen = true;
-  const entered = await api.ui.prompt(
-    "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):",
-    "",
-    "Label",
-    "Labelmaker",
-  );
-  promptOpen = false;
-  if (entered === null) return;
-  const text = entered;
-  if (!text.length) {
-    api.ui.toast("Labelmaker: enter at least one character.");
-    return;
-  }
+  try {
+    const entered = await api.ui.prompt(LABEL_PROMPT, "", "Label", LABELMAKER_NAME);
+    if (entered === null) return;
+    if (!entered.length) {
+      api.ui.toast("Labelmaker: enter at least one character.");
+      return;
+    }
 
-  const blueprint = createLabelBlueprint(text);
-  encodeBlueprint(blueprint);
-  const localizeBlueprintStructures = (sandkit.engine.api as any).prefabulator
-    ?.localizeBlueprintStructures;
-  const cursorStructures = localizeBlueprintStructures
-    ? blueprint.data.flatMap((structure) => localizeBlueprintStructures([structure]))
-    : blueprint.data;
-  if (!cursorStructures?.length) {
-    api.ui.toast("Labelmaker: could not prepare the placement cursor.");
-    return;
-  }
+    const blueprint = createLabelBlueprint(entered);
+    encodeBlueprint(blueprint);
+    const localizeBlueprintStructures = (sandkit.engine.api as any).prefabulator
+      ?.localizeBlueprintStructures;
+    const cursorStructures = localizeBlueprintStructures
+      ? blueprint.data.flatMap((structure) => localizeBlueprintStructures([structure]))
+      : blueprint.data;
+    if (!cursorStructures?.length) {
+      api.ui.toast("Labelmaker: could not prepare the placement cursor.");
+      return;
+    }
 
-  const minX = Math.min(...cursorStructures.map((structure: any) => structure.x));
-  const maxX = Math.max(...cursorStructures.map((structure: any) => structure.x));
-  const minY = Math.min(...cursorStructures.map((structure: any) => structure.y));
-  const maxY = Math.max(...cursorStructures.map((structure: any) => structure.y));
-  if (!api.action) {
-    api.ui.toast("Labelmaker: the placement cursor is unavailable.");
-    return;
-  }
-  api.action.setCustomData({
-    selectedStructures: cursorStructures,
-    signalLinks: null,
-    mode: COPYING_MODE,
-    marqueeSelected: true,
-    mouseOffset: {
-      x: (minX + maxX) / 2,
-      y: (minY + maxY) / 2,
-    },
-  });
+    const minX = Math.min(...cursorStructures.map((structure: any) => structure.x));
+    const maxX = Math.max(...cursorStructures.map((structure: any) => structure.x));
+    const minY = Math.min(...cursorStructures.map((structure: any) => structure.y));
+    const maxY = Math.max(...cursorStructures.map((structure: any) => structure.y));
+    if (!api.action) {
+      api.ui.toast("Labelmaker: the placement cursor is unavailable.");
+      return;
+    }
+    api.action.setCustomData({
+      selectedStructures: cursorStructures,
+      signalLinks: null,
+      mode: COPYING_MODE,
+      marqueeSelected: true,
+      mouseOffset: {
+        x: (minX + maxX) / 2,
+        y: (minY + maxY) / 2,
+      },
+    });
 
-  // Reuse the game's native Copier placement and preview. This changes only
-  // the active action; the blueprint is not written to clipboard/history.
-  const state = sandkit.engine?.state as any;
-  if (state?.store?.player) {
-    state.store.player.action = { type: ACTION_TYPE_TOOL, id: COPIER_ID };
-    state.store.player.hotbar.activeSlotIndex = null;
+    // Reuse the game's native Copier placement and preview. This changes only
+    // the active action; the blueprint is not written to clipboard/history.
+    const state = sandkit.engine?.state as any;
+    if (state?.store?.player) {
+      state.store.player.action = { type: ACTION_TYPE_TOOL, id: COPIER_ID };
+      state.store.player.hotbar.activeSlotIndex = null;
+    }
+    cursorActive = true;
+    api.input.resetMouseState();
+    api.ui.toast(`Labelmaker: ${cursorStructures.length} prefab Blocks ready to place.`);
+  } finally {
+    promptOpen = false;
   }
-  cursorActive = true;
-  api.input.resetMouseState();
-  api.ui.toast(`Labelmaker: ${cursorStructures.length} prefab Blocks ready to place.`);
 }
 
 function clearLabelmakerCursor(restoreLabelmaker = false): void {
@@ -109,14 +119,10 @@ function registerLabelmaker(): void {
     },
   });
 
-  api.i18n.register("en", {
-    "items|labelmaker|name": "Labelmaker",
-    "items|labelmaker|description":
-      "Click to generate a label blueprint using letters A–Z and spaces.",
-  });
+  api.i18n.register("en", ITEM_TRANSLATIONS);
 
   api.input.registerBinding("LabelmakerCancel", ["MouseRight"], {
-    displayName: "Labelmaker",
+    displayName: LABELMAKER_NAME,
     category: "utility",
     handlers: {
       down: () => clearLabelmakerCursor(true),
@@ -138,12 +144,7 @@ function registerLabelmaker(): void {
 }
 
 async function initialize(): Promise<void> {
-  api.i18n.register("en", {
-    "mods|labelmaker|name": "Labelmaker",
-    "mods|labelmaker|description": "Generate pixel-font label blueprints.",
-    "mods|labelmaker|prompt":
-      "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):",
-  });
+  api.i18n.register("en", MOD_TRANSLATIONS);
 
   try {
     await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");
