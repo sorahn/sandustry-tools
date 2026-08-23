@@ -1,10 +1,14 @@
+import assert from "node:assert/strict";
+import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, test } from "bun:test";
-import { createLabelBlueprint } from "./blueprint";
 import { encodeBlueprint } from "../../../packages/sandustry-blueprint-core/src";
 import { renderVisualBlueprint } from "../../../packages/sandustry-blueprint-core/tests/visual/node-renderer";
+import { createLabelBlueprint } from "../src/blueprint";
 
-const repoRoot = path.resolve(import.meta.dir, "../../..");
+const testRoot = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(testRoot, "../../..");
 const assetRoot = path.join(repoRoot, "apps/blueprint-site/public");
 const outputRoot = path.join(repoRoot, "artifacts/visual/labelmaker");
 
@@ -15,17 +19,20 @@ const SYMBOLS = String.fromCharCode(
 ).replace(/[A-Za-z0-9]/g, "");
 
 const fixtures = [
-  ["labelmaker-uppercase-test", UPPERCASE],
-  ["labelmaker-lowercase-test", LOWERCASE],
-  ["labelmaker-symbols-test", SYMBOLS],
+  ["uppercase", UPPERCASE],
+  ["lowercase", LOWERCASE],
+  ["symbols", SYMBOLS],
 ] as const;
 
 describe("labelmaker character groups", () => {
   for (const [name, characters] of fixtures) {
-    test(`renders ${name}`, async () => {
+    test(name, async () => {
+      await mkdir(outputRoot, { recursive: true });
       const input = encodeBlueprint(createLabelBlueprint(characters));
       const png = await renderVisualBlueprint(input, assetRoot);
-      await Bun.write(path.join(outputRoot, `${name}.png`), png);
+      const outputPath = path.join(outputRoot, `${name}-current.png`);
+      await writeFile(outputPath, png);
+      assert.ok((await stat(outputPath)).size > 0, `empty visual output: ${outputPath}`);
     });
   }
 });

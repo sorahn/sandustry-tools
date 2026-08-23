@@ -156,20 +156,6 @@ export const BLANK_GLYPH: LabelGlyph = [
   "00000",
 ];
 
-export function isSupportedLabelCharacter(character: string): boolean {
-  const code = character.codePointAt(0) ?? -1;
-  return code >= 32 && code <= 127;
-}
-
-export function sanitizeLabel(text: string): { text: string; removed: boolean } {
-  const characters = [...text];
-  const supportedCharacters = characters.filter(isSupportedLabelCharacter);
-  return {
-    text: supportedCharacters.join(""),
-    removed: supportedCharacters.length !== characters.length,
-  };
-}
-
 export function glyphFor(character: string): LabelGlyph {
   if (character === " ") return BLANK_GLYPH;
   const base = LABELMAKER_GLYPHS[character];

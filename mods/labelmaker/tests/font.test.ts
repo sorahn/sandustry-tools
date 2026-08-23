@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { glyphFor } from "./font";
+import { glyphFor } from "../src/font";
 
 test("calibrated lowercase glyphs preserve the supplied e and j rows", () => {
   expect(glyphFor("e")).toEqual([

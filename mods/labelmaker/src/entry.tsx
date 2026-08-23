@@ -1,6 +1,5 @@
 import { encodeBlueprint } from "@sandustry/blueprint-core";
 import { createLabelBlueprint } from "./blueprint";
-import { sanitizeLabel } from "./font";
 
 const api = sandkit.api;
 const ITEM_ID = "sorahnLabelmaker";
@@ -16,7 +15,8 @@ let cursorActive = false;
 api.i18n.register("en", {
   "mods|labelmaker|name": "Labelmaker",
   "mods|labelmaker|description": "Generate pixel-font label blueprints.",
-  "mods|labelmaker|prompt": "Enter a label (letters A–Z and spaces):",
+  "mods|labelmaker|prompt":
+    "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):",
 });
 
 await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");
@@ -25,18 +25,14 @@ async function openLabelmaker(): Promise<void> {
   if (promptOpen) return;
   promptOpen = true;
   const entered = await api.ui.prompt(
-    "Enter a label (letters A–Z and spaces):",
+    "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):",
     "",
     "Label",
     "Labelmaker",
   );
   promptOpen = false;
   if (entered === null) return;
-  const sanitized = sanitizeLabel(entered);
-  if (sanitized.removed) {
-    api.ui.toast("Labelmaker: unsupported characters have been removed");
-  }
-  const text = sanitized.text;
+  const text = entered;
   if (!text.length) {
     api.ui.toast("Labelmaker: enter at least one character.");
     return;
