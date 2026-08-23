@@ -6,7 +6,7 @@
   "apiVersion": 1,
   "author": "sorahn",
   "entry": "entry.js",
-  "description": "Generates pixel-font label blueprints.",
+  "description": "Generates pixel-font text for your factory.",
   "dependencies": [],
   "loadOrder": 0
 }
