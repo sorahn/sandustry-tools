@@ -3,35 +3,30 @@
 "use strict";
 
 import { onDispose } from "~shared/dev-hmr";
+import noop from "~shared/noop";
+import {
+  BLACKLISTED_TERRAIN_IDS,
+  EARTH_FILTER_ENTRY,
+  EARTH_FILTER_ID,
+  EARTH_FILTER_TERRAIN_IDS,
+  NO_FILTER_ENTRY,
+  NO_FILTER_ID,
+  TERRAIN_COLORS,
+  TERRAIN_IDS,
+} from "./terrainCatalog";
+import { TerrainPicker } from "./ui/picker/TerrainPicker";
+import type { PickerState, TerrainEntry, TerrainSelection } from "./ui/picker/pickerTypes";
 
 const api = sandkit.api;
 const MOD_ID = "sorahn.sandustry-filtered-lenses";
 const LASER_ID = "laser";
 const UPGRADE_ID = "filteredLenses";
 const FILTER_STORAGE_KEY = `${MOD_ID}.element`;
-const NO_FILTER_ID = "no-filter";
-const EARTH_FILTER_ID = "filter:earth";
-const EARTH_FILTER_TERRAIN_IDS = ["dirt", "grass", "moss", "vine", "earth"];
 const CONFIGURE_BINDING_ID = `${MOD_ID}:configure`;
 const PICKER_ID = `${MOD_ID}-terrain-picker`;
 const NAV_SCOPE = `${PICKER_ID}-scope`;
 const UIReact = sandkit.react ?? null;
-
-type Selection = { id: string; type: number };
-type Entry = Selection & { name: string; color: string };
-type PickerState = {
-  current: Selection;
-  minimized: boolean;
-  resolve: ((value: Selection | null) => void) | null;
-};
-type ButtonProps = {
-  id: string;
-  onActivate: () => void;
-  neighbors?: Record<string, string | undefined>;
-  className?: string;
-  children?: any;
-  [key: string]: unknown;
-};
+const HOTBAR_OVERLAY_SLOT = "hotbar";
 
 const TEXT: Record<string, string> = {
   "upgrades|laser|filteredLenses|name": "Filtered Lenses",
@@ -47,9 +42,18 @@ const TEXT: Record<string, string> = {
 };
 
 let pickerState: PickerState | null = null;
-let pickerPromise: Promise<Selection | null> | null = null;
+let pickerPromise: Promise<TerrainSelection | null> | null = null;
 let pickerRepaint: ((update: (value: number) => number) => void) | null = null;
 let pickerOverlayReady = false;
+
+const refreshPicker = () => {
+  pickerRepaint?.((value) => value + 1);
+  try {
+    api.ui.overlays.update(HOTBAR_OVERLAY_SLOT);
+  } catch (error) {
+    noop(error);
+  }
+};
 
 const safe = <T,>(fn: () => T, fallback: T): T => {
   try {
@@ -63,6 +67,8 @@ const isEnabled = () => {
   const value = api.settings.get("enabled");
   return typeof value === "boolean" ? value : true;
 };
+const hasFilteredLenses = () =>
+  safe(() => api.upgrades.getLevelById(LASER_ID, UPGRADE_ID) >= 1, false);
 const terrainTypeFromId = (id: string): number | null => {
   try {
     const runtimeId = id === "frostbed" ? "freezingIceSoil" : id;
@@ -71,99 +77,7 @@ const terrainTypeFromId = (id: string): number | null => {
     return null;
   }
 };
-const TERRAIN_IDS = [
-  "auraliteCrystal",
-  "bedrock",
-  "blackrock",
-  "caldera",
-  "copper",
-  "crackstone",
-  "crystal",
-  "dirt",
-  "dissolvingTerrain",
-  "dune",
-  "earth",
-  "florinolSoil",
-  "fluxite",
-  "frostbed",
-  "gameOfLifeRandom",
-  "gameOfLifeStrict",
-  "glassTerrain",
-  "golGrow",
-  "grass",
-  "ice",
-  "limestone",
-  "moss",
-  "puffMushroom",
-  "redsoil",
-  "sand2",
-  "sandstone",
-  "scoria",
-  "shatterstone",
-  "solidite",
-  "sporemound",
-  "spreadingTerrain",
-  "stone",
-  "vine",
-  "voidFlowerSoil",
-];
-// Add unfinished or unused terrain IDs here. The picker, persisted selection,
-// and runtime excavation check all use this same list.
-const BLACKLISTED_TERRAIN_IDS = new Set([
-  "bedrock",
-  "blackrock",
-  "caldera",
-  "dissolvingTerrain",
-  "dune",
-  "gameOfLifeRandom",
-  "gameOfLifeStrict",
-  "glassTerrain",
-  "golGrow",
-  "limestone",
-  "puffMushroom",
-  "sand2",
-  "sandstone",
-  "solidite",
-  "spreadingTerrain",
-]);
-// Static swatches copied from the native terrain metadata. These are picker
-// colors only; the terrain renderer may use patterns, lighting, or shaders.
-const TERRAIN_COLORS: Record<string, string> = {
-  auraliteCrystal: "#4a40b0",
-  bedrock: "#222222",
-  blackrock: "#141414",
-  copper: "#ffa500",
-  crackstone: "#fffab3",
-  dirt: "#926426",
-  dune: "#eed975",
-  earth: "#59452e",
-  florinolSoil: "#339999",
-  fluxite: "#8a2be2",
-  frostbed: "#add8e6",
-  grass: "#228b22",
-  ice: "#afeeee",
-  moss: "#1dae1d",
-  redsoil: "#8b0000",
-  scoria: "#2b2b2b",
-  shatterstone: "#b6bcc1",
-  sporemound: "#556b2f",
-  stone: "#808080",
-  vine: "#1dae1d",
-  voidFlowerSoil: "#46304d",
-};
-const NO_FILTER_ENTRY: Entry = {
-  id: NO_FILTER_ID,
-  type: -1,
-  name: "[No filter]",
-  color: "#9aa7b5",
-};
-const EARTH_FILTER_ENTRY: Entry = {
-  id: EARTH_FILTER_ID,
-  type: -2,
-  name: "Earth",
-  color: "#6b8e23",
-};
-const entries = (): Entry[] =>
+const entries = (): TerrainEntry[] =>
   safe(
     () =>
       TERRAIN_IDS.map((id) => {
@@ -173,11 +87,11 @@ const entries = (): Entry[] =>
         const name = safe(() => api.i18n.getName({ nameKey: `terrains|${id}|name` }), id);
         return { id, type, name: name || id, color: TERRAIN_COLORS[id] || "#8f9aa6" };
       })
-        .filter((entry): entry is Entry => entry !== null)
+        .filter((entry): entry is TerrainEntry => entry !== null)
         .sort((a, b) => a.name.localeCompare(b.name)),
     [],
   );
-const currentSelection = (): Selection => {
+const currentSelection = (): TerrainSelection => {
   const saved = api.storage.local.get(FILTER_STORAGE_KEY);
   if (typeof saved === "string" && saved.length > 0) {
     const id = saved.startsWith("terrain:") ? saved.slice(8) : saved;
@@ -188,7 +102,7 @@ const currentSelection = (): Selection => {
   }
   return NO_FILTER_ENTRY;
 };
-const closePicker = (selection: Selection | null) => {
+const closePicker = (selection: TerrainSelection | null) => {
   if (!pickerState) return;
   const resolve = pickerState.resolve;
   const current = selection || pickerState.current;
@@ -196,7 +110,7 @@ const closePicker = (selection: Selection | null) => {
   pickerState = { current, minimized: true, resolve: null };
   pickerPromise = null;
   resolve?.(selection);
-  pickerRepaint?.((value) => value + 1);
+  refreshPicker();
 };
 const minimizePicker = () => {
   if (pickerState && !pickerState.minimized) {
@@ -204,294 +118,73 @@ const minimizePicker = () => {
     pickerState = { ...pickerState, minimized: true, resolve: null };
     pickerPromise = null;
     resolve?.(null);
-    pickerRepaint?.((value) => value + 1);
+    refreshPicker();
   }
 };
 
-const FocusableButton = ({
-  id,
-  onActivate,
-  neighbors,
-  className = "",
-  children,
-  ...props
-}: ButtonProps) => {
-  if (!UIReact) return null;
-  const focusable = api.ui.navigation.useFocusable({
-    id,
-    scope: NAV_SCOPE,
-    onActivate,
-    neighbors,
-    scrollIntoView: true,
-  });
-  return (
-    <button
-      {...props}
-      ref={focusable.ref}
-      type="button"
-      onClick={onActivate}
-      className={`${className} ${api.ui.navigation.controllerFocusClass(focusable.focused)}`.trim()}
-    >
-      {children}
-    </button>
-  );
+const registerPickerRepaint = (repaint: (update: (value: number) => number) => void) => {
+  pickerRepaint = repaint;
+  return () => {
+    if (pickerRepaint === repaint) pickerRepaint = null;
+  };
 };
 
-const ElementGridButton = ({
-  entry,
-  index,
-  filtered,
-  selected,
-  onSelect,
-}: {
-  entry: Entry;
-  index: number;
-  filtered: Entry[];
-  selected: boolean;
-  onSelect: () => void;
-}) => {
-  if (!UIReact) return null;
-  const key = (value: Entry) => `${PICKER_ID}-terrain-${value.id || `type-${value.type}`}`;
-  const column = index % 4;
-  const focusable = api.ui.navigation.useFocusable({
-    id: key(entry),
-    scope: NAV_SCOPE,
-    onActivate: onSelect,
-    scrollIntoView: true,
-    neighbors: {
-      left: column > 0 ? key(filtered[index - 1]) : undefined,
-      right: column < 3 && filtered[index + 1] ? key(filtered[index + 1]) : undefined,
-      up: index >= 4 ? key(filtered[index - 4]) : `${PICKER_ID}-custom-earth`,
-      down: filtered[index + 4] ? key(filtered[index + 4]) : undefined,
-    },
-  });
-  const className = selected
-    ? "group flex items-center gap-2 px-2 py-1.5 text-left w-full rounded border border-[#ffe700] bg-[#ffe700]/10"
-    : "group flex items-center gap-2 px-2 py-1.5 text-left w-full rounded border border-slate-700 bg-black/40";
-  return (
-    <button
-      ref={focusable.ref}
-      type="button"
-      onClick={onSelect}
-      className={`${className} ${api.ui.navigation.controllerFocusClass(focusable.focused)}`.trim()}
-    >
-      <span className="w-3 h-3 flex-shrink-0" style={{ backgroundColor: entry.color }} />
-      <span
-        className={selected ? "text-xs truncate text-[#ffe700]" : "text-xs truncate text-slate-300"}
-      >
-        {entry.name}
-      </span>
-    </button>
-  );
-};
+const renderTerrainPicker = () => (
+  <TerrainPicker
+    picker={pickerState}
+    entries={entries()}
+    pickerId={PICKER_ID}
+    scope={NAV_SCOPE}
+    onOpen={(current) => void openTerrainPicker(current)}
+    onClose={closePicker}
+    onMinimize={minimizePicker}
+    onRegisterRepaint={registerPickerRepaint}
+  />
+);
 
-const NoFilterButton = ({ selected, onSelect }: { selected: boolean; onSelect: () => void }) => {
-  if (!UIReact) return null;
-  return (
-    <FocusableButton
-      id={`${PICKER_ID}-${NO_FILTER_ID}`}
-      onActivate={onSelect}
-      neighbors={{ up: `${PICKER_ID}-search`, down: `${PICKER_ID}-custom-earth` }}
-      className={`flex-1 flex items-center gap-2 px-2 py-1.5 text-left w-full rounded border ${
-        selected ? "border-[#ffe700] bg-[#ffe700]/10" : "border-slate-700 bg-black/40"
-      }`}
-    >
-      <span className="w-3 h-3 flex-shrink-0" style={{ backgroundColor: NO_FILTER_ENTRY.color }} />
-      <span className={selected ? "text-xs text-[#ffe700]" : "text-xs text-slate-300"}>
-        {NO_FILTER_ENTRY.name}
-      </span>
-    </FocusableButton>
-  );
-};
-
-const CustomFilterButton = ({
-  selected,
-  onSelect,
-}: {
-  selected: boolean;
-  onSelect: () => void;
-}) => {
-  if (!UIReact) return null;
-  return (
-    <FocusableButton
-      id={`${PICKER_ID}-custom-earth`}
-      onActivate={onSelect}
-      neighbors={{ up: `${PICKER_ID}-${NO_FILTER_ID}`, down: `${PICKER_ID}-terrain-0` }}
-      className={`flex-1 flex items-center gap-2 px-2 py-1.5 text-left w-full rounded border ${
-        selected ? "border-[#ffe700] bg-[#ffe700]/10" : "border-slate-700 bg-black/40"
-      }`}
-    >
-      <span
-        className="w-3 h-3 flex-shrink-0"
-        style={{ backgroundColor: EARTH_FILTER_ENTRY.color }}
-      />
-      <span className={selected ? "text-xs text-[#ffe700]" : "text-xs text-slate-300"}>
-        {EARTH_FILTER_ENTRY.name}
-      </span>
-      <span className="text-[10px] text-slate-500">Dirt, Grass, Moss, Vine, Earth Strataform</span>
-    </FocusableButton>
-  );
-};
-
-const TerrainPicker = () => {
-  if (!UIReact) return null;
-  const [query, setQuery] = UIReact.useState("");
-  const [, bump] = UIReact.useState(0);
-  const picker = pickerState;
-  api.ui.navigation.useFocusScope({
-    id: NAV_SCOPE,
-    active: !!picker,
-    priority: 100,
-    defaultId: picker?.minimized ? `${PICKER_ID}-selected` : `${PICKER_ID}-search`,
-    onBack: () => {
-      if (pickerState && !pickerState.minimized) {
-        minimizePicker();
-        return true;
-      }
-      closePicker(null);
-      return true;
-    },
-  });
-  UIReact.useEffect(() => {
-    pickerRepaint = bump;
-    return () => {
-      if (pickerRepaint === bump) pickerRepaint = null;
-    };
-  }, []);
-  const search = api.ui.navigation.useFocusable({
-    id: `${PICKER_ID}-search`,
-    scope: NAV_SCOPE,
-    onActivate: (element: HTMLElement | null) => element?.focus(),
-    neighbors: { up: `${PICKER_ID}-minimize`, down: `${PICKER_ID}-${NO_FILTER_ID}` },
-    scrollIntoView: true,
-  });
-  if (!picker) return null;
-  if (picker.minimized) {
-    const selected =
-      picker.current.id === NO_FILTER_ID
-        ? NO_FILTER_ENTRY
-        : picker.current.id === EARTH_FILTER_ID
-          ? EARTH_FILTER_ENTRY
-          : entries().find((entry) => entry.type === picker.current.type);
-    return (
-      <div
-        className="pointer-events-auto flex items-center gap-2 bg-black bg-opacity-75 border border-slate-700 rounded px-3 py-2 ui-box text-slate-300"
-        style={{
-          position: "fixed",
-          left: "50%",
-          bottom: 80,
-          transform: "translateX(-50%)",
-          zIndex: 10000,
-        }}
-        onClick={() => void openTerrainPicker(picker.current)}
-      >
-        <span className="text-white text-xs opacity-70">Laser filter</span>
-        <FocusableButton
-          id={`${PICKER_ID}-selected`}
-          onActivate={() => void openTerrainPicker(picker.current)}
-          className="flex items-center gap-2 text-xs text-white"
-        >
-          <span className="w-3 h-3" style={{ backgroundColor: selected?.color || "#9aa7b5" }} />
-          {selected?.name || "No terrain"}
-        </FocusableButton>
-        <span className="text-xs text-slate-500">Click to expand</span>
-      </div>
-    );
-  }
-  const allEntries = entries();
-  const normalizedQuery = query.trim().toLowerCase();
-  const filtered = allEntries.filter(
-    (entry) =>
-      !normalizedQuery ||
-      entry.name.toLowerCase().includes(normalizedQuery) ||
-      entry.id.toLowerCase().includes(normalizedQuery),
-  );
-  return (
-    <div
-      className="pointer-events-auto flex flex-col overflow-hidden bg-black bg-opacity-75 border border-slate-700 rounded ui-box text-slate-300"
-      style={{
-        position: "fixed",
-        left: "50%",
-        bottom: 80,
-        transform: "translateX(-50%)",
-        zIndex: 10000,
-        width: "640px",
-        maxWidth: "92vw",
-        maxHeight: "600px",
-      }}
-    >
-      <div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between">
-        <span className="text-white text-xs opacity-70">Laser filter</span>
-        <FocusableButton
-          id={`${PICKER_ID}-minimize`}
-          onActivate={minimizePicker}
-          neighbors={{ down: `${PICKER_ID}-search` }}
-          className="text-xs px-2 py-0.5 text-white bg-black border rounded"
-        >
-          Minimize ▾
-        </FocusableButton>
-      </div>
-      <div className="px-4 py-3 border-b border-slate-800 flex flex-col gap-2">
-        <input
-          ref={search.ref}
-          autoFocus
-          value={query}
-          placeholder="Search terrain..."
-          maxLength={64}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") minimizePicker();
-          }}
-          className="w-full bg-black/60 border border-slate-700 px-3 py-1.5 rounded text-xs text-white"
-        />
-      </div>
-      <div className="flex-1 overflow-y-auto px-4 py-2" style={{ maxHeight: 480 }}>
-        <div className="flex gap-1.5 border-b border-slate-800 pb-2 mb-1">
-          <NoFilterButton
-            selected={picker.current.id === NO_FILTER_ID}
-            onSelect={() => closePicker(NO_FILTER_ENTRY)}
-          />
-          <CustomFilterButton
-            selected={picker.current.id === EARTH_FILTER_ID}
-            onSelect={() => closePicker(EARTH_FILTER_ENTRY)}
-          />
-        </div>
-        <div className="grid grid-cols-4 gap-1.5 py-1.5">
-          {filtered.map((entry, index) => (
-            <ElementGridButton
-              key={entry.id}
-              entry={entry}
-              index={index}
-              filtered={filtered}
-              selected={entry.id === picker.current.id}
-              onSelect={() => closePicker(entry)}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
+const PickerFallbackHost = () => (
+  <div
+    className="pointer-events-none fixed inset-0 z-[10000] flex items-end justify-center px-4"
+    style={{ paddingBottom: "clamp(72px, 10vh, 96px)" }}
+  >
+    {renderTerrainPicker()}
+  </div>
+);
 
 const registerPicker = () => {
   if (pickerOverlayReady) return true;
   if (!UIReact) return false;
   try {
-    const dispose = api.ui.inject(PICKER_ID, TerrainPicker);
+    api.ui.overlays.register(HOTBAR_OVERLAY_SLOT, PICKER_ID, renderTerrainPicker);
+    pickerOverlayReady = true;
+    onDispose(() => {
+      try {
+        api.ui.overlays.unregister(HOTBAR_OVERLAY_SLOT, PICKER_ID);
+      } catch (error) {
+        noop(error);
+      }
+    });
+    return pickerOverlayReady;
+  } catch (error) {
+    console.warn(`[${MOD_ID}] hotbar picker host unavailable; using injected fallback:`, error);
+  }
+  try {
+    const dispose = api.ui.inject(PICKER_ID, PickerFallbackHost);
     pickerOverlayReady = typeof dispose === "function";
     if (pickerOverlayReady) onDispose(dispose as () => void);
     return pickerOverlayReady;
   } catch (error) {
-    console.error(`[${MOD_ID}] element picker unavailable:`, error);
+    console.error(`[${MOD_ID}] terrain picker unavailable:`, error);
     return false;
   }
 };
-const openTerrainPicker = async (current: Selection) => {
+const openTerrainPicker = async (current: TerrainSelection) => {
+  if (!isEnabled() || !hasFilteredLenses()) return null;
   if (registerPicker()) {
     if (pickerPromise) return pickerPromise;
     pickerPromise = new Promise((resolve) => {
       pickerState = { current, minimized: false, resolve };
-      pickerRepaint?.((value) => value + 1);
+      refreshPicker();
     });
     return pickerPromise;
   }
@@ -504,19 +197,21 @@ const openTerrainPicker = async (current: Selection) => {
   return type === null ? null : { id, type };
 };
 const syncPickerToSelectedAction = () => {
-  if (!UIReact || !registerPicker()) return;
+  if (!UIReact) return;
   const selected = safe(() => api.action?.getSelected(), null);
-  if (selected?.id === LASER_ID && !pickerState) {
+  const canConfigure = isEnabled() && hasFilteredLenses();
+  if (selected?.id === LASER_ID && canConfigure && !pickerState) {
+    if (!registerPicker()) return;
     pickerState = { current: currentSelection(), minimized: true, resolve: null };
-    pickerRepaint?.((value) => value + 1);
+    refreshPicker();
     return;
   }
-  if (selected?.id !== LASER_ID && pickerState) {
+  if ((selected?.id !== LASER_ID || !canConfigure) && pickerState) {
     const resolve = pickerState.resolve;
     pickerState = null;
     pickerPromise = null;
     resolve?.(null);
-    pickerRepaint?.((value) => value + 1);
+    refreshPicker();
   }
 };
 const configure = async () => {
@@ -601,7 +296,7 @@ const clearLaser = () => {
   laserSessionActive = false;
 };
 
-const terrainMatchesSelection = (selected: Selection, terrainType: number | null) => {
+const terrainMatchesSelection = (selected: TerrainSelection, terrainType: number | null) => {
   if (terrainType === null) return false;
   if (selected.id === EARTH_FILTER_ID) {
     return EARTH_FILTER_TERRAIN_IDS.some((id) => terrainTypeFromId(id) === terrainType);
