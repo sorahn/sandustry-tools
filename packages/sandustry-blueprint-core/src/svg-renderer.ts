@@ -11,7 +11,7 @@ import {
   type BlueprintRenderModel,
   type BlueprintRenderOptions,
 } from "./render-model";
-import { contributesUnderlyingCells, foundationOutlinePath } from "./prepare";
+import { foundationOutlinePath, isFoundationStructure } from "./prepare";
 
 export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   assetBaseUrl?: string;
@@ -95,11 +95,6 @@ function renderShapeRects(
       ),
     )
     .join("");
-}
-
-function isFoundationStructure(model: BlueprintRenderModel, index: number) {
-  const prepared = model.preparedBlueprint.preparedStructures[index];
-  return contributesUnderlyingCells(prepared);
 }
 
 function renderStructure(
@@ -212,10 +207,10 @@ export function renderBlueprintToSvg(
   const showFoundationOutlines = options.showFoundationOutlines ?? true;
   const showSignalLinks = options.showSignalLinks ?? true;
   const foundationAndBeltStructures = model.renderStructures.filter(({ index }) =>
-    isFoundationStructure(model, index),
+    isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
   );
   const otherStructures = model.renderStructures.filter(
-    ({ index }) => !isFoundationStructure(model, index),
+    ({ index }) => !isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
   );
   const foundationAndBeltMarkup = foundationAndBeltStructures
     .map(({ index }) => renderStructure(model, index, options))
@@ -242,11 +237,11 @@ export function renderBlueprintToSvg(
         }</defs><g opacity=".25"><rect width="${number(model.width)}" height="${number(model.height)}" fill="url(#blueprint-block-grid)"/><rect width="${number(model.width)}" height="${number(model.height)}" fill="url(#blueprint-cell-grid)"/></g>`
       : "";
   const outline = foundationPath
-    ? `<path d="${escapeXml(foundationPath)}" fill="none" stroke="#000000" stroke-width="${number(renderPixelScale(model.cell))}" stroke-linecap="round" stroke-linejoin="round"/>`
+    ? `<path d="${escapeXml(foundationPath)}" fill="none" stroke="#000000" stroke-width="${number(renderPixelScale(model.cell))}" stroke-linecap="butt" stroke-linejoin="miter"/>`
     : "";
   const signals = showSignalLinks ? renderSignalLinks(model) : "";
   return {
     model,
-    svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${number(model.width)} ${number(model.height)}" width="${number(model.width)}" height="${number(model.height)}" preserveAspectRatio="xMidYMid meet"><title>${escapeXml(blueprint.name || "Sandustry blueprint")}</title><desc>Rendered Sandustry blueprint map</desc><style>image{image-rendering:pixelated}</style>${background}<g>${foundationAndBeltMarkup}</g>${outline}<g>${otherStructureMarkup}</g>${signals}</svg>`,
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${number(model.width)} ${number(model.height)}" width="${number(model.width)}" height="${number(model.height)}" preserveAspectRatio="xMidYMid meet"><title>${escapeXml(blueprint.name || "Sandustry blueprint")}</title><desc>Rendered Sandustry blueprint map</desc><style>image{image-rendering:pixelated}</style>${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}</svg>`,
   };
 }

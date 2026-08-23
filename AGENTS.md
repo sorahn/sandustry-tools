@@ -294,7 +294,7 @@ numeric type.
 The source files are under `mods/infinite-source-trash/`. The distributable
 archive is generated as `sandustry-test-blocks-0.1.3.zip` or the current
 Makefile-derived archive name.
-Generated zip files are written under the root `artifacts/` directory and are
+Generated zip files are written under `artifacts/build/` and are
 ignored by `.gitignore`.
 
 The Makefile provides:

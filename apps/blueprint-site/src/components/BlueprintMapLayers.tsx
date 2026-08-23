@@ -169,8 +169,8 @@ export const BlueprintMapFoundationOutlineLayer = memo(function BlueprintMapFoun
       fill="none"
       stroke="#000000"
       strokeWidth={renderPixelScale(cell)}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeLinecap="butt"
+      strokeLinejoin="miter"
       pointerEvents="none"
       style={mapLayerStyle("foundationShapes")}
     />

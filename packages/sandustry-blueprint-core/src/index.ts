@@ -38,6 +38,7 @@ export {
   type RenderAsset,
   customShapeFromStructure,
   contributesUnderlyingCells,
+  isFoundationStructure,
   underlyingCellCoordinates,
   shapeForStructure,
   structureTopY,

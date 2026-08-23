@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   customShapeFromStructure,
+  isFoundationStructure,
   renderPixelScale,
   renderBlueprintToSvg,
   renderSvgToPng,
@@ -8,7 +9,7 @@ import {
   NATIVE_PIXELS_PER_CELL,
 } from "@sandustry/blueprint-core";
 import { type Blueprint } from "../utils/blueprint";
-import { blueprintCatalog, catalogEntry } from "../utils/catalog";
+import { blueprintCatalog } from "../utils/catalog";
 import { debugComponent } from "./DebugComponentWrapper";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
 import { MapDebugOptions } from "./MapDebugOptions";
@@ -598,16 +599,19 @@ export function BlueprintMap({
               })}
             </g>
           ) : null}
+          <BlueprintMapFoundationOutlineLayer
+            preparedBlueprint={preparedBlueprint}
+            visible={foundationOutlinesVisible}
+            minX={minX}
+            minY={minY}
+            padding={padding}
+            cell={cell}
+          />
           {(() => {
             const isFoundationShape = ({ structure, index }: (typeof renderStructures)[number]) => {
               const prepared = preparedBlueprint.preparedStructures[index];
-              const entry = catalogEntry(structure.type);
               return (
-                (typeof structure.type === "number" &&
-                  structure.type >= 11 &&
-                  structure.type <= 15) ||
-                prepared.customShape !== undefined ||
-                (prepared.shape !== undefined && !entry?.renderAsset)
+                isFoundationStructure(preparedBlueprint.preparedStructures[index])
               );
             };
             const renderStructure = ({ structure, index }: (typeof renderStructures)[number]) => {
@@ -652,14 +656,6 @@ export function BlueprintMap({
             preparedBlueprint={preparedBlueprint}
             visible={signalLinksVisible}
             point={point}
-          />
-          <BlueprintMapFoundationOutlineLayer
-            preparedBlueprint={preparedBlueprint}
-            visible={foundationOutlinesVisible}
-            minX={minX}
-            minY={minY}
-            padding={padding}
-            cell={cell}
           />
           {selected ? (
             <rect

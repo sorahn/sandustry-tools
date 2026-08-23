@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const visualRoot = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(visualRoot, "../../../..");
-const outputRoot = path.join(root, "artifacts/visual");
+const outputRoot = path.join(root, "artifacts/visual/blueprint-core");
 const blueprintRoot = path.join(visualRoot, "blueprints");
 const baselineRoot = path.join(visualRoot, "baselines");
 const update = process.argv.includes("--update");

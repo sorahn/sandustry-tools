@@ -112,7 +112,7 @@ describe("SVG and PNG adapters", () => {
     expect(result).toContain(">Mac</text>");
   });
 
-  test("renders foundations and belts below outlines, structures, and signals", () => {
+  test("renders outlines below foundations and belts, then structures and signals", () => {
     const result = renderBlueprintToSvg(
       {
         name: "SVG fixture",
@@ -133,7 +133,9 @@ describe("SVG and PNG adapters", () => {
     const signal = result.indexOf('stroke="#00ff99"');
     expect(foundation).toBeGreaterThanOrEqual(0);
     expect(belt).toBeGreaterThan(foundation);
-    expect(outline).toBeGreaterThan(belt);
+    expect(outline).toBeGreaterThanOrEqual(0);
+    expect(outline).toBeLessThan(foundation);
+    expect(outline).toBeLessThan(belt);
     expect(machine).toBeGreaterThan(outline);
     expect(signal).toBeGreaterThan(machine);
   });
@@ -177,6 +179,42 @@ describe("SVG and PNG adapters", () => {
       },
     ).svg;
     expect(result.match(/stroke="#000000"/g)).toHaveLength(1);
+  });
+
+  test("keeps the one-Pixel outline outside both sides of a foundation hole", () => {
+    const result = renderBlueprintToSvg(
+      {
+        name: "Inset outline fixture",
+        data: [
+          {
+            type: "ringFoundation",
+            x: 0,
+            y: 0,
+            data: {
+              __prefabulatorBlueprint: {
+                definition: {
+                  shape: [
+                    [1, 1, 1],
+                    [1, 0, 1],
+                    [1, 1, 1],
+                  ],
+                },
+              },
+            },
+          },
+        ],
+        signalLinks: null,
+      },
+      { padding: 1, cell: 8, showGrid: false, showNames: false },
+    ).svg;
+
+    expect(result).toContain('stroke-width="2"');
+    expect(result).toContain('stroke-linecap="butt"');
+    expect(result).toContain('stroke-linejoin="miter"');
+    // The inner contour is offset into the one-cell hole. With one-cell
+    // padding and an 8-unit Cell, its centerline is at 17/23 rather than the
+    // occupied boundary at 16/24; the 2-unit stroke then ends at 16/24.
+    expect(result).toContain("M 17 17 L 23 17 L 23 23 L 17 23 Z");
   });
 
   test("runs the SVG-to-PNG platform pipeline with rounded dimensions", async () => {

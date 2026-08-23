@@ -313,6 +313,11 @@ export function contributesUnderlyingCells(prepared: PreparedStructure) {
   );
 }
 
+/** Returns the core-owned render layer for foundation, belt, and solid-mask structures. */
+export function isFoundationStructure(prepared: PreparedStructure) {
+  return contributesUnderlyingCells(prepared);
+}
+
 export function isBeltType(type: BlueprintType) {
   return BELT_TYPES.has(type);
 }
@@ -429,10 +434,6 @@ export function foundationOutlinePath(
         0
       );
     });
-    const area = contourPoints.reduce((sum, current, index) => {
-      const next = contourPoints[(index + 1) % contourPoints.length];
-      return sum + current[0] * next[1] - next[0] * current[1];
-    }, 0);
     const offsetPoint = (
       previous: [number, number],
       current: [number, number],
@@ -442,7 +443,12 @@ export function foundationOutlinePath(
         const dx = to[0] - from[0];
         const dy = to[1] - from[1];
         const length = Math.hypot(dx, dy);
-        const normal = area > 0 ? [dy / length, -dx / length] : [-dy / length, dx / length];
+        // Boundary edges are traversed with occupied cells on their left in
+        // screen coordinates. The right-hand normal therefore always points
+        // into unoccupied space: outward for an exterior contour and toward
+        // the center of a hole for an interior contour. Flipping this by
+        // contour winding sends hole borders into the foundation.
+        const normal = [-dy / length, dx / length];
         return {
           from: [from[0] + normal[0] * outlineOffset, from[1] + normal[1] * outlineOffset],
           to: [to[0] + normal[0] * outlineOffset, to[1] + normal[1] * outlineOffset],

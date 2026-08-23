@@ -4,7 +4,7 @@ The catalog fixture and every `.txt` file in `blueprints/` render through the
 actual blueprint site and capture a PNG with headless Chrome. The current
 images are trimmed to the rendered map bounds, without the site navigation,
 test controls, or viewport chrome. Current images and ImageMagick diffs are
-written under `artifacts/visual/`.
+written under `artifacts/visual/blueprint-core/`.
 
 Put one encoded blueprint per file in `packages/sandustry-blueprint-core/tests/visual/blueprints/`, for example
 `packages/sandustry-blueprint-core/tests/visual/blueprints/thermal-line.txt`. Both v2 binary strings and v2 text

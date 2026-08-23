@@ -6,9 +6,9 @@
   "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "files.exclude": {
-    "**/build": true
-  },
+  // "files.exclude": {
+  //   "**/build": true
+  // },
   "js/ts.preferences.autoImportEntrypointDirectorySearch": true,
   "workbench.colorTheme": "Dark 2026"
 }

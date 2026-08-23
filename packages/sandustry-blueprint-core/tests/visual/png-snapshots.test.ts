@@ -10,7 +10,7 @@ const visualRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(visualRoot, "../../../..");
 const blueprintRoot = path.join(visualRoot, "blueprints");
 const baselineRoot = path.join(visualRoot, "baselines");
-const outputRoot = path.join(repoRoot, "artifacts/visual");
+const outputRoot = path.join(repoRoot, "artifacts/visual/blueprint-core");
 const update = process.argv.includes("--update");
 
 const fixtures = [
