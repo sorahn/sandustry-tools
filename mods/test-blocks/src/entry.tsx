@@ -11,7 +11,15 @@ import noop from "~shared/noop";
 import { onDispose } from "~shared/dev-hmr";
 import { ElementRow } from "./ui/picker/ElementRow";
 import { SearchInput } from "./ui/picker/SearchInput";
+import { createElementCatalog } from "./ui/picker/elementCatalog";
+import {
+  findSelectedElement,
+  filterElements,
+  matterTabs,
+  isSelectedElement,
+} from "./ui/picker/pickerModel";
 import { matterTabClass } from "./ui/picker/styles";
+import type { PickerElement, PickerRuntimeState } from "./ui/picker/pickerTypes";
 
 const api = sandkit.api;
 const MOD_ID = "sorahn.sandustry-test-blocks";
@@ -62,17 +70,6 @@ const TEXT = {
 
 type ElementSelection = { id: string | null; type: number | null };
 type ValidElementSelection = { id: string | null; type: number };
-type ElementEntry = ValidElementSelection & {
-  name: string;
-  color: string;
-  matterType: number | undefined;
-};
-type PickerState = {
-  current: string | null;
-  currentType: number | null;
-  minimized: boolean;
-  resolve: ((value: ElementSelection | null) => void) | null;
-};
 type FocusableButtonProps = {
   id: string;
   onActivate: () => void;
@@ -82,26 +79,18 @@ type FocusableButtonProps = {
   [key: string]: unknown;
 };
 type ElementGridButtonProps = {
-  entry: ElementEntry;
+  entry: PickerElement;
   index: number;
-  entries: ElementEntry[];
+  entries: PickerElement[];
   selected: boolean;
   onSelect: () => void;
 };
-type CurrentPickerEntry = {
-  id: string | null;
-  type: number | null;
-  name: string;
-  color: string;
-  matterType?: number;
-};
-
 const configuredSources = new Set<string>();
 const sourceSelections = new Map<string, ElementSelection>();
 const configuringSources = new Set<string>();
 const disabledSources = new Set<string>();
 const PICKER_ID = `${MOD_ID}-element-picker`;
-let pickerState: PickerState | null = null;
+let pickerState: PickerRuntimeState | null = null;
 let pickerOverlayReady = false;
 let pickerRepaint: ((update: (value: number) => number) => void) | null = null;
 let pickerPromise: Promise<ElementSelection | null> | null = null;
@@ -240,44 +229,19 @@ const elementTypeFromSource = (structure: SandustryStructure) => {
   return elementType !== null && isElementTypeAllowed(elementType) ? elementType : null;
 };
 
-const elementEntries = (): ElementEntry[] =>
-  safe<ElementEntry[]>(
+const elementEntries = (): PickerElement[] =>
+  safe(
     () =>
-      api.elements
-        .getRegisteredTypes()
-        .map((type) => {
-          if (!isElementTypeAllowed(type)) return null;
-          const definition = api.elements.getDefinitionByType(type);
-          const id = definition?.id || null;
-          if (!definition || !isElementAllowed(id, definition)) return null;
-          const name =
-            safe(() => api.i18n.getName(definition), id || `[type ${type}]`) ||
-            id ||
-            `[type ${type}]`;
-          const color =
-            typeof definition.metaColor === "number"
-              ? `#${definition.metaColor.toString(16).padStart(6, "0")}`
-              : "#9aa7b5";
-          return { id, type, name, color, matterType: definition.matterType };
-        })
-        .filter((entry): entry is ElementEntry => entry !== null)
-        .sort((a, b) => a.name.localeCompare(b.name)),
+      createElementCatalog({
+        getRegisteredTypes: () => api.elements.getRegisteredTypes(),
+        getDefinition: (type) => api.elements.getDefinitionByType(type),
+        getName: (definition, fallback) =>
+          safe(() => api.i18n.getName(definition), fallback) || fallback,
+        isTypeAllowed: isElementTypeAllowed,
+        isElementAllowed,
+      }),
     [],
   ) || [];
-
-const matterName = (matterType: number | undefined) =>
-  (
-    ({
-      1: "Solid",
-      2: "Liquid",
-      3: "Particle",
-      4: "Gas",
-      5: "Static",
-      6: "Slushy",
-      7: "Wisp",
-      8: "Powder",
-    }) as Record<number, string>
-  )[matterType ?? 0] || "Other";
 
 const applySourceSelection = (structure: SandustryStructure, value: ElementSelection) => {
   const definition = safe(() => api.elements.getDefinitionByType(value.type), null);
@@ -419,18 +383,14 @@ const ElementGridButton = ({
   );
 };
 
-const currentPickerEntry = (): CurrentPickerEntry | null => {
+const currentPickerEntry = (): PickerElement | null => {
   const state = pickerState;
   if (!state) return null;
   const entries = elementEntries();
-  return (
-    entries.find((entry) => entry.id !== null && entry.id === state.current) ||
-    entries.find((entry) => entry.type === state.currentType) || {
-      id: state.current,
-      type: state.currentType,
-      name: state.current || DEFAULT_ELEMENT_ID,
-      color: "#9aa7b5",
-    }
+  return findSelectedElement(
+    entries,
+    { id: state.current, type: state.currentType },
+    DEFAULT_ELEMENT_ID,
   );
 };
 
@@ -537,22 +497,11 @@ const ElementPicker = () => {
     );
   }
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const entries = elementEntries().filter((entry) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      entry.name.toLowerCase().includes(normalizedQuery) ||
-      (entry.id || "").toLowerCase().includes(normalizedQuery);
-    return matchesQuery && (matter === "All" || matterName(entry.matterType) === matter);
-  });
-  const matters = [
-    "All",
-    ...new Set(elementEntries().map((entry) => matterName(entry.matterType))),
-  ];
-  const isSelected = (entry: ElementEntry): boolean =>
-    picker.currentType !== null
-      ? entry.type === picker.currentType
-      : entry.id !== null && entry.id === picker.current;
+  const queryState = { query, matter };
+  const entries = filterElements(elementEntries(), queryState);
+  const matters = matterTabs(elementEntries());
+  const isSelected = (entry: PickerElement): boolean =>
+    isSelectedElement(entry, { id: picker.current, type: picker.currentType });
 
   return (
     <div

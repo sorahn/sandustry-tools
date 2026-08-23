@@ -32,3 +32,10 @@ export type PickerState = {
 };
 
 export type PickerResolve = (selection: PickerSelection | null) => void;
+
+export type PickerRuntimeState = {
+  current: string | null;
+  currentType: number | null;
+  minimized: boolean;
+  resolve: PickerResolve | null;
+};
