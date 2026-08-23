@@ -36,5 +36,10 @@ export function getBundledFontIds(): string[] {
 }
 
 export function getBundledFontOptions(): BundledFontOption[] {
-  return BUNDLED_FONT_CATALOG.map(({ id, label }) => ({ id, label }));
+  return BUNDLED_FONT_CATALOG.map(({ id, label }) => {
+    const font = loadedFonts.get(id);
+    const size = font?.fontSize === undefined ? "" : ` ${font.fontSize}px`;
+    const mono = font?.fixedWidth ? " (mono)" : "";
+    return { id, label: `${label}${size}${mono}` };
+  });
 }

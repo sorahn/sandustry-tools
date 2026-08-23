@@ -27,17 +27,38 @@ const PREFAB_BLOCK_CELLS = 4;
 export function labelBitmap(text: string, font: LabelFont): number[][] {
   const glyphs = [...text].map(font.glyphFor);
   const width = glyphs.reduce((total, glyph) => total + glyph.advance, 0);
-  const height = Math.max(0, ...glyphs.map((glyph) => glyph.height));
+  const yOffset = font.yOffset ?? 0;
+  const glyphHeight = Math.max(0, ...glyphs.map((glyph) => glyph.height));
+  let minPaintedY = glyphHeight;
+  let maxPaintedY = -1;
+  for (const glyph of glyphs)
+    for (let y = 0; y < glyph.height; y += 1)
+      if (glyph.rows[y] !== 0) {
+        minPaintedY = Math.min(minPaintedY, y);
+        maxPaintedY = Math.max(maxPaintedY, y);
+      }
+  const topPadding = Math.max(0, -(minPaintedY + yOffset));
+  const bottomPadding = Math.max(0, maxPaintedY + yOffset - (glyphHeight - 1));
+  const height = maxPaintedY < 0 ? 0 : glyphHeight + topPadding + bottomPadding;
   const bitmap = Array.from({ length: height }, () => Array<number>(width).fill(0));
 
   let left = 0;
   for (const glyph of glyphs) {
     for (let y = 0; y < glyph.height; y += 1)
-      for (let x = 0; x < glyph.width; x += 1)
-        bitmap[y][left + x] = glyph.rows[y] & (1 << (glyph.width - x - 1)) ? 1 : 0;
+      if (glyph.rows[y] !== 0)
+        for (let x = 0; x < glyph.width; x += 1)
+          bitmap[y + yOffset + topPadding][left + x] =
+            glyph.rows[y] & (1 << (glyph.width - x - 1)) ? 1 : 0;
     left += glyph.advance;
   }
-  return bitmap;
+  let firstPaintedRow = 0;
+  while (firstPaintedRow < bitmap.length && bitmap[firstPaintedRow].every((cell) => cell === 0))
+    firstPaintedRow += 1;
+  if (firstPaintedRow === bitmap.length) return [];
+
+  let lastPaintedRow = bitmap.length - 1;
+  while (bitmap[lastPaintedRow].every((cell) => cell === 0)) lastPaintedRow -= 1;
+  return bitmap.slice(firstPaintedRow, lastPaintedRow + 1);
 }
 
 export function createLabelBlueprint(text: string, font: LabelFont): LabelBlueprint {

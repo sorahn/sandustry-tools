@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "dogica-pixel",
+  "fontSize": 8,
   "glyphs": {
     "0": {
       "width": 5,

@@ -5,7 +5,9 @@ export type LabelFontData = {
   readonly name: string;
   readonly glyphs: Readonly<Record<string, LabelGlyph>>;
   readonly blankGlyph: LabelGlyph;
+  readonly fontSize?: number;
   readonly baselineRow?: number;
+  readonly yOffset?: number;
   readonly fixedWidth?: boolean;
 };
 
@@ -14,8 +16,10 @@ export function fontFromData(data: LabelFontData): LabelFont {
   return {
     glyphs: data.glyphs,
     blankGlyph: data.blankGlyph,
+    fontSize: data.fontSize,
     glyphFor,
     baselineRow: data.baselineRow,
+    yOffset: data.yOffset,
     fixedWidth: data.fixedWidth,
   };
 }

@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "minecraft",
+  "fontSize": 16,
   "glyphs": {
     "0": {
       "width": 8,
