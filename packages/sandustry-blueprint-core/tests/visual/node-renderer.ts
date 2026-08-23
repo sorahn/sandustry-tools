@@ -11,7 +11,11 @@ export function encodeVisualBlueprint(blueprint: Blueprint) {
   return encodeBlueprint(blueprint);
 }
 
-export function renderVisualBlueprint(input: string, assetRoot: string) {
+export function renderVisualBlueprint(
+  input: string,
+  assetRoot: string,
+  showFoundationOutlines = true,
+) {
   return renderBlueprintStringToNodePng(input, {
     assetRoot,
     catalog: blueprintCatalog(),
@@ -19,7 +23,7 @@ export function renderVisualBlueprint(input: string, assetRoot: string) {
     scale: 1,
     includeBackground: true,
     showGrid: true,
-    showFoundationOutlines: true,
+    showFoundationOutlines,
     showSignalLinks: true,
   });
 }

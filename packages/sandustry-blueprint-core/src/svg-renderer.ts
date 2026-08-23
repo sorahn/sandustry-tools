@@ -19,6 +19,8 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   includeBackground?: boolean;
   showGrid?: boolean;
   showCustomShapes?: boolean;
+  /** Render custom shapes as exact Cell rectangles without the fallback asset. */
+  useCustomShapeAsset?: boolean;
   showNames?: boolean;
   showFoundationOutlines?: boolean;
   showSignalLinks?: boolean;
@@ -124,7 +126,10 @@ function renderStructure(
   const labelLineHeight = labelFontSize * 1.15;
   const labelY = top + tileHeight / 2 - ((lines.length - 1) * labelLineHeight) / 2;
   let output = `<g data-structure-index="${index}">`;
-  const customAsset = isCustomShape ? options.catalog?.get(11)?.renderAsset : undefined;
+  const customAsset =
+    isCustomShape && options.useCustomShapeAsset !== false
+      ? options.catalog?.get(11)?.renderAsset
+      : undefined;
   const asset = prepared.sprite?.asset ?? customAsset;
   const usesFallbackAsset = asset !== undefined && prepared.sprite?.asset === undefined;
   if (!asset?.path) {

@@ -1,5 +1,6 @@
 import { encodeBlueprint } from "@sandustry/blueprint-core";
-import { createLabelBlueprint } from "~shared/labelmaker-blueprint";
+import { createLabelBlueprint } from "./blueprint";
+import { sanitizeLabel } from "./font";
 
 const api = sandkit.api;
 const ITEM_ID = "sorahnLabelmaker";
@@ -15,7 +16,7 @@ let cursorActive = false;
 api.i18n.register("en", {
   "mods|labelmaker|name": "Labelmaker",
   "mods|labelmaker|description": "Generate pixel-font label blueprints.",
-  "mods|labelmaker|prompt": "Enter a label (ASCII 32–127):",
+  "mods|labelmaker|prompt": "Enter a label (letters A–Z and spaces):",
 });
 
 await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");
@@ -23,21 +24,21 @@ await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");
 async function openLabelmaker(): Promise<void> {
   if (promptOpen) return;
   promptOpen = true;
-  const entered = await api.ui.prompt("Enter a label (ASCII 32–127):", "", "Label", "Labelmaker");
+  const entered = await api.ui.prompt(
+    "Enter a label (letters A–Z and spaces):",
+    "",
+    "Label",
+    "Labelmaker",
+  );
   promptOpen = false;
   if (entered === null) return;
-  const text = entered;
+  const sanitized = sanitizeLabel(entered);
+  if (sanitized.removed) {
+    api.ui.toast("Labelmaker: unsupported characters have been removed");
+  }
+  const text = sanitized.text;
   if (!text.length) {
     api.ui.toast("Labelmaker: enter at least one character.");
-    return;
-  }
-  if (
-    [...text].some((character) => {
-      const code = character.codePointAt(0) ?? -1;
-      return code < 32 || code > 127;
-    })
-  ) {
-    api.ui.toast("Labelmaker: use only ASCII characters 32–127.");
     return;
   }
 
@@ -122,7 +123,8 @@ api.items.register({
 
 api.i18n.register("en", {
   "items|labelmaker|name": "Labelmaker",
-  "items|labelmaker|description": "Click to generate a pixel-font label blueprint.",
+  "items|labelmaker|description":
+    "Click to generate a label blueprint using letters A–Z and spaces.",
 });
 
 api.input.registerBinding("LabelmakerCancel", ["MouseRight"], {

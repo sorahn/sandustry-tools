@@ -15,6 +15,7 @@ const blueprintRoot = path.join(visualRoot, "blueprints");
 const baselineRoot = path.join(visualRoot, "baselines");
 const update = process.argv.includes("--update");
 const diff = process.argv.includes("--diff");
+const noOutlines = process.argv.includes("--no-outlines");
 const onlyArgument = process.argv.find((argument) => argument.startsWith("--only="));
 const onlyIndex = process.argv.indexOf("--only");
 const only = onlyArgument
@@ -71,6 +72,7 @@ async function capture(renderer, job, currentPath) {
   const png = await renderer.renderVisualBlueprint(
     input,
     path.join(root, "apps/blueprint-site/public"),
+    !noOutlines,
   );
   await writeFile(currentPath, png);
   const trimmedPath = `${currentPath}.trim.png`;
@@ -115,7 +117,10 @@ async function run() {
   if (update) await mkdir(baselineRoot, { recursive: true });
   const renderer = await loadNodeRenderer();
   for (const job of jobs) {
-    const currentPath = path.join(outputRoot, `${job.name}-current.png`);
+    const currentPath = path.join(
+      outputRoot,
+      `${job.name}${noOutlines ? "-no-outlines" : ""}-current.png`,
+    );
     await capture(renderer, job, currentPath);
     if (update) {
       await copyFile(currentPath, job.baseline);

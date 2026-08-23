@@ -1,9 +1,4 @@
-import {
-  LABELMAKER_CELL_GAP,
-  LABELMAKER_GLYPH_HEIGHT,
-  LABELMAKER_GLYPH_WIDTH,
-  glyphFor,
-} from "./labelmaker-font";
+import { LABELMAKER_CELL_GAP, glyphFor } from "./font";
 
 export type LabelBlueprintStructure = {
   type: string;
@@ -30,17 +25,19 @@ const PREFAB_CELL_ID = 31;
 const PREFAB_BLOCK_CELLS = 4;
 
 export function labelBitmap(text: string): number[][] {
-  const width = Math.max(0, text.length * (LABELMAKER_GLYPH_WIDTH + LABELMAKER_CELL_GAP) - 1);
-  const bitmap = Array.from({ length: LABELMAKER_GLYPH_HEIGHT }, () =>
-    Array<number>(width).fill(0),
-  );
+  const glyphs = [...text].map(glyphFor);
+  const width =
+    glyphs.reduce((total, glyph) => total + Math.max(0, ...glyph.map((row) => row.length)), 0) +
+    Math.max(0, glyphs.length - 1) * LABELMAKER_CELL_GAP;
+  const height = Math.max(0, ...glyphs.map((glyph) => glyph.length));
+  const bitmap = Array.from({ length: height }, () => Array<number>(width).fill(0));
 
-  for (let characterIndex = 0; characterIndex < text.length; characterIndex += 1) {
-    const glyph = glyphFor(text[characterIndex]);
-    const left = characterIndex * (LABELMAKER_GLYPH_WIDTH + LABELMAKER_CELL_GAP);
-    for (let y = 0; y < LABELMAKER_GLYPH_HEIGHT; y += 1)
-      for (let x = 0; x < LABELMAKER_GLYPH_WIDTH; x += 1)
+  let left = 0;
+  for (const glyph of glyphs) {
+    for (let y = 0; y < glyph.length; y += 1)
+      for (let x = 0; x < glyph[y].length; x += 1)
         bitmap[y][left + x] = glyph[y][x] === "1" ? 1 : 0;
+    left += Math.max(0, ...glyph.map((row) => row.length)) + LABELMAKER_CELL_GAP;
   }
   return bitmap;
 }
@@ -49,7 +46,7 @@ export function createLabelBlueprint(text: string): LabelBlueprint {
   const bitmap = labelBitmap(text);
   const width = bitmap[0]?.length ?? 0;
   const data: LabelBlueprintStructure[] = [];
-  for (let blockY = 0; blockY < LABELMAKER_GLYPH_HEIGHT; blockY += PREFAB_BLOCK_CELLS)
+  for (let blockY = 0; blockY < bitmap.length; blockY += PREFAB_BLOCK_CELLS)
     for (let blockX = 0; blockX < width; blockX += PREFAB_BLOCK_CELLS) {
       const shape: number[][] = [];
       const cellIds: number[][] = [];
