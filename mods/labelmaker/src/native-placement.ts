@@ -49,6 +49,7 @@ export function activateCopierPlacement(structures: SandustryBlueprintRecord[]):
   const minY = Math.min(...structures.map((structure) => structure.y));
   const maxY = Math.max(...structures.map((structure) => structure.y));
   api.action.setCustomData({
+    __labelmakerCursor: true,
     selectedStructures: structures,
     signalLinks: null,
     mode: COPYING_MODE,

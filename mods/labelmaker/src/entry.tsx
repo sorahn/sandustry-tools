@@ -91,7 +91,12 @@ async function openLabelmaker(): Promise<void> {
 }
 
 function clearLabelmakerCursor(restoreLabelmaker = false): void {
-  if (!cursorActive && !promptOpen) return;
+  const customData = (
+    sandkit.engine.state?.store?.player?.action as
+      | { customData?: { __labelmakerCursor?: boolean } | null }
+      | undefined
+  )?.customData;
+  if (!cursorActive && !promptOpen && !customData?.__labelmakerCursor) return;
   cancelLabelmakerPrompt();
   promptOpen = false;
   cursorActive = false;
