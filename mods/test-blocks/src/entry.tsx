@@ -505,17 +505,17 @@ const ElementPicker = () => {
 
   return (
     <div
-      className="pointer-events-auto flex flex-col overflow-hidden bg-black bg-opacity-75 border border-slate-700 rounded ui-box text-slate-300"
+      className="pointer-events-auto mx-4 flex min-h-0 flex-col overflow-hidden bg-black bg-opacity-75 border border-slate-700 rounded ui-box text-slate-300"
       style={{
         position: "fixed",
         top: "auto",
         left: "50%",
-        bottom: 80,
+        bottom: "clamp(72px, 10vh, 96px)",
         transform: "translateX(-50%)",
         zIndex: 10000,
-        width: "640px",
-        maxWidth: "92vw",
-        maxHeight: "600px",
+        width: "calc(100vw - 32px)",
+        maxWidth: "640px",
+        maxHeight: "calc(100vh - 96px)",
       }}
     >
       <div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between">
@@ -531,17 +531,18 @@ const ElementPicker = () => {
           </FocusableButton>
         </div>
       </div>
-      <div className="px-4 py-3 border-b border-slate-800 flex flex-col gap-2 items-stretch">
-        <div className="flex items-center">
+      <div className="px-4 py-3 border-b border-slate-800 flex flex-wrap gap-2 items-center">
+        <div className="order-last min-w-[180px] flex-1 sm:order-none">
           <SearchInput
             inputRef={searchFocus.ref}
             value={query}
             placeholder="Search elements..."
             onChange={setQuery}
             onEscape={minimizePicker}
+            onClear={() => setQuery("")}
           />
         </div>
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex shrink-0 flex-wrap gap-1">
           {matters.map((name, index) => (
             <FocusableButton
               key={name}
@@ -563,19 +564,30 @@ const ElementPicker = () => {
           ))}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-2" style={{ maxHeight: 480 }}>
-        <div className="grid grid-cols-4 gap-1.5 py-1.5">
-          {entries.map((entry, index) => (
-            <ElementGridButton
-              key={entry.id || `type-${entry.type}`}
-              entry={entry}
-              index={index}
-              entries={entries}
-              selected={isSelected(entry)}
-              onSelect={() => closePicker(entry)}
-            />
-          ))}
-        </div>
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-2"
+        style={{ maxHeight: "min(480px, calc(100vh - 190px))" }}
+      >
+        {entries.length ? (
+          <div className="grid grid-cols-4 gap-1.5 py-1.5">
+            {entries.map((entry, index) => (
+              <ElementGridButton
+                key={entry.id || `type-${entry.type}`}
+                entry={entry}
+                index={index}
+                entries={entries}
+                selected={isSelected(entry)}
+                onSelect={() => closePicker(entry)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="py-8 text-center text-slate-600">
+            <span className="text-xs">
+              {query.trim() ? `No elements match “${query.trim()}”.` : "No elements available."}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
