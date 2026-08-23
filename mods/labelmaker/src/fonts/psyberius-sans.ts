@@ -1,11 +1,6 @@
-export const LABELMAKER_CELL_GAP = 1;
+import type { LabelFont, LabelGlyph } from "./types";
 
-export type LabelGlyph = {
-  readonly width: number;
-  readonly height: number;
-  readonly rows: readonly number[];
-  readonly advance: number;
-};
+export const LABELMAKER_CELL_GAP = 1;
 
 type LabelGlyphRows = readonly string[];
 
@@ -182,3 +177,9 @@ export function glyphFor(character: string): LabelGlyph {
   const base = LABELMAKER_GLYPHS[character];
   return base ?? BLANK_GLYPH;
 }
+
+export const PSYBERIUS_SANS_FONT: LabelFont = {
+  glyphs: LABELMAKER_GLYPHS,
+  blankGlyph: BLANK_GLYPH,
+  glyphFor,
+};

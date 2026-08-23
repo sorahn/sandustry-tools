@@ -1,4 +1,4 @@
-import { LABELMAKER_CELL_GAP, glyphFor } from "./fonts/psyberius-sans";
+import { PSYBERIUS_SANS_FONT } from "./fonts/psyberius-sans";
 
 export type LabelBlueprintStructure = {
   type: string;
@@ -24,11 +24,9 @@ const PREFAB_TERRAIN_TYPE = "prefabTerrain_5";
 const PREFAB_CELL_ID = 31;
 const PREFAB_BLOCK_CELLS = 4;
 
-export function labelBitmap(text: string): number[][] {
-  const glyphs = [...text].map(glyphFor);
-  const width =
-    glyphs.reduce((total, glyph) => total + glyph.width, 0) +
-    Math.max(0, glyphs.length - 1) * LABELMAKER_CELL_GAP;
+export function labelBitmap(text: string, font = PSYBERIUS_SANS_FONT): number[][] {
+  const glyphs = [...text].map(font.glyphFor);
+  const width = glyphs.reduce((total, glyph) => total + glyph.advance, 0);
   const height = Math.max(0, ...glyphs.map((glyph) => glyph.height));
   const bitmap = Array.from({ length: height }, () => Array<number>(width).fill(0));
 
@@ -42,8 +40,8 @@ export function labelBitmap(text: string): number[][] {
   return bitmap;
 }
 
-export function createLabelBlueprint(text: string): LabelBlueprint {
-  const bitmap = labelBitmap(text);
+export function createLabelBlueprint(text: string, font = PSYBERIUS_SANS_FONT): LabelBlueprint {
+  const bitmap = labelBitmap(text, font);
   const width = bitmap[0]?.length ?? 0;
   const data: LabelBlueprintStructure[] = [];
   for (let blockY = 0; blockY < bitmap.length; blockY += PREFAB_BLOCK_CELLS)
@@ -64,7 +62,7 @@ export function createLabelBlueprint(text: string): LabelBlueprint {
       data.push({
         type: PREFAB_TERRAIN_TYPE,
         x: blockX,
-        y: blockY,
+        y: blockY + 1,
         data: { __prefabulatorBlueprint: { definition: { shape, cellIds } } },
       });
     }

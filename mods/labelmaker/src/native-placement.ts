@@ -9,11 +9,35 @@ const COPIER_ACTION_TYPE = 3;
 const LABELMAKER_ACTION_TYPE = 4;
 const COPYING_MODE = 2;
 
+type PrefabBlueprintDefinition = {
+  shape: number[][];
+  cellIds: number[][];
+};
+
+type PrefabBlueprintData = {
+  __prefabulatorBlueprint?: {
+    definition?: PrefabBlueprintDefinition;
+  };
+};
+
 export function localizeLabelStructures(
   structures: SandustryBlueprintRecord[],
 ): SandustryBlueprintRecord[] {
   const localizer = sandkit.engine.api.prefabulator?.localizeBlueprintStructures;
-  return localizer ? structures.flatMap((structure) => localizer([structure])) : [...structures];
+  if (!localizer) return [...structures];
+
+  // Keep the definition on the transient Copier cursor after localization.
+  // This does not call the clipboard API or save a blueprint.
+  return structures.flatMap((structure) => {
+    const definition = (structure.data as PrefabBlueprintData | undefined)?.__prefabulatorBlueprint
+      ?.definition;
+    const localized = localizer([structure]);
+    if (!definition || !localized.length) return localized;
+    return localized.map((record) => ({
+      ...record,
+      data: { __prefabulatorBlueprint: { definition } },
+    }));
+  });
 }
 
 export function activateCopierPlacement(structures: SandustryBlueprintRecord[]): boolean {

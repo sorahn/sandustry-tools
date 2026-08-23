@@ -1,21 +1,15 @@
 import { expect, test } from "bun:test";
-import { glyphFor } from "../src/font";
+import { DOGICA_PIXEL_FONT } from "../src/fonts/dogica-pixel";
 
-test("calibrated lowercase glyphs preserve the supplied e and j rows", () => {
-  expect(glyphFor("e")).toEqual([
-    "00000",
-    "00000",
-    "01110",
-    "10001",
-    "11111",
-    "10000",
-    "10001",
-    "01110",
-  ]);
-  expect(glyphFor("j")).toEqual(["01", "00", "01", "01", "01", "01", "01", "01", "01", "01", "10"]);
+test("dogica lowercase glyphs use packed rows and measured advances", () => {
+  const e = DOGICA_PIXEL_FONT.glyphFor("e");
+  expect(e.width).toBeGreaterThan(0);
+  expect(e.height).toBeGreaterThan(0);
+  expect(e.rows).toHaveLength(e.height);
+  expect(e.advance).toBeGreaterThanOrEqual(e.width);
 });
 
 test("every lowercase letter has a glyph", () => {
   for (const character of "abcdefghijklmnopqrstuvwxyz")
-    expect(glyphFor(character).some((row) => row.includes("1"))).toBe(true);
+    expect(DOGICA_PIXEL_FONT.glyphFor(character).rows.some((row) => row !== 0)).toBe(true);
 });

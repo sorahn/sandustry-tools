@@ -60,6 +60,12 @@ interface SandustryNavigation {
   controllerFocusClass(focused: boolean): string;
 }
 
+interface SandustryUiOverlays {
+  register(slot: string, overlayId: string, render: () => unknown): void;
+  unregister(slot: string, overlayId: string): void;
+  update(slot: string): void;
+}
+
 interface SandustryEvents {
   on(event: string, callback: (...args: unknown[]) => void): void;
 }
@@ -349,10 +355,20 @@ interface SandustryApi {
   ui: {
     update(componentId: number | string, options?: Record<string, unknown>): void;
     openPauseMenu(): void;
+    showTooltip(data: unknown): void;
     toast(message: string, options?: Record<string, unknown>): void;
-    inject(id: string, component: () => unknown): unknown;
+    alert(message: unknown, title?: unknown): Promise<void>;
+    confirm(message: unknown, title?: unknown): Promise<boolean>;
+    inject(id: string, component: () => unknown): () => void;
+    overlays: SandustryUiOverlays;
     navigation: SandustryNavigation;
-    prompt(...args: string[]): Promise<string | null>;
+    prompt(
+      message: unknown,
+      defaultValue?: string,
+      placeholder?: unknown,
+      title?: unknown,
+      allowCopy?: boolean,
+    ): Promise<string | null>;
   };
   rendering: {
     getGridMetrics(): { cellSize: number; snapGridCellSize: number };
