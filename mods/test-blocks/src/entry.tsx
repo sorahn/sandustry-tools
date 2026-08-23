@@ -9,6 +9,8 @@
 
 import noop from "~shared/noop";
 import { onDispose } from "~shared/dev-hmr";
+import { ElementRow } from "./ui/picker/ElementRow";
+import { SearchInput } from "./ui/picker/SearchInput";
 
 const api = sandkit.api;
 const MOD_ID = "sorahn.sandustry-test-blocks";
@@ -405,28 +407,14 @@ const ElementGridButton = ({
     focusable.focus();
     onSelect();
   };
-  const className = selected
-    ? "group flex items-center gap-2 px-2 py-1.5 text-left w-full rounded border transition-all duration-200 border-[#ffe700] bg-[#ffe700]/10"
-    : "group flex items-center gap-2 px-2 py-1.5 text-left w-full rounded border transition-all duration-200 border-slate-700 hover:border-slate-500 bg-black/40 hover:bg-black/60";
-
   return (
-    <button
-      ref={focusable.ref}
-      type="button"
+    <ElementRow
+      element={entry}
+      selected={selected}
+      buttonRef={focusable.ref}
       onClick={select}
-      className={`${className} ${focusClass}`.trim()}
-    >
-      <span className="w-3 h-3 flex-shrink-0" style={{ backgroundColor: entry.color }} />
-      <span
-        className={
-          selected
-            ? "text-xs truncate transition-colors text-[#ffe700]"
-            : "text-xs truncate transition-colors text-slate-300 group-hover:text-white"
-        }
-      >
-        {entry.name}
-      </span>
-    </button>
+      className={focusClass}
+    />
   );
 };
 
@@ -603,17 +591,12 @@ const ElementPicker = () => {
       </div>
       <div className="px-4 py-3 border-b border-slate-800 flex flex-col gap-2 items-stretch">
         <div className="flex items-center">
-          <input
-            ref={searchFocus.ref}
-            autoFocus
+          <SearchInput
+            inputRef={searchFocus.ref}
             value={query}
             placeholder="Search elements..."
-            maxLength={64}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") minimizePicker();
-            }}
-            className="w-full bg-black/60 border border-slate-700 px-3 py-1.5 rounded text-xs text-white placeholder-slate-600 focus:outline-none focus:border-slate-500 transition-colors"
+            onChange={setQuery}
+            onEscape={minimizePicker}
           />
         </div>
         <div className="flex gap-1 flex-wrap">
