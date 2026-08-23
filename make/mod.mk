@@ -13,7 +13,7 @@ PACKAGE_DIR := $(BUILD_DIR)/package
 SANDUSTRY_MODS_DIR ?= /Users/daryl/Library/Application Support/sandustry/mods
 INSTALL_DIR := $(SANDUSTRY_MODS_DIR)/$(MOD_ID)
 
-.PHONY: all build package install check format version major minor patch clean FORCE
+.PHONY: all build package install publish check format version major minor patch clean FORCE
 all: build
 
 FORCE:
@@ -43,6 +43,9 @@ install: $(ARCHIVE)
 	@node "$(REPO_ROOT)/scripts/dev/capture-workshop-id.mjs" "$(MOD_ID)" "$(INSTALL_DIR)"
 	@cp -R "$(PACKAGE_DIR)/." "$(INSTALL_DIR)/"
 	@echo "Installed unzipped $(MOD_ID) mod to $(INSTALL_DIR)"
+
+publish: $(ARCHIVE)
+	@node "$(REPO_ROOT)/scripts/publish-workshop.mjs" "$(MOD_DIR)" "$(PACKAGE_DIR)"
 
 check: $(ARCHIVE)
 	@cd "$(REPO_ROOT)" && npx tsc --noEmit

@@ -33,6 +33,21 @@ make check
 make format
 ```
 
+Publish a Workshop mod through SteamCMD after logging in:
+
+```sh
+make publish MOD=zoom-hotkeys
+```
+
+`publish` requires exactly one `MOD=<name>` and uses `steamcmd` from your PATH.
+It reads the most recent account from Steam's `loginusers.vdf` and passes that
+account to SteamCMD with `+login`. Steam client login and SteamCMD credentials
+are separate; the first publish may prompt for the Steam password and Steam
+Guard code. If the mod has an entry in `workshop-published-ids.json`, it
+updates that item; otherwise it creates a new item and records the ID SteamCMD
+writes back to the temporary VDF. Set `STEAMCMD=/path/to/steamcmd`,
+`STEAM_ACCOUNT=<account>`, or `CHANGE_NOTE="..."` to override the defaults.
+
 For development, watch one mod and keep its installed copy up to date with:
 
 ```sh
