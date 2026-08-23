@@ -12,15 +12,6 @@ const COPYING_MODE = 2;
 let promptOpen = false;
 let cursorActive = false;
 
-api.i18n.register("en", {
-  "mods|labelmaker|name": "Labelmaker",
-  "mods|labelmaker|description": "Generate pixel-font label blueprints.",
-  "mods|labelmaker|prompt":
-    "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):",
-});
-
-await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");
-
 async function openLabelmaker(): Promise<void> {
   if (promptOpen) return;
   promptOpen = true;
@@ -97,47 +88,74 @@ function restoreLabelmakerAction(state: any): void {
   }
 }
 
-api.items.register({
-  id: ITEM_ID,
-  nameKey: "items|labelmaker|name",
-  descriptionKey: "items|labelmaker|description",
-  categoryKey: "utility",
-  sprite: {
-    id: TOOL_SPRITE_ID,
-    type: "backhand",
-  },
-  handleAction: (state: any) => {
-    if (state?.session?.action?.state?.[ACTION_START]) void openLabelmaker();
-  },
-  afterRender: (state: any) => {
-    if (!cursorActive || state?.store?.player?.action?.id !== COPIER_ID) return;
-    if (state?.session?.action?.customData) return;
-    cursorActive = false;
-    restoreLabelmakerAction(state);
-  },
-});
+function registerLabelmaker(): void {
+  api.items.register({
+    id: ITEM_ID,
+    nameKey: "items|labelmaker|name",
+    descriptionKey: "items|labelmaker|description",
+    categoryKey: "utility",
+    sprite: {
+      id: TOOL_SPRITE_ID,
+      type: "backhand",
+    },
+    handleAction: (state: any) => {
+      if (state?.session?.action?.state?.[ACTION_START]) void openLabelmaker();
+    },
+    afterRender: (state: any) => {
+      if (!cursorActive || state?.store?.player?.action?.id !== COPIER_ID) return;
+      if (state?.session?.action?.customData) return;
+      cursorActive = false;
+      restoreLabelmakerAction(state);
+    },
+  });
 
-api.i18n.register("en", {
-  "items|labelmaker|name": "Labelmaker",
-  "items|labelmaker|description":
-    "Click to generate a label blueprint using letters A–Z and spaces.",
-});
+  api.i18n.register("en", {
+    "items|labelmaker|name": "Labelmaker",
+    "items|labelmaker|description":
+      "Click to generate a label blueprint using letters A–Z and spaces.",
+  });
 
-api.input.registerBinding("LabelmakerCancel", ["MouseRight"], {
-  displayName: "Labelmaker",
-  category: "utility",
-  handlers: {
-    down: () => clearLabelmakerCursor(true),
-  },
-});
+  api.input.registerBinding("LabelmakerCancel", ["MouseRight"], {
+    displayName: "Labelmaker",
+    category: "utility",
+    handlers: {
+      down: () => clearLabelmakerCursor(true),
+    },
+  });
 
-api.events.on("action:changed", () => {
-  const selected = api.action?.getSelected();
-  if (cursorActive && selected?.id !== ITEM_ID && String(selected?.id) !== String(COPIER_ID)) {
-    clearLabelmakerCursor();
+  api.events.on("action:changed", () => {
+    const selected = api.action?.getSelected();
+    if (cursorActive && selected?.id !== ITEM_ID && String(selected?.id) !== String(COPIER_ID)) {
+      clearLabelmakerCursor();
+    }
+  });
+
+  api.events.on("game:ready", () => {
+    const inventory = (sandkit.engine?.state as any)?.store?.player?.inventory;
+    if (Array.isArray(inventory) && inventory.some((item: any) => item?.id === ITEM_ID)) return;
+    api.player.inventory.addFromId(ITEM_ID);
+  });
+}
+
+async function initialize(): Promise<void> {
+  api.i18n.register("en", {
+    "mods|labelmaker|name": "Labelmaker",
+    "mods|labelmaker|description": "Generate pixel-font label blueprints.",
+    "mods|labelmaker|prompt":
+      "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):",
+  });
+
+  try {
+    await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");
+  } catch (error) {
+    console.error("[Labelmaker] Failed to load labelmaker sprite:", error);
   }
-});
 
-api.events.on("game:ready", () => {
-  api.player.inventory.addFromId(ITEM_ID);
-});
+  try {
+    registerLabelmaker();
+  } catch (error) {
+    console.error("[Labelmaker] Failed to register Labelmaker:", error);
+  }
+}
+
+initialize().catch((error) => console.error("[Labelmaker] Initialization failed:", error));
