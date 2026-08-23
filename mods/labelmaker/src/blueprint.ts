@@ -1,4 +1,4 @@
-import { LABELMAKER_CELL_GAP, glyphFor } from "./font";
+import { LABELMAKER_CELL_GAP, glyphFor } from "./fonts/psyberius-sans";
 
 export type LabelBlueprintStructure = {
   type: string;
@@ -27,17 +27,17 @@ const PREFAB_BLOCK_CELLS = 4;
 export function labelBitmap(text: string): number[][] {
   const glyphs = [...text].map(glyphFor);
   const width =
-    glyphs.reduce((total, glyph) => total + Math.max(0, ...glyph.map((row) => row.length)), 0) +
+    glyphs.reduce((total, glyph) => total + glyph.width, 0) +
     Math.max(0, glyphs.length - 1) * LABELMAKER_CELL_GAP;
-  const height = Math.max(0, ...glyphs.map((glyph) => glyph.length));
+  const height = Math.max(0, ...glyphs.map((glyph) => glyph.height));
   const bitmap = Array.from({ length: height }, () => Array<number>(width).fill(0));
 
   let left = 0;
   for (const glyph of glyphs) {
-    for (let y = 0; y < glyph.length; y += 1)
-      for (let x = 0; x < glyph[y].length; x += 1)
-        bitmap[y][left + x] = glyph[y][x] === "1" ? 1 : 0;
-    left += Math.max(0, ...glyph.map((row) => row.length)) + LABELMAKER_CELL_GAP;
+    for (let y = 0; y < glyph.height; y += 1)
+      for (let x = 0; x < glyph.width; x += 1)
+        bitmap[y][left + x] = glyph.rows[y] & (1 << (glyph.width - x - 1)) ? 1 : 0;
+    left += glyph.advance;
   }
   return bitmap;
 }

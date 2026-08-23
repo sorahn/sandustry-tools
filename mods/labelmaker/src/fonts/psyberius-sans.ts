@@ -1,10 +1,27 @@
 export const LABELMAKER_CELL_GAP = 1;
 
-export type LabelGlyph = readonly string[];
+export type LabelGlyph = {
+  readonly width: number;
+  readonly height: number;
+  readonly rows: readonly number[];
+  readonly advance: number;
+};
+
+type LabelGlyphRows = readonly string[];
+
+function packGlyph(rows: LabelGlyphRows): LabelGlyph {
+  const width = Math.max(0, ...rows.map((row) => row.length));
+  return {
+    width,
+    height: rows.length,
+    rows: rows.map((row) => Number.parseInt(row || "0", 2)),
+    advance: width + LABELMAKER_CELL_GAP,
+  };
+}
 
 // Glyphs transcribed from resources/ascii-text.webp. The table uses distinct
 // entries for uppercase and lowercase letters so labels preserve their case.
-export const LABELMAKER_GLYPHS: Readonly<Record<string, LabelGlyph>> = {
+const LABELMAKER_GLYPH_ROWS: Readonly<Record<string, LabelGlyphRows>> = {
   A: ["01110", "10001", "10001", "10001", "11111", "10001", "10001", "10001"],
   B: ["11110", "10001", "10001", "11110", "10001", "10001", "10001", "11110"],
   C: ["01110", "10001", "10000", "10000", "10000", "10000", "10001", "01110"],
@@ -141,7 +158,11 @@ export const LABELMAKER_GLYPHS: Readonly<Record<string, LabelGlyph>> = {
   "~": ["00000", "00000", "00000", "01000", "10101", "00010"],
 };
 
-export const BLANK_GLYPH: LabelGlyph = [
+export const LABELMAKER_GLYPHS: Readonly<Record<string, LabelGlyph>> = Object.fromEntries(
+  Object.entries(LABELMAKER_GLYPH_ROWS).map(([character, rows]) => [character, packGlyph(rows)]),
+);
+
+export const BLANK_GLYPH: LabelGlyph = packGlyph([
   "00000",
   "00000",
   "00000",
@@ -154,7 +175,7 @@ export const BLANK_GLYPH: LabelGlyph = [
   "00000",
   "00000",
   "00000",
-];
+]);
 
 export function glyphFor(character: string): LabelGlyph {
   if (character === " ") return BLANK_GLYPH;
