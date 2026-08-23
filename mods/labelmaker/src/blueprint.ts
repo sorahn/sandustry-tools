@@ -1,4 +1,4 @@
-import { PSYBERIUS_SANS_FONT } from "./fonts/psyberius-sans";
+import type { LabelFont } from "./fonts/types";
 
 export type LabelBlueprintStructure = {
   type: string;
@@ -24,7 +24,7 @@ const PREFAB_TERRAIN_TYPE = "prefabTerrain_5";
 const PREFAB_CELL_ID = 31;
 const PREFAB_BLOCK_CELLS = 4;
 
-export function labelBitmap(text: string, font = PSYBERIUS_SANS_FONT): number[][] {
+export function labelBitmap(text: string, font: LabelFont): number[][] {
   const glyphs = [...text].map(font.glyphFor);
   const width = glyphs.reduce((total, glyph) => total + glyph.advance, 0);
   const height = Math.max(0, ...glyphs.map((glyph) => glyph.height));
@@ -40,7 +40,7 @@ export function labelBitmap(text: string, font = PSYBERIUS_SANS_FONT): number[][
   return bitmap;
 }
 
-export function createLabelBlueprint(text: string, font = PSYBERIUS_SANS_FONT): LabelBlueprint {
+export function createLabelBlueprint(text: string, font: LabelFont): LabelBlueprint {
   const bitmap = labelBitmap(text, font);
   const width = bitmap[0]?.length ?? 0;
   const data: LabelBlueprintStructure[] = [];

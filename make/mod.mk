@@ -23,7 +23,7 @@ $(BUILD_DIR)/entry.js: FORCE $(shell find $(SRC_DIR) -type f -print 2>/dev/null)
 	@mkdir -p "$(BUILD_DIR)"
 	@echo "Compiling $(MOD_ID)"
 	@cd "$(REPO_ROOT)" && npx tsc --noEmit
-	@cd "$(REPO_ROOT)" && npx esbuild "$(SRC_DIR)/entry.tsx" --bundle --format=esm --platform=neutral --target=es2022 --drop:console --jsx-factory=sandkit.react.createElement --jsx-fragment=sandkit.react.Fragment --alias:~shared="$(REPO_ROOT)/shared" --outfile="$(BUILD_DIR)/entry.js"
+	@if [ -n "$(MOD_ESBUILD_SCRIPT)" ]; then node "$(MOD_ESBUILD_SCRIPT)" "$(SRC_DIR)/entry.tsx" "$(BUILD_DIR)/entry.js"; else cd "$(REPO_ROOT)" && npx esbuild "$(SRC_DIR)/entry.tsx" --bundle --format=esm --platform=neutral --target=es2022 --drop:console --jsx-factory=sandkit.react.createElement --jsx-fragment=sandkit.react.Fragment --alias:~shared="$(REPO_ROOT)/shared" --outfile="$(BUILD_DIR)/entry.js"; fi
 
 $(ARCHIVE): $(BUILD_DIR)/entry.js $(MANIFEST) $(shell find $(MOD_DIR)/assets -type f -print 2>/dev/null) $(wildcard $(MOD_DIR)/preview.png)
 	@rm -rf "$(PACKAGE_DIR)"

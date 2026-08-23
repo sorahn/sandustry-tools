@@ -9,6 +9,7 @@ import {
   localizeLabelStructures,
   restoreLabelmakerAction,
 } from "./native-placement";
+import { getBundledFont, loadBundledFonts } from "./fonts/registry";
 
 const api = sandkit.api;
 const ITEM_ID = "sorahnLabelmaker";
@@ -48,7 +49,7 @@ async function openLabelmaker(): Promise<void> {
       return;
     }
 
-    const blueprint = createLabelBlueprint(entered);
+    const blueprint = createLabelBlueprint(entered, getBundledFont());
     encodeBlueprint(blueprint);
     const cursorStructures = localizeLabelStructures(blueprint.data);
     if (!cursorStructures?.length) {
@@ -122,6 +123,14 @@ function registerLabelmaker(): void {
 
 async function initialize(): Promise<void> {
   api.i18n.register("en", MOD_TRANSLATIONS);
+
+  try {
+    await loadBundledFonts();
+  } catch (error) {
+    console.error("[Labelmaker] Failed to load bundled fonts:", error);
+    api.ui.toast("Labelmaker: bundled fonts could not be loaded.");
+    return;
+  }
 
   try {
     await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");

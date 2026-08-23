@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
 import { labelBitmap } from "../src/blueprint";
-import { DOGICA_PIXEL_FONT } from "../src/fonts/dogica-pixel";
+import { loadFontFixture } from "./font-fixtures";
+
+const DOGICA_PIXEL_FONT = loadFontFixture("dogica-pixel.font.json");
 
 function rowsToBitmap(rows: readonly number[], width: number): number[][] {
   return rows.map((row) =>

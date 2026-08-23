@@ -6,7 +6,10 @@ import { describe, test } from "bun:test";
 import { encodeBlueprint } from "../../../packages/sandustry-blueprint-core/src";
 import { renderVisualBlueprint } from "../../../packages/sandustry-blueprint-core/tests/visual/node-renderer";
 import { createLabelBlueprint } from "../src/blueprint";
-import { PIXOLLETTA_FONT } from "../src/fonts/pixolletta";
+import { loadFontFixture } from "./font-fixtures";
+
+const PSYBERIUS_SANS_FONT = loadFontFixture("psyberius-sans.font.json");
+const PIXOLLETTA_FONT = loadFontFixture("pixolletta.font.json");
 
 const testRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testRoot, "../../..");
@@ -30,7 +33,7 @@ describe("labelmaker character groups", () => {
   for (const [name, characters] of fixtures) {
     test(name, async () => {
       await mkdir(outputRoot, { recursive: true });
-      const input = encodeBlueprint(createLabelBlueprint(characters));
+      const input = encodeBlueprint(createLabelBlueprint(characters, PSYBERIUS_SANS_FONT));
       const png = await renderVisualBlueprint(input, assetRoot);
       const outputPath = path.join(outputRoot, `${name}-current.png`);
       await writeFile(outputPath, png);

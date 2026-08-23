@@ -10,6 +10,7 @@ import { build } from "esbuild";
 import { createServer } from "node:http";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { cp, mkdir, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
@@ -25,6 +26,22 @@ const HMR_PORT = 19147;
 const HMR_PATH = "/hot-reload";
 const DEBOUNCE_MS = 100;
 const POLL_MS = 250;
+
+const gzipFontPlugin = {
+  name: "sandustry-gzip-fonts",
+  setup(pluginBuild) {
+    pluginBuild.onLoad({ filter: /\.font\.json$/ }, ({ path }) => {
+      const source = readFileSync(path, "utf8");
+      JSON.parse(source);
+      const encoded = gzipSync(source).toString("base64");
+      return {
+        contents: `export default ${JSON.stringify(encoded)};`,
+        loader: "js",
+        resolveDir: dirname(path),
+      };
+    });
+  },
+};
 
 const args = process.argv.slice(2);
 const takeover = args.includes("--takeover");
@@ -340,6 +357,7 @@ async function buildAndInstall(reason) {
       jsxFactory: "sandkit.react.createElement",
       jsxFragment: "sandkit.react.Fragment",
       alias: { "~shared": join(ROOT, "shared") },
+      plugins: [gzipFontPlugin],
       outfile: devEntryPath,
       logLevel: "info",
     });

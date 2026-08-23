@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
-import { DOGICA_PIXEL_FONT } from "../src/fonts/dogica-pixel";
+import { loadFontFixture } from "./font-fixtures";
+
+const DOGICA_PIXEL_FONT = loadFontFixture("dogica-pixel.font.json");
 
 test("dogica lowercase glyphs use packed rows and measured advances", () => {
   const e = DOGICA_PIXEL_FONT.glyphFor("e");

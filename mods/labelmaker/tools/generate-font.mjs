@@ -6,17 +6,13 @@ import { readFileSync, writeFileSync } from "node:fs";
 const [fontPath, outputPath, pointSizeArg = "8", fontNameArg = "generated", glyphHeightArg] =
   process.argv.slice(2);
 if (!fontPath || !outputPath) {
-  console.error("usage: generate-font.mjs FONT.ttf OUTPUT.ts [POINT_SIZE]");
+  console.error("usage: generate-font.mjs FONT.ttf OUTPUT.json [POINT_SIZE] [FONT_NAME]");
   process.exit(2);
 }
 
 readFileSync(fontPath);
 const pointSize = Number(pointSizeArg);
 const glyphHeight = Number(glyphHeightArg ?? pointSize);
-const fontName = fontNameArg
-  .replace(/[^a-zA-Z0-9]+(.)/g, (_, character) => character.toUpperCase())
-  .replace(/^[^a-zA-Z_]+/, "");
-const exportName = fontNameArg.replace(/[^a-zA-Z0-9]+/g, "_").toUpperCase();
 const characters = Array.from({ length: 96 }, (_, index) => String.fromCodePoint(32 + index));
 const glyphTextPath = "/private/tmp/labelmaker-font-glyph.txt";
 
@@ -116,20 +112,16 @@ const blankGlyph = {
   advance: fallbackAdvance,
 };
 
-const output = `import type { LabelFont, LabelGlyph } from "./types";
-
-export const ${exportName}_GLYPHS: Readonly<Record<string, LabelGlyph>> = ${JSON.stringify(glyphs, null, 2)};
-
-export const ${exportName}_BLANK_GLYPH: LabelGlyph = ${JSON.stringify(blankGlyph, null, 2)};
-
-export function ${fontName}GlyphFor(character: string): LabelGlyph {
-  return ${exportName}_GLYPHS[character] ?? ${exportName}_BLANK_GLYPH;
-}
-
-export const ${exportName}_FONT: LabelFont = {
-  glyphs: ${exportName}_GLYPHS,
-  blankGlyph: ${exportName}_BLANK_GLYPH,
-  glyphFor: ${fontName}GlyphFor,
-};
-`;
-writeFileSync(outputPath, output);
+writeFileSync(
+  outputPath,
+  `${JSON.stringify(
+    {
+      schemaVersion: 1,
+      name: fontNameArg,
+      glyphs,
+      blankGlyph,
+    },
+    null,
+    2,
+  )}\n`,
+);
