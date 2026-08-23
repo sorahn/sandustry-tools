@@ -750,7 +750,7 @@ const setup = async () => {
   await api.sprites.loadFromMod(TRASH_SPRITE, "assets/Trash.png");
 
   const common = {
-    categoryKey: "misc",
+    categoryKey: "production",
     buildModes: [
       { type: "single" },
       {
@@ -786,7 +786,7 @@ const setup = async () => {
   });
 
   // These blocks are creative utility blocks, so they do not require a tech
-  // node before appearing in the Misc build category.
+  // node before appearing in the Production build category.
   api.player.buildings.unlockByType(SOURCE_ID);
   api.player.buildings.unlockByType(TRASH_ID);
 

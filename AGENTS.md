@@ -164,8 +164,8 @@ structures:
 - **Infinite Source**: emits a configurable element continuously.
 - **Infinite Trash**: removes elements in its footprint.
 
-The blocks belong in the `misc` building category and currently reuse the two
-icons from the demo Creative Mode mod.
+The blocks belong in the `production` building category and currently reuse the
+two icons from the demo Creative Mode mod.
 
 ## Important version distinction
 
@@ -251,7 +251,7 @@ manifest is `mods/infinite-source-trash/modinfo.json`.
 - Entrypoint: `entry.js`
 - Structures: `sandustryTestBlocksSource` and
   `sandustryTestBlocksTrash`
-- Category: `misc`
+- Category: `production`
 - Both structures use a 4×4 footprint and the demo icons:
   - `mods/infinite-source-trash/assets/SourceBlock.png`
   - `mods/infinite-source-trash/assets/Trash.png`
@@ -353,7 +353,7 @@ further debugging, test these cases in Sandustry:
 
 If the game does not accept the all-zero structure shape or the `single` build
 mode, compare against the supplied v1 Rocket Dispenser and adjust the structure
-registration while preserving the 4×4 geometry and `misc` category.
+registration while preserving the 4×4 geometry and `production` category.
 
 ## Debug Lab F8 snapshots
 
