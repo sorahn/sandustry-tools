@@ -531,8 +531,8 @@ const ElementPicker = () => {
           </FocusableButton>
         </div>
       </div>
-      <div className="px-4 py-3 border-b border-slate-800 flex flex-wrap gap-2 items-center">
-        <div className="order-last min-w-[180px] flex-1 sm:order-none">
+      <div className="px-4 py-3 border-b border-slate-800 flex flex-col gap-2 items-stretch">
+        <div className="w-full">
           <SearchInput
             inputRef={searchFocus.ref}
             value={query}
@@ -542,7 +542,7 @@ const ElementPicker = () => {
             onClear={() => setQuery("")}
           />
         </div>
-        <div className="flex shrink-0 flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1">
           {matters.map((name, index) => (
             <FocusableButton
               key={name}
