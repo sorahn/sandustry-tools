@@ -96,6 +96,7 @@ let pickerRepaint: ((update: (value: number) => number) => void) | null = null;
 let pickerPromise: Promise<ElementSelection | null> | null = null;
 let lastElementSelection: ElementSelection | null = null;
 const UIReact = sandkit.react ?? null;
+const HOTBAR_OVERLAY_SLOT = "hotbar";
 
 const safe = <T,>(fn: () => T, fallback: T | null = null): T | null => {
   try {
@@ -471,13 +472,6 @@ const ElementPicker = () => {
     return (
       <div
         className="pointer-events-auto flex items-center gap-2 bg-black bg-opacity-75 border border-slate-700 rounded px-3 py-2 ui-box text-slate-300"
-        style={{
-          position: "fixed",
-          left: "50%",
-          bottom: 80,
-          transform: "translateX(-50%)",
-          zIndex: 10000,
-        }}
         onClick={expandPicker}
       >
         <span className="text-white text-xs opacity-70">Source</span>
@@ -505,17 +499,11 @@ const ElementPicker = () => {
 
   return (
     <div
-      className="pointer-events-auto mx-4 flex min-h-0 flex-col overflow-hidden bg-black bg-opacity-75 border border-slate-700 rounded ui-box text-slate-300"
+      className="pointer-events-auto flex min-h-0 flex-col overflow-hidden bg-black bg-opacity-75 border border-slate-700 rounded ui-box text-slate-300"
       style={{
-        position: "fixed",
-        top: "auto",
-        left: "50%",
-        bottom: "clamp(72px, 10vh, 96px)",
-        transform: "translateX(-50%)",
-        zIndex: 10000,
-        width: "calc(100vw - 32px)",
+        width: "640px",
         maxWidth: "640px",
-        maxHeight: "calc(100vh - 96px)",
+        maxHeight: "600px",
       }}
     >
       <div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between">
@@ -593,11 +581,34 @@ const ElementPicker = () => {
   );
 };
 
+const PickerFallbackHost = () => (
+  <div
+    className="pointer-events-none fixed inset-0 z-[10000] flex items-end justify-center px-4"
+    style={{ paddingBottom: "clamp(72px, 10vh, 96px)" }}
+  >
+    <ElementPicker />
+  </div>
+);
+
 const registerPicker = () => {
   if (pickerOverlayReady) return true;
   if (!UIReact) return false;
   try {
-    const dispose = api.ui.inject(PICKER_ID, ElementPicker);
+    api.ui.overlays.register(HOTBAR_OVERLAY_SLOT, PICKER_ID, () => <ElementPicker />);
+    pickerOverlayReady = true;
+    onDispose(() => {
+      try {
+        api.ui.overlays.unregister(HOTBAR_OVERLAY_SLOT, PICKER_ID);
+      } catch (error) {
+        noop(error);
+      }
+    });
+    return pickerOverlayReady;
+  } catch (error) {
+    console.warn(`[${MOD_ID}] hotbar picker host unavailable; using injected fallback:`, error);
+  }
+  try {
+    const dispose = api.ui.inject(PICKER_ID, PickerFallbackHost);
     pickerOverlayReady = typeof dispose === "function";
     if (pickerOverlayReady) onDispose(dispose as () => void);
     return pickerOverlayReady;
