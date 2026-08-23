@@ -1,99 +1,81 @@
-const PROMPT_ID = "sorahn-labelmaker-prompt";
+import { onDispose } from "../../../shared/dev-hmr";
+import { LabelmakerPrompt } from "./ui/prompt/LabelmakerPrompt";
+import type { LabelmakerPromptResult, LabelmakerPromptState } from "./ui/prompt/promptTypes";
 
-type PromptRequest = {
-  message: string;
-  placeholder: string;
-  title: string;
-  resolve: (value: string | null) => void;
+const PROMPT_ID = "sorahn-labelmaker-prompt";
+const api = sandkit.api;
+
+type PromptRequest = LabelmakerPromptState & {
+  resolve: (value: LabelmakerPromptResult | null) => void;
 };
 
 let promptRequest: PromptRequest | null = null;
 let promptValue = "";
+let promptFontId = "";
 let promptRepaint: ((update: (value: number) => number) => void) | null = null;
 let promptDispose: (() => void) | null = null;
 
-function LabelmakerPrompt(): unknown {
-  const React = sandkit.react;
-  const [, repaint] = React.useState(0);
+const refreshPrompt = () => {
+  promptRepaint?.((current) => current + 1);
+  try {
+    api.ui.update(PROMPT_ID);
+  } catch (error) {
+    console.warn("[Labelmaker] prompt refresh failed:", error);
+  }
+};
 
-  React.useEffect(() => {
-    promptRepaint = repaint;
-    return () => {
-      if (promptRepaint === repaint) promptRepaint = null;
-    };
-  }, []);
-
-  if (!promptRequest) return null;
-
-  const request = promptRequest;
-  const finish = (value: string | null) => {
-    promptRequest = null;
-    promptRepaint?.((current) => current + 1);
-    request.resolve(value);
+const registerPromptRepaint = (repaint: (update: (value: number) => number) => void) => {
+  promptRepaint = repaint;
+  return () => {
+    if (promptRepaint === repaint) promptRepaint = null;
   };
+};
 
-  return (
-    <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-6"
-      onClick={() => finish(null)}
-    >
-      <div
-        className="w-[min(90vw,480px)] rounded border border-slate-700 bg-slate-950 p-4 shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <div className="font-mono text-sm font-bold text-white">{request.title}</div>
-          <button
-            type="button"
-            className="sd-button sd-button--compact"
-            aria-label="Close"
-            onClick={() => finish(null)}
-          >
-            ✕
-          </button>
-        </div>
-        <div className="mb-3 border-t border-slate-800 pt-3 text-sm leading-5 text-slate-300">
-          {request.message}
-        </div>
-        <input
-          id={`${PROMPT_ID}-input`}
-          className="mb-4 w-full rounded border border-slate-700 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-slate-400"
-          value={promptValue}
-          placeholder={request.placeholder}
-          autoFocus
-          spellCheck={false}
-          onChange={(event) => {
-            promptValue = event.currentTarget.value;
-            promptRepaint?.((current) => current + 1);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") finish(promptValue);
-            if (event.key === "Escape") finish(null);
-          }}
-        />
-        <div className="flex justify-end gap-2">
-          <button type="button" className="sd-button" onClick={() => finish(null)}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="sd-button sd-button--accent"
-            onClick={() => finish(promptValue)}
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+const finishPrompt = (value: LabelmakerPromptResult | null) => {
+  if (!promptRequest) return;
+  const resolve = promptRequest.resolve;
+  promptRequest = null;
+  resolve(value);
+  refreshPrompt();
+};
+
+export function cancelLabelmakerPrompt(): void {
+  finishPrompt(null);
 }
+
+const renderPrompt = () => (
+  <LabelmakerPrompt
+    prompt={promptRequest}
+    value={promptValue}
+    fontId={promptFontId}
+    onChange={(value) => {
+      promptValue = value;
+      refreshPrompt();
+    }}
+    onFontChange={(fontId) => {
+      promptFontId = fontId;
+      refreshPrompt();
+    }}
+    onCancel={() => finishPrompt(null)}
+    onConfirm={() => finishPrompt({ text: promptValue, fontId: promptFontId })}
+    onRegisterRepaint={registerPromptRepaint}
+  />
+);
 
 export function registerLabelmakerPrompt(): boolean {
   if (promptDispose) return true;
   try {
-    const dispose = sandkit.api.ui.inject(PROMPT_ID, LabelmakerPrompt);
+    const dispose = api.ui.inject(PROMPT_ID, renderPrompt);
     if (typeof dispose !== "function") return false;
     promptDispose = dispose;
+    onDispose(() => {
+      promptDispose?.();
+      promptDispose = null;
+      const request = promptRequest;
+      promptRequest = null;
+      promptRepaint = null;
+      request?.resolve(null);
+    });
     return true;
   } catch (error) {
     console.warn("[Labelmaker] custom prompt unavailable:", error);
@@ -106,14 +88,19 @@ export function openLabelmakerPrompt(
   defaultValue: string,
   placeholder: string,
   title: string,
-): Promise<string | null> {
-  if (!registerLabelmakerPrompt())
-    return sandkit.api.ui.prompt(message, defaultValue, placeholder, title);
+  fontOptions: LabelmakerPromptState["fontOptions"],
+  defaultFontId: string,
+): Promise<LabelmakerPromptResult | null> {
   if (promptRequest) return Promise.resolve(null);
-
+  if (!registerLabelmakerPrompt()) {
+    return api.ui
+      .prompt(message, defaultValue, placeholder, title)
+      .then((text) => (text === null ? null : { text, fontId: defaultFontId }));
+  }
   promptValue = defaultValue;
+  promptFontId = defaultFontId;
   return new Promise((resolve) => {
-    promptRequest = { message, placeholder, title, resolve };
-    promptRepaint?.((current) => current + 1);
+    promptRequest = { message, placeholder, title, fontOptions, resolve };
+    refreshPrompt();
   });
 }

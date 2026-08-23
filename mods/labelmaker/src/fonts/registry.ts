@@ -4,6 +4,11 @@ import type { LabelFont } from "./types";
 
 const loadedFonts = new Map<string, LabelFont>();
 
+export type BundledFontOption = {
+  readonly id: string;
+  readonly label: string;
+};
+
 async function decodeFont(encoded: string): Promise<LabelFontData> {
   if (typeof DecompressionStream !== "function")
     throw new Error("Labelmaker requires browser gzip decompression support.");
@@ -28,4 +33,8 @@ export function getBundledFont(id = BUNDLED_FONT_CATALOG[0]?.id): LabelFont {
 
 export function getBundledFontIds(): string[] {
   return BUNDLED_FONT_CATALOG.map(({ id }) => id);
+}
+
+export function getBundledFontOptions(): BundledFontOption[] {
+  return BUNDLED_FONT_CATALOG.map(({ id, label }) => ({ id, label }));
 }

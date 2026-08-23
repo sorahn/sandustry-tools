@@ -9,8 +9,13 @@ import {
   localizeLabelStructures,
   restoreLabelmakerAction,
 } from "./native-placement";
-import { getBundledFont, loadBundledFonts } from "./fonts/registry";
-import { openLabelmakerPrompt, registerLabelmakerPrompt } from "./prompt";
+import {
+  getBundledFont,
+  getBundledFontIds,
+  getBundledFontOptions,
+  loadBundledFonts,
+} from "./fonts/registry";
+import { cancelLabelmakerPrompt, openLabelmakerPrompt } from "./prompt";
 
 const api = sandkit.api;
 const ITEM_ID = "sorahnLabelmaker";
@@ -32,25 +37,38 @@ const ITEM_TRANSLATIONS = {
 };
 let promptOpen = false;
 let cursorActive = false;
+let selectedFontId = getBundledFontIds()[0] ?? "";
 
 async function openLabelmaker(): Promise<void> {
-  if (promptOpen) return;
+  if (promptOpen) {
+    // A dev reload can remove the injected component while leaving this flag set.
+    cancelLabelmakerPrompt();
+    promptOpen = false;
+  }
   promptOpen = true;
   try {
-    const entered = await openLabelmakerPrompt(LABEL_PROMPT, "", "Label", LABELMAKER_NAME);
-    if (entered === null) return;
-    if (!entered.length) {
+    const result = await openLabelmakerPrompt(
+      LABEL_PROMPT,
+      "",
+      "Label",
+      LABELMAKER_NAME,
+      getBundledFontOptions(),
+      selectedFontId,
+    );
+    if (result === null) return;
+    selectedFontId = result.fontId;
+    if (!result.text.length) {
       api.ui.toast("Labelmaker: enter at least one character.");
       return;
     }
-    if ([...entered].length > LABELMAKER_MAX_CHARACTERS) {
+    if ([...result.text].length > LABELMAKER_MAX_CHARACTERS) {
       api.ui.toast(
         `Labelmaker: label is too long. Use ${LABELMAKER_MAX_CHARACTERS} characters or fewer.`,
       );
       return;
     }
 
-    const blueprint = createLabelBlueprint(entered, getBundledFont());
+    const blueprint = createLabelBlueprint(result.text, getBundledFont(result.fontId));
     encodeBlueprint(blueprint);
     const cursorStructures = localizeLabelStructures(blueprint.data);
     if (!cursorStructures?.length) {
@@ -74,6 +92,8 @@ async function openLabelmaker(): Promise<void> {
 
 function clearLabelmakerCursor(restoreLabelmaker = false): void {
   if (!cursorActive && !promptOpen) return;
+  cancelLabelmakerPrompt();
+  promptOpen = false;
   cursorActive = false;
   clearNativePlacementCursor();
   if (restoreLabelmaker) {
@@ -114,7 +134,11 @@ function registerLabelmaker(): void {
 
   api.events.on("action:changed", () => {
     const selected = api.action?.getSelected();
-    if (cursorActive && selected?.id !== ITEM_ID && !isCopierSelected(selected?.id)) {
+    if (
+      (cursorActive || promptOpen) &&
+      selected?.id !== ITEM_ID &&
+      !isCopierSelected(selected?.id)
+    ) {
       clearLabelmakerCursor();
     }
   });
@@ -135,8 +159,6 @@ async function initialize(): Promise<void> {
     api.ui.toast("Labelmaker: bundled fonts could not be loaded.");
     return;
   }
-
-  registerLabelmakerPrompt();
 
   try {
     await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");
