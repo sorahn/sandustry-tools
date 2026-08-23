@@ -11,10 +11,13 @@ export function HomePage() {
         </p>
         <h1 className="text-3xl font-bold text-white">Read and convert your blueprints.</h1>
         <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400">
-          Paste a Sandustry blueprint string to inspect its contents, or turn readable JSON back
-          into a string. Render blueprints as images, too. Everything runs locally in your browser.
+          Explore a Sandustry save, inspect blueprint strings, or turn readable JSON back into a
+          string. Render blueprints as images, too. Everything runs locally in your browser.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
+          <Link to="/explorer" className={cx(buttonStyles.button, buttonStyles.accent)}>
+            Open the save explorer
+          </Link>
           <Link to="/inspect" className={cx(buttonStyles.button, buttonStyles.accent)}>
             Open the blueprint inspector
           </Link>
