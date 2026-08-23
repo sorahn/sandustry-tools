@@ -10,6 +10,7 @@ const ACTION_TYPE_MOD = 4;
 const COPIER_ID = 7;
 const COPYING_MODE = 2;
 const LABELMAKER_NAME = "Labelmaker";
+const LABELMAKER_MAX_CHARACTERS = 64;
 const LABEL_PROMPT =
   "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):";
 const MOD_TRANSLATIONS = {
@@ -33,6 +34,12 @@ async function openLabelmaker(): Promise<void> {
     if (entered === null) return;
     if (!entered.length) {
       api.ui.toast("Labelmaker: enter at least one character.");
+      return;
+    }
+    if ([...entered].length > LABELMAKER_MAX_CHARACTERS) {
+      api.ui.toast(
+        `Labelmaker: label is too long. Use ${LABELMAKER_MAX_CHARACTERS} characters or fewer.`,
+      );
       return;
     }
 

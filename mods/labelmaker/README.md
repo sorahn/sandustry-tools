@@ -19,3 +19,9 @@ Labelmaker is currently always available, so it grants itself through the
 `game:ready` event. That callback checks the current player inventory before
 calling `api.player.inventory.addFromId(ITEM_ID)`, allowing a new world to
 receive the tool without adding duplicate copies on repeated ready events.
+
+## Size limits
+
+Labels are limited to 64 characters. The length check runs before bitmap and
+placement data are generated, and oversized labels are rejected with an
+in-game toast.
