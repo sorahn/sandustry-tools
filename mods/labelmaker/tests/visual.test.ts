@@ -6,6 +6,7 @@ import { describe, test } from "bun:test";
 import { encodeBlueprint } from "../../../packages/sandustry-blueprint-core/src";
 import { renderVisualBlueprint } from "../../../packages/sandustry-blueprint-core/tests/visual/node-renderer";
 import { createLabelBlueprint } from "../src/blueprint";
+import { PIXOLLETTA_FONT } from "../src/fonts/pixolletta";
 
 const testRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testRoot, "../../..");
@@ -14,6 +15,7 @@ const outputRoot = path.join(repoRoot, "artifacts/visual/labelmaker");
 
 const UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+const PIXOLLETTA_SAMPLES = "Ajy&/[_";
 const SYMBOLS = String.fromCharCode(
   ...Array.from({ length: 95 }, (_, index) => index + 32),
 ).replace(/[A-Za-z0-9]/g, "");
@@ -35,4 +37,22 @@ describe("labelmaker character groups", () => {
       assert.ok((await stat(outputPath)).size > 0, `empty visual output: ${outputPath}`);
     });
   }
+
+  test("pixolletta lowercase", async () => {
+    await mkdir(outputRoot, { recursive: true });
+    const input = encodeBlueprint(createLabelBlueprint(LOWERCASE, PIXOLLETTA_FONT));
+    const png = await renderVisualBlueprint(input, assetRoot);
+    const outputPath = path.join(outputRoot, "pixolletta-lowercase-current.png");
+    await writeFile(outputPath, png);
+    assert.ok((await stat(outputPath)).size > 0, `empty visual output: ${outputPath}`);
+  });
+
+  test("pixolletta character samples", async () => {
+    await mkdir(outputRoot, { recursive: true });
+    const input = encodeBlueprint(createLabelBlueprint(PIXOLLETTA_SAMPLES, PIXOLLETTA_FONT));
+    const png = await renderVisualBlueprint(input, assetRoot);
+    const outputPath = path.join(outputRoot, "pixolletta-character-samples-current.png");
+    await writeFile(outputPath, png);
+    assert.ok((await stat(outputPath)).size > 0, `empty visual output: ${outputPath}`);
+  });
 });
