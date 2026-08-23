@@ -1,20 +1,6 @@
-import deltaruneGzip from "./deltarune.font.json";
-import dogicaPixelGzip from "./dogica-pixel.font.json";
-import minecraftGzip from "./minecraft.font.json";
-import pixelComicSansGzip from "./pixel-comic-sans.font.json";
-import pixollettaGzip from "./pixolletta.font.json";
-import psyberiusSansGzip from "./psyberius-sans.font.json";
+import { BUNDLED_FONT_CATALOG } from "./catalog";
 import { fontFromData, type LabelFontData } from "./font-data";
 import type { LabelFont } from "./types";
-
-const BUNDLED_FONT_DATA: Readonly<Record<string, string>> = {
-  "psyberius-sans": psyberiusSansGzip as unknown as string,
-  deltarune: deltaruneGzip as unknown as string,
-  "dogica-pixel": dogicaPixelGzip as unknown as string,
-  minecraft: minecraftGzip as unknown as string,
-  "pixel-comic-sans": pixelComicSansGzip as unknown as string,
-  pixolletta: pixollettaGzip as unknown as string,
-};
 
 const loadedFonts = new Map<string, LabelFont>();
 
@@ -28,18 +14,18 @@ async function decodeFont(encoded: string): Promise<LabelFontData> {
 
 export async function loadBundledFonts(): Promise<void> {
   await Promise.all(
-    Object.entries(BUNDLED_FONT_DATA).map(async ([id, encoded]) => {
-      loadedFonts.set(id, fontFromData(await decodeFont(encoded)));
+    BUNDLED_FONT_CATALOG.map(async ({ id, gzip }) => {
+      loadedFonts.set(id, fontFromData(await decodeFont(gzip)));
     }),
   );
 }
 
-export function getBundledFont(id = "psyberius-sans"): LabelFont {
+export function getBundledFont(id = BUNDLED_FONT_CATALOG[0]?.id): LabelFont {
   const font = loadedFonts.get(id);
   if (!font) throw new Error(`Labelmaker font is not loaded: ${id}`);
   return font;
 }
 
 export function getBundledFontIds(): string[] {
-  return Object.keys(BUNDLED_FONT_DATA);
+  return BUNDLED_FONT_CATALOG.map(({ id }) => id);
 }

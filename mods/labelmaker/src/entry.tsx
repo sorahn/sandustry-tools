@@ -10,6 +10,7 @@ import {
   restoreLabelmakerAction,
 } from "./native-placement";
 import { getBundledFont, loadBundledFonts } from "./fonts/registry";
+import { openLabelmakerPrompt, registerLabelmakerPrompt } from "./prompt";
 
 const api = sandkit.api;
 const ITEM_ID = "sorahnLabelmaker";
@@ -36,7 +37,7 @@ async function openLabelmaker(): Promise<void> {
   if (promptOpen) return;
   promptOpen = true;
   try {
-    const entered = await api.ui.prompt(LABEL_PROMPT, "", "Label", LABELMAKER_NAME);
+    const entered = await openLabelmakerPrompt(LABEL_PROMPT, "", "Label", LABELMAKER_NAME);
     if (entered === null) return;
     if (!entered.length) {
       api.ui.toast("Labelmaker: enter at least one character.");
@@ -63,6 +64,9 @@ async function openLabelmaker(): Promise<void> {
     }
     cursorActive = true;
     api.ui.toast(`Labelmaker: ${cursorStructures.length} prefab Blocks ready to place.`);
+  } catch (error) {
+    console.error("[Labelmaker] Failed to generate label:", error);
+    api.ui.toast("Labelmaker: failed to generate the label.");
   } finally {
     promptOpen = false;
   }
@@ -131,6 +135,8 @@ async function initialize(): Promise<void> {
     api.ui.toast("Labelmaker: bundled fonts could not be loaded.");
     return;
   }
+
+  registerLabelmakerPrompt();
 
   try {
     await api.sprites.loadFromMod(TOOL_SPRITE_ID, "assets/labelmaker.png");
