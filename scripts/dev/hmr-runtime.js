@@ -19,6 +19,22 @@
   const config = globalThis.__sandustryDevHmrConfig__;
   if (!config || !config.url || !config.modId) return;
 
+  // Sandustry's renderer understands db_load on the index URL. The Electron
+  // main process always starts index.html without a query, so redirect once
+  // from the dev prelude when a save was requested. This avoids the main-menu
+  // Continue click while leaving normal sessions unchanged.
+  if (typeof config.initialSave === "string" && config.initialSave.trim()) {
+    const requestedSave = config.initialSave.trim();
+    const currentSave = new URLSearchParams(location.search).get("db_load");
+    if (currentSave !== requestedSave) {
+      const target = new URL(location.href);
+      target.search = "";
+      target.searchParams.set("db_load", requestedSave);
+      location.replace(target.href);
+      return;
+    }
+  }
+
   const hosts = globalThis.__sandustryDevHmrHosts__ || (globalThis.__sandustryDevHmrHosts__ = {});
   const host =
     hosts[config.modId] ||

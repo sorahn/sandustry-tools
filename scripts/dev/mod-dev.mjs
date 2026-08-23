@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const MODS_ROOT = join(ROOT, "mods");
 const WORKSHOP_REGISTRY = join(ROOT, "workshop-published-ids.json");
+const DEFAULT_SAVE_PATH = join(ROOT, ".sandustry-save");
 const HMR_RUNTIME_PATH = join(ROOT, "scripts/dev/hmr-runtime.js");
 const HMR_RUNTIME = readFileSync(HMR_RUNTIME_PATH, "utf8");
 const HMR_PORT = 19147;
@@ -32,12 +33,20 @@ const modArgument = valueAfter("--mod");
 const once = args.includes("--once");
 
 if (!modArgument) {
-  console.error("Usage: node scripts/dev/mod-dev.mjs --mod <mod> [--takeover] [--once]");
+  console.error(
+    "Usage: node scripts/dev/mod-dev.mjs --mod <mod> [--save <id>] [--takeover] [--once]",
+  );
   process.exit(2);
 }
 
 const modDirName = resolveModDirectory(modArgument);
 const modDir = join(MODS_ROOT, modDirName);
+const modSavePath = join(modDir, ".sandustry-save");
+const initialSave =
+  cleanSave(valueAfter("--save")) ||
+  cleanSave(process.env.SANDUSTRY_DEV_SAVE) ||
+  readSaveFile(modSavePath) ||
+  readSaveFile(DEFAULT_SAVE_PATH);
 const manifestPath = join(modDir, "modinfo.json");
 const sourcePath = join(modDir, "src", "entry.tsx");
 const buildDir = join(modDir, "build");
@@ -111,6 +120,20 @@ function readJson(path) {
     return JSON.parse(readFileSync(path, "utf8"));
   } catch (error) {
     fail(`could not read ${relative(ROOT, path)}: ${error.message}`);
+  }
+}
+
+function cleanSave(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function readSaveFile(path) {
+  try {
+    return cleanSave(readFileSync(path, "utf8"));
+  } catch (error) {
+    if (error.code !== "ENOENT")
+      console.error(`could not read ${relative(ROOT, path)}: ${error.message}`);
+    return null;
   }
 }
 
@@ -327,6 +350,7 @@ async function buildAndInstall(reason) {
       modId,
       url: `http://127.0.0.1:${HMR_PORT}${HMR_PATH}`,
       autoContinue: debug,
+      initialSave,
     };
     writeFileSync(
       entryPath,
@@ -421,6 +445,8 @@ function snapshotWatchedFiles() {
   for (const path of [
     manifestPath,
     reloadConfigPath,
+    modSavePath,
+    DEFAULT_SAVE_PATH,
     join(modDir, "preview.png"),
     join(ROOT, "tsconfig.json"),
     HMR_RUNTIME_PATH,
