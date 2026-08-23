@@ -86,10 +86,10 @@ function registerLabelmaker(): void {
       id: TOOL_SPRITE_ID,
       type: "backhand",
     },
-    handleAction: (state: any) => {
+    handleAction: (state) => {
       if (state?.session?.action?.state?.[ACTION_START]) void openLabelmaker();
     },
-    afterRender: (state: any) => {
+    afterRender: (state) => {
       if (!cursorActive || !isCopierAction(state)) return;
       if (state?.session?.action?.customData) return;
       cursorActive = false;

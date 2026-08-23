@@ -1,7 +1,7 @@
 interface SandustryStructureData {
   elementId?: string | null;
   elementType?: number | null;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface SandustryStructure {
@@ -29,8 +29,8 @@ interface SandustryItemDefinition {
   nameKey?: string;
   descriptionKey?: string;
   categoryKey?: string;
-  handleAction?: (...args: any[]) => unknown;
-  afterRender?: (...args: any[]) => unknown;
+  handleAction?: (state: SandustryEngineState, action?: unknown) => unknown;
+  afterRender?: (state: SandustryEngineState) => unknown;
   [key: string]: unknown;
 }
 
@@ -55,8 +55,8 @@ interface SandustryFocusable {
 }
 
 interface SandustryNavigation {
-  useFocusable(options: Record<string, any>): SandustryFocusable;
-  useFocusScope(options: Record<string, any>): void;
+  useFocusable(options: Record<string, unknown>): SandustryFocusable;
+  useFocusScope(options: Record<string, unknown>): void;
   controllerFocusClass(focused: boolean): string;
 }
 
@@ -117,6 +117,44 @@ interface SandustryBlueprintRecord {
   data?: unknown;
 }
 
+interface SandustryPlayerAction {
+  type: number;
+  id: string | number;
+}
+
+interface SandustryHotbarSlot {
+  id: string | number;
+  type: number;
+  [key: string]: unknown;
+}
+
+interface SandustryHotbarState {
+  activeSlotIndex: number | null;
+  hotbarIndex: number;
+  bars: Array<Array<SandustryHotbarSlot | null>>;
+  [key: string]: unknown;
+}
+
+interface SandustryInventoryItem {
+  id: string | number;
+  itemType: number;
+  [key: string]: unknown;
+}
+
+interface SandustryPlayerState {
+  inventory: SandustryInventoryItem[];
+  action: SandustryPlayerAction | null;
+  hotbar: SandustryHotbarState;
+  [key: string]: unknown;
+}
+
+interface SandustrySessionAction {
+  point: { x: number; y: number };
+  state: Record<string, boolean>;
+  customData: unknown;
+  [key: string]: unknown;
+}
+
 interface SandustrySavedBlueprint {
   id: string;
   name: string;
@@ -154,10 +192,17 @@ interface SandustryInternalClipboardApi {
   activate(...args: unknown[]): unknown;
 }
 
+/** Observed on the running bundle; not a supported public mod API. */
+interface SandustryInternalPrefabulatorApi {
+  serializeBlueprintStructures(structures: SandustryBlueprintRecord[]): unknown;
+  localizeBlueprintStructures(structures: SandustryBlueprintRecord[]): SandustryBlueprintRecord[];
+}
+
 interface SandustryEngineApi {
   [namespace: string]: unknown;
   blueprints?: SandustryInternalBlueprintApi;
   clipboard?: SandustryInternalClipboardApi;
+  prefabulator?: SandustryInternalPrefabulatorApi;
 }
 
 interface SandustryPropagationOptions {
@@ -181,7 +226,7 @@ interface SandustryApi {
       endWorldX: number,
       endWorldY: number,
       options?: Record<string, unknown>,
-    ): any;
+    ): unknown;
     createLightAtWorld(
       worldX: number,
       worldY: number,
@@ -190,7 +235,7 @@ interface SandustryApi {
     createParticlesAtWorld(worldX: number, worldY: number, options?: Record<string, unknown>): void;
   };
   energy: { consume(amount: number, options?: { allOrNothing?: boolean }): number };
-  authorization: { canUseTool(player: any, isFlamethrower?: boolean): boolean };
+  authorization: { canUseTool(player: SandustryPlayerState, isFlamethrower?: boolean): boolean };
   patterns: {
     createCircle(size: number): number[][];
     excavateAtCell(
@@ -327,7 +372,7 @@ interface SandustryApi {
   sound?: { play(soundId: string, options?: Record<string, unknown>): unknown };
   action?: {
     getActive(): unknown;
-    getSelected(): { id?: string } | null;
+    getSelected(): { id?: string | number } | null;
     setCustomData(data: unknown): void;
   };
   input: {
@@ -350,13 +395,20 @@ interface SandustryApi {
 
 interface SandustryEngineState {
   session: {
+    action: SandustrySessionAction;
     cinematic?: unknown;
     settings: { videoZoom: number };
     windows: {
       menu: { open: boolean };
       options: { open: boolean };
     };
+    [key: string]: unknown;
   };
+  store: {
+    player: SandustryPlayerState;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
 }
 
 interface SandustryEngine {

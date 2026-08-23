@@ -9,19 +9,21 @@ const COPIER_ACTION_TYPE = 3;
 const LABELMAKER_ACTION_TYPE = 4;
 const COPYING_MODE = 2;
 
-export function localizeLabelStructures(structures: readonly unknown[]): any[] {
-  const localizer = (sandkit.engine.api as any).prefabulator?.localizeBlueprintStructures;
+export function localizeLabelStructures(
+  structures: SandustryBlueprintRecord[],
+): SandustryBlueprintRecord[] {
+  const localizer = sandkit.engine.api.prefabulator?.localizeBlueprintStructures;
   return localizer ? structures.flatMap((structure) => localizer([structure])) : [...structures];
 }
 
-export function activateCopierPlacement(structures: readonly unknown[]): boolean {
-  const api = sandkit.api as any;
+export function activateCopierPlacement(structures: SandustryBlueprintRecord[]): boolean {
+  const api = sandkit.api;
   if (!api.action || !structures.length) return false;
 
-  const minX = Math.min(...structures.map((structure: any) => structure.x));
-  const maxX = Math.max(...structures.map((structure: any) => structure.x));
-  const minY = Math.min(...structures.map((structure: any) => structure.y));
-  const maxY = Math.max(...structures.map((structure: any) => structure.y));
+  const minX = Math.min(...structures.map((structure) => structure.x));
+  const maxX = Math.max(...structures.map((structure) => structure.x));
+  const minY = Math.min(...structures.map((structure) => structure.y));
+  const maxY = Math.max(...structures.map((structure) => structure.y));
   api.action.setCustomData({
     selectedStructures: structures,
     signalLinks: null,
@@ -33,7 +35,7 @@ export function activateCopierPlacement(structures: readonly unknown[]): boolean
     },
   });
 
-  const state = sandkit.engine?.state as any;
+  const state = sandkit.engine.state;
   if (state?.store?.player) {
     state.store.player.action = { type: COPIER_ACTION_TYPE, id: COPIER_ID };
     state.store.player.hotbar.activeSlotIndex = null;
@@ -43,18 +45,18 @@ export function activateCopierPlacement(structures: readonly unknown[]): boolean
 }
 
 export function clearNativePlacementCursor(): void {
-  (sandkit.api as any).action?.setCustomData(null);
+  sandkit.api.action?.setCustomData(null);
 }
 
-export function restoreLabelmakerAction(itemId: string, state?: any): void {
-  const playerState = state ?? (sandkit.engine?.state as any);
+export function restoreLabelmakerAction(itemId: string, state?: SandustryEngineState): void {
+  const playerState = state ?? sandkit.engine.state;
   if (playerState?.store?.player) {
     playerState.store.player.action = { type: LABELMAKER_ACTION_TYPE, id: itemId };
     playerState.store.player.hotbar.activeSlotIndex = null;
   }
 }
 
-export function isCopierAction(state: any): boolean {
+export function isCopierAction(state: SandustryEngineState): boolean {
   return state?.store?.player?.action?.id === COPIER_ID;
 }
 
@@ -63,6 +65,5 @@ export function isCopierSelected(selectedId: unknown): boolean {
 }
 
 export function inventoryContains(itemId: string): boolean {
-  const inventory = (sandkit.engine?.state as any)?.store?.player?.inventory;
-  return Array.isArray(inventory) && inventory.some((item: any) => item?.id === itemId);
+  return sandkit.engine.state.store.player.inventory.some((item) => item.id === itemId);
 }
