@@ -11,6 +11,7 @@ import noop from "~shared/noop";
 import { onDispose } from "~shared/dev-hmr";
 import { ElementRow } from "./ui/picker/ElementRow";
 import { SearchInput } from "./ui/picker/SearchInput";
+import { matterTabClass } from "./ui/picker/styles";
 
 const api = sandkit.api;
 const MOD_ID = "sorahn.sandustry-test-blocks";
@@ -553,14 +554,6 @@ const ElementPicker = () => {
       ? entry.type === picker.currentType
       : entry.id !== null && entry.id === picker.current;
 
-  const baseTabClass =
-    "text-xs px-3 py-1 border rounded-tr-lg rounded-bl-lg item-button-transition border-slate-200";
-
-  const tabClass = (active: boolean) =>
-    active
-      ? `${baseTabClass} text-[#ffe700] border-opacity-50 bg-[#ffe700]/10`
-      : `${baseTabClass} text-white border-opacity-25 hover:text-[#ffe700] hover:border-opacity-0 bg-black`;
-
   return (
     <div
       className="pointer-events-auto flex flex-col overflow-hidden bg-black bg-opacity-75 border border-slate-700 rounded ui-box text-slate-300"
@@ -613,7 +606,7 @@ const ElementPicker = () => {
                 up: `${PICKER_ID}-search`,
                 down: `${PICKER_ID}-element-0`,
               }}
-              className={tabClass(matter === name)}
+              className={matterTabClass(matter === name)}
               onActivate={() => setMatter(name)}
             >
               {name}
