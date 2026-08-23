@@ -39,63 +39,80 @@ export const LabelmakerPrompt = ({
 
   return (
     <div
-      className="pointer-events-auto fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-6"
+      className="pointer-events-auto fixed inset-0 z-[10007] flex items-center justify-center bg-black bg-opacity-50"
       onClick={(event) => {
         if (event.target === event.currentTarget) cancel();
       }}
     >
       <div
-        className="w-[400px] max-w-[90vw] rounded border border-slate-700 bg-slate-950 p-4 shadow-2xl"
+        style={{
+          width: 400,
+          height: "auto",
+          transform: "scale(0.7)",
+          transformOrigin: "center center",
+        }}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <div className="font-mono text-sm font-bold text-white">{prompt.title}</div>
-          <button
-            type="button"
-            className="sd-button sd-button--compact"
-            aria-label="Close"
-            onClick={cancel}
-          >
-            ✕
-          </button>
-        </div>
-        <div className="mb-3 border-t border-slate-800 pt-3 text-sm leading-5 text-slate-300">
-          {prompt.message}
-        </div>
-        <input
-          id="sorahn-labelmaker-prompt-input"
-          className="mb-4 w-full rounded border border-slate-700 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-slate-400"
-          value={value}
-          placeholder={prompt.placeholder}
-          autoFocus
-          spellCheck={false}
-          onChange={(event) => onChange(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") onConfirm();
-            if (event.key === "Escape") cancel();
-          }}
-        />
-        <label className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-300">
-          <span>Font</span>
-          <select
-            className="min-w-0 flex-1 rounded border border-slate-700 bg-black/60 px-3 py-2 text-sm text-white outline-none focus:border-slate-400"
-            value={fontId}
-            onChange={(event) => onFontChange(event.currentTarget.value)}
-          >
-            {prompt.fontOptions.map((font) => (
-              <option key={font.id} value={font.id}>
-                {font.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="flex justify-end gap-2">
-          <button type="button" className="sd-button" onClick={cancel}>
-            Cancel
-          </button>
-          <button type="button" className="sd-button sd-button--accent" onClick={onConfirm}>
-            Confirm
-          </button>
+        <div className="h-full bg-black bg-opacity-85 p-4 shadow-lg ui-box card-2 max-h-[80vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl text-white">{prompt.title}</h2>
+            <button
+              type="button"
+              className="text-white hover:text-[#ffe700] transition-colors"
+              aria-label="Close"
+              onClick={cancel}
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex flex-col gap-4">
+            <div className="text-white whitespace-pre-wrap">{prompt.message}</div>
+            <div className="flex gap-2">
+              <input
+                id="sorahn-labelmaker-prompt-input"
+                className="flex-1 bg-slate-900 border border-slate-600 rounded p-2 text-white focus:border-[#ffe700] outline-none"
+                value={value}
+                placeholder={prompt.placeholder}
+                autoFocus
+                spellCheck={false}
+                onChange={(event) => onChange(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") onConfirm();
+                  if (event.key === "Escape") cancel();
+                }}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-white">
+              <span>Font</span>
+              <select
+                className="flex-1 bg-slate-900 border border-slate-600 rounded p-2 text-white focus:border-[#ffe700] outline-none"
+                value={fontId}
+                onChange={(event) => onFontChange(event.currentTarget.value)}
+              >
+                {prompt.fontOptions.map((font) => (
+                  <option key={font.id} value={font.id}>
+                    {font.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                type="button"
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-white transition-colors"
+                onClick={cancel}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 bg-[#ffe700] hover:bg-[#ffe700] text-black rounded font-bold transition-colors"
+                onClick={onConfirm}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
