@@ -1,14 +1,19 @@
 import { encodeBlueprint } from "@sandustry/blueprint-core";
 import { createLabelBlueprint } from "./blueprint";
+import {
+  activateCopierPlacement,
+  clearNativePlacementCursor,
+  inventoryContains,
+  isCopierAction,
+  isCopierSelected,
+  localizeLabelStructures,
+  restoreLabelmakerAction,
+} from "./native-placement";
 
 const api = sandkit.api;
 const ITEM_ID = "sorahnLabelmaker";
 const TOOL_SPRITE_ID = "sorahnLabelmakerSprite";
 const ACTION_START = 1;
-const ACTION_TYPE_TOOL = 3;
-const ACTION_TYPE_MOD = 4;
-const COPIER_ID = 7;
-const COPYING_MODE = 2;
 const LABELMAKER_NAME = "Labelmaker";
 const LABELMAKER_MAX_CHARACTERS = 64;
 const LABEL_PROMPT =
@@ -45,44 +50,17 @@ async function openLabelmaker(): Promise<void> {
 
     const blueprint = createLabelBlueprint(entered);
     encodeBlueprint(blueprint);
-    const localizeBlueprintStructures = (sandkit.engine.api as any).prefabulator
-      ?.localizeBlueprintStructures;
-    const cursorStructures = localizeBlueprintStructures
-      ? blueprint.data.flatMap((structure) => localizeBlueprintStructures([structure]))
-      : blueprint.data;
+    const cursorStructures = localizeLabelStructures(blueprint.data);
     if (!cursorStructures?.length) {
       api.ui.toast("Labelmaker: could not prepare the placement cursor.");
       return;
     }
 
-    const minX = Math.min(...cursorStructures.map((structure: any) => structure.x));
-    const maxX = Math.max(...cursorStructures.map((structure: any) => structure.x));
-    const minY = Math.min(...cursorStructures.map((structure: any) => structure.y));
-    const maxY = Math.max(...cursorStructures.map((structure: any) => structure.y));
-    if (!api.action) {
+    if (!activateCopierPlacement(cursorStructures)) {
       api.ui.toast("Labelmaker: the placement cursor is unavailable.");
       return;
     }
-    api.action.setCustomData({
-      selectedStructures: cursorStructures,
-      signalLinks: null,
-      mode: COPYING_MODE,
-      marqueeSelected: true,
-      mouseOffset: {
-        x: (minX + maxX) / 2,
-        y: (minY + maxY) / 2,
-      },
-    });
-
-    // Reuse the game's native Copier placement and preview. This changes only
-    // the active action; the blueprint is not written to clipboard/history.
-    const state = sandkit.engine?.state as any;
-    if (state?.store?.player) {
-      state.store.player.action = { type: ACTION_TYPE_TOOL, id: COPIER_ID };
-      state.store.player.hotbar.activeSlotIndex = null;
-    }
     cursorActive = true;
-    api.input.resetMouseState();
     api.ui.toast(`Labelmaker: ${cursorStructures.length} prefab Blocks ready to place.`);
   } finally {
     promptOpen = false;
@@ -92,16 +70,9 @@ async function openLabelmaker(): Promise<void> {
 function clearLabelmakerCursor(restoreLabelmaker = false): void {
   if (!cursorActive && !promptOpen) return;
   cursorActive = false;
-  api.action?.setCustomData(null);
+  clearNativePlacementCursor();
   if (restoreLabelmaker) {
-    restoreLabelmakerAction(sandkit.engine?.state as any);
-  }
-}
-
-function restoreLabelmakerAction(state: any): void {
-  if (state?.store?.player) {
-    state.store.player.action = { type: ACTION_TYPE_MOD, id: ITEM_ID };
-    state.store.player.hotbar.activeSlotIndex = null;
+    restoreLabelmakerAction(ITEM_ID);
   }
 }
 
@@ -119,10 +90,10 @@ function registerLabelmaker(): void {
       if (state?.session?.action?.state?.[ACTION_START]) void openLabelmaker();
     },
     afterRender: (state: any) => {
-      if (!cursorActive || state?.store?.player?.action?.id !== COPIER_ID) return;
+      if (!cursorActive || !isCopierAction(state)) return;
       if (state?.session?.action?.customData) return;
       cursorActive = false;
-      restoreLabelmakerAction(state);
+      restoreLabelmakerAction(ITEM_ID, state);
     },
   });
 
@@ -138,14 +109,13 @@ function registerLabelmaker(): void {
 
   api.events.on("action:changed", () => {
     const selected = api.action?.getSelected();
-    if (cursorActive && selected?.id !== ITEM_ID && String(selected?.id) !== String(COPIER_ID)) {
+    if (cursorActive && selected?.id !== ITEM_ID && !isCopierSelected(selected?.id)) {
       clearLabelmakerCursor();
     }
   });
 
   api.events.on("game:ready", () => {
-    const inventory = (sandkit.engine?.state as any)?.store?.player?.inventory;
-    if (Array.isArray(inventory) && inventory.some((item: any) => item?.id === ITEM_ID)) return;
+    if (inventoryContains(ITEM_ID)) return;
     api.player.inventory.addFromId(ITEM_ID);
   });
 }

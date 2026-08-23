@@ -25,3 +25,7 @@ receive the tool without adding duplicate copies on repeated ready events.
 Labels are limited to 64 characters. The length check runs before bitmap and
 placement data are generated, and oversized labels are rejected with an
 in-game toast.
+
+The unstable native Copier and prefabulator integration is isolated in
+`src/native-placement.ts`. Keep raw engine state shapes, internal action IDs,
+and prefabulator lookups there when updating runtime compatibility.
