@@ -8,5 +8,5 @@
   "entry": "entry.js",
   "description": "Adds an infinite Source block and a Trash block to the Misc buildings menu.",
   "dependencies": [],
-  "loadOrder": 0
+  "loadOrder": 9007199254740991
 }
