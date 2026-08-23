@@ -23,5 +23,4 @@ export type LabelmakerPromptProps = {
   onFontChange: (fontId: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
-  onRegisterRepaint: (repaint: (update: (value: number) => number) => void) => () => void;
 };

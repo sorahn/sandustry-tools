@@ -1,5 +1,14 @@
 # Agent Notes
 
+## Runtime lifecycle notes (read first for runtime/mod work)
+
+Before adding or changing registrations, UI, `game:ready` behavior, dev-mode
+reload handling, or other runtime integrations, read
+`planning/notes/runtime-lifecycle.md`. It is the canonical repository note for
+registration timing, pattern-first implementation, injected UI host ownership,
+repaint state, disposal, and installed-versus-dev verification. Follow an
+existing working mod pattern closely before introducing a new lifecycle shape.
+
 ## Sandkit surface-map reference
 
 `resources/sandkit-surface-map/` is a high-value reference when investigating

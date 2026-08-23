@@ -31,6 +31,8 @@ const registerPromptRepaint = (repaint: (update: (value: number) => number) => v
   };
 };
 
+const UIReact = sandkit.react ?? null;
+
 const finishPrompt = (value: LabelmakerPromptResult | null) => {
   if (!promptRequest) return;
   const resolve = promptRequest.resolve;
@@ -43,24 +45,33 @@ export function cancelLabelmakerPrompt(): void {
   finishPrompt(null);
 }
 
-const renderPrompt = () => (
-  <LabelmakerPrompt
-    prompt={promptRequest}
-    value={promptValue}
-    fontId={promptFontId}
-    onChange={(value) => {
-      promptValue = value;
-      refreshPrompt();
-    }}
-    onFontChange={(fontId) => {
-      promptFontId = fontId;
-      refreshPrompt();
-    }}
-    onCancel={() => finishPrompt(null)}
-    onConfirm={() => finishPrompt({ text: promptValue, fontId: promptFontId })}
-    onRegisterRepaint={registerPromptRepaint}
-  />
-);
+const renderPrompt = () => (UIReact ? <LabelmakerPromptHost /> : null);
+
+const LabelmakerPromptHost = () => {
+  if (!UIReact) return null;
+  const [, repaint] = UIReact.useState(0);
+
+  UIReact.useEffect(() => registerPromptRepaint(repaint), [repaint]);
+
+  return (
+    <LabelmakerPrompt
+      key={promptRequest ? "open" : "closed"}
+      prompt={promptRequest}
+      value={promptValue}
+      fontId={promptFontId}
+      onChange={(value) => {
+        promptValue = value;
+        refreshPrompt();
+      }}
+      onFontChange={(fontId) => {
+        promptFontId = fontId;
+        refreshPrompt();
+      }}
+      onCancel={() => finishPrompt(null)}
+      onConfirm={() => finishPrompt({ text: promptValue, fontId: promptFontId })}
+    />
+  );
+};
 
 export function registerLabelmakerPrompt(): boolean {
   if (promptDispose) return true;
@@ -91,7 +102,7 @@ export function openLabelmakerPrompt(
   fontOptions: LabelmakerPromptState["fontOptions"],
   defaultFontId: string,
 ): Promise<LabelmakerPromptResult | null> {
-  if (promptRequest) return Promise.resolve(null);
+  if (promptRequest) finishPrompt(null);
   if (!registerLabelmakerPrompt()) {
     return api.ui
       .prompt(message, defaultValue, placeholder, title)

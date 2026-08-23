@@ -10,19 +10,39 @@ export const LabelmakerPrompt = ({
   onFontChange,
   onCancel,
   onConfirm,
-  onRegisterRepaint,
 }: LabelmakerPromptProps) => {
   if (!UIReact) return null;
-  const [, repaint] = UIReact.useState(0);
+  const [dismissed, setDismissed] = UIReact.useState(false);
 
-  UIReact.useEffect(() => onRegisterRepaint(repaint), [onRegisterRepaint, repaint]);
+  UIReact.useEffect(() => {
+    if (prompt) setDismissed(false);
+  }, [prompt]);
+  UIReact.useEffect(() => {
+    if (!prompt) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setDismissed(true);
+      onCancel();
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [onCancel, prompt]);
 
-  if (!prompt) return null;
+  if (!prompt || dismissed) return null;
+
+  const cancel = () => {
+    setDismissed(true);
+    onCancel();
+  };
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-6"
-      onClick={onCancel}
+      className="pointer-events-auto fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-6"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) cancel();
+      }}
     >
       <div
         className="w-[400px] max-w-[90vw] rounded border border-slate-700 bg-slate-950 p-4 shadow-2xl"
@@ -34,7 +54,7 @@ export const LabelmakerPrompt = ({
             type="button"
             className="sd-button sd-button--compact"
             aria-label="Close"
-            onClick={onCancel}
+            onClick={cancel}
           >
             ✕
           </button>
@@ -52,7 +72,7 @@ export const LabelmakerPrompt = ({
           onChange={(event) => onChange(event.currentTarget.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") onConfirm();
-            if (event.key === "Escape") onCancel();
+            if (event.key === "Escape") cancel();
           }}
         />
         <label className="mb-4 flex items-center justify-between gap-3 text-sm text-slate-300">
@@ -70,7 +90,7 @@ export const LabelmakerPrompt = ({
           </select>
         </label>
         <div className="flex justify-end gap-2">
-          <button type="button" className="sd-button" onClick={onCancel}>
+          <button type="button" className="sd-button" onClick={cancel}>
             Cancel
           </button>
           <button type="button" className="sd-button sd-button--accent" onClick={onConfirm}>
