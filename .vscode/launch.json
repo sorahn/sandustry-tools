@@ -11,8 +11,6 @@
         "${workspaceFolder}/scripts/dev/mod-dev.mjs",
         "--mod",
         "${input:sandustryMod}",
-        "--save",
-        "${input:sandustrySave}",
         "--takeover",
         "--debug"
       ],
@@ -66,12 +64,6 @@
       "type": "promptString",
       "description": "Mod directory/name to develop",
       "default": "test-blocks"
-    },
-    {
-      "id": "sandustrySave",
-      "type": "promptString",
-      "description": "Save ID to load directly (leave blank for normal startup)",
-      "default": ""
     }
   ]
 }

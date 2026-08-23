@@ -78,19 +78,19 @@ timer, listener, and other reloadable registration. Without that file, builds
 still install automatically but the dev protocol reports `restart` mode.
 
 For VS Code debugging, press F5 and choose the `Sandustry Dev` compound. It
-prompts for a mod and optional save ID, launches Sandustry with main-process
-and renderer debug ports, attaches both debuggers, and loads the requested save
-directly through `index.html?db_load=<save>`. Save selection uses this order:
+prompts for a mod, launches Sandustry with main-process and renderer debug
+ports, attaches both debuggers, and loads the configured save directly through
+`index.html?db_load=<save>`. Save selection uses this order:
 
-1. The save ID entered in the VS Code prompt or passed with `--save`.
-2. `SANDUSTRY_DEV_SAVE`, when set.
-3. `mods/<name>/.sandustry-save`, for a mod-specific test world.
-4. The repository root `.sandustry-save`, for the shared default.
-5. No save ID, which leaves Sandustry on its normal sandbox startup.
+1. `SANDUSTRY_DEV_SAVE`, when set.
+2. `mods/<name>/.sandustry-save`, for a mod-specific test world.
+3. The repository root `.sandustry-save`, for the shared default.
+4. No save ID, which leaves Sandustry on its normal sandbox startup.
 
 The dot files contain only the save ID as plain text. Leave a file empty or
-omit it to continue to the next fallback. The debug compound takes over the
-existing game explicitly.
+omit it to continue to the next fallback. For one-off overrides, the watcher
+still accepts `--save <id>`. The debug compound takes over the existing game
+explicitly.
 
 The dev runner starts Sandustry when it is not already running and owns that
 process. For an already-running game, use `make dev MOD=test-blocks TAKEOVER=1`
