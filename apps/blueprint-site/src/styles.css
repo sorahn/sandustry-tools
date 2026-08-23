@@ -93,7 +93,9 @@ p a {
   border-bottom: 1px solid rgb(30 41 59 / 0.9);
   background: rgb(15 23 42 / 0.45);
   padding: 1rem;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 .save-explorer-dropzone--active {
   border-color: rgb(255 231 0 / 0.7);
@@ -163,7 +165,9 @@ p a {
   transform: translate(-50%, -50%);
   border: 2px solid rgb(253 224 71 / 0.95);
   background: rgb(253 224 71 / 0.16);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.7), 0 0 10px rgb(253 224 71 / 0.35);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.7),
+    0 0 10px rgb(253 224 71 / 0.35);
 }
 
 .blueprint-visual-test--capture .blueprint-core-png {
