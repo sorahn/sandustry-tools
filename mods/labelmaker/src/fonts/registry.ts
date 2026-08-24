@@ -1,5 +1,6 @@
 import { BUNDLED_FONT_CATALOG } from "./catalog";
 import { fontFromData, type LabelFontData } from "./font-data";
+import { loadPureTtfFont, type TtfAssetApi } from "./ttf";
 import type { LabelFont } from "./types";
 
 const loadedFonts = new Map<string, LabelFont>();
@@ -17,10 +18,17 @@ async function decodeFont(encoded: string): Promise<LabelFontData> {
   return JSON.parse(await new Response(stream).text()) as LabelFontData;
 }
 
-export async function loadBundledFonts(): Promise<void> {
+export async function loadBundledFonts(api: TtfAssetApi): Promise<void> {
   await Promise.all(
-    BUNDLED_FONT_CATALOG.map(async ({ id, gzip }) => {
-      loadedFonts.set(id, fontFromData(await decodeFont(gzip)));
+    BUNDLED_FONT_CATALOG.map(async (entry) => {
+      const data = entry.gzip
+        ? await decodeFont(entry.gzip)
+        : await loadPureTtfFont(api, entry.assetPath!, {
+            name: entry.label,
+            fontSize: entry.fontSize!,
+            fixedWidth: entry.fixedWidth,
+          });
+      loadedFonts.set(entry.id, fontFromData(data));
     }),
   );
 }

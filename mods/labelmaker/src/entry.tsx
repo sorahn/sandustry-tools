@@ -158,7 +158,7 @@ async function initialize(): Promise<void> {
   api.i18n.register("en", MOD_TRANSLATIONS);
 
   try {
-    await loadBundledFonts();
+    await loadBundledFonts(api);
   } catch (error) {
     console.error("[Labelmaker] Failed to load bundled fonts:", error);
     api.ui.toast("Labelmaker: bundled fonts could not be loaded.");

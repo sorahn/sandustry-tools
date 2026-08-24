@@ -1,5 +1,6 @@
 import { gzipSync } from "node:zlib";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
 const [entryPoint, outfile] = process.argv.slice(2);
@@ -30,10 +31,14 @@ await build({
   format: "esm",
   platform: "neutral",
   target: "es2022",
+  mainFields: ["browser", "module", "main"],
   drop: ["console"],
   jsxFactory: "sandkit.react.createElement",
   jsxFragment: "sandkit.react.Fragment",
-  alias: { "~shared": new URL("../../../shared", import.meta.url).pathname },
+  alias: {
+    "~shared": new URL("../../../shared", import.meta.url).pathname,
+    fs: fileURLToPath(new URL("./empty-fs.js", import.meta.url)),
+  },
   plugins: [gzipFontPlugin],
   outfile,
 });

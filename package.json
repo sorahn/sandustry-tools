@@ -22,6 +22,9 @@
     "visual:render": "bun packages/sandustry-blueprint-core/tests/visual/render-visual.mjs",
     "visual:update": "bun packages/sandustry-blueprint-core/tests/visual/render-visual.mjs --update"
   },
+  "dependencies": {
+    "opentype.js": "1.3.4"
+  },
   "devDependencies": {
     "@types/bun": "^1.4.0",
     "@types/node": "^26.2.0",

@@ -316,6 +316,7 @@ interface SandustryApi {
     ): { x: number; y: number; distance: number } | null;
   };
   settings: SandustrySettings;
+  assets: { getUrl(relativePath: string): string };
   sprites: { loadFromMod(id: string, path: string): Promise<unknown> };
   storage: { local: { get(key: string): unknown; set(key: string, value: string): void } };
   structures: {
