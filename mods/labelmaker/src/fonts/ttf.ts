@@ -21,6 +21,7 @@ export type TtfFontOptions = {
 
 type Point = { x: number; y: number };
 type Segment = { from: Point; to: Point };
+type VerticalBounds = { minY: number; maxY: number };
 
 function isLineCommand(command: PathCommand): command is Extract<PathCommand, { type: "M" | "L" }> {
   return command.type === "M" || command.type === "L";
@@ -62,14 +63,19 @@ function containsEvenOdd(point: Point, segments: readonly Segment[]): boolean {
   return inside;
 }
 
-function extractGlyph(font: Font, character: string, options: TtfFontOptions): LabelGlyph {
+function extractGlyph(
+  font: Font,
+  character: string,
+  options: TtfFontOptions,
+  verticalBounds: VerticalBounds,
+): LabelGlyph {
   const glyph = font.charToGlyph(character);
   const segments = pathSegments(glyph, options.fontSize);
   if (!segments.length) {
     return {
       width: 0,
-      height: 0,
-      rows: [],
+      height: verticalBounds.maxY - verticalBounds.minY,
+      rows: Array(verticalBounds.maxY - verticalBounds.minY).fill(0),
       advance: Math.max(0, Math.round((glyph.advanceWidth / font.unitsPerEm) * options.fontSize)),
     };
   }
@@ -77,13 +83,13 @@ function extractGlyph(font: Font, character: string, options: TtfFontOptions): L
   const points = segments.flatMap(({ from, to }) => [from, to]);
   const minX = Math.floor(Math.min(...points.map(({ x }) => x)));
   const maxX = Math.ceil(Math.max(...points.map(({ x }) => x)));
-  const minY = Math.floor(Math.min(...points.map(({ y }) => y)));
-  const maxY = Math.ceil(Math.max(...points.map(({ y }) => y)));
   const width = Math.max(0, maxX - minX);
-  const height = Math.max(0, maxY - minY);
+  const height = verticalBounds.maxY - verticalBounds.minY;
   const rows = Array.from({ length: height }, (_, row) => {
     let packed = 0;
-    const y = maxY - row - 0.5;
+    // opentype.js has already converted the font's upward-positive Y axis to
+    // screen-style coordinates in getPath(), so scan from minY to maxY.
+    const y = verticalBounds.minY + row + 0.5;
     for (let column = 0; column < width; column++) {
       if (containsEvenOdd({ x: minX + column + 0.5, y }, segments)) {
         packed |= 1 << (width - column - 1);
@@ -104,11 +110,24 @@ export function extractPureTtfFont(buffer: ArrayBuffer, options: TtfFontOptions)
   if (!Number.isInteger(options.fontSize) || options.fontSize < 1)
     throw new Error("TTF font size must be a positive integer.");
   const font = opentype.parse(buffer);
+  const characters = Array.from({ length: LAST_ASCII - FIRST_ASCII + 1 }, (_, index) =>
+    String.fromCodePoint(FIRST_ASCII + index),
+  );
+  const verticalPoints = characters.flatMap((character) =>
+    pathSegments(font.charToGlyph(character), options.fontSize).flatMap(({ from, to }) => [
+      from,
+      to,
+    ]),
+  );
+  const verticalBounds: VerticalBounds = verticalPoints.length
+    ? {
+        minY: Math.floor(Math.min(...verticalPoints.map(({ y }) => y))),
+        maxY: Math.ceil(Math.max(...verticalPoints.map(({ y }) => y))),
+      }
+    : { minY: 0, maxY: 0 };
   const glyphs: Record<string, LabelGlyph> = {};
-  for (let code = FIRST_ASCII; code <= LAST_ASCII; code++) {
-    const character = String.fromCodePoint(code);
-    glyphs[character] = extractGlyph(font, character, options);
-  }
+  for (const character of characters)
+    glyphs[character] = extractGlyph(font, character, options, verticalBounds);
   const blankGlyph = glyphs[" "] ?? { width: 0, height: 0, rows: [], advance: options.fontSize };
   return {
     schemaVersion: 1,

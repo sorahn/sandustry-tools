@@ -25,6 +25,8 @@ const gzipFontPlugin = {
   },
 };
 
+// Keep this browser shim in sync with scripts/dev/mod-dev.mjs. Both bundlers
+// must be updated together when changing the TTF parser or its dependencies.
 await build({
   entryPoints: [entryPoint],
   bundle: true,

@@ -348,15 +348,20 @@ async function buildAndInstall(reason) {
       throw new Error(`TypeScript check failed with exit code ${typecheck.status ?? "unknown"}`);
 
     mkdirSync(buildDir, { recursive: true });
+    const alias = { "~shared": join(ROOT, "shared") };
+    // Keep this resolver setup in sync with mods/labelmaker/tools/build.mjs.
+    const browserFsShim = join(modDir, "tools/empty-fs.js");
+    if (existsSync(browserFsShim)) alias.fs = browserFsShim;
     await build({
       entryPoints: [sourcePath],
       bundle: true,
       format: "esm",
       platform: "neutral",
       target: "es2022",
+      mainFields: ["browser", "module", "main"],
       jsxFactory: "sandkit.react.createElement",
       jsxFragment: "sandkit.react.Fragment",
-      alias: { "~shared": join(ROOT, "shared") },
+      alias,
       plugins: [gzipFontPlugin],
       outfile: devEntryPath,
       logLevel: "info",
