@@ -99,7 +99,7 @@ export function openLabelmakerPrompt(
   defaultValue: string,
   placeholder: string,
   title: string,
-  fontOptions: LabelmakerPromptState["fontOptions"],
+  fontGroups: LabelmakerPromptState["fontGroups"],
   defaultFontId: string,
 ): Promise<LabelmakerPromptResult | null> {
   if (promptRequest) finishPrompt(null);
@@ -111,7 +111,7 @@ export function openLabelmakerPrompt(
   promptValue = defaultValue;
   promptFontId = defaultFontId;
   return new Promise((resolve) => {
-    promptRequest = { message, placeholder, title, fontOptions, resolve };
+    promptRequest = { message, placeholder, title, fontGroups, resolve };
     refreshPrompt();
   });
 }

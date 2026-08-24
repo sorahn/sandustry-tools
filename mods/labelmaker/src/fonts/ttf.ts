@@ -17,6 +17,14 @@ export type TtfFontOptions = {
   readonly baselineRow?: number;
   readonly yOffset?: number;
   readonly fixedWidth?: boolean;
+  /** Omit glyphs whose advance does not land on an integer Cell. */
+  readonly strictAdvances?: boolean;
+  /** Omit glyphs with curved, diagonal, or off-grid outline geometry. */
+  readonly strictGeometry?: boolean;
+  /** Font units between adjacent pixel-grid boundaries. */
+  readonly gridUnits?: number;
+  /** Small per-font tolerance for rounded outline coordinates. */
+  readonly geometryTolerance?: number;
 };
 
 type Point = { x: number; y: number };
@@ -63,20 +71,50 @@ function containsEvenOdd(point: Point, segments: readonly Segment[]): boolean {
   return inside;
 }
 
+function scaledAdvance(font: Font, glyph: Glyph, options: TtfFontOptions): number | null {
+  const exact = (glyph.advanceWidth / font.unitsPerEm) * options.fontSize;
+  if (options.strictAdvances && !Number.isInteger(exact)) return null;
+  return Math.max(0, Math.ceil(exact));
+}
+
+function isGridCoordinate(value: number, gridStep: number, tolerance: number): boolean {
+  const remainder = Math.abs(value / gridStep - Math.round(value / gridStep));
+  return remainder < tolerance;
+}
+
 function extractGlyph(
   font: Font,
   character: string,
   options: TtfFontOptions,
   verticalBounds: VerticalBounds,
-): LabelGlyph {
+): LabelGlyph | null {
   const glyph = font.charToGlyph(character);
   const segments = pathSegments(glyph, options.fontSize);
+  const advance = scaledAdvance(font, glyph, options);
+  if (advance === null) return null;
+  if (options.strictGeometry) {
+    const gridStep = options.gridUnits
+      ? (options.gridUnits / font.unitsPerEm) * options.fontSize
+      : undefined;
+    const geometryTolerance = options.geometryTolerance ?? 1e-6;
+    const valid = segments.every(({ from, to }) => {
+      const axisAligned = Math.abs(from.x - to.x) < 1e-6 || Math.abs(from.y - to.y) < 1e-6;
+      const onGrid =
+        gridStep === undefined ||
+        (isGridCoordinate(from.x, gridStep, geometryTolerance) &&
+          isGridCoordinate(from.y, gridStep, geometryTolerance) &&
+          isGridCoordinate(to.x, gridStep, geometryTolerance) &&
+          isGridCoordinate(to.y, gridStep, geometryTolerance));
+      return axisAligned && onGrid;
+    });
+    if (!valid) return null;
+  }
   if (!segments.length) {
     return {
       width: 0,
       height: verticalBounds.maxY - verticalBounds.minY,
       rows: Array(verticalBounds.maxY - verticalBounds.minY).fill(0),
-      advance: Math.max(0, Math.round((glyph.advanceWidth / font.unitsPerEm) * options.fontSize)),
+      advance,
     };
   }
 
@@ -102,7 +140,7 @@ function extractGlyph(
     width,
     height,
     rows,
-    advance: Math.max(0, Math.round((glyph.advanceWidth / font.unitsPerEm) * options.fontSize)),
+    advance,
   };
 }
 
@@ -126,8 +164,10 @@ export function extractPureTtfFont(buffer: ArrayBuffer, options: TtfFontOptions)
       }
     : { minY: 0, maxY: 0 };
   const glyphs: Record<string, LabelGlyph> = {};
-  for (const character of characters)
-    glyphs[character] = extractGlyph(font, character, options, verticalBounds);
+  for (const character of characters) {
+    const glyph = extractGlyph(font, character, options, verticalBounds);
+    if (glyph) glyphs[character] = glyph;
+  }
   const blankGlyph = glyphs[" "] ?? { width: 0, height: 0, rows: [], advance: options.fontSize };
   return {
     schemaVersion: 1,

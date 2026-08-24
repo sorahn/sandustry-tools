@@ -89,13 +89,24 @@ export const LabelmakerPrompt = ({
                 value={fontId}
                 onChange={(event) => onFontChange(event.currentTarget.value)}
               >
-                {prompt.fontOptions.map((font) => (
-                  <option key={font.id} value={font.id}>
-                    {font.label}
-                  </option>
+                {prompt.fontGroups.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((font) => (
+                      <option key={font.id} value={font.id}>
+                        {font.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </label>
+            {prompt.fontGroups.some((group) =>
+              group.options.some((font) => font.id === fontId && font.retro),
+            ) ? (
+              <div className="text-amber-300 text-sm">
+                Retro fonts have basic character and symbol support.
+              </div>
+            ) : null}
             <div className="flex justify-end gap-2 mt-2">
               <button
                 type="button"
