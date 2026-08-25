@@ -330,6 +330,84 @@ const gridPathForDrag = (drag: DragData, step: number): Point[] => {
   return result;
 };
 
+const drawAngleLockIndicator = (
+  context: CanvasRenderingContext2D,
+  state: SandustryEngineState,
+  drag: DragData,
+  step: number,
+  cellSize: number,
+): void => {
+  if (drag.lockedAngle === null) return;
+
+  const tileSize = cellSize * step;
+  const start = snapCell(drag.start, step);
+  const startDraw = internalApi.rendering?.getCellDrawPos?.(state, start.x, start.y);
+  if (!startDraw) return;
+
+  const centerX = startDraw.x + tileSize / 2;
+  const centerY = startDraw.y + tileSize / 2;
+  const angle = (drag.lockedAngle * Math.PI) / 180;
+  const directionX = Math.cos(angle);
+  const directionY = Math.sin(angle);
+  const lockDistance = isGridAlignedAngle(drag.lockedAngle) ? 3 : 6;
+  const radius = (lockDistance * tileSize) / Math.max(Math.abs(directionX), Math.abs(directionY));
+  const lockX = centerX + directionX * radius;
+  const lockY = centerY + directionY * radius;
+
+  context.save();
+  context.strokeStyle = "rgba(255, 0, 0, 0.35)";
+  context.lineWidth = 2;
+  context.setLineDash([6, 6]);
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+  context.stroke();
+  context.setLineDash([]);
+
+  // Match the native lock marker: a gold circular base with a dark body and
+  // dark shackle, positioned at the locked-angle radius.
+  const markerSize = 0.35 * tileSize;
+  const markerWidth = markerSize;
+  const markerHeight = 0.65 * markerSize;
+  const bodyX = lockX - markerWidth / 2;
+  const bodyY = lockY - 0.15 * markerHeight;
+  const shackleRadius = 0.3 * markerSize;
+  const baseRadius = shackleRadius + 0.5 * markerSize;
+  const baseY = (bodyY - shackleRadius + bodyY + markerHeight) / 2;
+
+  context.fillStyle = "rgb(255, 0, 0)";
+  context.beginPath();
+  context.arc(lockX, baseY, baseRadius, 0, 2 * Math.PI);
+  context.fill();
+
+  context.fillStyle = "rgb(30, 30, 30)";
+  context.strokeStyle = "rgb(30, 30, 30)";
+  context.lineWidth = 0.15 * markerSize;
+  context.beginPath();
+  context.arc(lockX, bodyY, shackleRadius, Math.PI, 0);
+  context.stroke();
+
+  const inset = 0.1 * markerSize;
+  context.beginPath();
+  context.moveTo(bodyX + inset, bodyY);
+  context.lineTo(bodyX + markerWidth - inset, bodyY);
+  context.arcTo(bodyX + markerWidth, bodyY, bodyX + markerWidth, bodyY + inset, inset);
+  context.lineTo(bodyX + markerWidth, bodyY + markerHeight - inset);
+  context.arcTo(
+    bodyX + markerWidth,
+    bodyY + markerHeight,
+    bodyX + markerWidth - inset,
+    bodyY + markerHeight,
+    inset,
+  );
+  context.lineTo(bodyX + inset, bodyY + markerHeight);
+  context.arcTo(bodyX, bodyY + markerHeight, bodyX, bodyY + markerHeight - inset, inset);
+  context.lineTo(bodyX, bodyY + inset);
+  context.arcTo(bodyX, bodyY, bodyX + inset, bodyY, inset);
+  context.closePath();
+  context.fill();
+  context.restore();
+};
+
 const removeAtPositions = (state: SandustryEngineState, positions: Point[]): void => {
   if (positions.length === 0) return;
 
@@ -401,6 +479,9 @@ const drawPreview = (state: SandustryEngineState, drag: DragData): void => {
       context.fillRect(draw.x, draw.y, size, size);
       context.strokeRect(draw.x + 0.5, draw.y + 0.5, size - 1, size - 1);
     }
+    if (deleteMode === "angled") {
+      drawAngleLockIndicator(context, state, drag, step, metrics.cellSize);
+    }
     context.restore();
   });
 };
@@ -444,7 +525,7 @@ const registerItem = (): void => {
     itemType: TOOL_ITEM_TYPE,
     nameKey: "items|diagonalDelete|name",
     descriptionKey: "items|diagonalDelete|description",
-    categoryKey: "tools",
+    categoryKey: "utility",
     sprite: { id: ITEM_SPRITE_ID, type: "backhand" },
     handleAction,
     afterRender: (state) => {
@@ -456,7 +537,7 @@ const registerItem = (): void => {
 
   api.input.registerBinding(`${MOD_ID}:cancel`, ["MouseRight"], {
     displayName: "Diagonal Delete",
-    category: "tools",
+    category: "utility",
     handlers: {
       down: () => {
         if (selectedTool()) api.action?.setCustomData(null);
@@ -466,7 +547,7 @@ const registerItem = (): void => {
 
   api.input.registerBinding(`${MOD_ID}:mode`, ["KeyR"], {
     displayName: "Diagonal Delete Mode",
-    category: "tools",
+    category: "utility",
     handlers: {
       down: () => {
         if (!selectedTool()) return;
@@ -481,7 +562,7 @@ const registerItem = (): void => {
 
   api.input.registerBinding(`${MOD_ID}:parallelogram`, ["KeyZ"], {
     displayName: "Diagonal Delete Parallelogram",
-    category: "tools",
+    category: "utility",
     handlers: {
       down: () => {
         if (!selectedTool()) return;
