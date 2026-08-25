@@ -1,0 +1,12 @@
+{
+  "manifestVersion": 1,
+  "id": "sorahn.sandustry-diagonal-delete",
+  "name": "Diagonal Delete",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "author": "sorahn",
+  "entry": "entry.js",
+  "description": "A structure-deletion tool for straight, diagonal, and parallelogram selections. Press R to switch between Free and Angled (90°/45°) modes. During a drag, press Z to lock the line and extend it into a parallelogram. Supports the game's native undo system.",
+  "dependencies": [],
+  "loadOrder": 0
+}
