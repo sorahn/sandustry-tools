@@ -520,7 +520,7 @@ const handleAction = (state: SandustryEngineState): void => {
 };
 
 const registerItem = (): void => {
-  api.items.register({
+  const definition: SandustryItemDefinition = {
     id: ITEM_ID,
     itemType: TOOL_ITEM_TYPE,
     nameKey: "items|diagonalDelete|name",
@@ -533,7 +533,16 @@ const registerItem = (): void => {
       const drag = currentDrag(state);
       if (drag) drawPreview(state, drag);
     },
-  });
+  };
+
+  // Item definitions are keyed by ID, but register() also creates a new
+  // mounted sprite each time. Update an existing definition in place during
+  // reloads so repeated evaluation cannot create duplicate tool registrations.
+  if (api.items.getDefinitionById(ITEM_ID)) {
+    api.items.updateDefinition(ITEM_ID, definition);
+  } else {
+    api.items.register(definition);
+  }
 
   api.input.registerBinding(`${MOD_ID}:cancel`, ["MouseRight"], {
     displayName: "Diagonal Delete",
@@ -600,13 +609,32 @@ const registerItem = (): void => {
   });
 };
 
+const ensureSingleInventoryItem = (): void => {
+  const state = engine.state as unknown as {
+    store?: { player?: { inventory?: Array<{ id?: string | number }> } };
+  };
+  const inventory = state.store?.player?.inventory;
+  if (!inventory) {
+    if (!api.items.isActiveById?.(ITEM_ID)) api.player.inventory.addFromId(ITEM_ID);
+    return;
+  }
+
+  let kept = false;
+  for (let index = inventory.length - 1; index >= 0; index -= 1) {
+    if (inventory[index]?.id !== ITEM_ID) continue;
+    if (kept) inventory.splice(index, 1);
+    else kept = true;
+  }
+  if (!kept) api.player.inventory.addFromId(ITEM_ID);
+};
+
 const initialize = async (): Promise<void> => {
   api.i18n.register("en", TEXT);
   await api.sprites.loadFromMod(ITEM_SPRITE_ID, "assets/diagonal-delete.png");
   registerItem();
 
   api.events.on("game:ready", () => {
-    if (!api.items.isActiveById?.(ITEM_ID)) api.player.inventory.addFromId(ITEM_ID);
+    ensureSingleInventoryItem();
   });
 };
 
