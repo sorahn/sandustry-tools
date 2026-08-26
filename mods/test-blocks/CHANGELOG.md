@@ -1,7 +1,18 @@
 # Test Blocks changelog
 
+## 0.1.8
+
+- Added the Infinite Source and Infinite Trash utility blocks.
+
+## 0.1.9
+
+- Refined the Test Blocks identity and presentation.
+
+## 0.1.10
+
+- Updated the Workshop preview.
+
 ## 0.1.11
 
-- Added the diagonal delete utility tool with free, angled, and parallelogram modes.
-- Added native undo support and red lock/preview visuals.
-- Added configurable Infinite Source and Infinite Trash utilities.
+- Stabilized the Infinite Source and Infinite Trash utility blocks.
+- Added the native-style element picker and persistent Source configuration.

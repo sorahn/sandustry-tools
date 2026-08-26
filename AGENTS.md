@@ -49,6 +49,11 @@ Makefile discovers active mods and supports `make build`, `make install`,
 `make check`, and `make format`; add `MOD=<name>` to target one mod. Per-mod
 Makefiles expose the same commands.
 
+Mods explicitly marked deprecated, including `signal-gate-repair` and
+`zoom-hotkeys`, are retained for reference only. Do not add new features,
+documentation, changelogs, or other maintenance work to them unless the user
+specifically asks to revive one.
+
 ### Sandustry dev-mode loading
 
 If the Sandustry MCP server is available and can connect to the running game,
