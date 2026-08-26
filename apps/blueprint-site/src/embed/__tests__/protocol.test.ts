@@ -3,6 +3,8 @@ import {
   BLUEPRINT_RENDERER_NAMESPACE,
   isAllowedParentOrigin,
   isRendererRequest,
+  rendererPreviewErrorEvent,
+  rendererPreviewReadyEvent,
   rendererReadyEvent,
 } from "../protocol";
 
@@ -38,6 +40,24 @@ describe("blueprint renderer embed protocol", () => {
       type: "ready",
       protocolVersion: 1,
       modes: ["thumbnail", "inspector"],
+    });
+  });
+
+  test("creates request-correlated preview events", () => {
+    expect(rendererPreviewReadyEvent("paste-1", "Factory", 320, 180)).toEqual({
+      namespace: BLUEPRINT_RENDERER_NAMESPACE,
+      type: "preview-ready",
+      requestId: "paste-1",
+      blueprintName: "Factory",
+      width: 320,
+      height: 180,
+    });
+    expect(rendererPreviewErrorEvent("paste-2", "invalid-blueprint", "Bad data")).toEqual({
+      namespace: BLUEPRINT_RENDERER_NAMESPACE,
+      type: "preview-error",
+      requestId: "paste-2",
+      code: "invalid-blueprint",
+      message: "Bad data",
     });
   });
 });

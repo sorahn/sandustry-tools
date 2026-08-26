@@ -17,7 +17,27 @@ export type RendererReadyEvent = {
   modes: BlueprintRendererMode[];
 };
 
-export type RendererEvent = RendererReadyEvent;
+export type RendererPreviewReadyEvent = {
+  namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
+  type: "preview-ready";
+  requestId: string;
+  blueprintName: string;
+  width: number;
+  height: number;
+};
+
+export type RendererEvent =
+  | RendererReadyEvent
+  | RendererPreviewReadyEvent
+  | RendererPreviewErrorEvent;
+
+export type RendererPreviewErrorEvent = {
+  namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
+  type: "preview-error";
+  requestId: string;
+  code: "invalid-blueprint" | "unsupported-format" | "too-large" | "render-failed";
+  message: string;
+};
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 
@@ -74,5 +94,35 @@ export function rendererReadyEvent(modes: BlueprintRendererMode[]): RendererRead
     type: "ready",
     protocolVersion: BLUEPRINT_RENDERER_PROTOCOL_VERSION,
     modes,
+  };
+}
+
+export function rendererPreviewReadyEvent(
+  requestId: string,
+  blueprintName: string,
+  width: number,
+  height: number,
+): RendererPreviewReadyEvent {
+  return {
+    namespace: BLUEPRINT_RENDERER_NAMESPACE,
+    type: "preview-ready",
+    requestId,
+    blueprintName,
+    width,
+    height,
+  };
+}
+
+export function rendererPreviewErrorEvent(
+  requestId: string,
+  code: RendererPreviewErrorEvent["code"],
+  message: string,
+): RendererPreviewErrorEvent {
+  return {
+    namespace: BLUEPRINT_RENDERER_NAMESPACE,
+    type: "preview-error",
+    requestId,
+    code,
+    message,
   };
 }
