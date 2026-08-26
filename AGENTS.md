@@ -66,9 +66,10 @@ just for convenience.
 
 The repository toolchain is pinned in `package.json` and `package-lock.json`.
 TypeScript 7 and TSX support are configured with the Sandustry JSX factory, and
-the Infinite Source/Trash implementation is now TypeScript compiled to a plain
-JavaScript entrypoint. Generated `mods/*/build/` output and the root
-`artifacts/` archive directory must not be committed.
+the Test Blocks implementation is TypeScript compiled to a plain JavaScript
+entrypoint. Optional `patches.json` files are validated and packaged beside
+the entrypoint. Generated `mods/*/build/` output and the root `artifacts/`
+archive directory must not be committed.
 
 Reusable TypeScript modules belong directly under `shared/`. Mod source can
 import them normally; esbuild resolves and bundles those imports into each
@@ -167,8 +168,8 @@ future agents do not have to rediscover them.
 
 ## Project goal
 
-This repository contains a Sandustry v1 mod that adds two creative utility
-structures:
+This repository's primary Sandustry v1 mod, Test Blocks, adds two creative
+utility structures:
 
 - **Infinite Source**: emits a configurable element continuously.
 - **Infinite Trash**: removes elements in its footprint.
@@ -252,18 +253,18 @@ expanded picker.
 
 ## Current implementation behavior
 
-The implementation lives in `mods/infinite-source-trash/src/entry.ts` and its
-manifest is `mods/infinite-source-trash/modinfo.json`.
+The implementation lives in `mods/test-blocks/src/entry.tsx` and its manifest is
+`mods/test-blocks/modinfo.json`.
 
 - Mod ID: `sorahn.sandustry-test-blocks`
-- Current version: `0.1.3`
+- Current version: `0.1.11`
 - Entrypoint: `entry.js`
 - Structures: `sandustryTestBlocksSource` and
   `sandustryTestBlocksTrash`
 - Category: `production`
 - Both structures use a 4×4 footprint and the demo icons:
-  - `mods/infinite-source-trash/assets/SourceBlock.png`
-  - `mods/infinite-source-trash/assets/Trash.png`
+  - `mods/test-blocks/assets/SourceBlock.png`
+  - `mods/test-blocks/assets/Trash.png`
 - The structure shape is intentionally four rows of zeroes, matching the demo
   blocks. This makes the structures non-blocking overlays and avoids the red
   occupied-footprint rendering caused by an all-ones shape.
@@ -278,7 +279,7 @@ manifest is `mods/infinite-source-trash/modinfo.json`.
   with `api.ui.inject`. It reads registered element definitions for names, IDs,
   matter types, and colors. If injection or the React runtime is unavailable,
   it falls back to the text prompt.
-- `BLACKLISTED_ELEMENT_IDS` in `mod/entry.js` is the explicit blacklist for
+- `BLACKLISTED_ELEMENT_IDS` in `mods/test-blocks/src/entry.tsx` is the explicit blacklist for
   unfinished or unwanted elements. The same check is applied to picker entries,
   manual ID input, and runtime spawning. Definitions with `hidden: true` are
   also excluded automatically.
@@ -300,8 +301,8 @@ numeric type.
 
 ## Assets and packaging
 
-The source files are under `mods/infinite-source-trash/`. The distributable
-archive is generated as `sandustry-test-blocks-0.1.3.zip` or the current
+The source files are under `mods/test-blocks/`. The distributable
+archive is generated as `sandustry-test-blocks-0.1.11.zip` or the current
 Makefile-derived archive name.
 Generated zip files are written under `artifacts/build/` and are
 ignored by `.gitignore`.
@@ -344,8 +345,8 @@ request; do not silently skip installation after a permission failure.
 
 Checks performed during development:
 
-- `node --check mods/infinite-source-trash/build/entry.js`
-- JSON parsing of `mods/infinite-source-trash/modinfo.json`
+- `node --check mods/test-blocks/build/entry.js`
+- JSON parsing of `mods/test-blocks/modinfo.json`
 - Makefile dry runs with `make -n install`
 - Archive content inspection with `unzip -l`
 

@@ -1,7 +1,7 @@
 # Sandustry Mods
 
-This repository is a Sandustry v1 mods monorepo. The current mod,
-`infinite-source-trash`, adds two creative utility structures to the `Misc`
+This repository is a Sandustry v1 mods monorepo. The primary mod,
+`test-blocks`, adds two creative utility structures to the `production`
 building category:
 
 - **Infinite Source** emits configured gases above itself and other elements
@@ -18,8 +18,8 @@ from the demo mod, renamed to `SourceBlock.png` and `Trash.png`.
 Each active mod is isolated under `mods/<name>` with its source, manifest, and
 assets. Reusable TypeScript helpers live under `shared/` and are compiled into
 each standalone entrypoint. Shared build rules live in `make/mod.mk`; reference
-material remains under `resources/`. The Infinite Source/Trash entrypoint is
-TypeScript and compiles to the plain JavaScript file Sandustry expects.
+material remains under `resources/`. The Test Blocks entrypoint is TypeScript
+and compiles to the plain JavaScript file Sandustry expects.
 
 ## Packaging
 
