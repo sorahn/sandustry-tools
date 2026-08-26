@@ -29,8 +29,62 @@ const SOURCE_ID = "sandustryTestBlocksSource";
 const TRASH_ID = "sandustryTestBlocksTrash";
 const THERMAL_SOURCE_ID = "sandustryTestBlocksThermalSource";
 const TEST_BLOCKS_CATEGORY = "testBlocks";
-const SOURCE_SPRITE = "sandustryTestBlocksSourceSprite";
-const TRASH_SPRITE = "sandustryTestBlocksTrashSprite";
+const SPRITE_SET_SETTING = "spriteSet";
+type SpriteSetDefinition = {
+  source: string;
+  trash: string;
+  thermal: string;
+  energy: string;
+  assets: {
+    source: string;
+    trash: string;
+    thermal: string;
+    energy: string;
+  };
+};
+const SPRITE_SETS: Record<string, SpriteSetDefinition> = {
+  purple: {
+    source: "sandustryTestBlocksPurpleSourceSprite",
+    trash: "sandustryTestBlocksPurpleTrashSprite",
+    thermal: "sandustryTestBlocksPurpleThermalSourceSprite",
+    energy: "sandustryTestBlocksPurpleEnergySourceSprite",
+    assets: {
+      source: "assets/purple/element-source.png",
+      trash: "assets/purple/trash.png",
+      thermal: "assets/purple/thermal-source.png",
+      energy: "assets/purple/energy-source.png",
+    },
+  },
+  v1: {
+    source: "sandustryTestBlocksV1SourceSprite",
+    trash: "sandustryTestBlocksV1TrashSprite",
+    thermal: "sandustryTestBlocksV1ThermalSourceSprite",
+    energy: "sandustryTestBlocksV1EnergySourceSprite",
+    assets: {
+      source: "assets/v1/element-source.png",
+      trash: "assets/v1/trash.png",
+      thermal: "assets/v1/thermal-source.png",
+      energy: "assets/v1/energy-source.png",
+    },
+  },
+  colorful: {
+    source: "sandustryTestBlocksColorfulSourceSprite",
+    trash: "sandustryTestBlocksColorfulTrashSprite",
+    thermal: "sandustryTestBlocksColorfulThermalSourceSprite",
+    energy: "sandustryTestBlocksColorfulEnergySourceSprite",
+    assets: {
+      source: "assets/colorful/element-source.png",
+      trash: "assets/colorful/trash.png",
+      thermal: "assets/colorful/thermal-source.png",
+      energy: "assets/colorful/power-source.png",
+    },
+  },
+} as const;
+const SPRITE_SET_LABELS = {
+  purple: "Editor Extensions",
+  v1: "Sandustry Demo",
+  colorful: "Colorful (Sir Monkz)",
+} as const;
 const SOURCE_TICK_MS = 500;
 const TRASH_PROCESS_INTERVAL_MS = 50;
 const THERMAL_SOURCE_TICK_MS = 1000;
@@ -38,7 +92,6 @@ const THERMAL_SOURCE_DEFAULT_TEMPERATURE = 1000;
 const THERMAL_SOURCE_MIN_TEMPERATURE = -1000;
 const THERMAL_SOURCE_MAX_TEMPERATURE = 1000;
 const THERMAL_SOURCE_EXCHANGE_RATE = 0.5;
-const THERMAL_SOURCE_SPRITE = "sandustryTestBlocksThermalSourceSprite";
 const DEFAULT_ELEMENT_ID = "sand";
 const LAST_ELEMENT_KEY = `${MOD_ID}.lastElement`;
 // Add unfinished or unwanted element IDs here. The picker, manual fallback,
@@ -74,6 +127,12 @@ const FOOTPRINT = [
 
 const TEXT = {
   "ui|management|category|testBlocks": "Test Blocks",
+  "settings|spriteSet|label": "Sprite set",
+  "settings|spriteSet|description":
+    "Choose the visual theme for Test Blocks. Reload the game for changes to take effect.",
+  "settings|spriteSet|option|purple": SPRITE_SET_LABELS.purple,
+  "settings|spriteSet|option|v1": SPRITE_SET_LABELS.v1,
+  "settings|spriteSet|option|colorful": SPRITE_SET_LABELS.colorful,
   "structures|source|name": "Elements",
   "structures|source|description": "Creates an endless stream of the configured element.",
   "structures|trash|name": "Trash",
@@ -84,6 +143,13 @@ const TEXT = {
 };
 
 type ElementSelection = { id: string | null; type: number | null };
+type SpriteSetKey = keyof typeof SPRITE_SETS;
+
+const getSpriteSet = (): SpriteSetDefinition => {
+  const selected = safe(() => api.settings.get<string>(SPRITE_SET_SETTING), "v1");
+  const selectedKey = selected as SpriteSetKey;
+  return SPRITE_SETS[selectedKey] ?? SPRITE_SETS.purple;
+};
 type ValidElementSelection = { id: string | null; type: number };
 type FocusableButtonProps = {
   id: string;
@@ -941,9 +1007,19 @@ const setup = async () => {
   api.i18n.register("en", TEXT);
   registerPicker();
 
-  await api.sprites.loadFromMod(SOURCE_SPRITE, "assets/element-source.png");
-  await api.sprites.loadFromMod(TRASH_SPRITE, "assets/trash.png");
-  await api.sprites.loadFromMod(THERMAL_SOURCE_SPRITE, "assets/thermal-source.png");
+  for (const [key, spriteSet] of Object.entries(SPRITE_SETS)) {
+    try {
+      await Promise.all([
+        api.sprites.loadFromMod(spriteSet.source, spriteSet.assets.source),
+        api.sprites.loadFromMod(spriteSet.trash, spriteSet.assets.trash),
+        api.sprites.loadFromMod(spriteSet.thermal, spriteSet.assets.thermal),
+      ]);
+      await api.sprites.loadFromMod(spriteSet.energy, spriteSet.assets.energy).catch(() => {});
+    } catch {
+      console.warn(`[${MOD_ID}] sprite set unavailable: ${key}`);
+    }
+  }
+  const spriteSet = getSpriteSet();
 
   const common = {
     categoryKey: TEST_BLOCKS_CATEGORY,
@@ -968,18 +1044,18 @@ const setup = async () => {
     nameKey: "structures|source|name",
     descriptionKey: "structures|source|description",
     variants: [{ id: SOURCE_ID, angles: [0, 90, 180, 270] }],
-    render: { ...common.render, imageName: SOURCE_SPRITE },
+    render: { ...common.render, imageName: spriteSet.source },
   });
 
   api.structures.register({
     ...common,
     id: TRASH_ID,
     categoryKey: TEST_BLOCKS_CATEGORY,
-    order: 20,
+    order: 30,
     nameKey: "structures|trash|name",
     descriptionKey: "structures|trash|description",
     variants: [{ id: TRASH_ID, angles: [0, 90, 180, 270] }],
-    render: { ...common.render, imageName: TRASH_SPRITE },
+    render: { ...common.render, imageName: spriteSet.trash },
   });
 
   api.structures.register({
@@ -987,7 +1063,7 @@ const setup = async () => {
     nameKey: "structures|thermalSource|name",
     descriptionKey: "structures|thermalSource|description",
     categoryKey: TEST_BLOCKS_CATEGORY,
-    order: 30,
+    order: 20,
     alwaysUnlocked: true,
     buildModes: [
       { type: "single" },
@@ -1008,7 +1084,7 @@ const setup = async () => {
       [1, 1, 1, 1],
     ],
     render: {
-      imageName: THERMAL_SOURCE_SPRITE,
+      imageName: spriteSet.thermal,
       size: { width: 16, height: 16 },
       offset: { x: 0, y: 0 },
       ui: { outline: true },

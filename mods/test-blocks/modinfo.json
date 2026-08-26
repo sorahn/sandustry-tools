@@ -8,5 +8,27 @@
   "entry": "entry.js",
   "description": "Adds an infinite Source block and a Trash block to the Misc buildings menu.",
   "dependencies": [],
-  "loadOrder": 9007199254740991
+  "loadOrder": 9007199254740991,
+  "configSchema": {
+    "spriteSet": {
+      "type": "choice",
+      "default": "v1",
+      "labelKey": "settings|spriteSet|label",
+      "descriptionKey": "settings|spriteSet|description",
+      "options": [
+        {
+          "value": "v1",
+          "labelKey": "settings|spriteSet|option|v1"
+        },
+        {
+          "value": "purple",
+          "labelKey": "settings|spriteSet|option|purple"
+        },
+        {
+          "value": "colorful",
+          "labelKey": "settings|spriteSet|option|colorful"
+        }
+      ]
+    }
+  }
 }
