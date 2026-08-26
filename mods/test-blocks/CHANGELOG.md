@@ -16,3 +16,5 @@
 
 - Stabilized the Infinite Source and Infinite Trash utility blocks.
 - Added the native-style element picker and persistent Source configuration.
+- Updated Infinite Source to spawn material gradually in a randomized brush-style pattern.
+- Improved compatibility with the game's native runtime APIs.
