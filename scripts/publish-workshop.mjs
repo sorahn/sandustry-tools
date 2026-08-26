@@ -36,7 +36,9 @@ const appId = process.env.STEAM_APP_ID ?? "2764460";
 const steamcmd = process.env.STEAMCMD ?? "steamcmd";
 const steamAccount = process.env.STEAM_ACCOUNT ?? findSteamAccount();
 const changenote = process.env.CHANGE_NOTE ?? readChangelogNote(modDir, manifest);
-const previewPath = join(modDir, "preview.png");
+const previewPath = ["preview.png", "preview.gif", "preview.jpg", "preview.jpeg"]
+  .map((name) => join(modDir, name))
+  .find((path) => existsSync(path));
 const tempDir = mkdtempSync(join(tmpdir(), "sandustry-workshop-"));
 const vdfPath = join(tempDir, "workshop-item.vdf");
 
@@ -50,7 +52,7 @@ const fields = [
 if (recordedPublishedFileId != null) {
   fields.splice(1, 0, ["publishedfileid", String(recordedPublishedFileId)]);
 }
-if (existsSync(previewPath)) fields.push(["previewfile", previewPath]);
+if (previewPath) fields.push(["previewfile", previewPath]);
 
 const vdf = [
   '"workshopitem"',

@@ -119,7 +119,8 @@ copy the unzipped mod into an ID-named folder in the default Sandustry mods
 directory. Override the destination with
 `make install SANDUSTRY_MODS_DIR=/path/to/mods`.
 
-To bump one mod's version and create a commit containing only its manifest:
+To bump one mod's version, move its current changelog entry to the new
+version, and create a commit containing the manifest and changelog:
 
 ```sh
 make version MOD=zoom-hotkeys patch

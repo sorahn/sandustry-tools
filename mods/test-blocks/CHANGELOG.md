@@ -12,7 +12,7 @@
 
 - Updated the Workshop preview.
 
-## 0.1.11
+## 0.1.12
 
 - Stabilized the Infinite Source and Infinite Trash utility blocks.
 - Added the native-style element picker and persistent Source configuration.
