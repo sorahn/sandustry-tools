@@ -154,6 +154,7 @@ export function BlueprintMap({
   showSidebar,
   showGrid,
   showPngBackground,
+  onLoadBlueprint,
   captureOnly,
 }: {
   blueprint: Blueprint;
@@ -162,6 +163,7 @@ export function BlueprintMap({
   showSidebar: boolean;
   showGrid: boolean;
   showPngBackground: boolean;
+  onLoadBlueprint: (blueprint: Blueprint) => void;
   captureOnly?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -303,6 +305,7 @@ export function BlueprintMap({
     onShowRawStructuresChange: setShowRawStructures,
     resetVersion: debugResetVersion,
     onReset: resetDebugOptions,
+    onLoadBlueprint,
   });
   useEffect(() => {
     const stored = remember && !captureOnly ? readStoredMapView(blueprintKey) : null;

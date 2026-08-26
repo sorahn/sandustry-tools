@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { structureLabel } from "@sandustry/blueprint-core";
-import { decodeBlueprint, type Blueprint } from "../utils/blueprint";
+import { decodeBlueprint, encodeBlueprint, type Blueprint } from "../utils/blueprint";
 import { debugComponent } from "../components/DebugComponentWrapper";
 import { BlueprintMapPanel } from "../components/BlueprintMapPanel";
 import { PersistentCheckbox } from "../components/PersistentCheckbox";
@@ -90,6 +90,15 @@ export function BlueprintInspectorPage() {
       setMessage(error instanceof Error ? error.message : "Unable to inspect blueprint.");
     }
   };
+  const loadTestBlueprint = (nextBlueprint: Blueprint) => {
+    const nextEncoded = encodeBlueprint(nextBlueprint);
+    setEncoded(nextEncoded);
+    setInspectedBlueprintKey(nextEncoded);
+    setBlueprint(nextBlueprint);
+    setSummary(summarizeBlueprint(nextEncoded, nextBlueprint));
+    setMessage(`Loaded test blueprint ${nextBlueprint.name}.`);
+    if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, nextEncoded);
+  };
   useEffect(() => {
     if (remember && encoded.trim()) inspect();
     // The initial remembered value should be inspected once after the page mounts.
@@ -159,6 +168,7 @@ export function BlueprintInspectorPage() {
               onShowGridChange={setShowGrid}
               showPngBackground={showPngBackground}
               onShowPngBackgroundChange={setShowPngBackground}
+              onLoadBlueprint={loadTestBlueprint}
             />
           </div>
           <BlueprintStructuresPanel blueprint={blueprint} structureLabel={structureLabel} />

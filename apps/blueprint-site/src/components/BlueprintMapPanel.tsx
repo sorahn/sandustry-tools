@@ -18,6 +18,7 @@ type BlueprintMapPanelProps = {
   onShowGridChange: (value: boolean) => void;
   showPngBackground: boolean;
   onShowPngBackgroundChange: (value: boolean) => void;
+  onLoadBlueprint: (blueprint: Blueprint) => void;
 };
 
 export function BlueprintMapPanel({
@@ -30,6 +31,7 @@ export function BlueprintMapPanel({
   onShowGridChange,
   showPngBackground,
   onShowPngBackgroundChange,
+  onLoadBlueprint,
 }: BlueprintMapPanelProps) {
   return (
     <Panel
@@ -71,6 +73,7 @@ export function BlueprintMapPanel({
           showSidebar={showSidebar}
           showGrid={showGrid}
           showPngBackground={showPngBackground}
+          onLoadBlueprint={onLoadBlueprint}
         />
         <p className="mt-4 text-xs text-slate-500">
           The captured native runtime catalog supplies names and footprints. Other content remains

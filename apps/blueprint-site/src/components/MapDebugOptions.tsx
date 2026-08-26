@@ -11,6 +11,7 @@ import {
   SHOW_SPRITES_KEY,
 } from "../utils/storage-keys";
 import { Divider, IconButton } from "@sandustry/ui";
+import { BLUEPRINT_VISUAL_FIXTURES } from "../visual-fixtures/catalog";
 
 type MapDebugOptionsProps = {
   showDebugCells: boolean;
@@ -29,6 +30,7 @@ type MapDebugOptionsProps = {
   onShowRawStructuresChange: (value: boolean) => void;
   resetVersion?: number;
   onReset: () => void;
+  onLoadBlueprint: (blueprint: (typeof BLUEPRINT_VISUAL_FIXTURES)[number]["blueprint"]) => void;
 };
 
 export function MapDebugOptions({
@@ -48,6 +50,7 @@ export function MapDebugOptions({
   onShowRawStructuresChange,
   resetVersion,
   onReset,
+  onLoadBlueprint,
 }: MapDebugOptionsProps) {
   const toggles = [
     <PersistentCheckbox
@@ -141,6 +144,20 @@ export function MapDebugOptions({
         ))}
       </div>
       <Divider className="my-4" />
+      <p className="font-mono uppercase tracking-[0.18em] text-slate-500">Test blueprints</p>
+      <div className="mt-3 grid gap-2">
+        {BLUEPRINT_VISUAL_FIXTURES.map((fixture) => (
+          <button
+            key={fixture.id}
+            type="button"
+            className="rounded border border-slate-700 bg-slate-950/50 px-2 py-1.5 text-left text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
+            onClick={() => onLoadBlueprint(fixture.blueprint)}
+          >
+            {fixture.label}
+          </button>
+        ))}
+        <Divider className="my-4" />
+      </div>
     </>
   );
 }

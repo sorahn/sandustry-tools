@@ -1,7 +1,8 @@
 import type { Blueprint } from "@sandustry/blueprint-core";
+import { CORE_VISUAL_BASELINES } from "./core-baselines";
 
-// A compact, stable fixture for renderer regression screenshots. Keep the
-// structures grouped by family so sprite changes are easy to locate visually.
+// The catalog baseline is assembled from the captured native/mod catalog
+// rather than stored as a standalone blueprint string.
 export const catalogVisualFixture: Blueprint = {
   name: "catalog visual regression",
   signalLinks: null,
@@ -29,3 +30,14 @@ export const catalogVisualFixture: Blueprint = {
     { type: "kineticFieldEmitterUpRight", x: 55, y: 6 },
   ],
 };
+
+export type BlueprintVisualFixture = {
+  id: string;
+  label: string;
+  blueprint: Blueprint;
+};
+
+export const BLUEPRINT_VISUAL_FIXTURES: BlueprintVisualFixture[] = [
+  { id: "catalog", label: "Catalog visual regression", blueprint: catalogVisualFixture },
+  ...CORE_VISUAL_BASELINES,
+];
