@@ -35,7 +35,7 @@ if (!existsSync(contentDir)) {
 const appId = process.env.STEAM_APP_ID ?? "2764460";
 const steamcmd = process.env.STEAMCMD ?? "steamcmd";
 const steamAccount = process.env.STEAM_ACCOUNT ?? findSteamAccount();
-const changenote = process.env.CHANGE_NOTE ?? readChangelogNote(modDir, manifest);
+const changenote = formatChangenote(process.env.CHANGE_NOTE ?? readChangelogNote(modDir, manifest));
 const previewPath = ["preview.png", "preview.gif", "preview.jpg", "preview.jpeg"]
   .map((name) => join(modDir, name))
   .find((path) => existsSync(path));
@@ -68,6 +68,7 @@ console.log(
     ? `Creating Workshop item for ${manifest.name} v${manifest.version}`
     : `Publishing ${manifest.name} v${manifest.version} (${recordedPublishedFileId})`,
 );
+console.log(`Workshop changenote: ${changenote}`);
 
 try {
   const result = spawnSync(
@@ -129,6 +130,15 @@ function readChangelogNote(modDir, manifest) {
     `No CHANGELOG.md entry for ${manifest.name} v${manifest.version}; using default note.`,
   );
   return `Update ${manifest.name} to v${manifest.version}`;
+}
+
+function formatChangenote(value) {
+  return String(value)
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.trim().replace(/^[-*]\s+/, ""))
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function escapeVdf(value) {
