@@ -5,8 +5,10 @@ interface SandustryStructureData {
 }
 
 interface SandustryStructure {
+  type: string | number;
   x: number;
   y: number;
+  queued?: boolean;
   trapped?: boolean;
   data?: SandustryStructureData;
 }
@@ -86,10 +88,29 @@ interface SandustryStructureVariant {
   angles: number[];
 }
 
+interface SandustryHeatTransferApi {
+  ensureTemperature(structure: SandustryStructure): number;
+  addTemperature(state: SandustryEngineState, structure: SandustryStructure, delta: number): number;
+  consumeTemperatureNear?: (...args: unknown[]) => boolean;
+  absorbAdjacentElements?: (...args: unknown[]) => number;
+  equalizeConnected?: (
+    state: SandustryEngineState,
+    structures: SandustryStructure[],
+    options: {
+      structureTypeId: string | number;
+      diffusionRate?: number;
+      magnitudeFraction?: number;
+    },
+  ) => void;
+  computeEqualizedTemperature?: (...args: unknown[]) => number;
+  computeDiffusedTemperatures?: (...args: unknown[]) => number[];
+}
+
 interface SandustryStructureRender {
   imageName?: string;
   size?: { width: number; height: number };
   offset?: { x: number; y: number };
+  ui?: Record<string, unknown>;
 }
 
 interface SandustryStructureDefinition {
@@ -105,9 +126,12 @@ interface SandustryStructureDefinition {
   buildModes?: SandustryStructureBuildMode[];
   shape?: number[][];
   variants?: SandustryStructureVariant[];
+  copyData?: boolean;
+  useRawShape?: boolean;
   render?: SandustryStructureRender;
   defaultData?: SandustryStructureData;
   draw?: (...args: unknown[]) => unknown;
+  tooltipHover?: Record<string, unknown>;
 }
 
 interface SandustryInputBindingHandlers {
@@ -216,6 +240,8 @@ interface SandustryEngineApi {
   world?: SandustryInternalWorldApi;
   /** Observed engine escape hatch used by the native debug brush path. */
   elements?: SandustryInternalElementsApi;
+  /** Observed engine escape hatch used by the native thermal relay. */
+  heatTransfer?: SandustryHeatTransferApi;
   blueprints?: SandustryInternalBlueprintApi;
   clipboard?: SandustryInternalClipboardApi;
   prefabulator?: SandustryInternalPrefabulatorApi;
@@ -360,6 +386,11 @@ interface SandustryApi {
   structures: {
     forEachOfType(id: string, callback: (structure: SandustryStructure) => void): void;
     register(definition: SandustryStructureDefinition): void;
+    addVariant(
+      baseStructureTypeOrId: string | number,
+      variant: SandustryStructureVariant,
+      options?: { addBuildMode?: SandustryStructureBuildMode },
+    ): void;
     addProcessor(
       structureId: string | number,
       definition: {
@@ -367,6 +398,7 @@ interface SandustryApi {
         process: (structure: SandustryStructure, processor: SandustryStructureProcessor) => void;
       },
     ): void;
+    getAtCell(x: number, y: number): SandustryStructure | null;
     buildAtCellWhenIdle?(
       x: number,
       y: number,

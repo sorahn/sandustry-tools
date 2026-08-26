@@ -1,0 +1,26 @@
+[
+  {
+    "id": "thermal-source-consumption",
+    "file": "js/bundle.js",
+    "operation": "replace",
+    "find": "if(!r||r.type!==i)continue;",
+    "code": "if(!r||(r.type!==i&&!(globalThis.__sandustryTestBlocksThermalSource&&globalThis.__sandustryTestBlocksThermalSource(r.type,i))))continue;",
+    "expectedMatches": 1
+  },
+  {
+    "id": "test-blocks-category-order",
+    "file": "js/bundle.js",
+    "operation": "replace",
+    "find": "\"production\",\"blocks\",\"economy\"",
+    "code": "\"production\",\"blocks\",\"testBlocks\",\"economy\"",
+    "expectedMatches": 1
+  },
+  {
+    "id": "test-blocks-category-label",
+    "file": "js/bundle.js",
+    "operation": "replace",
+    "find": "\"misc\",\"logic\",\"blocks\",\"construction\",\"debug\"",
+    "code": "\"misc\",\"logic\",\"blocks\",\"testBlocks\",\"construction\",\"debug\"",
+    "expectedMatches": 1
+  }
+]

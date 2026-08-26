@@ -27,10 +27,18 @@ const MOD_ID = "sorahn.sandustry-test-blocks";
 
 const SOURCE_ID = "sandustryTestBlocksSource";
 const TRASH_ID = "sandustryTestBlocksTrash";
+const THERMAL_SOURCE_ID = "sandustryTestBlocksThermalSource";
+const TEST_BLOCKS_CATEGORY = "testBlocks";
 const SOURCE_SPRITE = "sandustryTestBlocksSourceSprite";
 const TRASH_SPRITE = "sandustryTestBlocksTrashSprite";
 const SOURCE_TICK_MS = 500;
 const TRASH_PROCESS_INTERVAL_MS = 50;
+const THERMAL_SOURCE_TICK_MS = 1000;
+const THERMAL_SOURCE_DEFAULT_TEMPERATURE = 1000;
+const THERMAL_SOURCE_MIN_TEMPERATURE = -1000;
+const THERMAL_SOURCE_MAX_TEMPERATURE = 1000;
+const THERMAL_SOURCE_EXCHANGE_RATE = 0.5;
+const THERMAL_SOURCE_SPRITE = "sandustryTestBlocksThermalSourceSprite";
 const DEFAULT_ELEMENT_ID = "sand";
 const LAST_ELEMENT_KEY = `${MOD_ID}.lastElement`;
 // Add unfinished or unwanted element IDs here. The picker, manual fallback,
@@ -65,10 +73,14 @@ const FOOTPRINT = [
 ];
 
 const TEXT = {
-  "structures|source|name": "Infinite Source",
+  "ui|management|category|testBlocks": "Test Blocks",
+  "structures|source|name": "Elements",
   "structures|source|description": "Creates an endless stream of the configured element.",
-  "structures|trash|name": " Trash",
+  "structures|trash|name": "Trash",
   "structures|trash|description": "An infinitely deep void for particle trash.",
+  "structures|thermalSource|name": "Thermals",
+  "structures|thermalSource|description":
+    "Maintains a hot thermal buffer and shares heat with adjacent relays.",
 };
 
 type ElementSelection = { id: string | null; type: number | null };
@@ -806,6 +818,111 @@ const processTrash = (structure: SandustryStructure) => {
   });
 };
 
+const thermalTemperature = (structure: SandustryStructure) => {
+  const heatTransfer = engine.api.heatTransfer;
+  return heatTransfer ? heatTransfer.ensureTemperature(structure) : 0;
+};
+
+const addThermalTemperature = (structure: SandustryStructure, delta: number) => {
+  const heatTransfer = engine.api.heatTransfer;
+  if (!heatTransfer || delta === 0) return;
+  heatTransfer.addTemperature(engine.state, structure, delta);
+};
+
+const thermalRingCells = (structure: SandustryStructure) => {
+  const cells: Array<{ x: number; y: number }> = [];
+  for (let index = 0; index < SIZE; index += 1) {
+    cells.push({ x: structure.x + index, y: structure.y - 1 });
+    cells.push({ x: structure.x + index, y: structure.y + SIZE });
+    cells.push({ x: structure.x - 1, y: structure.y + index });
+    cells.push({ x: structure.x + SIZE, y: structure.y + index });
+  }
+  return cells;
+};
+
+const touchingThermalRelays = (sources: SandustryStructure[]) => {
+  const relays: SandustryStructure[] = [];
+  const seen = new Set<string>();
+  for (const source of sources) {
+    for (const cell of thermalRingCells(source)) {
+      const relay = safe(() => api.structures.getAtCell(cell.x, cell.y), null);
+      if (!relay || relay.type !== "thermalRelay" || relay.queued) continue;
+      const key = `${relay.x},${relay.y}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      relays.push(relay);
+    }
+  }
+  return relays;
+};
+
+const absorbThermalSurroundings = (structure: SandustryStructure) => {
+  const heatTransfer = engine.api.heatTransfer;
+  if (!heatTransfer?.absorbAdjacentElements) return;
+  const current = thermalTemperature(structure);
+  const delta = heatTransfer.absorbAdjacentElements(engine.state, structure, {
+    lavaDelta: 250,
+    snowDelta: -20,
+    currentTemperature: current,
+    minTemperature: THERMAL_SOURCE_MIN_TEMPERATURE,
+    maxTemperature: THERMAL_SOURCE_MAX_TEMPERATURE,
+    structSize: SIZE,
+  });
+  if (delta) addThermalTemperature(structure, delta);
+};
+
+const thermalSourceTick = () => {
+  const sources: SandustryStructure[] = [];
+  api.structures.forEachOfType(THERMAL_SOURCE_ID, (structure) => {
+    try {
+      absorbThermalSurroundings(structure);
+      sources.push(structure);
+    } catch (error) {
+      console.error(`[${MOD_ID}] thermal source tick failed:`, error);
+    }
+  });
+  if (sources.length === 0) return;
+
+  // Native machines can consume from this block through the bundle patch. A
+  // nearby native relay also trades with it using the game's 50% diffusion
+  // behavior, without replacing the native relay network.
+  for (const relay of touchingThermalRelays(sources)) {
+    const source = sources.find((candidate) =>
+      thermalRingCells(candidate).some((cell) => cell.x === relay.x && cell.y === relay.y),
+    );
+    if (!source) continue;
+    const move =
+      (thermalTemperature(source) - thermalTemperature(relay)) * THERMAL_SOURCE_EXCHANGE_RATE;
+    addThermalTemperature(source, -move);
+    addThermalTemperature(relay, move);
+  }
+
+  for (const source of sources) {
+    const target =
+      typeof source.data?.targetTemperature === "number"
+        ? source.data.targetTemperature
+        : THERMAL_SOURCE_DEFAULT_TEMPERATURE;
+    addThermalTemperature(source, target - thermalTemperature(source));
+  }
+};
+
+let nextThermalSourceTick = 0;
+const registerThermalSourceTick = () => {
+  api.events.on("frame:render", () => {
+    const now = Date.now();
+    if (now < nextThermalSourceTick) return;
+    nextThermalSourceTick = now + THERMAL_SOURCE_TICK_MS;
+    thermalSourceTick();
+  });
+};
+
+// The native thermal consumers ask for the exact "thermalRelay" type. The
+// bundle patch calls this predicate so they can also consume from our source.
+Object.assign(globalThis, {
+  __sandustryTestBlocksThermalSource: (type: unknown, expected: unknown) =>
+    type === THERMAL_SOURCE_ID && (expected === "thermalRelay" || expected === THERMAL_SOURCE_ID),
+});
+
 const registerTrashProcessor = () => {
   const trashType = api.structures.getTypeFromId?.(TRASH_ID) ?? TRASH_ID;
   api.structures.addProcessor(trashType, {
@@ -826,9 +943,10 @@ const setup = async () => {
 
   await api.sprites.loadFromMod(SOURCE_SPRITE, "assets/element-source.png");
   await api.sprites.loadFromMod(TRASH_SPRITE, "assets/trash.png");
+  await api.sprites.loadFromMod(THERMAL_SOURCE_SPRITE, "assets/thermal-source.png");
 
   const common = {
-    categoryKey: "production",
+    categoryKey: TEST_BLOCKS_CATEGORY,
     buildModes: [
       { type: "single" },
       {
@@ -846,6 +964,7 @@ const setup = async () => {
   api.structures.register({
     ...common,
     id: SOURCE_ID,
+    order: 10,
     nameKey: "structures|source|name",
     descriptionKey: "structures|source|description",
     variants: [{ id: SOURCE_ID, angles: [0, 90, 180, 270] }],
@@ -855,16 +974,61 @@ const setup = async () => {
   api.structures.register({
     ...common,
     id: TRASH_ID,
+    categoryKey: TEST_BLOCKS_CATEGORY,
+    order: 20,
     nameKey: "structures|trash|name",
     descriptionKey: "structures|trash|description",
     variants: [{ id: TRASH_ID, angles: [0, 90, 180, 270] }],
     render: { ...common.render, imageName: TRASH_SPRITE },
   });
 
+  api.structures.register({
+    id: THERMAL_SOURCE_ID,
+    nameKey: "structures|thermalSource|name",
+    descriptionKey: "structures|thermalSource|description",
+    categoryKey: TEST_BLOCKS_CATEGORY,
+    order: 30,
+    alwaysUnlocked: true,
+    buildModes: [
+      { type: "single" },
+      { type: "line", directions: ["horizontal", "vertical"] },
+      { type: "rectangle" },
+    ],
+    variants: [{ id: THERMAL_SOURCE_ID, angles: [0, 90, 180, 270] }],
+    copyData: false,
+    useRawShape: true,
+    defaultData: {
+      temperature: 0,
+      targetTemperature: THERMAL_SOURCE_DEFAULT_TEMPERATURE,
+    },
+    shape: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    render: {
+      imageName: THERMAL_SOURCE_SPRITE,
+      size: { width: 16, height: 16 },
+      offset: { x: 0, y: 0 },
+      ui: { outline: true },
+    },
+    tooltipHover: {
+      type: "custom",
+      dataFieldIconValue: {
+        field: "temperature",
+        iconPath: "mods/thermal_icon.png",
+        round: true,
+      },
+    },
+  });
+
   // These blocks are creative utility blocks, so they do not require a tech
   // node before appearing in the Production build category.
   api.player.buildings.unlockByType(SOURCE_ID);
   api.player.buildings.unlockByType(TRASH_ID);
+  api.player.buildings.unlockByType(THERMAL_SOURCE_ID);
+  registerThermalSourceTick();
 
   api.triggers.register(`${MOD_ID}:source-tick`, {
     interval: SOURCE_BRUSH_INTERVAL_MS,
