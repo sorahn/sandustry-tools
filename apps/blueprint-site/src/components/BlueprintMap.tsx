@@ -4,14 +4,12 @@ import {
   isFoundationStructure,
   renderPixelScale,
   renderBlueprintToSvg,
-  renderSvgToPng,
   tileColor,
   NATIVE_PIXELS_PER_CELL,
 } from "@sandustry/blueprint-core";
-import { type Blueprint } from "../utils/blueprint";
+import { encodeBlueprint, type Blueprint } from "../utils/blueprint";
 import { blueprintCatalog } from "../utils/catalog";
 import { debugComponent } from "./DebugComponentWrapper";
-import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
 import { MapDebugOptions } from "./MapDebugOptions";
 import { BlueprintMapSidebar } from "./BlueprintMapSidebar";
 import { BlueprintMapStructure } from "./BlueprintMapStructure";
@@ -406,31 +404,29 @@ export function BlueprintMap({
     });
   };
   const exportPng = async () => {
-    const source = svgRef.current;
-    if (!source) return;
-    const rendered = renderBlueprintToSvg(blueprint, {
-      catalog: blueprintCatalog(),
-      padding,
-      cell,
-      assetBaseUrl: import.meta.env.BASE_URL,
-      includeBackground: showPngBackground,
-      showGrid,
-      showFoundationOutlines: true,
-      showSignalLinks: true,
+    const worker = new Worker(new URL("../blueprint-worker.ts", import.meta.url), {
+      type: "module",
     });
-    const exportScale = 1 / renderPixelScale(cell);
-    const png = await renderSvgToPng(rendered.svg, {
-      width,
-      height,
-      scale: exportScale,
-      title: blueprint.name,
-      includeBackground: showPngBackground,
-      resolveImage: createImageResolver(document.baseURI),
-      platform: createBrowserPngPlatform(),
-    });
-    const pngBuffer = new ArrayBuffer(png.byteLength);
-    new Uint8Array(pngBuffer).set(png);
-    const blob = new Blob([pngBuffer], { type: "image/png" });
+    const png = await new Promise<ArrayBuffer>((resolve, reject) => {
+      worker.onmessage = (
+        event: MessageEvent<{ type: string; png?: ArrayBuffer; message?: string }>,
+      ) => {
+        if (event.data.type === "result" && event.data.png) resolve(event.data.png);
+        else if (event.data.type === "error") reject(new Error(event.data.message));
+      };
+      worker.onerror = () => reject(new Error("Blueprint PNG worker stopped unexpectedly"));
+      worker.postMessage({
+        type: "render",
+        blueprint: encodeBlueprint(blueprint),
+        assetBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).href,
+        scale: 1 / renderPixelScale(cell),
+        includeBackground: showPngBackground,
+        showGrid,
+        showFoundationOutlines: true,
+        showSignalLinks: true,
+      });
+    }).finally(() => worker.terminate());
+    const blob = new Blob([png], { type: "image/png" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;

@@ -8,6 +8,11 @@ type WorkerRequest = {
   type: "render";
   blueprint: string;
   assetBaseUrl: string;
+  scale?: number;
+  includeBackground?: boolean;
+  showGrid?: boolean;
+  showFoundationOutlines?: boolean;
+  showSignalLinks?: boolean;
 };
 
 type WorkerResponse = { type: "result"; png: ArrayBuffer } | { type: "error"; message: string };
@@ -25,12 +30,12 @@ workerScope.onmessage = async ({ data }) => {
     const png = await renderBlueprintStringToPng(data.blueprint, {
       catalog: blueprintCatalog(),
       assetBaseUrl: data.assetBaseUrl,
-      scale: 1,
+      scale: data.scale ?? 1,
       platform,
-      includeBackground: true,
-      showGrid: true,
-      showFoundationOutlines: true,
-      showSignalLinks: true,
+      includeBackground: data.includeBackground ?? true,
+      showGrid: data.showGrid ?? true,
+      showFoundationOutlines: data.showFoundationOutlines ?? true,
+      showSignalLinks: data.showSignalLinks ?? true,
       resolveImage: createImageResolver(data.assetBaseUrl),
     });
     const buffer = new ArrayBuffer(png.byteLength);

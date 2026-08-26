@@ -64,36 +64,36 @@ function CorePngFixture({
         blueprint: encoded,
         assetBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).href,
       });
-    }
-    void renderBlueprintStringToPng(encoded, {
-      catalog: blueprintCatalog(),
-      assetBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).href,
-      scale: 1,
-      includeBackground: true,
-      showGrid: true,
-      showFoundationOutlines: true,
-      showSignalLinks: true,
-      resolveImage: createImageResolver(
-        new URL(import.meta.env.BASE_URL, window.location.origin).href,
-      ),
-      platform: createBrowserPngPlatform(),
-    })
-      .then((png) => {
-        if (cancelled) return;
-        const buffer = new ArrayBuffer(png.byteLength);
-        new Uint8Array(buffer).set(png);
-        setImageUrl((previous) => {
-          if (previous) URL.revokeObjectURL(previous);
-          return URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
-        });
+    } else
+      void renderBlueprintStringToPng(encoded, {
+        catalog: blueprintCatalog(),
+        assetBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).href,
+        scale: 1,
+        includeBackground: true,
+        showGrid: true,
+        showFoundationOutlines: true,
+        showSignalLinks: true,
+        resolveImage: createImageResolver(
+          new URL(import.meta.env.BASE_URL, window.location.origin).href,
+        ),
+        platform: createBrowserPngPlatform(),
       })
-      .catch((renderError: unknown) => {
-        if (!cancelled) {
-          setError(
-            renderError instanceof Error ? renderError.message : "Unable to render blueprint PNG",
-          );
-        }
-      });
+        .then((png) => {
+          if (cancelled) return;
+          const buffer = new ArrayBuffer(png.byteLength);
+          new Uint8Array(buffer).set(png);
+          setImageUrl((previous) => {
+            if (previous) URL.revokeObjectURL(previous);
+            return URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
+          });
+        })
+        .catch((renderError: unknown) => {
+          if (!cancelled) {
+            setError(
+              renderError instanceof Error ? renderError.message : "Unable to render blueprint PNG",
+            );
+          }
+        });
     return () => {
       cancelled = true;
       worker?.terminate();
