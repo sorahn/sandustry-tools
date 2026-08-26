@@ -136,13 +136,14 @@ function formatChangenote(value) {
   return String(value)
     .replace(/\r\n?/g, "\n")
     .split("\n")
-    .map((line) => line.trim().replace(/^[-*]\s+/, ""))
+    .map((line) => line.trim())
     .filter(Boolean)
-    .join(" · ");
+    .map((line) => line.replace(/^[-*]\s+/, "• "))
+    .join("\n\n");
 }
 
 function escapeVdf(value) {
-  return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("\n", "\\n");
+  return String(value).replaceAll("\r\n", "\n").replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 }
 
 function readVdfValue(path, key) {
