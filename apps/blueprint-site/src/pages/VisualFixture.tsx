@@ -52,11 +52,10 @@ function CorePngFixture({
     if (worker) {
       worker.onmessage = (event: MessageEvent<{ type: string; png?: ArrayBuffer }>) => {
         if (cancelled || event.data.type !== "result" || !event.data.png) return;
-        const buffer = new ArrayBuffer(event.data.png.byteLength);
-        new Uint8Array(buffer).set(new Uint8Array(event.data.png));
+        const png = event.data.png;
         setImageUrl((previous) => {
           if (previous) URL.revokeObjectURL(previous);
-          return URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
+          return URL.createObjectURL(new Blob([png], { type: "image/png" }));
         });
       };
       worker.postMessage({
@@ -80,11 +79,11 @@ function CorePngFixture({
       })
         .then((png) => {
           if (cancelled) return;
-          const buffer = new ArrayBuffer(png.byteLength);
-          new Uint8Array(buffer).set(png);
           setImageUrl((previous) => {
             if (previous) URL.revokeObjectURL(previous);
-            return URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
+            return URL.createObjectURL(
+              new Blob([png as unknown as BlobPart], { type: "image/png" }),
+            );
           });
         })
         .catch((renderError: unknown) => {

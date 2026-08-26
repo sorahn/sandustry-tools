@@ -38,8 +38,7 @@ workerScope.onmessage = async ({ data }) => {
       showSignalLinks: data.showSignalLinks ?? true,
       resolveImage: createImageResolver(data.assetBaseUrl),
     });
-    const buffer = new ArrayBuffer(png.byteLength);
-    new Uint8Array(buffer).set(png);
+    const buffer = png.buffer as ArrayBuffer;
     workerScope.postMessage({ type: "result", png: buffer }, [buffer]);
   } catch (error) {
     workerScope.postMessage({
