@@ -50,6 +50,12 @@ updates that item; otherwise it creates a new item and records the ID SteamCMD
 writes back to the temporary VDF. Set `STEAMCMD=/path/to/steamcmd`,
 `STEAM_ACCOUNT=<account>`, or `CHANGE_NOTE="..."` to override the defaults.
 
+Each mod may keep player-facing Workshop notes in `mods/<name>/CHANGELOG.md`.
+Publishing uses the section headed with the manifest version, for example
+`## 0.1.4`, as the Workshop changenote. `CHANGE_NOTE` still overrides the file
+for one-off releases. If the file or matching version is absent, publishing
+uses the generic update message and prints a warning for a missing entry.
+
 For development, watch one mod and keep its installed copy up to date with:
 
 ```sh

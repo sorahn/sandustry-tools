@@ -66,7 +66,7 @@ version:
 	@if [ "$(word 2,$(MAKECMDGOALS))" != "major" ] && [ "$(word 2,$(MAKECMDGOALS))" != "minor" ] && [ "$(word 2,$(MAKECMDGOALS))" != "patch" ]; then echo "Usage: make version major|minor|patch" >&2; exit 2; fi
 	@node "$(REPO_ROOT)/scripts/bump-version.mjs" "$(MANIFEST)" "$(word 2,$(MAKECMDGOALS))"
 	@git add -- "$(MANIFEST)"
-	@git commit -m "version incremented: v$$(node -p 'require("$(MANIFEST)").version')" -- "$(MANIFEST)"
+	@git commit -m "version incremented: $(MOD_NAME) v$$(node -p 'require("$(MANIFEST)").version')" -- "$(MANIFEST)"
 	@$(MAKE) install
 major minor patch:
 	@:

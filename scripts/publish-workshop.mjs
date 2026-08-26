@@ -35,7 +35,7 @@ if (!existsSync(contentDir)) {
 const appId = process.env.STEAM_APP_ID ?? "2764460";
 const steamcmd = process.env.STEAMCMD ?? "steamcmd";
 const steamAccount = process.env.STEAM_ACCOUNT ?? findSteamAccount();
-const changenote = process.env.CHANGE_NOTE ?? `Update ${manifest.name} to v${manifest.version}`;
+const changenote = process.env.CHANGE_NOTE ?? readChangelogNote(modDir, manifest);
 const previewPath = join(modDir, "preview.png");
 const tempDir = mkdtempSync(join(tmpdir(), "sandustry-workshop-"));
 const vdfPath = join(tempDir, "workshop-item.vdf");
@@ -110,6 +110,23 @@ function readJson(path) {
     console.error(`Could not read ${path}: ${error.message}`);
     process.exit(1);
   }
+}
+
+function readChangelogNote(modDir, manifest) {
+  const changelogPath = join(modDir, "CHANGELOG.md");
+  if (!existsSync(changelogPath)) return `Update ${manifest.name} to v${manifest.version}`;
+  const changelog = readFileSync(changelogPath, "utf8");
+  const escapedVersion = manifest.version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const heading = changelog.match(new RegExp(`^##\\s+v?${escapedVersion}\\s*$`, "mi"));
+  const sectionStart = heading ? (heading.index ?? 0) + heading[0].length : -1;
+  const remainder = sectionStart < 0 ? "" : changelog.slice(sectionStart);
+  const nextHeading = remainder.search(/^##\\s+/m);
+  const note = remainder.slice(0, nextHeading < 0 ? remainder.length : nextHeading).trim();
+  if (note) return note;
+  console.warn(
+    `No CHANGELOG.md entry for ${manifest.name} v${manifest.version}; using default note.`,
+  );
+  return `Update ${manifest.name} to v${manifest.version}`;
 }
 
 function escapeVdf(value) {
