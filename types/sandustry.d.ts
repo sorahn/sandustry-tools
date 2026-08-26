@@ -94,14 +94,20 @@ interface SandustryStructureRender {
 
 interface SandustryStructureDefinition {
   id: string;
+  blockGridType?: string | number;
   nameKey?: string;
   descriptionKey?: string;
   categoryKey?: string;
   order?: number;
+  alwaysUnlocked?: boolean;
+  unlockedBy?: string | number;
+  rejectWhenBlocked?: boolean;
   buildModes?: SandustryStructureBuildMode[];
   shape?: number[][];
   variants?: SandustryStructureVariant[];
   render?: SandustryStructureRender;
+  defaultData?: SandustryStructureData;
+  draw?: (...args: unknown[]) => unknown;
 }
 
 interface SandustryInputBindingHandlers {
@@ -206,9 +212,40 @@ interface SandustryInternalPrefabulatorApi {
 
 interface SandustryEngineApi {
   [namespace: string]: unknown;
+  /** Observed engine escape hatch used by the native debug brush path. */
+  world?: SandustryInternalWorldApi;
+  /** Observed engine escape hatch used by the native debug brush path. */
+  elements?: SandustryInternalElementsApi;
   blueprints?: SandustryInternalBlueprintApi;
   clipboard?: SandustryInternalClipboardApi;
   prefabulator?: SandustryInternalPrefabulatorApi;
+}
+
+/** Observed on the running bundle; not a supported public mod API. */
+interface SandustryInternalWorldApi {
+  runWhenSimulationIdle(state: SandustryEngineState, callback: () => void): void;
+}
+
+/** Observed on the running bundle; not a supported public mod API. */
+interface SandustryInternalElementsApi {
+  createAt(
+    state: SandustryEngineState,
+    x: number,
+    y: number,
+    type: number,
+    options?: Record<string, unknown>,
+  ): void;
+}
+
+interface SandustryRandom {
+  int(min: number, max: number): number;
+  float(min: number, max: number): number;
+}
+
+interface SandustryStructureProcessor {
+  getElementTypeAtCell(x: number, y: number): number | null;
+  isCellEmpty(x: number, y: number): boolean;
+  commit(mutations: Array<Record<string, unknown>>): boolean;
 }
 
 interface SandustryPropagationOptions {
@@ -216,6 +253,7 @@ interface SandustryPropagationOptions {
 }
 
 interface SandustryApi {
+  random: SandustryRandom;
   elements: {
     getDefinitionByType(type: number | null | undefined): SandustryElementDefinition | null;
     getRegisteredTypes(): number[];
@@ -322,6 +360,13 @@ interface SandustryApi {
   structures: {
     forEachOfType(id: string, callback: (structure: SandustryStructure) => void): void;
     register(definition: SandustryStructureDefinition): void;
+    addProcessor(
+      structureId: string | number,
+      definition: {
+        intervalMs: number;
+        process: (structure: SandustryStructure, processor: SandustryStructureProcessor) => void;
+      },
+    ): void;
     buildAtCellWhenIdle?(
       x: number,
       y: number,

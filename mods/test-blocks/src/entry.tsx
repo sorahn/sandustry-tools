@@ -22,13 +22,15 @@ import { matterTabClass } from "./ui/picker/styles";
 import type { PickerElement, PickerRuntimeState } from "./ui/picker/pickerTypes";
 
 const api = sandkit.api;
+const engine = sandkit.engine;
 const MOD_ID = "sorahn.sandustry-test-blocks";
 
 const SOURCE_ID = "sandustryTestBlocksSource";
 const TRASH_ID = "sandustryTestBlocksTrash";
 const SOURCE_SPRITE = "sandustryTestBlocksSourceSprite";
 const TRASH_SPRITE = "sandustryTestBlocksTrashSprite";
-const TICK_MS = 500;
+const SOURCE_TICK_MS = 500;
+const TRASH_PROCESS_INTERVAL_MS = 50;
 const DEFAULT_ELEMENT_ID = "sand";
 const LAST_ELEMENT_KEY = `${MOD_ID}.lastElement`;
 // Add unfinished or unwanted element IDs here. The picker, manual fallback,
@@ -54,6 +56,7 @@ const BLACKLISTED_ELEMENT_IDS = new Set([
 // Type 2 is the element reported as [NO KEY]/[NO NAME].
 const BLACKLISTED_ELEMENT_TYPES = new Set([2]);
 const SIZE = 4;
+const SOURCE_BRUSH_INTERVAL_MS = SOURCE_TICK_MS / (SIZE * SIZE);
 const FOOTPRINT = [
   [0, 0, 0, 0],
   [0, 0, 0, 0],
@@ -89,6 +92,8 @@ const configuredSources = new Set<string>();
 const sourceSelections = new Map<string, ElementSelection>();
 const configuringSources = new Set<string>();
 const disabledSources = new Set<string>();
+const sourceBrushCursors = new Map<string, number>();
+const sourceBrushOrders = new Map<string, number[]>();
 const PICKER_ID = `${MOD_ID}-element-picker`;
 let pickerState: PickerRuntimeState | null = null;
 let pickerOverlayReady = false;
@@ -733,18 +738,7 @@ const sourceTick = () => {
     const elementType = sourceSelections.get(key)?.type ?? elementTypeFromSource(structure);
     if (typeof elementType !== "number") return;
 
-    // The structure has an all-zero shape, so it is a non-blocking overlay.
-    // Create elements in its footprint and let the normal simulation move them.
-    // Occupied cells are left alone and retried on later trigger ticks.
-    for (let y = 0; y < SIZE; y++) {
-      for (let x = 0; x < SIZE; x++) {
-        const outputX = structure.x + x;
-        const cellY = structure.y + y;
-        if (api.world.isCellEmptyAtCell(outputX, cellY)) {
-          api.elements.createAtCellWhenIdle(outputX, cellY, elementType);
-        }
-      }
-    }
+    spawnSourceBrush(structure, elementType);
   });
 
   for (const key of configuredSources) {
@@ -752,16 +746,77 @@ const sourceTick = () => {
       configuredSources.delete(key);
       sourceSelections.delete(key);
       disabledSources.delete(key);
+      sourceBrushCursors.delete(key);
+      sourceBrushOrders.delete(key);
     }
   }
 };
 
-const trashTick = () => {
-  api.structures.forEachOfType(TRASH_ID, (structure) => {
-    api.grid.forEachCellInRect(structure.x, structure.y, SIZE, SIZE, (cellX, cellY) => {
-      const info = api.elements.getInfoAtCell(cellX, cellY);
-      if (info) api.elements.removeAtCellWhenIdle(cellX, cellY);
-    });
+const spawnSourceBrush = (structure: SandustryStructure, elementType: number) => {
+  const nativeWorld = engine.api.world;
+  const nativeElements = engine.api.elements;
+  const state = engine.state;
+  const key = sourceKey(structure);
+  const cursor = sourceBrushCursors.get(key) ?? 0;
+  let order = sourceBrushOrders.get(key);
+  if (!order || cursor === 0) {
+    order = Array.from({ length: SIZE * SIZE }, (_, index) => index);
+    for (let index = order.length - 1; index > 0; index -= 1) {
+      const swapIndex = api.random.int(0, index);
+      [order[index], order[swapIndex]] = [order[swapIndex], order[index]];
+    }
+    sourceBrushOrders.set(key, order);
+  }
+  const cell = order[cursor];
+  const cellX = structure.x + (cell % SIZE);
+  const cellY = structure.y + Math.floor(cell / SIZE);
+  sourceBrushCursors.set(key, (cursor + 1) % (SIZE * SIZE));
+
+  // The native debug brush uses the engine mutation inside its idle scheduler.
+  // The state argument is required; omitting it corrupts the scheduler call.
+  if (
+    typeof nativeWorld?.runWhenSimulationIdle === "function" &&
+    typeof nativeElements?.createAt === "function"
+  ) {
+    try {
+      nativeWorld.runWhenSimulationIdle(state, () => {
+        if (api.world.isCellEmptyAtCell(cellX, cellY)) {
+          nativeElements.createAt(state, cellX, cellY, elementType);
+        }
+      });
+      return;
+    } catch (error) {
+      console.warn("[test-blocks] native source brush unavailable; using public path", error);
+    }
+  }
+
+  // Older runtimes may not expose the engine brush helpers. The public helper
+  // performs the same idle-safe native mutation.
+  if (api.world.isCellEmptyAtCell(cellX, cellY)) {
+    api.elements.createAtCellWhenIdle(cellX, cellY, elementType);
+  }
+};
+
+const processTrash = (structure: SandustryStructure) => {
+  api.grid.forEachCellInRect(structure.x, structure.y, SIZE, SIZE, (cellX, cellY) => {
+    // The API helper performs the same empty-cell check as the native element
+    // removal path. Let it handle that work instead of reading each cell here
+    // before scheduling the removal.
+    api.elements.removeAtCellWhenIdle(cellX, cellY);
+  });
+};
+
+const registerTrashProcessor = () => {
+  const trashType = api.structures.getTypeFromId?.(TRASH_ID) ?? TRASH_ID;
+  api.structures.addProcessor(trashType, {
+    intervalMs: TRASH_PROCESS_INTERVAL_MS,
+    process: (structure) => {
+      try {
+        processTrash(structure);
+      } catch (error) {
+        console.error(`[${MOD_ID}] trash processor failed:`, error);
+      }
+    },
   });
 };
 
@@ -811,17 +866,20 @@ const setup = async () => {
   api.player.buildings.unlockByType(SOURCE_ID);
   api.player.buildings.unlockByType(TRASH_ID);
 
-  api.triggers.register(`${MOD_ID}:tick`, {
-    interval: TICK_MS,
+  api.triggers.register(`${MOD_ID}:source-tick`, {
+    interval: SOURCE_BRUSH_INTERVAL_MS,
     callback: () => {
       try {
         sourceTick();
-        trashTick();
       } catch (error) {
-        console.error(`[${MOD_ID}] tick failed:`, error);
+        console.error(`[${MOD_ID}] source tick failed:`, error);
       }
     },
   });
+  // Register immediately after the structure exists. The runtime's processor
+  // registry indexes current structures when ready and listens for game:ready
+  // when this mod is loaded before the save is restored.
+  registerTrashProcessor();
 };
 
 try {
