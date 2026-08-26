@@ -4,6 +4,7 @@ REPO_ROOT ?= $(abspath $(MOD_DIR)/../..)
 SRC_DIR := $(MOD_DIR)/src
 BUILD_DIR := $(MOD_DIR)/build
 MANIFEST := $(MOD_DIR)/modinfo.json
+VERSION_FILES := $(MANIFEST) $(wildcard $(MOD_DIR)/CHANGELOG.md)
 PATCHES := $(MOD_DIR)/patches.json
 MOD_ID := $(shell node -p 'require("$(MANIFEST)").id')
 MOD_NAME := $(shell node -p 'require("$(MANIFEST)").name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$$/g,"")')
@@ -65,8 +66,8 @@ format:
 version:
 	@if [ "$(word 2,$(MAKECMDGOALS))" != "major" ] && [ "$(word 2,$(MAKECMDGOALS))" != "minor" ] && [ "$(word 2,$(MAKECMDGOALS))" != "patch" ]; then echo "Usage: make version major|minor|patch" >&2; exit 2; fi
 	@node "$(REPO_ROOT)/scripts/bump-version.mjs" "$(MANIFEST)" "$(word 2,$(MAKECMDGOALS))"
-	@git add -- "$(MANIFEST)"
-	@git commit -m "version incremented: $(MOD_NAME) v$$(node -p 'require("$(MANIFEST)").version')" -- "$(MANIFEST)"
+	@git add -- $(VERSION_FILES)
+	@git commit -m "version incremented: $(MOD_NAME) v$$(node -p 'require("$(MANIFEST)").version')" -- $(VERSION_FILES)
 	@$(MAKE) install
 major minor patch:
 	@:
