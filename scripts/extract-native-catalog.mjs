@@ -4,12 +4,12 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { extractFile, listPackage } from "@electron/asar";
 import { assertCatalogInvariants } from "./catalog-invariants.mjs";
+import { resolveSandustryAsar } from "./dev/sandustry-paths.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const asarPath =
-  process.env.SANDUSTRY_ASAR ??
-  "/Users/daryl/Library/Application Support/Steam/steamapps/common/Sandustry/Sandustry.app/Contents/Resources/app.asar";
+const asarPath = process.env.SANDUSTRY_ASAR ?? resolveSandustryAsar();
 const f8Path = path.join(root, "resources/f8-results.json");
 const menuPath = path.join(root, "resources/building-menu.html");
 const catalogPath = path.join(root, "apps/blueprint-site/src/structure-catalog.json");
@@ -292,34 +292,6 @@ const assetPresentationOverrides = new Map([
 const bottomAnchoredTypes = new Set([20]);
 const cellScaledTypes = new Set([20]);
 
-function readAsarHeader(buffer) {
-  if (buffer.length < 8) throw new Error("ASAR is too small to contain a header");
-  const jsonSize = buffer.length >= 12 ? buffer.readUInt32LE(8) : buffer.readUInt32LE(4);
-  const jsonStart = buffer.length >= 12 ? 16 : 8;
-  const jsonEnd = jsonStart + jsonSize;
-  try {
-    const json = buffer.subarray(jsonStart, jsonEnd).toString("utf8").replace(/\0.*$/s, "");
-    return { header: JSON.parse(json), dataStart: 8 + buffer.readUInt32LE(4) };
-  } catch {
-    const headerSize = buffer.readUInt32LE(4);
-    const alternateStart = 8;
-    const alternateEnd = alternateStart + headerSize;
-    return {
-      header: JSON.parse(buffer.subarray(alternateStart, alternateEnd).toString("utf8")),
-      dataStart: alternateEnd,
-    };
-  }
-}
-
-function flattenFiles(node, prefix = "", output = new Map()) {
-  for (const [name, value] of Object.entries(node.files ?? {})) {
-    const relative = prefix ? `${prefix}/${name}` : name;
-    if (value.files) flattenFiles(value, relative, output);
-    else output.set(relative, value);
-  }
-  return output;
-}
-
 function safeAssetName(relative) {
   return relative.replace(/^dist\//, "").replaceAll("/", "__");
 }
@@ -369,9 +341,7 @@ if (!fs.existsSync(asarPath)) {
 }
 if (!fs.existsSync(f8Path)) throw new Error(`F8 catalog not found: ${f8Path}`);
 
-const archive = fs.readFileSync(asarPath);
-const { header, dataStart } = readAsarHeader(archive);
-const files = flattenFiles(header);
+const files = new Set(listPackage(asarPath).map((value) => value.replace(/^\/+/, "")));
 const blueprintCatalog = JSON.parse(fs.readFileSync(f8Path, "utf8"));
 const menuAssets = capturedMenuAssets();
 const requested = [...files.keys()].filter(
@@ -383,16 +353,13 @@ const assets = [];
 fs.mkdirSync(assetRoot, { recursive: true });
 
 for (const relative of requested) {
-  const record = files.get(relative);
-  if (!record || typeof record.offset !== "string" || typeof record.size !== "number") continue;
-  const start = dataStart + Number(record.offset);
   const outputName = safeAssetName(relative);
-  const contents = archive.subarray(start, start + record.size);
+  const contents = extractFile(asarPath, relative);
   fs.writeFileSync(path.join(assetRoot, outputName), contents);
   assets.push({
     source: relative,
     file: `catalog/${outputName}`,
-    bytes: record.size,
+    bytes: contents.length,
     size: imageSize(contents),
   });
 }

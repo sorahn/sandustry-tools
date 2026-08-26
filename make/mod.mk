@@ -4,6 +4,7 @@ REPO_ROOT ?= $(abspath $(MOD_DIR)/../..)
 SRC_DIR := $(MOD_DIR)/src
 BUILD_DIR := $(MOD_DIR)/build
 MANIFEST := $(MOD_DIR)/modinfo.json
+PATCHES := $(MOD_DIR)/patches.json
 MOD_ID := $(shell node -p 'require("$(MANIFEST)").id')
 MOD_NAME := $(shell node -p 'require("$(MANIFEST)").name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$$/g,"")')
 MOD_VERSION := $(shell node -p 'require("$(MANIFEST)").version')
@@ -25,11 +26,12 @@ $(BUILD_DIR)/entry.js: FORCE $(shell find $(SRC_DIR) -type f -print 2>/dev/null)
 	@cd "$(REPO_ROOT)" && npx tsc --noEmit
 	@if [ -n "$(MOD_ESBUILD_SCRIPT)" ]; then node "$(MOD_ESBUILD_SCRIPT)" "$(SRC_DIR)/entry.tsx" "$(BUILD_DIR)/entry.js"; else cd "$(REPO_ROOT)" && npx esbuild "$(SRC_DIR)/entry.tsx" --bundle --format=esm --platform=neutral --target=es2022 --drop:console --jsx-factory=sandkit.react.createElement --jsx-fragment=sandkit.react.Fragment --alias:~shared="$(REPO_ROOT)/shared" --outfile="$(BUILD_DIR)/entry.js"; fi
 
-$(ARCHIVE): $(BUILD_DIR)/entry.js $(MANIFEST) $(shell find $(MOD_DIR)/assets -type f -print 2>/dev/null) $(wildcard $(MOD_DIR)/preview.png)
+$(ARCHIVE): $(BUILD_DIR)/entry.js $(MANIFEST) $(wildcard $(PATCHES)) $(shell find $(MOD_DIR)/assets -type f -print 2>/dev/null) $(wildcard $(MOD_DIR)/preview.png)
 	@rm -rf "$(PACKAGE_DIR)"
 	@mkdir -p "$(PACKAGE_DIR)"
 	@cp "$(BUILD_DIR)/entry.js" "$(PACKAGE_DIR)/entry.js"
 	@cp "$(MANIFEST)" "$(PACKAGE_DIR)/modinfo.json"
+	@if [ -f "$(PATCHES)" ]; then node "$(REPO_ROOT)/scripts/validate-patches.mjs" "$(PATCHES)"; cp "$(PATCHES)" "$(PACKAGE_DIR)/patches.json"; fi
 	@if [ -d "$(MOD_DIR)/assets" ]; then mkdir -p "$(PACKAGE_DIR)/assets"; cp -R "$(MOD_DIR)/assets/." "$(PACKAGE_DIR)/assets/"; fi
 	@if [ -f "$(MOD_DIR)/preview.png" ]; then cp "$(MOD_DIR)/preview.png" "$(PACKAGE_DIR)/preview.png"; fi
 	@mkdir -p "$(ARTIFACTS_DIR)"
@@ -52,6 +54,7 @@ publish:
 check: $(ARCHIVE)
 	@cd "$(REPO_ROOT)" && npx tsc --noEmit
 	@node --check "$(BUILD_DIR)/entry.js"
+	@if [ -f "$(PATCHES)" ]; then node "$(REPO_ROOT)/scripts/validate-patches.mjs" "$(PATCHES)"; fi
 	@cd "$(REPO_ROOT)" && npx oxlint "$(SRC_DIR)"
 	@cd "$(REPO_ROOT)" && npx oxfmt --check "$(SRC_DIR)" "$(MANIFEST)"
 	@node "$(REPO_ROOT)/scripts/validate-mod.mjs" "$(MOD_DIR)" "$(ARCHIVE)"

@@ -8,15 +8,19 @@ the game's private React implementation.
 
 - **DOM** — directly visible in `resources/filter-html.html`.
 - **Bundle** — component names, labels, Tailwind class strings, or interaction
-  hooks found in `resources/bundle.js`.
+  hooks found in a captured or freshly extracted Sandustry renderer bundle.
 - **Surface map** — API/documentation evidence in
   `resources/sandkit-surface-map/` and the repository's exploration notes.
 - **Inferred** — a reusable component hypothesis based on the evidence above;
   it needs a future DOM capture before being treated as visually authoritative.
 
 The bundle is minified and contains both game UI and renderer/debug tooling.
-Where there is no captured DOM, this catalog records the likely purpose rather
-than claiming an exact visual implementation.
+For current investigations, run the native catalog extractor; it resolves the
+installed game's `app.asar` and extracts the renderer bundle with
+`@electron/asar`. The checked-in references below are historical captures and
+are not required for extraction. Where there is no captured DOM, this catalog
+records the likely purpose rather than claiming an exact visual
+implementation.
 
 ## Visual foundation
 
@@ -228,8 +232,10 @@ The highest-value captures would be:
 ## Sources inspected
 
 - `resources/filter-html.html` — direct DOM snapshot of filter and hotbar UI.
-- `resources/bundle.js` — minified production bundle with UI strings, Tailwind
-  class names, overlay names, and interaction identifiers.
+- `scripts/extract-native-catalog.mjs` — extracts the current renderer bundle
+  from the installed `app.asar` with `@electron/asar`.
+- `resources/bundle.js` — historical minified production-bundle capture with UI
+  strings, Tailwind class names, overlay names, and interaction identifiers.
 - `resources/sandustry-mod-settings-guide.md` — settings tab and schema
   behavior inferred from the bundle.
 - `resources/sandkit-surface-map/` — exposed UI/overlay/toast/tooltip surface

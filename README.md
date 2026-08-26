@@ -64,13 +64,20 @@ process launched by that dev session. A pre-existing game process is not taken
 over automatically.
 
 The watcher rebuilds on changes under the selected mod's `src/` and `assets/`
-directories, reusable `shared/` code, and changes to its manifest, preview, or
-root TypeScript configuration. Steam-managed `workshop.json` exists only in the
-installed mod directory and is deliberately preserved there, not copied from
-source. Its `publishedFileId` is backed up in the tracked root-level
-`workshop-published-ids.json` file.
+directories, reusable `shared/` code, and changes to its manifest, optional
+`patches.json`, preview, or root TypeScript configuration. Press `r` in the
+watcher's terminal to restart the game owned by that session. Steam-managed
+`workshop.json` exists only in the installed mod directory and is deliberately
+preserved there, not copied from source. Its `publishedFileId` is backed up in
+the tracked root-level `workshop-published-ids.json` file.
 Override the installed-mod destination with
 `SANDUSTRY_MODS_DIR=/path/to/sandustry/mods`.
+
+An optional `mods/<name>/patches.json` is packaged beside `entry.js` and
+validated before installation. Patches are restart-only because the game reads
+them before loading the renderer bundle. The watcher removes an installed mod
+directory on exit only when it created that directory for the current dev
+session; pre-existing installed mods are preserved.
 
 HMR is opt-in per mod. Add a local, un-packaged `mods/<name>/dev-reload.json`
 with `{ "mode": "hmr" }` only after the mod registers cleanup for every UI,
@@ -90,7 +97,11 @@ ports, attaches both debuggers, and loads the configured save directly through
 The dot files contain only the save ID as plain text. Leave a file empty or
 omit it to continue to the next fallback. For one-off overrides, the watcher
 still accepts `--save <id>`. The debug compound takes over the existing game
-explicitly.
+explicitly. The watcher discovers Sandustry through `SANDUSTRY`,
+`SANDUSTRY_INSTALL`, or Steam library folders and `libraryfolders.vdf`.
+`SANDUSTRY_RESOURCES` and `SANDUSTRY_ASAR` override the resource archive used
+by native catalog extraction. The catalog extractor uses `@electron/asar` and
+does not require a checked-in game bundle.
 
 The dev runner starts Sandustry when it is not already running and owns that
 process. For an already-running game, use `make dev MOD=test-blocks TAKEOVER=1`

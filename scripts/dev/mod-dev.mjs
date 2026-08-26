@@ -8,13 +8,23 @@
  */
 import { build } from "esbuild";
 import { createServer } from "node:http";
+import { createConnection } from "node:net";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { gzipSync } from "node:zlib";
 import { cp, mkdir, rm } from "node:fs/promises";
-import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveSandustryBinary, sandustryModsDir } from "./sandustry-paths.mjs";
+import { validatePatches } from "../validate-patches.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const MODS_ROOT = join(ROOT, "mods");
@@ -79,8 +89,9 @@ if (entry !== "entry.js") {
 }
 if (!existsSync(sourcePath)) fail(`missing ${relative(ROOT, sourcePath)}`);
 
-const installRoot = process.env.SANDUSTRY_MODS_DIR || defaultModsDirectory();
+const installRoot = sandustryModsDir();
 const installDir = join(installRoot, modId);
+const devOwnerPath = join(installDir, ".sandustry-dev-owner.json");
 let building = false;
 let buildQueued = false;
 let buildTimer = null;
@@ -92,13 +103,16 @@ let gameChild = null;
 let gameRestartTimer = null;
 let gameRestarting = false;
 let gameOwned = false;
-const gameBinary = resolveGameBinary();
+let terminalInputHandler = null;
+let devOwnsInstallDir = false;
+const gameBinary = resolveSandustryBinary();
 
 console.log(`dev mod: ${modId}`);
 console.log(`source: ${relative(ROOT, modDir)}`);
 console.log(`install: ${installDir}`);
 
 startHotReloadServer();
+prepareDevInstallOwnership();
 await buildAndInstall("initial build");
 if (once) {
   shutdown();
@@ -108,8 +122,9 @@ if (once) {
 await ensureGame();
 
 startPolling();
+startTerminalControls();
 
-console.log(`watching ${relative(ROOT, modDir)} (Ctrl+C to stop)`);
+console.log(`watching ${relative(ROOT, modDir)} (r to restart game, Ctrl+C to stop)`);
 
 process.once("SIGINT", shutdown);
 process.once("SIGTERM", shutdown);
@@ -157,40 +172,6 @@ function readSaveFile(path) {
 function requiredString(value, label) {
   if (typeof value !== "string" || value.length === 0) fail(`${label} must be a non-empty string`);
   return value;
-}
-
-function defaultModsDirectory() {
-  if (process.platform === "win32") {
-    const appData = process.env.APPDATA;
-    if (appData) return join(appData, "sandustry", "mods");
-    return join(homedir(), "AppData", "Roaming", "sandustry", "mods");
-  }
-  if (process.platform === "darwin")
-    return join(homedir(), "Library", "Application Support", "sandustry", "mods");
-  return join(homedir(), ".config", "sandustry", "mods");
-}
-
-function resolveGameBinary() {
-  if (process.env.SANDUSTRY?.trim()) return process.env.SANDUSTRY.trim();
-  if (process.platform === "darwin") {
-    return join(
-      homedir(),
-      "Library",
-      "Application Support",
-      "Steam",
-      "steamapps",
-      "common",
-      "Sandustry",
-      "Sandustry.app",
-      "Contents",
-      "MacOS",
-      "Sandustry",
-    );
-  }
-  if (process.platform === "win32") {
-    return join(homedir(), "AppData", "Local", "Programs", "Sandustry", "Sandustry.exe");
-  }
-  return join(homedir(), ".steam", "steam", "steamapps", "common", "Sandustry", "sandustry");
 }
 
 function gamePids() {
@@ -265,7 +246,33 @@ async function launchGame() {
     gameChild = null;
     gameOwned = false;
   });
+  if (debug) {
+    const ready = await Promise.all([waitForPort(9222), waitForPort(9230)]);
+    if (ready.every(Boolean)) console.log("Sandustry debug ports ready");
+    else console.warn("Sandustry launched, but one or more debug ports did not open");
+  }
   console.log(`Launched Sandustry (pid ${gameChild.pid ?? "?"})`);
+}
+
+function waitForPort(port, timeoutMs = 60000) {
+  return new Promise((resolveReady) => {
+    const deadline = Date.now() + timeoutMs;
+    const probe = () => {
+      const socket = createConnection({ host: "127.0.0.1", port });
+      let settled = false;
+      const finish = (ready) => {
+        if (settled) return;
+        settled = true;
+        socket.destroy();
+        if (ready || Date.now() >= deadline) resolveReady(ready);
+        else setTimeout(probe, 100);
+      };
+      socket.once("connect", () => finish(true));
+      socket.once("error", () => finish(false));
+      socket.setTimeout(500, () => finish(false));
+    };
+    probe();
+  });
 }
 
 async function stopGame(pids = gamePids()) {
@@ -326,6 +333,29 @@ async function restartGame(reason) {
     await launchGame();
   } finally {
     gameRestarting = false;
+  }
+}
+
+function startTerminalControls() {
+  if (!process.stdin.isTTY || typeof process.stdin.setRawMode !== "function") return;
+
+  terminalInputHandler = (chunk) => {
+    for (const character of chunk.toString("utf8")) {
+      if (character === "\u0003") {
+        shutdown();
+        return;
+      }
+      if (character === "r" || character === "R") scheduleGameRestart("terminal command");
+    }
+  };
+
+  try {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.on("data", terminalInputHandler);
+  } catch (error) {
+    terminalInputHandler = null;
+    console.warn(`terminal controls unavailable: ${error.message}`);
   }
 }
 
@@ -409,9 +439,19 @@ function reloadMode() {
 
 async function installPackage() {
   captureInstalledWorkshopId();
+  await rm(packageDir, { recursive: true, force: true });
   await mkdir(packageDir, { recursive: true });
   await cp(devEntryPath, join(packageDir, "entry.js"));
   await cp(manifestPath, join(packageDir, "modinfo.json"));
+
+  const patchesPath = join(modDir, "patches.json");
+  const packagedPatchesPath = join(packageDir, "patches.json");
+  if (existsSync(patchesPath)) {
+    validatePatches(JSON.parse(readFileSync(patchesPath, "utf8")), patchesPath);
+    await cp(patchesPath, packagedPatchesPath);
+  } else {
+    rmSync(packagedPatchesPath, { force: true });
+  }
 
   for (const name of ["assets", "preview.png"]) {
     const source = join(modDir, name);
@@ -423,6 +463,24 @@ async function installPackage() {
 
   await mkdir(installDir, { recursive: true });
   await cp(packageDir, installDir, { recursive: true, force: true });
+}
+
+function prepareDevInstallOwnership() {
+  if (existsSync(devOwnerPath)) {
+    try {
+      const owner = JSON.parse(readFileSync(devOwnerPath, "utf8"));
+      if (owner?.modId === modId && owner?.repoRoot === ROOT) {
+        rmSync(installDir, { recursive: true, force: true });
+      }
+    } catch {
+      // An unreadable marker is not enough authority to remove the directory.
+    }
+  }
+
+  if (existsSync(installDir)) return;
+  mkdirSync(installDir, { recursive: true });
+  writeFileSync(devOwnerPath, `${JSON.stringify({ modId, repoRoot: ROOT }, null, 2)}\n`);
+  devOwnsInstallDir = true;
 }
 
 function captureInstalledWorkshopId() {
@@ -467,6 +525,7 @@ function snapshotWatchedFiles() {
   }
   for (const path of [
     manifestPath,
+    join(modDir, "patches.json"),
     reloadConfigPath,
     modSavePath,
     DEFAULT_SAVE_PATH,
@@ -524,11 +583,32 @@ function shutdown() {
   if (buildTimer) clearTimeout(buildTimer);
   if (pollTimer) clearInterval(pollTimer);
   if (gameRestartTimer) clearTimeout(gameRestartTimer);
+  if (terminalInputHandler) {
+    process.stdin.off("data", terminalInputHandler);
+    try {
+      process.stdin.setRawMode(false);
+    } catch {
+      // The terminal may already be closed.
+    }
+    process.stdin.pause();
+    terminalInputHandler = null;
+  }
   for (const response of hotReloadClients) response.end();
   hotReloadClients.clear();
   hotReloadServer?.close();
-  if (gameOwned && gameChild?.pid) void stopGame([gameChild.pid]);
+  const ownedGamePid = gameOwned ? gameChild?.pid : null;
+  if (ownedGamePid) {
+    void stopGame([ownedGamePid]).finally(removeOwnedInstallDir);
+  } else {
+    removeOwnedInstallDir();
+  }
   console.log("dev watcher stopped");
+}
+
+function removeOwnedInstallDir() {
+  if (!devOwnsInstallDir) return;
+  rmSync(installDir, { recursive: true, force: true });
+  devOwnsInstallDir = false;
 }
 
 function startHotReloadServer() {

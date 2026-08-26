@@ -16,7 +16,13 @@
       ],
       "console": "integratedTerminal",
       "autoAttachChildProcesses": false,
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": ["<node_internals>/**"],
+      "serverReadyAction": {
+        "pattern": "Sandustry debug ports ready",
+        "action": "startDebugging",
+        "name": "Sandustry Renderer",
+        "killOnServerStop": true
+      }
     },
     {
       "name": "Sandustry Main",
@@ -50,7 +56,7 @@
   "compounds": [
     {
       "name": "Sandustry Dev",
-      "configurations": ["Sandustry Dev Watcher", "Sandustry Main", "Sandustry Renderer"],
+      "configurations": ["Sandustry Dev Watcher", "Sandustry Main"],
       "stopAll": true,
       "presentation": {
         "order": 1,
