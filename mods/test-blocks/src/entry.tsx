@@ -824,8 +824,8 @@ const setup = async () => {
   api.i18n.register("en", TEXT);
   registerPicker();
 
-  await api.sprites.loadFromMod(SOURCE_SPRITE, "assets/SourceBlock.png");
-  await api.sprites.loadFromMod(TRASH_SPRITE, "assets/Trash.png");
+  await api.sprites.loadFromMod(SOURCE_SPRITE, "assets/element-source.png");
+  await api.sprites.loadFromMod(TRASH_SPRITE, "assets/trash.png");
 
   const common = {
     categoryKey: "production",
