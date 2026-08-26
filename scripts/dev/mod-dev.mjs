@@ -36,6 +36,8 @@ const HMR_PORT = 19147;
 const HMR_PATH = "/hot-reload";
 const DEBOUNCE_MS = 100;
 const POLL_MS = 250;
+const devSessionId = `${process.pid}-${Date.now()}`;
+let gameLaunchNumber = 0;
 
 const gzipFontPlugin = {
   name: "sandustry-gzip-fonts",
@@ -110,6 +112,7 @@ const gameBinary = resolveSandustryBinary();
 console.log(`dev mod: ${modId}`);
 console.log(`source: ${relative(ROOT, modDir)}`);
 console.log(`install: ${installDir}`);
+if (initialSave) console.log(`save override: ${initialSave}`);
 
 startHotReloadServer();
 prepareDevInstallOwnership();
@@ -231,17 +234,27 @@ async function launchGame() {
     return;
   }
 
+  gameLaunchNumber += 1;
+  await refreshDevLaunchConfig();
+
   const gameArgs = ["--no-sandbox"];
   if (debug) gameArgs.push("--inspect=9230", "--remote-debugging-port=9222");
-  gameChild = spawn(gameBinary, gameArgs, {
+  const launchedChild = spawn(gameBinary, gameArgs, {
     cwd: dirname(gameBinary),
     detached: false,
     env: process.env,
     stdio: "ignore",
   });
+  gameChild = launchedChild;
   gameOwned = true;
-  gameChild.on("exit", (code, signal) => {
-    if (gameChild?.pid === undefined) return;
+  launchedChild.on("error", (error) => {
+    if (gameChild !== launchedChild) return;
+    console.error(`Sandustry failed to launch: ${error.message}`);
+    gameChild = null;
+    gameOwned = false;
+  });
+  launchedChild.on("exit", (code, signal) => {
+    if (gameChild !== launchedChild) return;
     console.log(`Sandustry exited (${signal ?? code ?? "unknown"})`);
     gameChild = null;
     gameOwned = false;
@@ -251,7 +264,27 @@ async function launchGame() {
     if (ready.every(Boolean)) console.log("Sandustry debug ports ready");
     else console.warn("Sandustry launched, but one or more debug ports did not open");
   }
-  console.log(`Launched Sandustry (pid ${gameChild.pid ?? "?"})`);
+  console.log(`Launched Sandustry (pid ${launchedChild.pid ?? "?"})`);
+}
+
+async function refreshDevLaunchConfig() {
+  if (!initialSave || !existsSync(devEntryPath)) return;
+
+  const entrySource = readFileSync(devEntryPath, "utf8");
+  const newline = entrySource.indexOf("\n");
+  if (newline < 0) return;
+
+  const configPrefix = "globalThis.__sandustryDevHmrConfig__ = ";
+  const firstLine = entrySource.slice(0, newline);
+  if (!firstLine.startsWith(configPrefix) || !firstLine.endsWith(";")) return;
+
+  const config = JSON.parse(firstLine.slice(configPrefix.length, -1));
+  config.devSessionId = `${devSessionId}-${gameLaunchNumber}`;
+  writeFileSync(
+    devEntryPath,
+    `${configPrefix}${JSON.stringify(config)};${entrySource.slice(newline)}`,
+  );
+  await installPackage();
 }
 
 function waitForPort(port, timeoutMs = 60000) {
@@ -402,8 +435,9 @@ async function buildAndInstall(reason) {
     const hmrConfig = {
       modId,
       url: `http://127.0.0.1:${HMR_PORT}${HMR_PATH}`,
-      autoContinue: debug,
+      autoContinue: debug && !initialSave,
       initialSave,
+      devSessionId: `${devSessionId}-${gameLaunchNumber}`,
     };
     writeFileSync(
       entryPath,

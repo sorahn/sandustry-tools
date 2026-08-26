@@ -19,6 +19,32 @@
   const config = globalThis.__sandustryDevHmrConfig__;
   if (!config || !config.url || !config.modId) return;
 
+  // Development sessions should not overwrite the selected save when leaving
+  // a map. The exit dialog is mounted on demand, so watch for its checkbox.
+  if (!globalThis.__sandustryDevExitSaveGuardInstalled__) {
+    const installExitSaveGuard = () => {
+      if (!document.body) {
+        setTimeout(installExitSaveGuard, 0);
+        return;
+      }
+      globalThis.__sandustryDevExitSaveGuardInstalled__ = true;
+      const disableExitSave = () => {
+        for (const label of document.querySelectorAll("label")) {
+          if (!(label.textContent || "").toLowerCase().includes("save the game before exiting"))
+            continue;
+          const checkbox = label.querySelector('input[type="checkbox"]');
+          if (checkbox?.checked) checkbox.click();
+        }
+      };
+      new MutationObserver(disableExitSave).observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+      disableExitSave();
+    };
+    installExitSaveGuard();
+  }
+
   // Sandustry's renderer understands db_load on the index URL. The Electron
   // main process always starts index.html without a query, so redirect once
   // from the dev prelude when a save was requested. This avoids the main-menu
@@ -26,12 +52,31 @@
   if (typeof config.initialSave === "string" && config.initialSave.trim()) {
     const requestedSave = config.initialSave.trim();
     const currentSave = new URLSearchParams(location.search).get("db_load");
-    if (currentSave !== requestedSave) {
+    const saveRedirectStorageKey = `__sandustryDevSaveRedirectDone__:${config.devSessionId || "legacy"}:${requestedSave}`;
+    let saveRedirectDone = false;
+    try {
+      saveRedirectDone = localStorage.getItem(saveRedirectStorageKey) === "1";
+    } catch {
+      // Continue without the one-time redirect guard if storage is unavailable.
+    }
+    if (!saveRedirectDone && currentSave !== requestedSave) {
+      try {
+        localStorage.setItem(saveRedirectStorageKey, "1");
+      } catch {
+        // The redirect is still useful when local storage is unavailable.
+      }
       const target = new URL(location.href);
       target.search = "";
       target.searchParams.set("db_load", requestedSave);
       location.replace(target.href);
       return;
+    }
+    if (!saveRedirectDone) {
+      try {
+        localStorage.setItem(saveRedirectStorageKey, "1");
+      } catch {
+        // Ignore unavailable local storage.
+      }
     }
   }
 
@@ -50,11 +95,11 @@
       continueTimer: null,
     });
   const hotReloadEval = host.installed;
-  const autoContinueStorageKey = `__sandustryDevAutoContinueDone__:${location.origin}:${location.pathname}`;
+  const autoContinueStorageKey = `__sandustryDevAutoContinueDone__:${config.devSessionId || "legacy"}`;
 
   function hasAutoContinueDone() {
     try {
-      return sessionStorage.getItem(autoContinueStorageKey) === "1";
+      return localStorage.getItem(autoContinueStorageKey) === "1";
     } catch {
       return false;
     }
@@ -229,9 +274,9 @@
 
   function finishAutoContinue() {
     try {
-      sessionStorage.setItem(autoContinueStorageKey, "1");
+      localStorage.setItem(autoContinueStorageKey, "1");
     } catch {
-      // Some embedded contexts may not expose sessionStorage.
+      // Some embedded contexts may not expose localStorage.
     }
     for (const otherHost of Object.values(hosts)) {
       otherHost.booted = true;
