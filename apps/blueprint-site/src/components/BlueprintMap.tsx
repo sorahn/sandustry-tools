@@ -170,6 +170,7 @@ export function BlueprintMap({
   const [showFoundationOutlines, setShowFoundationOutlines] = useState(true);
   const [showSignalLinks, setShowSignalLinks] = useState(true);
   const [showRawStructures, setShowRawStructures] = useState(false);
+  const [exportScale, setExportScale] = useState(1);
   const [debugResetVersion, setDebugResetVersion] = useState<number | undefined>(undefined);
   const resetDebugOptions = () => {
     setShowDebugCells(false);
@@ -419,7 +420,7 @@ export function BlueprintMap({
         type: "render",
         blueprint: encodeBlueprint(blueprint),
         assetBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).href,
-        scale: 1 / renderPixelScale(cell),
+        scale: exportScale / renderPixelScale(cell),
         includeBackground: showPngBackground,
         showGrid,
         showFoundationOutlines: true,
@@ -464,6 +465,8 @@ export function BlueprintMap({
           fitMode={fitModeRef.current}
           pan={pan}
           onExport={exportPng}
+          exportScale={exportScale}
+          onExportScaleChange={setExportScale}
           onZoomOut={() => {
             const index = MAP_ZOOM_LEVELS.indexOf(snapMapZoom(zoom));
             setMapZoom(MAP_ZOOM_LEVELS[Math.max(0, index - 1)]);
