@@ -36,8 +36,17 @@ import {
   structureTopY,
   createBlueprintMapModel,
 } from "../utils/blueprint-map";
-import { writeStorageValue } from "../utils/storage";
-import { SAVED_MAP_VIEW_KEY } from "../utils/storage-keys";
+import { writeStorageValue, writeStoredBoolean } from "../utils/storage";
+import {
+  SAVED_MAP_VIEW_KEY,
+  SHOW_CUSTOM_SHAPES_KEY,
+  SHOW_DEBUG_CELLS_KEY,
+  SHOW_FOUNDATION_OUTLINES_KEY,
+  SHOW_NAMES_KEY,
+  SHOW_RAW_STRUCTURES_KEY,
+  SHOW_SIGNAL_LINKS_KEY,
+  SHOW_SPRITES_KEY,
+} from "../utils/storage-keys";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
 
 const MAP_FIT_ZOOM_MIN = 0.25;
@@ -177,6 +186,16 @@ export function BlueprintMap({
   const [exportScale, setExportScale] = useState(1);
   const [debugResetVersion, setDebugResetVersion] = useState<number | undefined>(undefined);
   const resetDebugOptions = () => {
+    const defaults = [
+      [SHOW_DEBUG_CELLS_KEY, false],
+      [SHOW_NAMES_KEY, false],
+      [SHOW_SPRITES_KEY, true],
+      [SHOW_CUSTOM_SHAPES_KEY, false],
+      [SHOW_FOUNDATION_OUTLINES_KEY, true],
+      [SHOW_SIGNAL_LINKS_KEY, true],
+      [SHOW_RAW_STRUCTURES_KEY, false],
+    ] as const;
+    for (const [key, value] of defaults) writeStoredBoolean(key, value);
     setShowDebugCells(false);
     setShowNames(false);
     setShowSprites(true);
