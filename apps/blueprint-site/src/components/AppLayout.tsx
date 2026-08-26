@@ -3,10 +3,14 @@ import { Footer } from "./Footer";
 import { Header } from "./Header";
 
 export function AppLayout() {
-  const visualCapture =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("visualCapture") === "1";
-  if (visualCapture) return <Outlet />;
+  const query =
+    typeof window !== "undefined" ? new URLSearchParams(window.location.search) : undefined;
+  const visualCapture = query?.get("visualCapture") === "1";
+  const embedMode = query?.get("mode");
+  const embed =
+    window.location.pathname.endsWith("/inspect/embed") &&
+    (embedMode === "thumbnail" || embedMode === "inspector");
+  if (visualCapture || embed) return <Outlet />;
 
   return (
     <div className="flex min-h-screen flex-col bg-sd-950 text-slate-100">
