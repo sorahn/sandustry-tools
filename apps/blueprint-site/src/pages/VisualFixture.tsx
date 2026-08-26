@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import cx from "clsx";
-import { renderBlueprintStringToPng } from "@sandustry/blueprint-core";
+import {
+  prepareSvgForPng,
+  renderBlueprintStringToPng,
+  renderBlueprintToSvg,
+} from "@sandustry/blueprint-core";
 import { decodeBlueprint, encodeBlueprint } from "../utils/blueprint";
 import { blueprintCatalog } from "../utils/catalog";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
@@ -50,18 +54,58 @@ function CorePngFixture({
       ? null
       : new Worker(new URL("../blueprint-worker.ts", import.meta.url), { type: "module" });
     if (worker) {
-      worker.onmessage = (event: MessageEvent<{ type: string; png?: ArrayBuffer }>) => {
-        if (cancelled || event.data.type !== "result" || !event.data.png) return;
+      worker.onmessage = (
+        event: MessageEvent<{ type: string; png?: ArrayBuffer; message?: string }>,
+      ) => {
+        if (cancelled) return;
+        if (event.data.type === "error") {
+          setError(event.data.message ?? "Unable to encode blueprint PNG");
+          return;
+        }
+        if (event.data.type !== "result" || !event.data.png) return;
         const png = event.data.png;
         setImageUrl((previous) => {
           if (previous) URL.revokeObjectURL(previous);
           return URL.createObjectURL(new Blob([png], { type: "image/png" }));
         });
       };
-      worker.postMessage({
-        type: "render",
-        blueprint: encoded,
-        assetBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).href,
+      void (async () => {
+        const rendered = renderBlueprintToSvg(blueprint, {
+          catalog: blueprintCatalog(),
+          assetBaseUrl: import.meta.env.BASE_URL,
+          includeBackground: true,
+          showGrid: true,
+          showFoundationOutlines: true,
+          showSignalLinks: true,
+        });
+        const scale = 1;
+        const prepared = await prepareSvgForPng(rendered.svg, {
+          width: rendered.model.width,
+          height: rendered.model.height,
+          scale,
+          title: blueprint.name,
+          includeBackground: true,
+          resolveImage: createImageResolver(
+            new URL(import.meta.env.BASE_URL, window.location.origin).href,
+          ),
+        });
+        const image = await createBrowserPngPlatform().loadSvg(prepared);
+        const bitmap = await createImageBitmap(image);
+        worker.postMessage(
+          {
+            type: "encode",
+            image: bitmap,
+            width: Math.max(1, Math.round(rendered.model.width * scale)),
+            height: Math.max(1, Math.round(rendered.model.height * scale)),
+          },
+          [bitmap],
+        );
+      })().catch((renderError: unknown) => {
+        if (!cancelled) {
+          setError(
+            renderError instanceof Error ? renderError.message : "Unable to render blueprint PNG",
+          );
+        }
       });
     } else
       void renderBlueprintStringToPng(encoded, {
