@@ -6,18 +6,31 @@ export function bytesToDataUrl(bytes: Uint8Array, mimeType: string) {
   return `data:${mimeType};base64,${btoa(binary)}`;
 }
 
+const resolvedImageCache = new Map<string, Promise<string | undefined>>();
+
 export function createImageResolver(baseUrl: string) {
   return async (source: string) => {
-    try {
-      const response = await fetch(new URL(source, baseUrl));
-      if (!response.ok) return undefined;
-      return bytesToDataUrl(
-        new Uint8Array(await response.arrayBuffer()),
-        response.headers.get("content-type") ?? "image/png",
-      );
-    } catch {
-      return undefined;
-    }
+    const url = new URL(source, baseUrl).href;
+    const cached = resolvedImageCache.get(url);
+    if (cached) return cached;
+
+    const pending = (async () => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) return undefined;
+        return bytesToDataUrl(
+          new Uint8Array(await response.arrayBuffer()),
+          response.headers.get("content-type") ?? "image/png",
+        );
+      } catch {
+        return undefined;
+      }
+    })();
+    resolvedImageCache.set(url, pending);
+    void pending.then((result) => {
+      if (result === undefined) resolvedImageCache.delete(url);
+    });
+    return pending;
   };
 }
 
