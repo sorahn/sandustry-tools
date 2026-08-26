@@ -28,6 +28,7 @@ const MOD_ID = "sorahn.sandustry-test-blocks";
 const SOURCE_ID = "sandustryTestBlocksSource";
 const TRASH_ID = "sandustryTestBlocksTrash";
 const THERMAL_SOURCE_ID = "sandustryTestBlocksThermalSource";
+// const POWER_ID = "sandustryTestBlocksPower";
 const TEST_BLOCKS_CATEGORY = "testBlocks";
 const SPRITE_SET_SETTING = "spriteSet";
 type SpriteSetDefinition = {
@@ -64,7 +65,7 @@ const SPRITE_SETS: Record<string, SpriteSetDefinition> = {
       source: "assets/v1/element-source.png",
       trash: "assets/v1/trash.png",
       thermal: "assets/v1/thermal-source.png",
-      energy: "assets/v1/energy-source.png",
+      energy: "assets/v1/power-source.png",
     },
   },
   colorful: {
@@ -140,6 +141,8 @@ const TEXT = {
   "structures|thermalSource|name": "Thermals",
   "structures|thermalSource|description":
     "Maintains a hot thermal buffer and shares heat with adjacent relays.",
+  "structures|power|name": "Power",
+  "structures|power|description": "A test power block with no active behavior.",
 };
 
 type ElementSelection = { id: string | null; type: number | null };
@@ -1051,7 +1054,7 @@ const setup = async () => {
     ...common,
     id: TRASH_ID,
     categoryKey: TEST_BLOCKS_CATEGORY,
-    order: 30,
+    order: 40,
     nameKey: "structures|trash|name",
     descriptionKey: "structures|trash|description",
     variants: [{ id: TRASH_ID, angles: [0, 90, 180, 270] }],
@@ -1099,11 +1102,25 @@ const setup = async () => {
     },
   });
 
+  // Reserved for the future power block; keep the asset and localization
+  // groundwork in place without exposing the current no-op structure.
+  // api.structures.register({
+  //   ...common,
+  //   id: POWER_ID,
+  //   order: 30,
+  //   nameKey: "structures|power|name",
+  //   descriptionKey: "structures|power|description",
+  //   alwaysUnlocked: true,
+  //   variants: [{ id: POWER_ID, angles: [0, 90, 180, 270] }],
+  //   render: { ...common.render, imageName: spriteSet.energy },
+  // });
+
   // These blocks are creative utility blocks, so they do not require a tech
   // node before appearing in the Production build category.
   api.player.buildings.unlockByType(SOURCE_ID);
   api.player.buildings.unlockByType(TRASH_ID);
   api.player.buildings.unlockByType(THERMAL_SOURCE_ID);
+  // api.player.buildings.unlockByType(POWER_ID);
   registerThermalSourceTick();
 
   api.triggers.register(`${MOD_ID}:source-tick`, {
