@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { decodeBlueprint, prepareSvgForPng, renderBlueprintToSvg } from "@sandustry/blueprint-core";
+import {
+  decodeBlueprint,
+  prepareSvgForPng,
+  renderBlueprintToSvg,
+  structureLabel,
+} from "@sandustry/blueprint-core";
 import { blueprintCatalog } from "../utils/catalog";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
+import { BlueprintMapPanel } from "../components/BlueprintMapPanel";
+import { BlueprintStructuresPanel } from "../components/BlueprintStructuresPanel";
 import {
   isAllowedParentOrigin,
   isRendererRequest,
@@ -28,7 +35,7 @@ export function BlueprintEmbedPage() {
   const renderTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!mode || window.parent === window) return;
+    if (!mode || mode === "inspector" || window.parent === window) return;
     const allowedOrigin = parentOrigin();
     if (!allowedOrigin) {
       setStatus("Embed origin is not configured.");
@@ -76,6 +83,8 @@ export function BlueprintEmbedPage() {
     },
     [previewUrl],
   );
+
+  if (mode === "inspector") return <BlueprintInspectorEmbed />;
 
   async function renderThumbnail(requestId: string, blueprintString: string, token: number) {
     const allowedOrigin = parentOrigin();
@@ -197,6 +206,107 @@ export function BlueprintEmbedPage() {
           {status}
         </p>
       </section>
+    </main>
+  );
+}
+
+function BlueprintInspectorEmbed() {
+  const [blueprint, setBlueprint] = useState<ReturnType<typeof decodeBlueprint> | null>(null);
+  const [blueprintKey, setBlueprintKey] = useState("");
+  const [status, setStatus] = useState("Waiting for a blueprint.");
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showPngBackground, setShowPngBackground] = useState(false);
+
+  useEffect(() => {
+    if (window.parent === window) return;
+    const allowedOrigin = parentOrigin();
+    if (!allowedOrigin) {
+      setStatus("Embed origin is not configured.");
+      return;
+    }
+    const handleMessage = (event: MessageEvent) => {
+      if (event.source !== window.parent || !isAllowedParentOrigin(event.origin)) return;
+      if (!isRendererRequest(event.data)) return;
+      const { requestId, blueprint: encoded } = event.data;
+      if (encoded.length > MAX_PREVIEW_BLUEPRINT_LENGTH) {
+        setBlueprint(null);
+        setStatus("Blueprint string is too large.");
+        window.parent.postMessage(
+          rendererPreviewErrorEvent(requestId, "too-large", "Blueprint string is too large."),
+          event.origin,
+        );
+        return;
+      }
+      if (encoded.startsWith("SAND:BP:v1:") || encoded.startsWith("SAND:BACKUP:v1:")) {
+        setBlueprint(null);
+        setStatus("Legacy v1 strings are not supported by the renderer inspector.");
+        window.parent.postMessage(
+          rendererPreviewErrorEvent(
+            requestId,
+            "unsupported-format",
+            "Legacy v1 strings are not supported by the renderer inspector.",
+          ),
+          event.origin,
+        );
+        return;
+      }
+      try {
+        const decoded = decodeBlueprint(encoded);
+        setBlueprint(decoded);
+        setBlueprintKey(encoded);
+        setStatus(`Inspected ${decoded.data.length} structure(s) from ${decoded.name}.`);
+      } catch (error) {
+        setBlueprint(null);
+        setStatus("Unable to decode blueprint.");
+        window.parent.postMessage(
+          rendererPreviewErrorEvent(
+            requestId,
+            "invalid-blueprint",
+            error instanceof Error ? error.message : "Unable to decode blueprint.",
+          ),
+          event.origin,
+        );
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    window.parent.postMessage(rendererReadyEvent(["inspector"]), allowedOrigin);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-sd-950 p-3 text-slate-100 sm:p-5" data-embed-mode="inspector">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="mb-3 flex items-center justify-between gap-4 px-1">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">
+            Blueprint inspector
+          </p>
+          <p className="text-right text-xs text-slate-500" role="status">
+            {status}
+          </p>
+        </div>
+        {blueprint ? (
+          <>
+            <BlueprintMapPanel
+              blueprint={blueprint}
+              remember={false}
+              blueprintKey={blueprintKey}
+              showSidebar={showSidebar}
+              onShowSidebarChange={setShowSidebar}
+              showGrid={showGrid}
+              onShowGridChange={setShowGrid}
+              showPngBackground={showPngBackground}
+              onShowPngBackgroundChange={setShowPngBackground}
+              onLoadBlueprint={setBlueprint}
+            />
+            <BlueprintStructuresPanel blueprint={blueprint} structureLabel={structureLabel} />
+          </>
+        ) : (
+          <section className="rounded border border-slate-800 bg-slate-950/70 p-6 text-sm text-slate-400">
+            Send a blueprint to begin inspecting it.
+          </section>
+        )}
+      </div>
     </main>
   );
 }
