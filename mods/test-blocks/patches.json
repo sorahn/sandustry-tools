@@ -3,8 +3,8 @@
     "id": "thermal-source-consumption",
     "file": "js/bundle.js",
     "operation": "replace",
-    "find": "if(!r||r.type!==i)continue;",
-    "code": "if(!r||(r.type!==i&&!(globalThis.__sandustryTestBlocksThermalSource&&globalThis.__sandustryTestBlocksThermalSource(r.type,i))))continue;",
+    "find": "if(!o||o.type!==s)continue;",
+    "code": "if(!o||(o.type!==s&&!(globalThis.__sandustryTestBlocksThermalSource&&globalThis.__sandustryTestBlocksThermalSource(o.type,s))))continue;",
     "expectedMatches": 1
   },
   {

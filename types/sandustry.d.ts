@@ -23,6 +23,9 @@ interface SandustryElementDefinition {
 
 interface SandustryElementInfo {
   type?: number;
+  id?: string;
+  velocity?: { x: number; y: number };
+  [key: string]: unknown;
 }
 
 interface SandustryItemDefinition {
@@ -66,6 +69,36 @@ interface SandustryUiOverlays {
   register(slot: string, overlayId: string, render: () => unknown): void;
   unregister(slot: string, overlayId: string): void;
   update(slot: string): void;
+}
+
+interface SandustryBlueprintApi {
+  serializeStructures(structures: SandustryBlueprintRecord[]): unknown;
+  localizeStructures(structures: SandustryBlueprintRecord[]): SandustryBlueprintRecord[];
+}
+
+interface SandustryUiRegions {
+  mount(id: string, render: () => unknown, options?: Record<string, unknown>): unknown;
+  setVisible(id: string, visible: boolean): void;
+}
+
+interface SandustryUiComponents {
+  ActionSlot(props: Record<string, unknown>): unknown;
+  Panel(props: Record<string, unknown>): unknown;
+  Button(props: Record<string, unknown>): unknown;
+}
+
+interface SandustryUiHotbar {
+  createBankSource(options?: Record<string, unknown>): unknown;
+  selectAction(action: unknown): void;
+  getBankCount(): number;
+  getActiveBankIndex(): number;
+  getActiveSlotIndex(): number | null;
+  getSlotKeyLabel(slotIndex: number): string;
+  useHotbar(): unknown;
+}
+
+interface SandustryUiOverrides {
+  register(id: string, override: (...args: unknown[]) => unknown): () => void;
 }
 
 interface SandustryEvents {
@@ -280,16 +313,64 @@ interface SandustryPropagationOptions {
 
 interface SandustryApi {
   random: SandustryRandom;
+  blueprints: SandustryBlueprintApi;
   elements: {
+    getTypeById(id: string | number): number | null;
     getDefinitionByType(type: number | null | undefined): SandustryElementDefinition | null;
     getRegisteredTypes(): number[];
     getTypeFromId(id: string | null | undefined): number | null;
+    getIdByType(type: number): string | null;
+    getNameByType(type: number): string;
     createAtCellWhenIdle(x: number, y: number, type: number): void;
+    createAtCell(x: number, y: number, type: number, options?: Record<string, unknown>): void;
+    replaceAtCell(x: number, y: number, type: number, options?: Record<string, unknown>): void;
+    replaceAtCellWhenIdle(
+      x: number,
+      y: number,
+      type: number,
+      options?: Record<string, unknown>,
+    ): void;
     getInfoAtCell(x: number, y: number): SandustryElementInfo | null;
+    getTypeAtCell(x: number, y: number): number | null;
     getResolvedTypeAtCell(x: number, y: number): number | null;
+    getMatterTypeAtCell(x: number, y: number): number | null;
+    removeAtCell(x: number, y: number, options?: Record<string, unknown>): void;
     removeAtCellWhenIdle(x: number, y: number): void;
+    teleportBetweenCells(fromX: number, fromY: number, toX: number, toY: number): void;
+    teleportBetweenCellsWhenIdle(fromX: number, fromY: number, toX: number, toY: number): void;
+    getVelocityAtCell(x: number, y: number): { x: number; y: number } | null;
+    setVelocityAtCell(x: number, y: number, velocity: { x: number; y: number }): void;
+    setVelocityAtCellWhenIdle(x: number, y: number, velocity: { x: number; y: number }): void;
+    addParticleVelocityAtCell(x: number, y: number, velocityX: number, velocityY: number): void;
+    addParticleVelocityAtCellWhenIdle(
+      x: number,
+      y: number,
+      velocityX: number,
+      velocityY: number,
+    ): void;
+    getDataFieldAtCell(x: number, y: number, field: string): unknown;
+    setDataFieldAtCell(x: number, y: number, field: string, value: unknown): void;
+    setDataFieldAtCellWhenIdle(x: number, y: number, field: string, value: unknown): void;
+    refreshColorAtCell(x: number, y: number): void;
+    refreshColorAtCellWhenIdle(x: number, y: number): void;
+    setPhysicsAtCell(x: number, y: number, physics: unknown): void;
+    setPhysicsAtCellWhenIdle(x: number, y: number, physics: unknown): void;
+    setDurationAtCell(
+      x: number,
+      y: number,
+      duration: number,
+      options?: Record<string, unknown>,
+    ): void;
+    setDurationAtCellWhenIdle(
+      x: number,
+      y: number,
+      duration: number,
+      options?: Record<string, unknown>,
+    ): void;
   };
   resources: {
+    refresh(options?: Record<string, unknown>): void;
+    adjustEnergy(amount: number, options?: Record<string, unknown>): void;
     updateEnergy(amount: number, options?: { deferUi?: boolean }): void;
   };
   effects: {
@@ -354,6 +435,17 @@ interface SandustryApi {
       height: number,
       callback: (cellX: number, cellY: number) => void,
     ): void;
+    forEachCellInRectangle(
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      callback: (cellX: number, cellY: number) => void,
+    ): void;
+    getDimensions(): { width: number; height: number };
+    getCellIdAtCell(x: number, y: number): number;
+    isCellEmptyAtCell(x: number, y: number): boolean;
+    isTerrainAtCell(x: number, y: number): boolean;
   };
   i18n: {
     register(locale: string, translations: Record<string, string>): void;
@@ -409,6 +501,15 @@ interface SandustryApi {
       },
     ): void;
     getAtCell(x: number, y: number): SandustryStructure | null;
+    getAvailableTypes(): Array<string | number>;
+    getTypeById(id: string | number): string | number | null;
+    isLockedByType(type: string | number): boolean;
+    isUnlockedByType(type: string | number): boolean;
+    updateData(
+      structure: SandustryStructure,
+      data: SandustryStructureData,
+      options?: SandustryPropagationOptions,
+    ): void;
     buildAtCellWhenIdle?(
       x: number,
       y: number,
@@ -422,10 +523,37 @@ interface SandustryApi {
       data: SandustryStructureData,
       options?: SandustryPropagationOptions,
     ): void;
+    buildAtCell(
+      x: number,
+      y: number,
+      type: string | number,
+      options?: Record<string, unknown>,
+    ): void;
     getTypeFromId?(id: number | string): string | null;
     getUnlockedTypes?(): string[];
     getDefinitionByType?(type: string | number): SandustryStructureDefinition | null;
     updateDefinition?(type: string | number, partial: Record<string, unknown>): void;
+    removeAtCell?(x: number, y: number, options?: Record<string, unknown>): void;
+    removeAtCellWhenIdle?(x: number, y: number, options?: Record<string, unknown>): void;
+    removeBetweenCells?(
+      fromX: number,
+      fromY: number,
+      toX: number,
+      toY: number,
+      options?: Record<string, unknown>,
+    ): void;
+    removeBetweenCellsWhenIdle?(
+      fromX: number,
+      fromY: number,
+      toX: number,
+      toY: number,
+      options?: Record<string, unknown>,
+    ): void;
+    removeAtCells?(cells: Array<{ x: number; y: number }>, options?: Record<string, unknown>): void;
+    removeAtCellsWhenIdle?(
+      cells: Array<{ x: number; y: number }>,
+      options?: Record<string, unknown>,
+    ): void;
   };
   terrains: {
     getTypeFromId(id: string): number | null;
@@ -449,6 +577,13 @@ interface SandustryApi {
     confirm(message: unknown, title?: unknown): Promise<boolean>;
     inject(id: string, component: () => unknown): () => void;
     overlays: SandustryUiOverlays;
+    regions: SandustryUiRegions;
+    components: SandustryUiComponents;
+    useRefresh(callback?: () => void): (() => void) | void;
+    useScale(): number;
+    useGameEvent(event: string, callback: (...args: unknown[]) => void): void;
+    overrides: SandustryUiOverrides;
+    hotbar: SandustryUiHotbar;
     navigation: SandustryNavigation;
     prompt(
       message: unknown,
@@ -462,7 +597,11 @@ interface SandustryApi {
     getGridMetrics(): { cellSize: number; snapGridCellSize: number };
   };
   world: {
+    getDimensions(): { width: number; height: number };
+    getCellIdAtCell(x: number, y: number): number;
     isCellEmptyAtCell(x: number, y: number): boolean;
+    isTerrainAtCell(x: number, y: number): boolean;
+    runWhenSimulationIdle(callback: () => void): void;
     revealFogAtCell(x: number, y: number): void;
     redrawAroundCellWhenIdle(x: number, y: number, radius: number): void;
     excavateAtCell(

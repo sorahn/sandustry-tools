@@ -831,9 +831,6 @@ const sourceTick = () => {
 };
 
 const spawnSourceBrush = (structure: SandustryStructure, elementType: number) => {
-  const nativeWorld = engine.api.world;
-  const nativeElements = engine.api.elements;
-  const state = engine.state;
   const key = sourceKey(structure);
   const cursor = sourceBrushCursors.get(key) ?? 0;
   let order = sourceBrushOrders.get(key);
@@ -850,33 +847,12 @@ const spawnSourceBrush = (structure: SandustryStructure, elementType: number) =>
   const cellY = structure.y + Math.floor(cell / SIZE);
   sourceBrushCursors.set(key, (cursor + 1) % (SIZE * SIZE));
 
-  // The native debug brush uses the engine mutation inside its idle scheduler.
-  // The state argument is required; omitting it corrupts the scheduler call.
-  if (
-    typeof nativeWorld?.runWhenSimulationIdle === "function" &&
-    typeof nativeElements?.createAt === "function"
-  ) {
-    try {
-      nativeWorld.runWhenSimulationIdle(state, () => {
-        if (api.world.isCellEmptyAtCell(cellX, cellY)) {
-          nativeElements.createAt(state, cellX, cellY, elementType);
-        }
-      });
-      return;
-    } catch (error) {
-      console.warn("[test-blocks] native source brush unavailable; using public path", error);
-    }
-  }
-
-  // Older runtimes may not expose the engine brush helpers. The public helper
-  // performs the same idle-safe native mutation.
-  if (api.world.isCellEmptyAtCell(cellX, cellY)) {
-    api.elements.createAtCellWhenIdle(cellX, cellY, elementType);
-  }
+  // The public helper performs the empty-cell check and idle-safe mutation.
+  api.elements.createAtCellWhenIdle(cellX, cellY, elementType);
 };
 
 const processTrash = (structure: SandustryStructure) => {
-  api.grid.forEachCellInRect(structure.x, structure.y, SIZE, SIZE, (cellX, cellY) => {
+  api.grid.forEachCellInRectangle(structure.x, structure.y, SIZE, SIZE, (cellX, cellY) => {
     // The API helper performs the same empty-cell check as the native element
     // removal path. Let it handle that work instead of reading each cell here
     // before scheduling the removal.
