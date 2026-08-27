@@ -4,7 +4,7 @@
 
 - Fixed Infinite Thermal Source adjacency so it shares heat with buffers on all four sides.
 
-## 0.1.15
+## 0.1.16
 
 - Updated the thermal-consumption patch for Sandustry 0.5.5.
 - Switched Source spawning and Trash footprint iteration to the public runtime API.
