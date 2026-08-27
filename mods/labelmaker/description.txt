@@ -1,0 +1,6 @@
+Labelmaker generates pixel-font text as factory blueprint prefabs.
+
+- Enter a label and choose from the bundled pixel fonts.
+- Supports labels up to 64 characters.
+- Generates the text as one or more blueprint Blocks ready to place.
+- The Labelmaker tool is added to your inventory automatically.

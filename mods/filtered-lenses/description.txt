@@ -1,0 +1,6 @@
+Filtered Laser Lenses adds a purchasable laser upgrade that mines only a selected terrain.
+
+- Choose the terrain to mine from an in-game picker.
+- Search and filter the available terrain types.
+- Press L while the laser is selected to change the filter.
+- Enable or disable the upgrade's effect from the mod settings.

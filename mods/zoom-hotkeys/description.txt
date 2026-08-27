@@ -1,0 +1,6 @@
+Zoom Hotkeys adds keyboard controls for the game's video zoom setting.
+
+- Press = to zoom in through the available zoom levels.
+- Press - to zoom out.
+- The bindings appear in the game's input settings and can be remapped.
+- Zoom hotkeys are disabled during cinematic mode.

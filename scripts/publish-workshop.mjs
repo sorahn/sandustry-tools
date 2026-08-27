@@ -15,6 +15,9 @@ const root = resolve(import.meta.dirname, "..");
 const modDir = resolve(modDirArgument);
 const contentDir = resolve(contentDirArgument);
 const manifest = readJson(join(modDir, "modinfo.json"));
+const descriptionPath = join(modDir, "description.txt");
+if (existsSync(descriptionPath))
+  manifest.description = readFileSync(descriptionPath, "utf8").trim();
 const registryPath = join(root, "workshop-published-ids.json");
 const registry = readJson(registryPath);
 const recordedPublishedFileId = registry[manifest.id];

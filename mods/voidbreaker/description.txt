@@ -1,0 +1,5 @@
+Voidbreaker removes placement limits from the Fluxite Emanators and Void Rifts.
+
+- Place unlimited Fluxite Emanators.
+- Place unlimited Void Rifts.
+- Enable or disable each limit independently in the mod settings.

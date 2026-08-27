@@ -4,6 +4,7 @@ REPO_ROOT ?= $(abspath $(MOD_DIR)/../..)
 SRC_DIR := $(MOD_DIR)/src
 BUILD_DIR := $(MOD_DIR)/build
 MANIFEST := $(MOD_DIR)/modinfo.json
+DESCRIPTION := $(wildcard $(MOD_DIR)/description.txt)
 CHANGELOG := $(wildcard $(MOD_DIR)/CHANGELOG.md)
 VERSION_FILES := $(MANIFEST) $(CHANGELOG)
 PREVIEW := $(firstword $(wildcard $(MOD_DIR)/preview.png $(MOD_DIR)/preview.gif $(MOD_DIR)/preview.jpg $(MOD_DIR)/preview.jpeg))
@@ -29,11 +30,11 @@ $(BUILD_DIR)/entry.js: FORCE $(shell find $(SRC_DIR) -type f -print 2>/dev/null)
 	@cd "$(REPO_ROOT)" && npx tsc --noEmit
 	@if [ -n "$(MOD_ESBUILD_SCRIPT)" ]; then node "$(MOD_ESBUILD_SCRIPT)" "$(SRC_DIR)/entry.tsx" "$(BUILD_DIR)/entry.js"; else cd "$(REPO_ROOT)" && npx esbuild "$(SRC_DIR)/entry.tsx" --bundle --format=esm --platform=neutral --target=es2022 --drop:console --jsx-factory=sandkit.react.createElement --jsx-fragment=sandkit.react.Fragment --alias:~shared="$(REPO_ROOT)/shared" --outfile="$(BUILD_DIR)/entry.js"; fi
 
-$(ARCHIVE): $(BUILD_DIR)/entry.js $(MANIFEST) $(wildcard $(PATCHES)) $(shell find $(MOD_DIR)/assets -type f -print 2>/dev/null) $(PREVIEW)
+$(ARCHIVE): $(BUILD_DIR)/entry.js $(MANIFEST) $(DESCRIPTION) $(wildcard $(PATCHES)) $(shell find $(MOD_DIR)/assets -type f -print 2>/dev/null) $(PREVIEW)
 	@rm -rf "$(PACKAGE_DIR)"
 	@mkdir -p "$(PACKAGE_DIR)"
 	@cp "$(BUILD_DIR)/entry.js" "$(PACKAGE_DIR)/entry.js"
-	@cp "$(MANIFEST)" "$(PACKAGE_DIR)/modinfo.json"
+	@if [ -n "$(DESCRIPTION)" ]; then node "$(REPO_ROOT)/scripts/render-modinfo.mjs" "$(MANIFEST)" "$(DESCRIPTION)" "$(PACKAGE_DIR)/modinfo.json"; else cp "$(MANIFEST)" "$(PACKAGE_DIR)/modinfo.json"; fi
 	@if [ -f "$(PATCHES)" ]; then node "$(REPO_ROOT)/scripts/validate-patches.mjs" "$(PATCHES)"; cp "$(PATCHES)" "$(PACKAGE_DIR)/patches.json"; fi
 	@if [ -d "$(MOD_DIR)/assets" ]; then mkdir -p "$(PACKAGE_DIR)/assets"; cp -R "$(MOD_DIR)/assets/." "$(PACKAGE_DIR)/assets/"; fi
 	@if [ -n "$(PREVIEW)" ]; then cp "$(PREVIEW)" "$(PACKAGE_DIR)/$(notdir $(PREVIEW))"; fi

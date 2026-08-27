@@ -1,0 +1,6 @@
+Sandustry Debug Lab is a developer utility for inspecting and moving data between Sandustry tools.
+
+- F8 copies the terrain palette used by the save explorer.
+- F9 copies the current hotbar as JSON.
+- F10 pastes a complete hotbar snapshot from JSON.
+- Intended for development, debugging, and reverse-engineering workflows.

@@ -1,0 +1,12 @@
+Test Blocks adds creative utility structures for testing, building, and experimentation:
+
+- Infinite Elements — continuously creates a selected element without consuming resources.
+- Built-in element picker with search, matter filters, color swatches, and remembered selections.
+- Infinite Trash — rapidly removes elements across its full footprint.
+- Heat — maintains a hot thermal buffer and shares heat with adjacent thermal relays.
+- Chill — maintains a cold thermal buffer and shares heat with adjacent thermal relays.
+- Thermal interaction — absorbs heat from nearby lava and cold from nearby snow.
+- Power — provides a large local energy store and maintains the global energy pool.
+- Multiple sprite themes: Sandustry Demo, Editor Extensions, and Colorful (Sir Monkz).
+- All blocks are unlocked automatically in the Infinite Test Blocks category.
+- Designed for creative testing, prototyping, automation experiments, and sandbox builds.

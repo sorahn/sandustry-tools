@@ -56,6 +56,12 @@ Publishing uses the section headed with the manifest version, for example
 for one-off releases. If the file or matching version is absent, publishing
 uses the generic update message and prints a warning for a missing entry.
 
+Mod descriptions can be edited as readable text in
+`mods/<name>/description.txt`. When present, the build injects that file into
+the packaged `modinfo.json`, and publishing uses the same text for the
+Workshop description. The file contents are trimmed at the ends but otherwise
+preserve their paragraphs; no manual VDF escaping is needed.
+
 For development, watch one mod and keep its installed copy up to date with:
 
 ```sh

@@ -1,0 +1,6 @@
+More Teleporters adds placeable player teleporter stations to the planetary network.
+
+- Place multiple stations around your world.
+- Walk near a station to open the teleporter network.
+- Choose a native portal or another player teleporter from the shared destination picker.
+- Teleport between destinations with a smooth map transition.

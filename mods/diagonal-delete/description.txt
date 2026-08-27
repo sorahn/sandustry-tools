@@ -1,0 +1,7 @@
+Diagonal Delete is a structure-deletion tool for precise cleanup and shaped selections.
+
+- Free mode supports arbitrary drag selections.
+- Angled mode supports straight 90° and 45° selections.
+- Press R to switch between Free and Angled modes.
+- Press Z during a drag to lock the line and extend it into a parallelogram.
+- Uses the game's native undo system.
