@@ -67,6 +67,11 @@
       ]
     },
     {
+      "id": "local-sandustry-types",
+      "authority": "local-type-declarations",
+      "include": ["types/sandustry.d.ts"]
+    },
+    {
       "id": "official-sandkit-docs",
       "authority": "official-api-docs",
       "type": "external-html",
