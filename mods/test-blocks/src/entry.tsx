@@ -30,7 +30,7 @@ const TRASH_ID = "sandustryTestBlocksTrash";
 const THERMAL_SOURCE_ID = "sandustryTestBlocksThermalSource";
 // Keep the saved type id stable while exposing the structure as Chill.
 const CHILL_ID = "sandustryTestBlocksCold";
-// const POWER_ID = "sandustryTestBlocksPower";
+const POWER_ID = "sandustryTestBlocksPower";
 const TEST_BLOCKS_CATEGORY = "testBlocks";
 const SPRITE_SET_SETTING = "spriteSet";
 type SpriteSetDefinition = {
@@ -78,6 +78,9 @@ const SPRITE_SET_LABELS = {
 const SOURCE_TICK_MS = 500;
 const TRASH_PROCESS_INTERVAL_MS = 50;
 const THERMAL_SOURCE_TICK_MS = 1000;
+const POWER_TICK_MS = 1000;
+const POWER_GLOBAL_ENERGY_TARGET = 1_000_000;
+const POWER_STORAGE_CAPACITY = 1_000_000;
 const THERMAL_SOURCE_DEFAULT_TEMPERATURE = 1000;
 const CHILL_DEFAULT_TEMPERATURE = -1000;
 const THERMAL_SOURCE_MIN_TEMPERATURE = -1000;
@@ -135,7 +138,8 @@ const TEXT = {
   "structures|chill|description":
     "Maintains a low-temperature thermal buffer and shares heat with adjacent relays.",
   "structures|power|name": "Power",
-  "structures|power|description": "A test power block with no active behavior.",
+  "structures|power|description":
+    "Stores one million energy and keeps the global pool at that level.",
 };
 
 type ElementSelection = { id: string | null; type: number | null };
@@ -982,6 +986,56 @@ const registerThermalSourceTick = () => {
   });
 };
 
+type GlobalEnergyState = SandustryEngineState & {
+  shared?: { energy?: Uint32Array };
+  store: SandustryEngineState["store"] & {
+    resources?: { energy?: number };
+  };
+};
+
+const globalEnergy = () => {
+  const state = engine.state as GlobalEnergyState;
+  const sharedEnergy = state.shared?.energy;
+  if (sharedEnergy && typeof Atomics?.load === "function") {
+    return Atomics.load(sharedEnergy, 0);
+  }
+  return state.store.resources?.energy ?? 0;
+};
+
+const maintainGlobalEnergy = () => {
+  const delta = POWER_GLOBAL_ENERGY_TARGET - globalEnergy();
+  if (delta === 0) return;
+  api.resources.updateEnergy(delta);
+};
+
+const maintainPowerStorage = (structure: SandustryStructure) => {
+  const data = structure.data ?? {};
+  if (data.maxEnergy === POWER_STORAGE_CAPACITY && data.storedEnergy === POWER_STORAGE_CAPACITY) {
+    return;
+  }
+  api.structures.setData(structure, {
+    ...data,
+    maxEnergy: POWER_STORAGE_CAPACITY,
+    storedEnergy: POWER_STORAGE_CAPACITY,
+  });
+};
+
+let nextPowerTick = 0;
+const registerPowerTick = () => {
+  api.events.on("frame:render", () => {
+    const now = Date.now();
+    if (now < nextPowerTick) return;
+    nextPowerTick = now + POWER_TICK_MS;
+
+    let hasPowerBlock = false;
+    api.structures.forEachOfType(POWER_ID, (structure) => {
+      hasPowerBlock = true;
+      maintainPowerStorage(structure);
+    });
+    if (hasPowerBlock) maintainGlobalEnergy();
+  });
+};
+
 // The native thermal consumers ask for the exact "thermalRelay" type. The
 // bundle patch calls this predicate so they can also consume from our source.
 Object.assign(globalThis, {
@@ -1055,7 +1109,7 @@ const setup = async () => {
     ...common,
     id: TRASH_ID,
     categoryKey: TEST_BLOCKS_CATEGORY,
-    order: 40,
+    order: 50,
     nameKey: "structures|trash|name",
     descriptionKey: "structures|trash|description",
     variants: [{ id: TRASH_ID, angles: [0, 90, 180, 270] }],
@@ -1144,18 +1198,43 @@ const setup = async () => {
     },
   });
 
-  // Reserved for the future power block; keep the asset and localization
-  // groundwork in place without exposing the current no-op structure.
-  // api.structures.register({
-  //   ...common,
-  //   id: POWER_ID,
-  //   order: 30,
-  //   nameKey: "structures|power|name",
-  //   descriptionKey: "structures|power|description",
-  //   alwaysUnlocked: true,
-  //   variants: [{ id: POWER_ID, angles: [0, 90, 180, 270] }],
-  //   render: { ...common.render, imageName: spriteSet.energy },
-  // });
+  api.structures.register({
+    ...common,
+    id: POWER_ID,
+    order: 40,
+    nameKey: "structures|power|name",
+    descriptionKey: "structures|power|description",
+    alwaysUnlocked: true,
+    copyData: false,
+    useRawShape: true,
+    defaultData: {
+      storedEnergy: 0,
+      maxEnergy: POWER_STORAGE_CAPACITY,
+    },
+    shape: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    variants: [{ id: POWER_ID, angles: [0, 90, 180, 270] }],
+    render: { ...common.render, imageName: spriteSet.energy, ui: { outline: true } },
+  });
+
+  api.energy.registerType(POWER_ID, "storage", {
+    priority: 1,
+    spritesheetThresholds: [0, 1, 60, 100],
+  });
+
+  // Give Power blocks from an earlier dev build the same capacity as newly
+  // placed blocks without disturbing their current stored energy.
+  api.structures.forEachOfType(POWER_ID, (structure) => {
+    if (structure.data?.maxEnergy === POWER_STORAGE_CAPACITY) return;
+    api.structures.setData(structure, {
+      ...structure.data,
+      maxEnergy: POWER_STORAGE_CAPACITY,
+    });
+  });
 
   // These blocks are creative utility blocks, so they do not require a tech
   // node before appearing in the Production build category.
@@ -1163,8 +1242,9 @@ const setup = async () => {
   api.player.buildings.unlockByType(TRASH_ID);
   api.player.buildings.unlockByType(THERMAL_SOURCE_ID);
   api.player.buildings.unlockByType(CHILL_ID);
-  // api.player.buildings.unlockByType(POWER_ID);
+  api.player.buildings.unlockByType(POWER_ID);
   registerThermalSourceTick();
+  registerPowerTick();
 
   api.triggers.register(`${MOD_ID}:source-tick`, {
     interval: SOURCE_BRUSH_INTERVAL_MS,

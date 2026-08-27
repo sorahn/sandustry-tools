@@ -289,6 +289,9 @@ interface SandustryApi {
     getResolvedTypeAtCell(x: number, y: number): number | null;
     removeAtCellWhenIdle(x: number, y: number): void;
   };
+  resources: {
+    updateEnergy(amount: number, options?: { deferUi?: boolean }): void;
+  };
   effects: {
     createLaserAtWorld(
       startWorldX: number,
@@ -304,7 +307,14 @@ interface SandustryApi {
     ): { index: number | null };
     createParticlesAtWorld(worldX: number, worldY: number, options?: Record<string, unknown>): void;
   };
-  energy: { consume(amount: number, options?: { allOrNothing?: boolean }): number };
+  energy: {
+    registerType(
+      structureType: string,
+      type: "storage" | "source" | "consumer",
+      options?: Record<string, unknown>,
+    ): void;
+    consume(amount: number, options?: { allOrNothing?: boolean }): number;
+  };
   authorization: { canUseTool(player: SandustryPlayerState, isFlamethrower?: boolean): boolean };
   patterns: {
     createCircle(size: number): number[][];
