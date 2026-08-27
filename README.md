@@ -50,6 +50,20 @@ updates that item; otherwise it creates a new item and records the ID SteamCMD
 writes back to the temporary VDF. Set `STEAMCMD=/path/to/steamcmd`,
 `STEAM_ACCOUNT=<account>`, or `CHANGE_NOTE="..."` to override the defaults.
 
+Download a Workshop mod by Published File ID with SteamCMD:
+
+```sh
+make steamdl ID=3783080659
+make steamdl ID=3783080659 INSTALL=1
+```
+
+The command uses SteamCMD account `sorahn` and Sandustry's Workshop app ID
+`2764460`. Without `INSTALL=1`, it only downloads the item. With it, the
+downloaded mod is copied into the Sandustry mods directory using the ID from
+its `modinfo.json`. Set `STEAMCMD=/path/to/steamcmd`,
+`STEAMCMD_USER=<account>`, `STEAMCMD_WORKSHOP_DIR=<content-dir>`, or
+`SANDUSTRY_MODS_DIR=/path/to/sandustry/mods` to override the defaults.
+
 Each mod may keep player-facing Workshop notes in `mods/<name>/CHANGELOG.md`.
 Publishing uses the section headed with the manifest version, for example
 `## 0.1.4`, as the Workshop changenote. `CHANGE_NOTE` still overrides the file

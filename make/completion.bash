@@ -6,7 +6,7 @@ _sandustry_make_completion() {
     local root="${SANDUSTRY_MODS_ROOT:-.}"
     local mods targets
 
-    targets="all build install check format version major minor patch clean"
+    targets="all build install check publish steamdl format version major minor patch clean"
     if [[ "$current" == MOD=* ]]; then
         mods="$(make -s --no-print-directory -C "$root" list-mods 2>/dev/null)"
         COMPREPLY=( $(compgen -W "$(printf 'MOD=%s\n' $mods)" -- "$current") )

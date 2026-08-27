@@ -17,5 +17,5 @@ complete -c make -n '__sandustry_make_mod_prefix' \
     -a '(__sandustry_make_mods | string replace -r "^" "MOD=")' \
     -d 'Mod'
 complete -c make -n 'not __sandustry_make_mod_prefix' \
-    -a 'all build install check format version major minor patch clean' \
+    -a 'all build install check publish steamdl format version major minor patch clean' \
     -d 'Make target'

@@ -10,7 +10,7 @@ INSTALL_MODS := $(filter-out $(DEPRECATED_MODS),$(MODS))
 MOD_DIR := $(or $(filter $(MOD),$(MODS)),$(filter sandustry-$(MOD),$(MODS)))
 MOD_NAMES := $(sort $(patsubst sandustry-%,%,$(filter sandustry-%,$(MODS))) $(filter-out sandustry-%,$(MODS)))
 
-.PHONY: all build install publish dev check format version major minor patch clean list-mods
+.PHONY: all build install publish steamdl dev check format version major minor patch clean list-mods
 
 all: build
 
@@ -27,6 +27,9 @@ publish:
 	@if [ "$(words $(strip $(MOD)))" -ne 1 ]; then echo "Usage: make publish MOD=<mod>" >&2; exit 2; fi
 	@if [ -z "$(MOD_DIR)" ]; then echo "Unknown MOD='$(MOD)'. Available mods: $(MOD_NAMES)" >&2; exit 2; fi
 	@$(MAKE) -C "mods/$(MOD_DIR)" publish
+
+steamdl:
+	@STEAMCMD="$(if $(STEAMCMD),$(STEAMCMD),steamcmd)" STEAMCMD_USER="$(if $(STEAMCMD_USER),$(STEAMCMD_USER),sorahn)" INSTALL="$(INSTALL)" STEAMCMD_WORKSHOP_DIR="$(STEAMCMD_WORKSHOP_DIR)" SANDUSTRY_MODS_DIR="$(SANDUSTRY_MODS_DIR)" node scripts/steam-download.mjs "$(ID)"
 
 dev:
 	@if [ -z "$(MOD)" ]; then echo "Usage: make dev MOD=<mod>" >&2; exit 2; fi
