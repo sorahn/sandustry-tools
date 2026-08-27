@@ -348,6 +348,14 @@ request; do not silently skip installation after a permission failure.
 
 ## Verification and limitations
 
+### Visual baseline policy
+
+Never update checked-in visual regression baselines as part of ordinary
+verification or to make a failing test pass. Treat snapshot differences as
+real evidence of a renderer or catalog change. Updating PNG or SVG baselines
+requires explicit user approval for the intentional behavior change; record
+which fixtures changed and verify the resulting images afterward.
+
 Checks performed during development:
 
 - `node --check mods/test-blocks/build/entry.js`

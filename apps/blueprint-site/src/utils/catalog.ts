@@ -82,12 +82,6 @@ const MANUAL_CATALOG: CatalogEntry[] = [
     name: "Angled Foundation Left",
     category: "building",
     footprint: { width: 4, height: 4 },
-    renderAsset: {
-      path: "catalog/img__triangle_left.png",
-      sourceSize: { width: 16, height: 16 },
-      frame: { width: 16, height: 16 },
-      clip: true,
-    },
     source: "native enum + bundle render map",
   },
   {
@@ -95,12 +89,6 @@ const MANUAL_CATALOG: CatalogEntry[] = [
     name: "Triangle Foundation Left Delete",
     category: "building",
     footprint: { width: 4, height: 4 },
-    renderAsset: {
-      path: "catalog/img__triangle_left_del.png",
-      sourceSize: { width: 16, height: 16 },
-      frame: { width: 16, height: 16 },
-      clip: true,
-    },
     source: "native enum + bundle render map",
   },
   {
@@ -108,12 +96,6 @@ const MANUAL_CATALOG: CatalogEntry[] = [
     name: "Angled Foundation Right",
     category: "building",
     footprint: { width: 4, height: 4 },
-    renderAsset: {
-      path: "catalog/img__triangle_right.png",
-      sourceSize: { width: 16, height: 16 },
-      frame: { width: 16, height: 16 },
-      clip: true,
-    },
     source: "native enum + bundle render map",
   },
   {
@@ -121,12 +103,6 @@ const MANUAL_CATALOG: CatalogEntry[] = [
     name: "Triangle Foundation Right Delete",
     category: "building",
     footprint: { width: 4, height: 4 },
-    renderAsset: {
-      path: "catalog/img__triangle_right_del.png",
-      sourceSize: { width: 16, height: 16 },
-      frame: { width: 16, height: 16 },
-      clip: true,
-    },
     source: "native enum + bundle render map",
   },
   {
@@ -142,12 +118,6 @@ const MANUAL_CATALOG: CatalogEntry[] = [
     name: "Sound Box",
     category: "logic",
     footprint: { width: 4, height: 4 },
-    renderAsset: {
-      path: "catalog/img__sound_box.png",
-      sourceSize: { width: 16, height: 16 },
-      frame: { width: 16, height: 16 },
-      clip: true,
-    },
     source: "native enum + bundle render map",
   },
   {

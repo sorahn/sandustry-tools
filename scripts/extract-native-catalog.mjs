@@ -89,6 +89,12 @@ const variantAssetFrames = new Map([
   [2, { width: 16, height: 16 }],
   [3, { width: 18, height: 22 }],
   [4, { width: 18, height: 22 }],
+  [12, { width: 16, height: 16 }],
+  [13, { width: 16, height: 16 }],
+  [14, { width: 16, height: 16 }],
+  [15, { width: 16, height: 16 }],
+  [22, { width: 16, height: 16 }],
+  [20, undefined],
   [17, { width: 18, height: 18 }],
   [18, { width: 18, height: 18 }],
   [19, { width: 18, height: 18 }],
@@ -120,6 +126,10 @@ function deriveAssetRotation(targetType, allEntries) {
     7,
     8,
     9,
+    12,
+    13,
+    14,
+    15,
     17,
   ]);
 
@@ -184,6 +194,12 @@ function findImageName(entry, allEntries) {
 }
 
 const clipOverrides = new Map([
+  [12, true],
+  [13, true],
+  [14, true],
+  [15, true],
+  [22, true],
+  [20, true],
   ["heatCannonRight", false],
   ["heatCannonUp", false],
   ["heatCannonLeft", false],
@@ -201,8 +217,6 @@ const assetPresentationOverrides = new Map([
   [7, { offset: { x: -1, y: -1 } }],
   [17, { offset: { x: -1, y: -1 } }],
   [18, { offset: { x: -1, y: -1 } }],
-  [13, { rotation: 180 }],
-  [14, { rotation: 0 }],
   [21, { clip: false, offset: { x: -1 } }],
   ["filterLeftMk2", { offset: { x: -1, y: -1 } }],
   ["filterRightMk2", { offset: { x: -1, y: -1 } }],
@@ -355,7 +369,9 @@ const catalogWithAssets = {
     // at the cardinal fan while their dedicated PNG is 15x15.
     const assetPath = variantAsset ?? renderImageAsset ?? menuAsset;
     const asset = assetPath ? assets.find((candidate) => candidate.file === assetPath) : undefined;
-    const assetFrame = variantAssetFrames.get(entry.type) ?? menuCapture?.frame;
+    const assetFrame = variantAssetFrames.has(entry.type)
+      ? variantAssetFrames.get(entry.type)
+      : menuCapture?.frame;
     const derivedRotation = deriveAssetRotation(entry.type, blueprintCatalog.entries);
     const defaultAssetClip =
       asset?.size &&
@@ -385,6 +401,20 @@ const catalogWithAssets = {
 
 assertCatalogInvariants(catalogWithAssets, { assetRoot });
 
+const usedAssetFiles = new Set([
+  ...catalogWithAssets.entries
+    .map((entry) => entry.renderAsset?.path)
+    .filter((file) => typeof file === "string"),
+  // This deprecated bundled-mod entry is intentionally supplied by the
+  // browser catalog because its runtime definition is not captured.
+  "catalog/mods__signalCounter4.png",
+]);
+for (const asset of assets) {
+  if (!usedAssetFiles.has(asset.file))
+    fs.rmSync(path.join(assetRoot, path.basename(asset.file)), { force: true });
+}
+const usedAssets = assets.filter((asset) => usedAssetFiles.has(asset.file));
+
 fs.writeFileSync(catalogPath, `${JSON.stringify(catalogWithAssets, null, 2)}\n`);
 fs.writeFileSync(
   path.join(assetRoot, "manifest.json"),
@@ -392,7 +422,7 @@ fs.writeFileSync(
     {
       generatedAt: new Date().toISOString(),
       source: "local Sandustry app.asar + building-menu.html",
-      assets,
+      assets: usedAssets,
     },
     null,
     2,

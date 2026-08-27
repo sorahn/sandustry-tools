@@ -10,7 +10,10 @@ Put one encoded blueprint per file in `packages/sandustry-blueprint-core/tests/v
 `packages/sandustry-blueprint-core/tests/visual/blueprints/thermal-line.txt`. Both v2 binary strings and v2 text
 strings are accepted.
 
-Create or replace the checked-in baseline with:
+Do not update checked-in baselines during ordinary test runs. A mismatch is a
+signal to inspect the renderer, catalog, asset metadata, or fixture. Only
+create or replace a baseline after the user explicitly approves an intentional
+visual behavior change. Then use:
 
 ```sh
 npm run visual:render -- --update
@@ -42,7 +45,8 @@ with:
 bun test packages/sandustry-blueprint-core/tests/visual/svg-snapshots.test.ts
 ```
 
-Refresh them after an intentional SVG renderer change with:
+After explicit approval for an intentional SVG renderer change, refresh them
+with:
 
 ```sh
 bun test packages/sandustry-blueprint-core/tests/visual/svg-snapshots.test.ts --update
@@ -54,7 +58,8 @@ PNG output snapshots are checked as individual Bun tests with:
 bun test packages/sandustry-blueprint-core/tests/visual/png-snapshots.test.ts
 ```
 
-Refresh the PNG baselines after an intentional renderer change with:
+After explicit approval for an intentional PNG renderer change, refresh the
+baselines with:
 
 ```sh
 bun test packages/sandustry-blueprint-core/tests/visual/png-snapshots.test.ts --update

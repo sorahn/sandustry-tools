@@ -25,8 +25,6 @@ test("catalog invariants", () => {
     ),
   );
   const expected = [
-    [13, { rotation: 180 }],
-    [14, { rotation: 0 }],
     [21, { clip: false, offset: { x: -1 } }],
     ["filterLeftMk2", { offset: { x: -1, y: -1 } }],
     ["filterRightMk2", { offset: { x: -1, y: -1 } }],
