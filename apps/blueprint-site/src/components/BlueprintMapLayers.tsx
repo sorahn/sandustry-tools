@@ -103,6 +103,78 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
   );
 });
 
+export const BlueprintMapEdgeFadeLayer = memo(function BlueprintMapEdgeFadeLayer({
+  width,
+  height,
+  cell,
+}: {
+  width: number;
+  height: number;
+  cell: number;
+}) {
+  const fadeSize = cell * 6;
+  const fadeBleed = 1;
+  const gradients = [
+    {
+      id: "blueprint-map-opacity-left",
+      x1: 0,
+      x2: fadeSize,
+      y1: 0,
+      y2: 0,
+      rect: { x: -fadeBleed, y: 0, width: fadeSize + fadeBleed, height },
+    },
+    {
+      id: "blueprint-map-opacity-right",
+      x1: width,
+      x2: width - fadeSize,
+      y1: 0,
+      y2: 0,
+      rect: { x: width - fadeSize, y: 0, width: fadeSize + fadeBleed, height },
+    },
+    {
+      id: "blueprint-map-opacity-top",
+      x1: 0,
+      x2: 0,
+      y1: 0,
+      y2: fadeSize,
+      rect: { x: 0, y: -fadeBleed, width, height: fadeSize + fadeBleed },
+    },
+    {
+      id: "blueprint-map-opacity-bottom",
+      x1: 0,
+      x2: 0,
+      y1: height,
+      y2: height - fadeSize,
+      rect: { x: 0, y: height - fadeSize, width, height: fadeSize + fadeBleed },
+    },
+  ];
+  return (
+    <g pointerEvents="none" style={mapLayerStyle("background")}>
+      <defs>
+        {gradients.map((gradient) => (
+          <linearGradient
+            key={gradient.id}
+            id={gradient.id}
+            gradientUnits="userSpaceOnUse"
+            x1={gradient.x1}
+            x2={gradient.x2}
+            y1={gradient.y1}
+            y2={gradient.y2}
+          >
+            <stop offset="0%" stopColor="#33a8ff" />
+            <stop offset="16.6667%" stopColor="#33a8ff" />
+            <stop offset="83.3333%" stopColor="#33a8ff" stopOpacity="0" />
+            <stop offset="100%" stopColor="#33a8ff" stopOpacity="0" />
+          </linearGradient>
+        ))}
+      </defs>
+      {gradients.map((gradient) => (
+        <rect key={gradient.id} {...gradient.rect} fill={`url(#${gradient.id})`} />
+      ))}
+    </g>
+  );
+});
+
 export const BlueprintMapSignalLinksLayer = memo(function BlueprintMapSignalLinksLayer({
   preparedBlueprint,
   visible,

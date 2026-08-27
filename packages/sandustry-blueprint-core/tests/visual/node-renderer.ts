@@ -15,6 +15,7 @@ export function renderVisualBlueprint(
   input: string,
   assetRoot: string,
   showFoundationOutlines = true,
+  showEdgeFade = false,
 ) {
   return renderBlueprintStringToNodePng(input, {
     assetRoot,
@@ -25,5 +26,6 @@ export function renderVisualBlueprint(
     showGrid: true,
     showFoundationOutlines,
     showSignalLinks: true,
+    showEdgeFade,
   });
 }

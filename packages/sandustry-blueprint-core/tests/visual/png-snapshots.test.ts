@@ -54,6 +54,8 @@ describe("blueprint PNG snapshots", () => {
       const png = await renderVisualBlueprint(
         fixture.input,
         path.join(repoRoot, "apps/blueprint-site/public"),
+        true,
+        fixture.name === "edge-fade",
       );
       await writeFile(currentPath, png);
 

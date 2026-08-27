@@ -73,6 +73,7 @@ async function capture(renderer, job, currentPath) {
     input,
     path.join(root, "apps/blueprint-site/public"),
     !noOutlines,
+    job.name === "edge-fade",
   );
   await writeFile(currentPath, png);
   const trimmedPath = `${currentPath}.trim.png`;

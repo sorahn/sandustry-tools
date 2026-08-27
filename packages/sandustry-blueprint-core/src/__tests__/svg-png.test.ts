@@ -140,6 +140,32 @@ describe("SVG and PNG adapters", () => {
     expect(signal).toBeGreaterThan(machine);
   });
 
+  test("renders the opt-in six-cell edge fade only with a visible background", () => {
+    const blueprint = { name: "Edge fade", data: [{ type: "machine", x: 0, y: 0 }] };
+    const faded = renderBlueprintToSvg(blueprint, {
+      padding: 1,
+      cell: 8,
+      showGrid: false,
+      showEdgeFade: true,
+    }).svg;
+
+    expect(faded.match(/blueprint-map-opacity-/g)).toHaveLength(8);
+    expect(faded.match(/<rect[^>]+fill="url\(#blueprint-map-opacity-/g)).toHaveLength(4);
+    expect(faded).toContain('x2="48"');
+    expect(faded).toContain('y2="48"');
+    expect(faded).toContain('offset="16.6667%"');
+    expect(faded).toContain('offset="83.3333%"');
+    expect(
+      renderBlueprintToSvg(blueprint, {
+        padding: 1,
+        cell: 8,
+        showGrid: false,
+        includeBackground: false,
+        showEdgeFade: true,
+      }).svg,
+    ).not.toContain("blueprint-map-opacity-");
+  });
+
   test("renders glass foundation and prefab terrain with the shared black boundary", () => {
     const result = renderBlueprintToSvg(
       {

@@ -28,7 +28,7 @@ describe("blueprint SVG snapshots", () => {
     test(fixture.name, async () => {
       assert.ok(fixture.input, `SVG fixture is empty: ${fixture.name}`);
       const snapshotPath = path.join(snapshotRoot, `${fixture.name}.svg`);
-      const actual = `${renderVisualBlueprintSvg(fixture.input).trim()}\n`;
+      const actual = `${renderVisualBlueprintSvg(fixture.input, fixture.name === "edge-fade").trim()}\n`;
       if (update) {
         await writeFile(snapshotPath, actual);
         return;

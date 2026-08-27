@@ -24,6 +24,8 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   showNames?: boolean;
   showFoundationOutlines?: boolean;
   showSignalLinks?: boolean;
+  /** Add a six-cell edge fade to exports with a visible background. */
+  showEdgeFade?: boolean;
 };
 
 export type BlueprintSvgRenderResult = {
@@ -77,6 +79,50 @@ function renderSignalLinks(model: BlueprintRenderModel) {
       return `<path d="${d}" stroke="${link.on ? "#00ff99" : "#ff3333"}" fill="none" stroke-linecap="round" stroke-width="3" opacity=".7"/>`;
     })
     .join("");
+}
+
+function renderEdgeFade(model: BlueprintRenderModel) {
+  const fadeSize = model.cell * 6;
+  const fadeBleed = 1;
+  const edges = [
+    ["left", 0, fadeSize, 0, 0, -fadeBleed, 0, fadeSize + fadeBleed, model.height],
+    [
+      "right",
+      model.width,
+      model.width - fadeSize,
+      0,
+      0,
+      model.width - fadeSize,
+      0,
+      fadeSize + fadeBleed,
+      model.height,
+    ],
+    ["top", 0, 0, 0, fadeSize, 0, -fadeBleed, model.width, fadeSize + fadeBleed],
+    [
+      "bottom",
+      0,
+      0,
+      model.height,
+      model.height - fadeSize,
+      0,
+      model.height - fadeSize,
+      model.width,
+      fadeSize + fadeBleed,
+    ],
+  ] as const;
+  const gradients = edges
+    .map(
+      ([side, x1, x2, y1, y2]) =>
+        `<linearGradient id="blueprint-map-opacity-${side}" gradientUnits="userSpaceOnUse" x1="${number(x1)}" x2="${number(x2)}" y1="${number(y1)}" y2="${number(y2)}"><stop offset="0%" stop-color="#33a8ff"/><stop offset="16.6667%" stop-color="#33a8ff"/><stop offset="83.3333%" stop-color="#33a8ff" stop-opacity="0"/><stop offset="100%" stop-color="#33a8ff" stop-opacity="0"/></linearGradient>`,
+    )
+    .join("");
+  const rects = edges
+    .map(
+      ([side, , , , , x, y, width, height]) =>
+        `<rect x="${number(x)}" y="${number(y)}" width="${number(width)}" height="${number(height)}" fill="url(#blueprint-map-opacity-${side})" pointer-events="none"/>`,
+    )
+    .join("");
+  return `<defs>${gradients}</defs>${rects}`;
 }
 
 function renderShapeRects(
@@ -206,6 +252,7 @@ export function renderBlueprintToSvg(
   const showGrid = options.showGrid ?? true;
   const showFoundationOutlines = options.showFoundationOutlines ?? true;
   const showSignalLinks = options.showSignalLinks ?? true;
+  const showEdgeFade = options.showEdgeFade ?? false;
   const foundationAndBeltStructures = model.renderStructures.filter(({ index }) =>
     isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
   );
@@ -240,8 +287,9 @@ export function renderBlueprintToSvg(
     ? `<path d="${escapeXml(foundationPath)}" fill="none" stroke="#000000" stroke-width="${number(renderPixelScale(model.cell))}" stroke-linecap="butt" stroke-linejoin="miter"/>`
     : "";
   const signals = showSignalLinks ? renderSignalLinks(model) : "";
+  const edgeFade = showEdgeFade && includeBackground ? renderEdgeFade(model) : "";
   return {
     model,
-    svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${number(model.width)} ${number(model.height)}" width="${number(model.width)}" height="${number(model.height)}" preserveAspectRatio="xMidYMid meet"><title>${escapeXml(blueprint.name || "Sandustry blueprint")}</title><desc>Rendered Sandustry blueprint map</desc><style>image{image-rendering:pixelated}</style>${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}</svg>`,
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${number(model.width)} ${number(model.height)}" width="${number(model.width)}" height="${number(model.height)}" preserveAspectRatio="xMidYMid meet"><title>${escapeXml(blueprint.name || "Sandustry blueprint")}</title><desc>Rendered Sandustry blueprint map</desc><style>image{image-rendering:pixelated}</style>${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}${edgeFade}</svg>`,
   };
 }

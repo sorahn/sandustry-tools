@@ -16,6 +16,7 @@ import { BlueprintMapSidebar } from "./BlueprintMapSidebar";
 import { BlueprintMapStructure } from "./BlueprintMapStructure";
 import { BlueprintMapViewportControls } from "./BlueprintMapViewportControls";
 import {
+  BlueprintMapEdgeFadeLayer,
   BlueprintMapFoundationOutlineLayer,
   BlueprintMapGridLayer,
   BlueprintMapRawStructuresLayer,
@@ -438,6 +439,7 @@ export function BlueprintMap({
       showGrid,
       showFoundationOutlines: true,
       showSignalLinks: true,
+      showEdgeFade: true,
     });
     const scale = exportScale / renderPixelScale(cell);
     const prepared = await prepareSvgForPng(rendered.svg, {
@@ -700,6 +702,7 @@ export function BlueprintMap({
             visible={signalLinksVisible}
             point={point}
           />
+          <BlueprintMapEdgeFadeLayer width={width} height={height} cell={cell} />
           {selected ? (
             <rect
               x={(selected.x - minX + padding) * cell}

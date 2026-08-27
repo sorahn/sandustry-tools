@@ -6,7 +6,7 @@ export function catalogVisualBlueprint() {
   return encodeBlueprint(catalogVisualFixture);
 }
 
-export function renderVisualBlueprintSvg(input: string) {
+export function renderVisualBlueprintSvg(input: string, showEdgeFade = false) {
   return renderBlueprintToSvg(decodeBlueprint(input), {
     catalog: blueprintCatalog(),
     assetBaseUrl: "",
@@ -14,5 +14,6 @@ export function renderVisualBlueprintSvg(input: string) {
     showGrid: true,
     showFoundationOutlines: true,
     showSignalLinks: true,
+    showEdgeFade,
   }).svg;
 }
