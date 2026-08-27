@@ -139,7 +139,7 @@ function formatChangenote(value) {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => line.replace(/^[-*]\s+/, "• "))
-    .join("\n\n");
+    .join("\n");
 }
 
 function escapeVdf(value) {
