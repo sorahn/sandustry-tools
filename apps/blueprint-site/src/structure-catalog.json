@@ -285,10 +285,7 @@
           "width": 18,
           "height": 18
         },
-        "frame": {
-          "width": 18,
-          "height": 18
-        },
+
         "rotation": 270,
         "offset": {
           "x": -1,
@@ -312,10 +309,7 @@
           "width": 18,
           "height": 26
         },
-        "frame": {
-          "width": 18,
-          "height": 26
-        },
+
         "offset": {
           "x": -1,
           "y": -1
@@ -338,10 +332,7 @@
           "width": 18,
           "height": 26
         },
-        "frame": {
-          "width": 18,
-          "height": 26
-        },
+
         "offset": {
           "x": -1,
           "y": -1
@@ -638,10 +629,7 @@
           "width": 16,
           "height": 16
         },
-        "frame": {
-          "width": 16,
-          "height": 16
-        },
+
         "rotation": 270
       }
     },
@@ -675,10 +663,7 @@
           "width": 16,
           "height": 16
         },
-        "frame": {
-          "width": 16,
-          "height": 16
-        },
+
         "rotation": 180
       }
     },
@@ -712,10 +697,7 @@
           "width": 16,
           "height": 16
         },
-        "frame": {
-          "width": 16,
-          "height": 16
-        },
+
         "rotation": 0
       }
     },
@@ -761,10 +743,7 @@
           "width": 16,
           "height": 16
         },
-        "frame": {
-          "width": 16,
-          "height": 16
-        },
+
         "rotation": 90
       }
     },
@@ -1085,10 +1064,6 @@
       "renderAsset": {
         "path": "catalog/img__velocity.png",
         "sourceSize": {
-          "width": 18,
-          "height": 417
-        },
-        "frame": {
           "width": 18,
           "height": 417
         },
@@ -1620,10 +1595,7 @@
           "width": 24,
           "height": 24
         },
-        "frame": {
-          "width": 24,
-          "height": 24
-        },
+
         "clip": false
       }
     },
@@ -3012,10 +2984,7 @@
           "width": 23,
           "height": 16
         },
-        "frame": {
-          "width": 23,
-          "height": 16
-        },
+
         "clip": false,
         "rotation": 90
       }
@@ -3101,10 +3070,7 @@
           "width": 23,
           "height": 16
         },
-        "frame": {
-          "width": 23,
-          "height": 16
-        },
+
         "clip": false,
         "rotation": 180
       }
@@ -3190,10 +3156,7 @@
           "width": 23,
           "height": 16
         },
-        "frame": {
-          "width": 23,
-          "height": 16
-        },
+
         "clip": false
       }
     },
@@ -3278,10 +3241,7 @@
           "width": 23,
           "height": 16
         },
-        "frame": {
-          "width": 23,
-          "height": 16
-        },
+
         "clip": false,
         "rotation": 270
       }
@@ -3515,10 +3475,7 @@
           "width": 23,
           "height": 16
         },
-        "frame": {
-          "width": 23,
-          "height": 16
-        },
+
         "rotation": 90,
         "clip": false,
         "offset": {
@@ -3612,10 +3569,7 @@
           "width": 15,
           "height": 15
         },
-        "frame": {
-          "width": 15,
-          "height": 15
-        },
+
         "rotation": 180,
         "clip": false,
         "offset": {
@@ -3710,10 +3664,7 @@
           "width": 15,
           "height": 15
         },
-        "frame": {
-          "width": 15,
-          "height": 15
-        },
+
         "rotation": 90,
         "clip": false,
         "offset": {
@@ -3808,10 +3759,7 @@
           "width": 23,
           "height": 16
         },
-        "frame": {
-          "width": 23,
-          "height": 16
-        },
+
         "rotation": 180,
         "clip": false,
         "offset": {
@@ -3905,10 +3853,7 @@
           "width": 23,
           "height": 16
         },
-        "frame": {
-          "width": 23,
-          "height": 16
-        },
+
         "rotation": 270,
         "clip": false,
         "offset": {
@@ -4002,10 +3947,7 @@
           "width": 15,
           "height": 15
         },
-        "frame": {
-          "width": 15,
-          "height": 15
-        },
+
         "rotation": 270,
         "clip": false,
         "offset": {
@@ -4100,10 +4042,7 @@
           "width": 15,
           "height": 15
         },
-        "frame": {
-          "width": 15,
-          "height": 15
-        },
+
         "clip": false,
         "offset": {
           "x": -8,
@@ -4376,10 +4315,7 @@
           "width": 18,
           "height": 18
         },
-        "frame": {
-          "width": 18,
-          "height": 18
-        },
+
         "rotation": 270
       }
     },
@@ -4590,18 +4526,10 @@
       },
       "source": "runtime structure definition",
       "renderAsset": {
-        "path": "catalog/mods__quantumPortal.png",
+        "path": "catalog/mods__quantum_portal.png",
         "sourceSize": {
-          "width": 16,
-          "height": 16
-        },
-        "frame": {
-          "width": 16,
-          "height": 16
-        },
-        "offset": {
-          "x": 1,
-          "y": 1
+          "width": 18,
+          "height": 18
         }
       }
     },
@@ -4642,14 +4570,10 @@
       },
       "source": "runtime structure definition",
       "renderAsset": {
-        "path": "catalog/mods__quantumPortalExit.png",
+        "path": "catalog/mods__quantum_portal_exit.png",
         "sourceSize": {
-          "width": 16,
-          "height": 16
-        },
-        "offset": {
-          "x": 1,
-          "y": 1
+          "width": 18,
+          "height": 18
         }
       }
     },
@@ -6523,10 +6447,7 @@
           "width": 16,
           "height": 16
         },
-        "frame": {
-          "width": 16,
-          "height": 16
-        },
+
         "clip": false
       }
     },
@@ -6997,10 +6918,7 @@
           "width": 16,
           "height": 16
         },
-        "frame": {
-          "width": 16,
-          "height": 16
-        },
+
         "clip": false
       }
     },

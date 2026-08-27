@@ -41,6 +41,19 @@ describe("site catalog utilities", () => {
     expect(catalogEntry(19)?.renderAsset).toBeUndefined();
   });
 
+  test("uses the Quantum portal presentation sprites for both endpoints", () => {
+    expect(catalogEntry("quantumPortal")?.renderAsset).toMatchObject({
+      path: "catalog/mods__quantum_portal.png",
+      sourceSize: { width: 18, height: 18 },
+    });
+    expect(catalogEntry("quantumPortalExit")?.renderAsset).toMatchObject({
+      path: "catalog/mods__quantum_portal_exit.png",
+      sourceSize: { width: 18, height: 18 },
+    });
+    expect(catalogEntry("quantumPortal")?.renderAsset?.offset).toBeUndefined();
+    expect(catalogEntry("quantumPortalExit")?.renderAsset?.offset).toBeUndefined();
+  });
+
   test("returns undefined for unknown structure types", () => {
     expect(catalogEntry("missingStructure")).toBeUndefined();
     expect(blueprintCatalog().get("missingStructure")).toBeUndefined();

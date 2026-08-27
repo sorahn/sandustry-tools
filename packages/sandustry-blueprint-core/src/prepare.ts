@@ -281,14 +281,14 @@ export function structureVisualTopY(
     return topY + assetOffsetY;
   }
   if (!renderAsset) return topY + assetOffsetY;
-  const frameHeight = renderAsset.frame?.width ?? 1;
+  const frameWidth = renderAsset.frame?.width ?? renderAsset.sourceSize?.width ?? 1;
   const sourceHeight =
-    renderAsset.sourceCrop?.height ?? renderAsset.sourceSize?.height ?? frameHeight;
+    renderAsset.sourceCrop?.height ?? renderAsset.sourceSize?.height ?? frameWidth;
   const scale = scaleFactor(renderAsset.scale);
   return (
     structure.y +
     1 -
-    (sourceHeight / frameHeight) * scale +
+    (sourceHeight / frameWidth) * scale +
     anchorOffsetCells(renderAsset.anchor) +
     assetOffsetY
   );

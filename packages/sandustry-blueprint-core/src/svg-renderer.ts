@@ -140,7 +140,7 @@ function renderStructure(
     const frameHeight = asset.frame?.height ?? asset.renderSize?.height ?? sourceHeight;
     const frameIndex = prepared.sprite?.frameIndex ?? asset.frameIndex ?? 0;
     const visualWidth =
-      asset.renderSize || (asset.frame && asset.scale !== "cell")
+      asset.renderSize || ((asset.sourceSize || asset.frame) && asset.scale !== "cell")
         ? frameWidth * renderPixelScale(model.cell)
         : renderScaleMode(asset.scale) === "cell"
           ? model.cell * renderScaleFactor(asset.scale)
@@ -148,7 +148,7 @@ function renderStructure(
     const visualHeight =
       asset.renderSize || (asset.frame && asset.scale !== "cell")
         ? frameHeight * renderPixelScale(model.cell)
-        : asset.frame
+        : asset.sourceSize || asset.frame
           ? visualWidth * ((asset.sourceCrop?.height ?? sourceHeight) / frameWidth)
           : tileHeight;
     const sourceScale = visualWidth / frameWidth;

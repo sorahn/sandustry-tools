@@ -72,6 +72,10 @@ const variantAssetSources = new Map([
   ["heatCannonDown", "dist/mods/heat_cannon.png"],
   ["heatCannonLeft", "dist/mods/heat_cannon.png"],
   ["heatCannonUp", "dist/mods/heat_cannon.png"],
+  // The camelCase exports are raw 16x16 masks; use the 18x18 presentation
+  // sprites for blueprint rendering.
+  ["quantumPortal", "dist/mods/quantum_portal.png"],
+  ["quantumPortalExit", "dist/mods/quantum_portal_exit.png"],
   ["glassFoundation", "dist/img/block.png"],
   ["kineticFieldEmitterDownRight", "dist/mods/kinetic_field_emitter_diagonal.png"],
   ["kineticFieldEmitterDownLeft", "dist/mods/kinetic_field_emitter_diagonal.png"],
@@ -85,40 +89,13 @@ const variantAssetFrames = new Map([
   [2, { width: 16, height: 16 }],
   [3, { width: 18, height: 22 }],
   [4, { width: 18, height: 22 }],
-  [5, { width: 18, height: 18 }],
-  [6, { width: 18, height: 26 }],
-  [7, { width: 18, height: 26 }],
-  [12, { width: 16, height: 16 }],
-  [13, { width: 16, height: 16 }],
-  [14, { width: 16, height: 16 }],
-  [15, { width: 16, height: 16 }],
   [17, { width: 18, height: 18 }],
   [18, { width: 18, height: 18 }],
   [19, { width: 18, height: 18 }],
-  [21, { width: 16, height: 16 }],
-  [22, { width: 16, height: 16 }],
-  [23, { width: 16, height: 16 }],
-  [24, { width: 16, height: 16 }],
-  [27, { width: 16, height: 16 }],
-  ["glassFoundation", { width: 16, height: 16 }],
   ["conveyorLeftMk2", { width: 16, height: 16 }],
   ["conveyorRightMk2", { width: 16, height: 16 }],
   ["filterLeftMk2", { width: 18, height: 18 }],
   ["filterRightMk2", { width: 18, height: 18 }],
-  ["launcherLeftMk2", { width: 18, height: 26 }],
-  ["launcherRightMk2", { width: 18, height: 26 }],
-  ["launcherUpMk2", { width: 18, height: 18 }],
-  ["heatCannonRight", { width: 16, height: 16 }],
-  ["heatCannonUp", { width: 16, height: 16 }],
-  ["heatCannonLeft", { width: 16, height: 16 }],
-  ["heatCannonDown", { width: 16, height: 16 }],
-  ["kineticFieldEmitterDownRight", { width: 15, height: 15 }],
-  ["kineticFieldEmitterDownLeft", { width: 15, height: 15 }],
-  ["kineticFieldEmitterUpLeft", { width: 15, height: 15 }],
-  ["kineticFieldEmitterUpRight", { width: 15, height: 15 }],
-  ["kineticFieldEmitterDown", { width: 23, height: 16 }],
-  ["kineticFieldEmitterLeft", { width: 23, height: 16 }],
-  ["kineticFieldEmitterUp", { width: 23, height: 16 }],
 ]);
 
 function deriveAssetRotation(targetType, allEntries) {
@@ -236,11 +213,8 @@ const assetPresentationOverrides = new Map([
       clip: false,
     },
   ],
-  // The menu capture reports an 18x18 presentation box, but the native
-  // conveyor-portal export is a single 16x16 frame. The runtime render
-  // metadata is offset by -1/-1, so counter it for the extracted asset.
-  ["quantumPortal", { frame: { width: 16, height: 16 }, offset: { x: 1, y: 1 } }],
-  ["quantumPortalExit", { offset: { x: 1, y: 1 } }],
+  ["quantumPortal", { frame: { width: 18, height: 18 } }],
+  ["quantumPortalExit", { frame: { width: 18, height: 18 } }],
   ["clearingFrameLeft", { frame: { width: 16, height: 20 }, clip: true, offset: { y: -4 } }],
   ["clearingFrameRight", { frame: { width: 16, height: 20 }, clip: true, offset: { y: -4 } }],
   // These native exports are complete sprites even though their presentation
@@ -280,7 +254,6 @@ const assetPresentationOverrides = new Map([
     20,
     {
       sourceCrop: { x: 0, y: 0, width: 18, height: 417 },
-      frame: { width: 18, height: 417 },
       offset: { x: -1 },
       scale: { mode: "cell", factor: 4 },
       anchor: { edge: "bottom", offsetCells: 3 },

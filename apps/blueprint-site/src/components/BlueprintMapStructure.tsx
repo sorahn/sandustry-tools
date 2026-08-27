@@ -225,7 +225,9 @@ function BlueprintMapSprite({
   const spriteRotation = prepared.sprite?.rotation ?? renderAsset.rotation;
   const customLightColor = renderAsset.lightColor ?? prepared.lightColor;
   const useNativeAssetSize =
-    runtimeSize !== undefined || (frame !== undefined && renderAsset.scale !== "cell");
+    runtimeSize !== undefined ||
+    (renderAsset.sourceSize !== undefined && renderAsset.scale !== "cell") ||
+    (frame !== undefined && renderAsset.scale !== "cell");
   const needsFrameClip = renderAsset.clip ?? sourceWidth > frameWidth;
   const pixelScale = renderPixelScale(cell);
   const visualWidth = useNativeAssetSize
@@ -235,7 +237,7 @@ function BlueprintMapSprite({
       : tileWidth;
   const visualHeight = useNativeAssetSize
     ? frameHeight * pixelScale
-    : frame
+    : frame || source
       ? visualWidth * ((sourceCrop?.height ?? sourceHeight) / frameWidth)
       : tileHeight;
   const sourceScale = visualWidth / frameWidth;
