@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { createHash } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { readExternalCache, refreshExternal } from "./external";
 
 type Source = {
   id: string;
@@ -146,9 +147,12 @@ async function indexFiles(mode: "all" | "changed") {
   const commitSha = runGit(["rev-parse", "HEAD"]);
   const indexedAt = new Date().toISOString();
   const repositoryId = hash(`${config.repository}:${root}`).slice(0, 24);
-  const existing = database.query("SELECT path, content_hash FROM documents").all() as Array<{
+  const existing = database
+    .query("SELECT path, content_hash, source_id FROM documents")
+    .all() as Array<{
     path: string;
     content_hash: string;
+    source_id: string;
   }>;
   const existingHashes = new Map(existing.map((row) => [row.path, row.content_hash]));
   const seen = new Set<string>();
@@ -257,7 +261,7 @@ async function indexFiles(mode: "all" | "changed") {
     }
 
     for (const row of existing) {
-      if (seen.has(row.path)) continue;
+      if (row.source_id === "official-sandkit-docs" || seen.has(row.path)) continue;
       const document = database
         .query("SELECT id FROM documents WHERE path = $path")
         .get({ $path: row.path }) as { id?: string } | null;
@@ -294,6 +298,96 @@ async function indexFiles(mode: "all" | "changed") {
     ),
   );
   database.close();
+}
+
+async function indexExternal() {
+  const cached = await readExternalCache(root);
+  if (!cached) return;
+  const source = config.sources.find((entry) => entry.id === "official-sandkit-docs");
+  if (!source?.enabled || !source.url) return;
+  const database = openDatabase();
+  for (const statement of [
+    "ALTER TABLE documents ADD COLUMN source_url TEXT",
+    "ALTER TABLE chunks ADD COLUMN source_url TEXT",
+    "ALTER TABLE chunks ADD COLUMN anchor TEXT",
+  ]) {
+    try {
+      database.exec(statement);
+    } catch (error) {
+      if (!(error instanceof Error) || !error.message.includes("duplicate column name"))
+        throw error;
+    }
+  }
+  const documentId = hash(`${config.repository}:external:${source.id}`).slice(0, 32);
+  const documentPath = `external/${source.id}`;
+  const indexedAt = new Date().toISOString();
+  database.exec("BEGIN");
+  try {
+    database
+      .query("DELETE FROM chunks_fts WHERE document_id = $document")
+      .run({ $document: documentId });
+    database
+      .query("DELETE FROM chunks WHERE document_id = $document")
+      .run({ $document: documentId });
+    database.query("DELETE FROM documents WHERE id = $document").run({ $document: documentId });
+    database
+      .query(
+        `INSERT INTO documents (id, path, source_id, authority, language, content_hash, byte_length, indexed_at, source_url)
+       VALUES ($id, $path, $source, $authority, 'html', $hash, $bytes, $indexed, $url)`,
+      )
+      .run({
+        $id: documentId,
+        $path: documentPath,
+        $source: source.id,
+        $authority: source.authority,
+        $hash: cached.metadata.contentHash,
+        $bytes: Buffer.byteLength(cached.html),
+        $indexed: indexedAt,
+        $url: source.url,
+      });
+    for (const [index, chunk] of cached.chunks.entries()) {
+      const chunkId = hash(`${documentId}:${index}:${chunk.anchor}:${chunk.content}`).slice(0, 40);
+      database
+        .query(
+          `INSERT INTO chunks (id, document_id, start_line, end_line, chunk_type, content, source_url, anchor)
+         VALUES ($id, $document, 0, 0, $type, $content, $url, $anchor)`,
+        )
+        .run({
+          $id: chunkId,
+          $document: documentId,
+          $type: chunk.type,
+          $content: chunk.content,
+          $url: source.url,
+          $anchor: chunk.anchor,
+        });
+      database
+        .query(
+          `INSERT INTO chunks_fts (content, path, authority, start_line, end_line, chunk_type, document_id, chunk_id)
+         VALUES ($content, $path, $authority, 0, 0, $type, $document, $id)`,
+        )
+        .run({
+          $content: chunk.content,
+          $path: `${documentPath}#${chunk.anchor}`,
+          $authority: source.authority,
+          $type: chunk.type,
+          $document: documentId,
+          $id: chunkId,
+        });
+    }
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  } finally {
+    database.close();
+  }
+  console.log(
+    JSON.stringify(
+      { source: source.id, chunks: cached.chunks.length, fetchedAt: cached.metadata.fetchedAt },
+      null,
+      2,
+    ),
+  );
 }
 
 function status() {
@@ -344,12 +438,19 @@ function search(query: string) {
 }
 
 const [command = "help", argument] = process.argv.slice(2);
-if (command === "index") await indexFiles(argument === "--changed" ? "changed" : "all");
-else if (command === "status") status();
+if (command === "index") {
+  await indexFiles(argument === "--changed" ? "changed" : "all");
+  await indexExternal();
+} else if (command === "external") {
+  const source = config.sources.find((entry) => entry.id === "official-sandkit-docs");
+  if (!source?.url) throw new Error("official Sandkit docs source is not configured");
+  if (argument !== "refresh") throw new Error("Usage: ... external refresh");
+  console.log(JSON.stringify(await refreshExternal(root, source.url), null, 2));
+} else if (command === "status") status();
 else if (command === "search") search(argument ?? "");
 else {
   console.log(
-    "Usage: bun scripts/repo-rag/index.ts <index [--all|--changed]|status|search <query>>",
+    "Usage: bun scripts/repo-rag/index.ts <index [--all|--changed]|external refresh|status|search <query>>",
   );
   process.exitCode = command === "help" ? 0 : 1;
 }
