@@ -874,9 +874,9 @@ const addThermalTemperature = (structure: SandustryStructure, delta: number) => 
 const thermalRingCells = (structure: SandustryStructure) => {
   const cells: Array<{ x: number; y: number }> = [];
   for (let index = 0; index < SIZE; index += 1) {
-    cells.push({ x: structure.x + index, y: structure.y - 1 });
+    cells.push({ x: structure.x + index, y: structure.y - SIZE });
     cells.push({ x: structure.x + index, y: structure.y + SIZE });
-    cells.push({ x: structure.x - 1, y: structure.y + index });
+    cells.push({ x: structure.x - SIZE, y: structure.y + index });
     cells.push({ x: structure.x + SIZE, y: structure.y + index });
   }
   return cells;

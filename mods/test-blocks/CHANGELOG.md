@@ -1,5 +1,9 @@
 # Test Blocks changelog
 
+## 0.1.16
+
+- Fixed Infinite Thermal Source adjacency so it shares heat with buffers on all four sides.
+
 ## 0.1.15
 
 - Updated the thermal-consumption patch for Sandustry 0.5.5.

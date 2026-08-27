@@ -98,6 +98,8 @@ separate dependency graphs:
   build, and test configuration; do not extend the mod build rules for them.
 - Reference material and DOM captures may inform browser implementations, but
   are research data/documentation, not shared executable code.
+- Screenshots may be used for visual comparison, but DOM traces are the source
+  of truth for component structure, states, interactions, and implementation.
 - Preserve the boundary with workspace/package rules or automated import checks
   so accidental cross-project dependencies fail early.
 
