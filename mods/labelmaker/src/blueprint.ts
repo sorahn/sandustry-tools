@@ -4,6 +4,7 @@ export type LabelBlueprintStructure = {
   type: string;
   x: number;
   y: number;
+  color: string;
   data: {
     __prefabulatorBlueprint: {
       definition: {
@@ -61,7 +62,11 @@ export function labelBitmap(text: string, font: LabelFont): number[][] {
   return bitmap.slice(firstPaintedRow, lastPaintedRow + 1);
 }
 
-export function createLabelBlueprint(text: string, font: LabelFont): LabelBlueprint {
+export function createLabelBlueprint(
+  text: string,
+  font: LabelFont,
+  color = "#ffffff",
+): LabelBlueprint {
   const bitmap = labelBitmap(text, font);
   const width = bitmap[0]?.length ?? 0;
   const data: LabelBlueprintStructure[] = [];
@@ -84,6 +89,7 @@ export function createLabelBlueprint(text: string, font: LabelFont): LabelBluepr
         type: PREFAB_TERRAIN_TYPE,
         x: blockX,
         y: blockY + 1,
+        color,
         data: { __prefabulatorBlueprint: { definition: { shape, cellIds } } },
       });
     }

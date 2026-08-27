@@ -6,8 +6,10 @@ export const LabelmakerPrompt = ({
   prompt,
   value,
   fontId,
+  color,
   onChange,
   onFontChange,
+  onColorChange,
   onCancel,
   onConfirm,
 }: LabelmakerPromptProps) => {
@@ -99,6 +101,17 @@ export const LabelmakerPrompt = ({
                   </optgroup>
                 ))}
               </select>
+            </label>
+            <label className="flex items-center gap-2 text-white">
+              <span>Color</span>
+              <input
+                className="h-9 w-16 rounded border border-slate-600 bg-slate-900 p-1"
+                type="color"
+                value={color}
+                aria-label="Label color"
+                onChange={(event) => onColorChange(event.currentTarget.value)}
+              />
+              <span className="font-mono text-slate-300">{color}</span>
             </label>
             {prompt.fontGroups.some((group) =>
               group.options.some((font) => font.id === fontId && font.retro),

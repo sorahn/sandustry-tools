@@ -7,7 +7,6 @@ import {
   isCopierSelected,
   localizeLabelStructures,
   restoreLabelmakerAction,
-  serializeLabelStructures,
 } from "./native-placement";
 import {
   getBundledFont,
@@ -23,6 +22,8 @@ const TOOL_SPRITE_ID = "sorahnLabelmakerSprite";
 const ACTION_START = 1;
 const LABELMAKER_NAME = "Labelmaker";
 const LABELMAKER_MAX_CHARACTERS = 64;
+const LAST_COLOR_KEY = `${ITEM_ID}.lastColor`;
+const DEFAULT_LABEL_COLOR = "#ffffff";
 const LABEL_PROMPT =
   "Enter a label (common keyboard characters and symbols are supported; unsupported characters become blank glyphs):";
 const MOD_TRANSLATIONS = {
@@ -38,6 +39,11 @@ const ITEM_TRANSLATIONS = {
 let promptOpen = false;
 let cursorActive = false;
 let selectedFontId = getBundledFontIds()[0] ?? "";
+const storedColor = api.storage.local.get(LAST_COLOR_KEY);
+let selectedColor =
+  typeof storedColor === "string" && /^#[\da-f]{6}$/i.test(storedColor)
+    ? storedColor
+    : DEFAULT_LABEL_COLOR;
 
 async function openLabelmaker(): Promise<void> {
   if (promptOpen) {
@@ -54,9 +60,12 @@ async function openLabelmaker(): Promise<void> {
       LABELMAKER_NAME,
       getBundledFontOptions(),
       selectedFontId,
+      selectedColor,
     );
     if (result === null) return;
     selectedFontId = result.fontId;
+    selectedColor = result.color;
+    api.storage.local.set(LAST_COLOR_KEY, selectedColor);
     if (!result.text.length) {
       api.ui.toast("Labelmaker: enter at least one character.");
       return;
@@ -68,9 +77,12 @@ async function openLabelmaker(): Promise<void> {
       return;
     }
 
-    const blueprint = createLabelBlueprint(result.text, getBundledFont(result.fontId));
-    const serializedStructures = serializeLabelStructures(blueprint.data);
-    const cursorStructures = localizeLabelStructures(serializedStructures);
+    const blueprint = createLabelBlueprint(
+      result.text,
+      getBundledFont(result.fontId),
+      result.color,
+    );
+    const cursorStructures = localizeLabelStructures(blueprint.data);
     if (!cursorStructures?.length) {
       api.ui.toast("Labelmaker: could not prepare the placement cursor.");
       return;

@@ -19,14 +19,17 @@ export type LabelmakerFontGroup = {
 export type LabelmakerPromptResult = {
   text: string;
   fontId: string;
+  color: string;
 };
 
 export type LabelmakerPromptProps = {
   prompt: LabelmakerPromptState | null;
   value: string;
   fontId: string;
+  color: string;
   onChange: (value: string) => void;
   onFontChange: (fontId: string) => void;
+  onColorChange: (color: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 };

@@ -23,28 +23,19 @@ type PrefabBlueprintData = {
 export function localizeLabelStructures(
   structures: SandustryBlueprintRecord[],
 ): SandustryBlueprintRecord[] {
-  const localized = sandkit.api.blueprints.localizeStructures(structures);
-
   // Keep the definition on the transient Copier cursor after localization.
   // This does not call the clipboard API or save a blueprint.
   return structures.flatMap((structure) => {
+    const localized = sandkit.api.blueprints.localizeStructures([structure]);
     const definition = (structure.data as PrefabBlueprintData | undefined)?.__prefabulatorBlueprint
       ?.definition;
-    const records = localized.filter(
-      (record) => record.x === structure.x && record.y === structure.y,
-    );
+    const records = localized;
     if (!definition || !records.length) return records;
     return records.map((record) => ({
       ...record,
       data: { __prefabulatorBlueprint: { definition } },
     }));
   });
-}
-
-export function serializeLabelStructures(
-  structures: SandustryBlueprintRecord[],
-): SandustryBlueprintRecord[] {
-  return sandkit.api.blueprints.serializeStructures(structures);
 }
 
 export function activateCopierPlacement(structures: SandustryBlueprintRecord[]): boolean {

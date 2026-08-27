@@ -5,6 +5,8 @@
 - Switched blueprint serialization and localization to the public Sandustry 0.5.5 API.
 - Kept the private Copier placement bridge isolated for compatibility.
 - Updated the Labelmaker tool asset.
+- Added a label color picker backed by prefab structure tinting.
+- Remembered the last selected label color between prompts and game sessions.
 
 ## 0.1.0
 

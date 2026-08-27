@@ -12,6 +12,7 @@ type PromptRequest = LabelmakerPromptState & {
 let promptRequest: PromptRequest | null = null;
 let promptValue = "";
 let promptFontId = "";
+let promptColor = "#ffffff";
 let promptRepaint: ((update: (value: number) => number) => void) | null = null;
 let promptDispose: (() => void) | null = null;
 
@@ -59,6 +60,7 @@ const LabelmakerPromptHost = () => {
       prompt={promptRequest}
       value={promptValue}
       fontId={promptFontId}
+      color={promptColor}
       onChange={(value) => {
         promptValue = value;
         refreshPrompt();
@@ -67,8 +69,14 @@ const LabelmakerPromptHost = () => {
         promptFontId = fontId;
         refreshPrompt();
       }}
+      onColorChange={(color) => {
+        promptColor = color;
+        refreshPrompt();
+      }}
       onCancel={() => finishPrompt(null)}
-      onConfirm={() => finishPrompt({ text: promptValue, fontId: promptFontId })}
+      onConfirm={() =>
+        finishPrompt({ text: promptValue, fontId: promptFontId, color: promptColor })
+      }
     />
   );
 };
@@ -101,15 +109,19 @@ export function openLabelmakerPrompt(
   title: string,
   fontGroups: LabelmakerPromptState["fontGroups"],
   defaultFontId: string,
+  defaultColor = "#ffffff",
 ): Promise<LabelmakerPromptResult | null> {
   if (promptRequest) finishPrompt(null);
   if (!registerLabelmakerPrompt()) {
     return api.ui
       .prompt(message, defaultValue, placeholder, title)
-      .then((text) => (text === null ? null : { text, fontId: defaultFontId }));
+      .then((text) =>
+        text === null ? null : { text, fontId: defaultFontId, color: defaultColor },
+      );
   }
   promptValue = defaultValue;
   promptFontId = defaultFontId;
+  promptColor = defaultColor;
   return new Promise((resolve) => {
     promptRequest = { message, placeholder, title, fontGroups, resolve };
     refreshPrompt();
