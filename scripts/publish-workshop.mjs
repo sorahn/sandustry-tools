@@ -130,7 +130,7 @@ function readChangelogNote(modDir, manifest) {
   const remainder = sectionStart < 0 ? "" : changelog.slice(sectionStart);
   const nextHeading = remainder.search(/^##\s+/m);
   const note = remainder.slice(0, nextHeading < 0 ? remainder.length : nextHeading).trim();
-  if (note) return note;
+  if (note) return `${manifest.version}\n\n${note}`;
   console.warn(`No release entry in CHANGELOG.md for ${manifest.name}; using default note.`);
   return `Update ${manifest.name} to v${manifest.version}`;
 }

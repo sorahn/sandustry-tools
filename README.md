@@ -65,10 +65,10 @@ its `modinfo.json`. Set `STEAMCMD=/path/to/steamcmd`,
 `SANDUSTRY_MODS_DIR=/path/to/sandustry/mods` to override the defaults.
 
 Each mod may keep player-facing Workshop notes in `mods/<name>/CHANGELOG.md`.
-Publishing uses the section headed with the manifest version, for example
-`## 0.1.4`, as the Workshop changenote. `CHANGE_NOTE` still overrides the file
-for one-off releases. If the file or matching version is absent, publishing
-uses the generic update message and prints a warning for a missing entry.
+Publishing uses the newest release section's bullets, prefixed with the
+committed manifest version, as the Workshop changenote. `CHANGE_NOTE` still
+overrides the file for one-off releases. If the file or release entry is
+absent, publishing uses the generic update message and prints a warning.
 
 Mod descriptions can be edited as readable text in
 `mods/<name>/description.txt`. When present, the build injects that file into
