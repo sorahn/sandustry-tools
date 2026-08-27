@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 
 const [imagePath, outputPath, fontNameArg = "generated"] = process.argv.slice(2);
 if (!imagePath || !outputPath) {

@@ -15,7 +15,7 @@ function getSetting<T>(key: string, defaultValue: T): T {
     if (value !== undefined && value !== null) {
       return value as T;
     }
-  } catch (_err) {
+  } catch {
     // Fall back to default if setting lookup fails
   }
   return defaultValue;
@@ -31,7 +31,7 @@ function isTargetStructure(idOrType: unknown): boolean {
     try {
       const typeName = api.structures?.getTypeFromId?.(idOrType);
       if (typeName) return isTargetStructure(typeName);
-    } catch (_err) {
+    } catch {
       // Ignore
     }
     return false;
@@ -75,12 +75,12 @@ function applyEngineEscapeHatch(): void {
             if ("single" in config) config.single = false;
             if ("unique" in config) config.unique = false;
           }
-        } catch (_err) {
+        } catch {
           // Ignore internal escape hatch fallback errors
         }
       }
     }
-  } catch (_err) {
+  } catch {
     // Ignore escape hatch failures when the runtime is unavailable.
   }
 }
@@ -121,7 +121,7 @@ function registerVoidRiftPlacementBypass(): void {
       priority: -100000,
       modId: MOD_ID,
     });
-  } catch (_err) {
+  } catch {
     // Ignore unavailable placement interceptors.
   }
 }
@@ -154,7 +154,7 @@ function registerHooks(): void {
     if (api.hooks?.modify) {
       api.hooks.modify("building:placement-limit", placementLimitCallback);
     }
-  } catch (_err) {
+  } catch {
     // Ignore unavailable public hooks.
   }
 
@@ -162,7 +162,7 @@ function registerHooks(): void {
     if (engineApi?.hooks?.modify) {
       engineApi.hooks.modify("building:placement-limit", placementLimitCallback);
     }
-  } catch (_err) {
+  } catch {
     // Engine API modify hook fallback
   }
 }

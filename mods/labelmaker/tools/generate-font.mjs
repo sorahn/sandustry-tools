@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 
 const [fontPath, outputPath, pointSizeArg = "8", fontNameArg = "generated", glyphHeightArg] =
   process.argv.slice(2);
@@ -10,7 +10,6 @@ if (!fontPath || !outputPath) {
   process.exit(2);
 }
 
-readFileSync(fontPath);
 const pointSize = Number(pointSizeArg);
 const glyphHeight = Number(glyphHeightArg ?? pointSize);
 const characters = Array.from({ length: 96 }, (_, index) => String.fromCodePoint(32 + index));
@@ -40,14 +39,12 @@ function render(character) {
   );
   const pixels = [];
   let width = 0;
-  let height = 0;
   for (const line of output.split("\n")) {
     const match = line.match(/^(\d+),(\d+): \((\d+)/);
     if (!match) {
       const header = line.match(/enumeration: (\d+),(\d+)/);
       if (header) {
         width = Number(header[1]);
-        height = Number(header[2]);
       }
       continue;
     }

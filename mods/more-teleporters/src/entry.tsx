@@ -54,7 +54,7 @@ const resolveNativeRuntime = (): NativeRuntime | null => {
     ]);
     const exports = runtime?.("46781");
     if (exports?.FH?.teleportZones?.teleportPlayerTo) return exports.FH;
-  } catch (_) {
+  } catch {
     // The custom picker remains unavailable on runtimes without the bridge.
   }
   return null;
@@ -197,7 +197,7 @@ const registerPicker = () => {
     const dispose = api.ui.inject(PICKER_ID, DestinationPicker);
     overlayReady = typeof dispose === "function";
     return overlayReady;
-  } catch (_) {
+  } catch {
     return false;
   }
 };
