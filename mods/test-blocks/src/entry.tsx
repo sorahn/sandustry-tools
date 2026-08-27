@@ -76,7 +76,7 @@ const SPRITE_SET_LABELS = {
   colorful: "Colorful (Sir Monkz)",
 } as const;
 const SOURCE_TICK_MS = 500;
-const TRASH_PROCESS_INTERVAL_MS = 50;
+const TRASH_PROCESS_INTERVAL_MS = 16;
 const THERMAL_SOURCE_TICK_MS = 1000;
 const POWER_TICK_MS = 1000;
 const POWER_GLOBAL_ENERGY_TARGET = 1_000_000;
