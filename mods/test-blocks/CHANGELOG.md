@@ -5,13 +5,16 @@
 - Updated the thermal-consumption patch for Sandustry 0.5.5.
 - Switched Source spawning and Trash footprint iteration to the public runtime API.
 
-## 0.1.15
+## 0.1.14
 
-- Added the Infinite Thermal Source with native thermal-relay integration.
-- Added selectable sprite themes and grouped the utility blocks under Test Blocks.
 - Added the Infinite Power block as a native one-million-unit battery.
 - Power maintains the global energy pool and continuously refills connected machines.
 - Improved Infinite Trash responsiveness by processing its footprint every 16 ms.
+
+## 0.1.13
+
+- Added the Infinite Thermal Source with native thermal-relay integration.
+- Added selectable sprite themes and grouped the utility blocks under Test Blocks.
 
 ## 0.1.12
 

@@ -122,16 +122,16 @@ function readChangelogNote(modDir, manifest) {
   const changelogPath = join(modDir, "CHANGELOG.md");
   if (!existsSync(changelogPath)) return `Update ${manifest.name} to v${manifest.version}`;
   const changelog = readFileSync(changelogPath, "utf8");
-  const escapedVersion = manifest.version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const heading = changelog.match(new RegExp(`^##\\s+v?${escapedVersion}\\s*$`, "mi"));
+  // The changelog is prepared before the manifest version is bumped. Always
+  // publish the first release section already written by the author instead
+  // of guessing which section matches the current manifest version.
+  const heading = changelog.match(/^##\s+v?[^\s]+\s*$/m);
   const sectionStart = heading ? (heading.index ?? 0) + heading[0].length : -1;
   const remainder = sectionStart < 0 ? "" : changelog.slice(sectionStart);
-  const nextHeading = remainder.search(/^##\\s+/m);
+  const nextHeading = remainder.search(/^##\s+/m);
   const note = remainder.slice(0, nextHeading < 0 ? remainder.length : nextHeading).trim();
   if (note) return note;
-  console.warn(
-    `No CHANGELOG.md entry for ${manifest.name} v${manifest.version}; using default note.`,
-  );
+  console.warn(`No release entry in CHANGELOG.md for ${manifest.name}; using default note.`);
   return `Update ${manifest.name} to v${manifest.version}`;
 }
 
