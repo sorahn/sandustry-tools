@@ -5,7 +5,7 @@
 - Updated the thermal-consumption patch for Sandustry 0.5.5.
 - Switched Source spawning and Trash footprint iteration to the public runtime API.
 
-## 0.1.14
+## 0.1.15
 
 - Added the Infinite Thermal Source with native thermal-relay integration.
 - Added selectable sprite themes and grouped the utility blocks under Test Blocks.
