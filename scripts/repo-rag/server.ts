@@ -52,8 +52,13 @@ function runIndexer(command: string, ...args: string[]) {
   return JSON.parse(new TextDecoder().decode(result.stdout));
 }
 
-function freshness(status: { currentCommit: string; repository?: { commit_sha: string } }) {
+function freshness(status: {
+  currentCommit: string;
+  repository?: { commit_sha: string };
+  dirtyFiles?: number;
+}) {
   if (!status.repository) return "unavailable";
+  if (status.dirtyFiles) return "dirty";
   return status.repository.commit_sha === status.currentCommit ? "current" : "stale";
 }
 
@@ -69,6 +74,7 @@ function callTool(name: string, args: Record<string, unknown>) {
   const status = runIndexer("status") as {
     currentCommit: string;
     repository?: { commit_sha: string };
+    dirtyFiles?: number;
   };
   if (name === "search_code" || name === "find_symbol" || name === "search_decisions") {
     const query = String(args.query ?? args.symbol ?? "").trim();
@@ -89,12 +95,26 @@ function callTool(name: string, args: Record<string, unknown>) {
       });
     }
     const limit = Math.min(Math.max(Number(args.limit ?? 8), 1), 20);
+    const overallFreshness = freshness(status);
     return result({
       repository: "sandustry-tools",
       query,
       indexedCommit: status.repository?.commit_sha ?? null,
-      freshness: freshness(status),
-      results: matches.slice(0, limit),
+      freshness: overallFreshness,
+      results: matches.slice(0, limit).map((match) => {
+        const matchPath = String(match.path ?? "");
+        const external = matchPath.startsWith("external/official-sandkit-docs#");
+        return {
+          ...match,
+          freshness: overallFreshness,
+          ...(external
+            ? {
+                sourceUrl: "https://sandustry.com/sandkit.html",
+                anchor: matchPath.split("#")[1] ?? null,
+              }
+            : {}),
+        };
+      }),
     });
   }
   throw new Error(`unknown tool: ${name}`);

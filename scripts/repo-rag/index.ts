@@ -407,6 +407,7 @@ function status() {
         chunks: chunks.count,
         currentCommit,
         dirtyFiles: dirtyFiles.length,
+        dirtyPaths: dirtyFiles.map((entry) => entry.slice(3).trim()),
         commitMatches:
           repository && (repository as { commit_sha: string }).commit_sha === currentCommit,
       },
