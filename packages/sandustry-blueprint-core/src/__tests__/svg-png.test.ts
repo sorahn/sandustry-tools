@@ -141,7 +141,11 @@ describe("SVG and PNG adapters", () => {
   });
 
   test("renders the opt-in six-cell edge fade only with a visible background", () => {
-    const blueprint = { name: "Edge fade", data: [{ type: "machine", x: 0, y: 0 }] };
+    const blueprint = {
+      name: "Edge fade",
+      data: [{ type: "machine", x: 0, y: 0 }],
+      signalLinks: null,
+    };
     const faded = renderBlueprintToSvg(blueprint, {
       padding: 1,
       cell: 8,

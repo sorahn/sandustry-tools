@@ -6,9 +6,16 @@
     "jsx": "react",
     "isolatedModules": true,
     "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
     "allowJs": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**/*.ts", "**/__tests__/**/*.tsx"],
+  "include": [
+    "types/**/*.d.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**/*.ts",
+    "**/__tests__/**/*.tsx"
+  ],
   "exclude": ["node_modules", "**/build/**"]
 }

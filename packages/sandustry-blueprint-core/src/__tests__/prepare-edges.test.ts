@@ -249,7 +249,7 @@ describe("blueprint preparation edges", () => {
   });
 
   test("recognizes every remaining raw native and shipped mask", () => {
-    const shapes = new Map([
+    const shapes = new Map<string | number, number[][]>([
       [
         8,
         [
