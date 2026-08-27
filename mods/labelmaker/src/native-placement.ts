@@ -1,5 +1,5 @@
 /**
- * Compatibility boundary for Sandustry's internal Copier/prefabulator APIs.
+ * Compatibility boundary for Sandustry's internal Copier placement state.
  * Keep bundle-dependent state shapes and numeric action IDs in this file so
  * future runtime changes do not spread through the Labelmaker flow.
  */
@@ -23,21 +23,28 @@ type PrefabBlueprintData = {
 export function localizeLabelStructures(
   structures: SandustryBlueprintRecord[],
 ): SandustryBlueprintRecord[] {
-  const localizer = sandkit.engine.api.prefabulator?.localizeBlueprintStructures;
-  if (!localizer) return [...structures];
+  const localized = sandkit.api.blueprints.localizeStructures(structures);
 
   // Keep the definition on the transient Copier cursor after localization.
   // This does not call the clipboard API or save a blueprint.
   return structures.flatMap((structure) => {
     const definition = (structure.data as PrefabBlueprintData | undefined)?.__prefabulatorBlueprint
       ?.definition;
-    const localized = localizer([structure]);
-    if (!definition || !localized.length) return localized;
-    return localized.map((record) => ({
+    const records = localized.filter(
+      (record) => record.x === structure.x && record.y === structure.y,
+    );
+    if (!definition || !records.length) return records;
+    return records.map((record) => ({
       ...record,
       data: { __prefabulatorBlueprint: { definition } },
     }));
   });
+}
+
+export function serializeLabelStructures(
+  structures: SandustryBlueprintRecord[],
+): SandustryBlueprintRecord[] {
+  return sandkit.api.blueprints.serializeStructures(structures);
 }
 
 export function activateCopierPlacement(structures: SandustryBlueprintRecord[]): boolean {

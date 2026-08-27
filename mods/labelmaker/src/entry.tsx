@@ -1,4 +1,3 @@
-import { encodeBlueprint } from "@sandustry/blueprint-core";
 import { createLabelBlueprint } from "./blueprint";
 import {
   activateCopierPlacement,
@@ -8,6 +7,7 @@ import {
   isCopierSelected,
   localizeLabelStructures,
   restoreLabelmakerAction,
+  serializeLabelStructures,
 } from "./native-placement";
 import {
   getBundledFont,
@@ -69,8 +69,8 @@ async function openLabelmaker(): Promise<void> {
     }
 
     const blueprint = createLabelBlueprint(result.text, getBundledFont(result.fontId));
-    encodeBlueprint(blueprint);
-    const cursorStructures = localizeLabelStructures(blueprint.data);
+    const serializedStructures = serializeLabelStructures(blueprint.data);
+    const cursorStructures = localizeLabelStructures(serializedStructures);
     if (!cursorStructures?.length) {
       api.ui.toast("Labelmaker: could not prepare the placement cursor.");
       return;

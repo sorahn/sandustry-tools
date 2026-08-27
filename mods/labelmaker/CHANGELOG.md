@@ -1,5 +1,11 @@
 # Labelmaker changelog
 
+## 0.1.8
+
+- Switched blueprint serialization and localization to the public Sandustry 0.5.5 API.
+- Kept the private Copier placement bridge isolated for compatibility.
+- Updated the Labelmaker tool asset.
+
 ## 0.1.0
 
 - Added the Labelmaker structure and placement flow.

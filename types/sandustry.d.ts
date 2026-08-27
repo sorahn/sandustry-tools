@@ -72,7 +72,7 @@ interface SandustryUiOverlays {
 }
 
 interface SandustryBlueprintApi {
-  serializeStructures(structures: SandustryBlueprintRecord[]): unknown;
+  serializeStructures(structures: SandustryBlueprintRecord[]): SandustryBlueprintRecord[];
   localizeStructures(structures: SandustryBlueprintRecord[]): SandustryBlueprintRecord[];
 }
 
