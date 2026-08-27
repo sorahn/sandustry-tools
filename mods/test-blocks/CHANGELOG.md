@@ -1,11 +1,12 @@
 # Test Blocks changelog
 
-## 0.1.13
+## 0.1.14
 
 - Added the Infinite Thermal Source with native thermal-relay integration.
 - Added selectable sprite themes and grouped the utility blocks under Test Blocks.
 - Added the Infinite Power block as a native one-million-unit battery.
 - Power maintains the global energy pool and continuously refills connected machines.
+- Improved Infinite Trash responsiveness by processing its footprint every 16 ms.
 
 ## 0.1.12
 
