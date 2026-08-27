@@ -28,57 +28,46 @@ const MOD_ID = "sorahn.sandustry-test-blocks";
 const SOURCE_ID = "sandustryTestBlocksSource";
 const TRASH_ID = "sandustryTestBlocksTrash";
 const THERMAL_SOURCE_ID = "sandustryTestBlocksThermalSource";
+// Keep the saved type id stable while exposing the structure as Chill.
+const CHILL_ID = "sandustryTestBlocksCold";
 // const POWER_ID = "sandustryTestBlocksPower";
 const TEST_BLOCKS_CATEGORY = "testBlocks";
 const SPRITE_SET_SETTING = "spriteSet";
 type SpriteSetDefinition = {
   source: string;
   trash: string;
-  thermal: string;
+  heat: string;
+  chill: string;
   energy: string;
-  assets: {
-    source: string;
-    trash: string;
-    thermal: string;
-    energy: string;
-  };
 };
+const SPRITE_FILE_NAMES = {
+  source: "element.png",
+  trash: "trash.png",
+  heat: "heat.png",
+  chill: "chill.png",
+  energy: "power.png",
+} as const;
 const SPRITE_SETS: Record<string, SpriteSetDefinition> = {
   purple: {
     source: "sandustryTestBlocksPurpleSourceSprite",
     trash: "sandustryTestBlocksPurpleTrashSprite",
-    thermal: "sandustryTestBlocksPurpleThermalSourceSprite",
+    heat: "sandustryTestBlocksPurpleHeatSourceSprite",
+    chill: "sandustryTestBlocksPurpleChillSprite",
     energy: "sandustryTestBlocksPurpleEnergySourceSprite",
-    assets: {
-      source: "assets/purple/element-source.png",
-      trash: "assets/purple/trash.png",
-      thermal: "assets/purple/thermal-source.png",
-      energy: "assets/purple/energy-source.png",
-    },
   },
   v1: {
     source: "sandustryTestBlocksV1SourceSprite",
     trash: "sandustryTestBlocksV1TrashSprite",
-    thermal: "sandustryTestBlocksV1ThermalSourceSprite",
+    heat: "sandustryTestBlocksV1HeatSourceSprite",
+    chill: "sandustryTestBlocksV1ChillSprite",
     energy: "sandustryTestBlocksV1EnergySourceSprite",
-    assets: {
-      source: "assets/v1/element-source.png",
-      trash: "assets/v1/trash.png",
-      thermal: "assets/v1/thermal-source.png",
-      energy: "assets/v1/power-source.png",
-    },
   },
   colorful: {
     source: "sandustryTestBlocksColorfulSourceSprite",
     trash: "sandustryTestBlocksColorfulTrashSprite",
-    thermal: "sandustryTestBlocksColorfulThermalSourceSprite",
+    heat: "sandustryTestBlocksColorfulHeatSourceSprite",
+    chill: "sandustryTestBlocksColorfulChillSprite",
     energy: "sandustryTestBlocksColorfulEnergySourceSprite",
-    assets: {
-      source: "assets/colorful/element-source.png",
-      trash: "assets/colorful/trash.png",
-      thermal: "assets/colorful/thermal-source.png",
-      energy: "assets/colorful/power-source.png",
-    },
   },
 } as const;
 const SPRITE_SET_LABELS = {
@@ -90,6 +79,7 @@ const SOURCE_TICK_MS = 500;
 const TRASH_PROCESS_INTERVAL_MS = 50;
 const THERMAL_SOURCE_TICK_MS = 1000;
 const THERMAL_SOURCE_DEFAULT_TEMPERATURE = 1000;
+const CHILL_DEFAULT_TEMPERATURE = -1000;
 const THERMAL_SOURCE_MIN_TEMPERATURE = -1000;
 const THERMAL_SOURCE_MAX_TEMPERATURE = 1000;
 const THERMAL_SOURCE_EXCHANGE_RATE = 0.5;
@@ -127,7 +117,7 @@ const FOOTPRINT = [
 ];
 
 const TEXT = {
-  "ui|management|category|testBlocks": "Test Blocks",
+  "ui|management|category|testBlocks": "Infinite Test Blocks",
   "settings|spriteSet|label": "Sprite set",
   "settings|spriteSet|description":
     "Choose the visual theme for Test Blocks. Reload the game for changes to take effect.",
@@ -138,9 +128,12 @@ const TEXT = {
   "structures|source|description": "Creates an endless stream of the configured element.",
   "structures|trash|name": "Trash",
   "structures|trash|description": "An infinitely deep void for particle trash.",
-  "structures|thermalSource|name": "Thermals",
+  "structures|thermalSource|name": "Heat",
   "structures|thermalSource|description":
     "Maintains a hot thermal buffer and shares heat with adjacent relays.",
+  "structures|chill|name": "Chill",
+  "structures|chill|description":
+    "Maintains a low-temperature thermal buffer and shares heat with adjacent relays.",
   "structures|power|name": "Power",
   "structures|power|description": "A test power block with no active behavior.",
 };
@@ -942,14 +935,16 @@ const absorbThermalSurroundings = (structure: SandustryStructure) => {
 
 const thermalSourceTick = () => {
   const sources: SandustryStructure[] = [];
-  api.structures.forEachOfType(THERMAL_SOURCE_ID, (structure) => {
-    try {
-      absorbThermalSurroundings(structure);
-      sources.push(structure);
-    } catch (error) {
-      console.error(`[${MOD_ID}] thermal source tick failed:`, error);
-    }
-  });
+  for (const type of [THERMAL_SOURCE_ID, CHILL_ID]) {
+    api.structures.forEachOfType(type, (structure) => {
+      try {
+        absorbThermalSurroundings(structure);
+        sources.push(structure);
+      } catch (error) {
+        console.error(`[${MOD_ID}] thermal source tick failed:`, error);
+      }
+    });
+  }
   if (sources.length === 0) return;
 
   // Native machines can consume from this block through the bundle patch. A
@@ -970,7 +965,9 @@ const thermalSourceTick = () => {
     const target =
       typeof source.data?.targetTemperature === "number"
         ? source.data.targetTemperature
-        : THERMAL_SOURCE_DEFAULT_TEMPERATURE;
+        : source.type === CHILL_ID
+          ? CHILL_DEFAULT_TEMPERATURE
+          : THERMAL_SOURCE_DEFAULT_TEMPERATURE;
     addThermalTemperature(source, target - thermalTemperature(source));
   }
 };
@@ -989,7 +986,8 @@ const registerThermalSourceTick = () => {
 // bundle patch calls this predicate so they can also consume from our source.
 Object.assign(globalThis, {
   __sandustryTestBlocksThermalSource: (type: unknown, expected: unknown) =>
-    type === THERMAL_SOURCE_ID && (expected === "thermalRelay" || expected === THERMAL_SOURCE_ID),
+    (type === THERMAL_SOURCE_ID || type === CHILL_ID) &&
+    (expected === "thermalRelay" || expected === type),
 });
 
 const registerTrashProcessor = () => {
@@ -1011,13 +1009,16 @@ const setup = async () => {
   registerPicker();
 
   for (const [key, spriteSet] of Object.entries(SPRITE_SETS)) {
+    const assetPath = (name: keyof typeof SPRITE_FILE_NAMES) =>
+      `assets/${key}/${SPRITE_FILE_NAMES[name]}`;
     try {
       await Promise.all([
-        api.sprites.loadFromMod(spriteSet.source, spriteSet.assets.source),
-        api.sprites.loadFromMod(spriteSet.trash, spriteSet.assets.trash),
-        api.sprites.loadFromMod(spriteSet.thermal, spriteSet.assets.thermal),
+        api.sprites.loadFromMod(spriteSet.source, assetPath("source")),
+        api.sprites.loadFromMod(spriteSet.trash, assetPath("trash")),
+        api.sprites.loadFromMod(spriteSet.heat, assetPath("heat")),
+        api.sprites.loadFromMod(spriteSet.chill, assetPath("chill")),
       ]);
-      await api.sprites.loadFromMod(spriteSet.energy, spriteSet.assets.energy).catch(() => {});
+      await api.sprites.loadFromMod(spriteSet.energy, assetPath("energy")).catch(() => {});
     } catch {
       console.warn(`[${MOD_ID}] sprite set unavailable: ${key}`);
     }
@@ -1087,7 +1088,48 @@ const setup = async () => {
       [1, 1, 1, 1],
     ],
     render: {
-      imageName: spriteSet.thermal,
+      imageName: spriteSet.heat,
+      size: { width: 16, height: 16 },
+      offset: { x: 0, y: 0 },
+      ui: { outline: true },
+    },
+    tooltipHover: {
+      type: "custom",
+      dataFieldIconValue: {
+        field: "temperature",
+        iconPath: "mods/thermal_icon.png",
+        round: true,
+      },
+    },
+  });
+
+  api.structures.register({
+    id: CHILL_ID,
+    nameKey: "structures|chill|name",
+    descriptionKey: "structures|chill|description",
+    categoryKey: TEST_BLOCKS_CATEGORY,
+    order: 30,
+    alwaysUnlocked: true,
+    buildModes: [
+      { type: "single" },
+      { type: "line", directions: ["horizontal", "vertical"] },
+      { type: "rectangle" },
+    ],
+    variants: [{ id: CHILL_ID, angles: [0, 90, 180, 270] }],
+    copyData: false,
+    useRawShape: true,
+    defaultData: {
+      temperature: 0,
+      targetTemperature: CHILL_DEFAULT_TEMPERATURE,
+    },
+    shape: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+    render: {
+      imageName: spriteSet.chill,
       size: { width: 16, height: 16 },
       offset: { x: 0, y: 0 },
       ui: { outline: true },
@@ -1120,6 +1162,7 @@ const setup = async () => {
   api.player.buildings.unlockByType(SOURCE_ID);
   api.player.buildings.unlockByType(TRASH_ID);
   api.player.buildings.unlockByType(THERMAL_SOURCE_ID);
+  api.player.buildings.unlockByType(CHILL_ID);
   // api.player.buildings.unlockByType(POWER_ID);
   registerThermalSourceTick();
 
