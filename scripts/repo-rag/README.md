@@ -24,6 +24,18 @@ Search the lexical index:
 npm run repo-rag:search -- "api.ui.inject"
 ```
 
+Start the local stdio MCP server:
+
+```sh
+npm run repo-rag:mcp
+```
+
+It exposes `search_code`, `find_symbol`, `search_decisions`, and
+`index_status`. Configure a local MCP client to launch that command from the
+repository root. Search results are discovery aids; verify edits and runtime
+claims against the current working tree, official documentation, or a live
+Sandustry session as appropriate.
+
 The corpus is controlled by `corpus-config.json`. `index --changed` compares
 content hashes and is safe to run repeatedly. `repo-rag:refresh-docs`
 conditionally fetches the official Sandkit HTML into the ignored
@@ -31,7 +43,3 @@ conditionally fetches the official Sandkit HTML into the ignored
 sections, API signatures, and code examples. Cache metadata keeps the URL,
 fetch time, content hash, and conditional HTTP headers; if the site is
 unavailable, the last successful cache remains usable.
-
-Indexed snippets are discovery aids. Always verify edits and runtime claims
-against the current working tree, official documentation, or a live Sandustry
-session as appropriate.

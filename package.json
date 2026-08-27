@@ -10,6 +10,7 @@
     "repo-rag:index": "bun scripts/repo-rag/index.ts index --all",
     "repo-rag:changed": "bun scripts/repo-rag/index.ts index --changed",
     "repo-rag:refresh-docs": "bun scripts/repo-rag/index.ts external refresh",
+    "repo-rag:mcp": "bun scripts/repo-rag/server.ts",
     "repo-rag:status": "bun scripts/repo-rag/index.ts status",
     "repo-rag:search": "bun scripts/repo-rag/index.ts search",
     "mcp:chrome-devtools": "chrome-devtools-mcp --browser-url=http://127.0.0.1:9222 --no-usage-statistics --no-performance-crux --no-update-checks",
