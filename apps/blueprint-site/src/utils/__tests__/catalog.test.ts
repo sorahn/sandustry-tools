@@ -14,10 +14,8 @@ describe("site catalog utilities", () => {
     expect(catalogEntry("burnerBeltLeft")?.name).toBe("Burner Belt");
     expect(catalogEntry("burnerBeltRight")?.name).toBe("Burner Belt");
     expect(catalogEntry(17)).toMatchObject({ name: "Filter", category: "logistics" });
-    expect(catalogEntry("sandustryTestBlocksSource")).toMatchObject({
-      name: "Infinite Source",
-      footprint: { width: 4, height: 4 },
-    });
+    expect(catalogEntry("sandustryTestBlocksSource")).toBeUndefined();
+    expect(catalogEntry("sandustryTestBlocksTrash")).toBeUndefined();
     expect(catalogEntry(1)?.name).toBe("Conveyor Left");
     expect(catalogEntry(3)?.name).toBe("Shaker Left");
     expect(catalogEntry(6)?.name).toBe("Launcher Left");

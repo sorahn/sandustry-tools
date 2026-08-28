@@ -61,6 +61,9 @@ export const BlueprintMapStructure = memo(function BlueprintMapStructure({
   const tileWidth = footprint.width * cell;
   const tileHeight = footprint.height * cell;
   const assetEntry = isCustomShape && !entry?.renderAsset ? catalogEntry(11) : entry;
+  const isUnknown = entry === undefined;
+  const unknownBorderInset = 1;
+  const unknownBorderWidth = 1;
   const labelX = left + tileWidth / 2;
   const label = String(
     entry?.name ??
@@ -92,20 +95,49 @@ export const BlueprintMapStructure = memo(function BlueprintMapStructure({
       className="blueprint-map__structure cursor-pointer"
       data-render-image={entry ? catalogRender(entry)?.imageName : undefined}
     >
+      {isUnknown && spritesVisible ? (
+        <rect
+          x={left}
+          y={top}
+          width={tileWidth}
+          height={tileHeight}
+          rx="0"
+          fill="#172033"
+          stroke="none"
+          pointerEvents="none"
+        />
+      ) : null}
       <rect
-        x={left}
-        y={top}
-        width={tileWidth}
-        height={tileHeight}
-        rx="5"
+        x={left + (isUnknown ? unknownBorderInset : 0)}
+        y={top + (isUnknown ? unknownBorderInset : 0)}
+        width={tileWidth - (isUnknown ? unknownBorderInset * 2 : 0)}
+        height={tileHeight - (isUnknown ? unknownBorderInset * 2 : 0)}
+        rx={isUnknown ? "0" : "5"}
         fill={
-          !spritesVisible || isCustomShape || entry?.renderAsset
+          !spritesVisible || isUnknown || isCustomShape || entry?.renderAsset
             ? "transparent"
             : tileColor(structure.type)
         }
-        stroke={!spritesVisible || isCustomShape || entry?.renderAsset ? "none" : "#8491a3"}
-        strokeWidth="1.5"
+        stroke={
+          !spritesVisible || isCustomShape || entry?.renderAsset
+            ? "none"
+            : isUnknown
+              ? "#f0b429"
+              : "#8491a3"
+        }
+        strokeWidth={isUnknown ? String(unknownBorderWidth) : "1.5"}
+        strokeDasharray={isUnknown ? "4 3" : undefined}
+        shapeRendering={isUnknown ? "crispEdges" : undefined}
       />
+      {isUnknown && spritesVisible ? (
+        <path
+          d={`M ${left + cell} ${top + cell} L ${left + tileWidth - cell} ${top + tileHeight - cell} M ${left + tileWidth - cell} ${top + cell} L ${left + cell} ${top + tileHeight - cell}`}
+          stroke="#f0b429"
+          strokeWidth="2"
+          opacity=".65"
+          pointerEvents="none"
+        />
+      ) : null}
       {isCustomShape && showCustomShapes
         ? shape.map((row, rowIndex) =>
             row.map((value, columnIndex) =>

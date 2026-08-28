@@ -173,8 +173,17 @@ function renderStructure(
       : undefined;
   const asset = prepared.sprite?.asset ?? customAsset;
   const usesFallbackAsset = asset !== undefined && prepared.sprite?.asset === undefined;
+  const isUnknown = entry === undefined;
+  const unknownBorderInset = 1;
+  const unknownBorderWidth = 1;
   if (!asset?.path) {
-    output += `<rect x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}" rx="5" fill="${isCustomShape ? "transparent" : tileColor(prepared.structure.type)}" stroke="${isCustomShape ? "none" : "#8491a3"}" stroke-width="1.5"/>`;
+    if (isUnknown) {
+      output += `<rect x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}" fill="#172033"/>`;
+    }
+    output += `<rect x="${number(left + (isUnknown ? unknownBorderInset : 0))}" y="${number(top + (isUnknown ? unknownBorderInset : 0))}" width="${number(tileWidth - (isUnknown ? unknownBorderInset * 2 : 0))}" height="${number(tileHeight - (isUnknown ? unknownBorderInset * 2 : 0))}" rx="${isUnknown ? "0" : "5"}" fill="${isUnknown ? "transparent" : isCustomShape ? "transparent" : tileColor(prepared.structure.type)}" stroke="${isUnknown ? "#f0b429" : isCustomShape ? "none" : "#8491a3"}" stroke-width="${isUnknown ? String(unknownBorderWidth) : "1.5"}"${isUnknown ? ' stroke-dasharray="4 3" shape-rendering="crispEdges"' : ""}/>`;
+    if (isUnknown) {
+      output += `<path d="M ${number(left + model.cell)} ${number(top + model.cell)} L ${number(left + tileWidth - model.cell)} ${number(top + tileHeight - model.cell)} M ${number(left + tileWidth - model.cell)} ${number(top + model.cell)} L ${number(left + model.cell)} ${number(top + tileHeight - model.cell)}" stroke="#f0b429" stroke-width="2" opacity=".65"/>`;
+    }
   }
   if (isCustomShape && options.showCustomShapes) {
     output += renderShapeRects(shape, left, top, model.cell, "#a47a45");

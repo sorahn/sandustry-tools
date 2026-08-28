@@ -2,6 +2,9 @@ import type { Blueprint, BlueprintStructure, BlueprintType, SignalLink } from ".
 
 export type BlueprintCoordinate = { x: number; y: number };
 
+/** Used only to keep unknown structures visible as one blueprint block. */
+export const UNKNOWN_STRUCTURE_FOOTPRINT = { width: 4, height: 4 } as const;
+
 export type SignalPoint = BlueprintCoordinate;
 
 export type SignalPoints = {
@@ -613,7 +616,7 @@ export function prepareBlueprint(
     const shape = shapeForStructure(structure, catalogEntry);
     const footprint = shape
       ? { width: shape[0].length, height: shape.length }
-      : (catalogEntry?.footprint ?? { width: 1, height: 1 });
+      : (catalogEntry?.footprint ?? UNKNOWN_STRUCTURE_FOOTPRINT);
     const renderAsset = catalogEntry?.renderAsset;
     const topY = structureTopY(structure, footprint, renderAsset);
     const visualTopY = structureVisualTopY(structure, footprint, renderAsset);

@@ -141,20 +141,6 @@ const MANUAL_CATALOG: CatalogEntry[] = [
     source: "runtime definition + English localization",
   },
   {
-    type: "sandustryTestBlocksSource",
-    name: "Infinite Source",
-    category: "misc",
-    footprint: { width: 4, height: 4 },
-    source: "repository mod definition",
-  },
-  {
-    type: "sandustryTestBlocksTrash",
-    name: "Infinite Trash",
-    category: "misc",
-    footprint: { width: 4, height: 4 },
-    source: "repository mod definition",
-  },
-  {
     type: "signalCounter4",
     name: "[DEPRECATED] Signal Counter",
     category: "logic",

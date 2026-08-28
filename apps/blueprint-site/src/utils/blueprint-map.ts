@@ -5,6 +5,7 @@ import {
   shapeForStructure,
   createBlueprintRenderModel,
   NATIVE_PIXELS_PER_CELL,
+  UNKNOWN_STRUCTURE_FOOTPRINT,
 } from "@sandustry/blueprint-core";
 import { blueprintCatalog } from "./catalog";
 import { readStorageValue } from "./storage";
@@ -60,7 +61,7 @@ export function structureFootprint(structure: Blueprint["data"][number]) {
   const shape = customShapeFromStructure(structure);
   return shape
     ? { width: shape[0].length, height: shape.length }
-    : (entry?.footprint ?? { width: 1, height: 1 });
+    : (entry?.footprint ?? UNKNOWN_STRUCTURE_FOOTPRINT);
 }
 
 export function structureTopY(structure: Blueprint["data"][number]) {

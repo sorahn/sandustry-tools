@@ -44,6 +44,7 @@ export {
   structureTopY,
   structureVisualTopY,
   foundationOutlinePath,
+  UNKNOWN_STRUCTURE_FOOTPRINT,
 } from "./prepare";
 export {
   catalogRender,

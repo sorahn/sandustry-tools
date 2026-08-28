@@ -24,11 +24,18 @@ export function BlueprintMapSidebar({
             const entry = catalogEntry(selected.type);
             const render = entry ? catalogRender(entry) : undefined;
             const renderSize = render ? catalogRenderSize(render) : undefined;
+            const footprint = structureFootprint(selected);
             return (
               <>
                 <p className="break-all font-mono text-yellow-200">
                   {entry?.name ?? structureLabel(selected.type)}
                 </p>
+                {!entry ? (
+                  <p className="rounded border border-amber-700/60 bg-amber-950/30 p-2 text-amber-200">
+                    Unknown structure — no catalog entry or sprite is available. Showing a
+                    placeholder using the raw blueprint record.
+                  </p>
+                ) : null}
                 {entry ? (
                   <>
                     <p>
@@ -63,6 +70,14 @@ export function BlueprintMapSidebar({
                       </pre>
                     </details>
                   </>
+                ) : null}
+                {!entry ? (
+                  <p>
+                    Placeholder footprint{" "}
+                    <strong className="text-white">
+                      {footprint.width}×{footprint.height}
+                    </strong>
+                  </p>
                 ) : null}
                 <p>
                   Position{" "}

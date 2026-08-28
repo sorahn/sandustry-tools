@@ -3,6 +3,28 @@ import { prepareSvgForPng, renderSvgToPng } from "../png";
 import { renderBlueprintToSvg } from "../svg-renderer";
 
 describe("SVG and PNG adapters", () => {
+  test("renders unknown structures as labeled sprite-free placeholders", () => {
+    const result = renderBlueprintToSvg(
+      {
+        name: "Unknown fixture",
+        data: [{ type: "example.third-party:machine", x: 4, y: 8, data: { mode: "fast" } }],
+        signalLinks: [],
+      },
+      { padding: 1, cell: 8, showNames: true, catalog: { get: () => undefined } },
+    ).svg;
+
+    expect(result).toContain('data-structure-index="0"');
+    expect(result).toContain('x="9" y="9" width="30" height="30"');
+    expect(result).toContain('x="8" y="8" width="32" height="32" fill="#172033"');
+    expect(result).toContain('height="30" rx="0"');
+    expect(result).toContain("M 16 16 L 32 32 M 32 16 L 16 32");
+    expect(result).toContain('stroke-width="1" stroke-dasharray="4 3"');
+    expect(result).toContain("#f0b429");
+    expect(result).toContain(">exampl</text>");
+    expect(result).toContain(">e.thir</text>");
+    expect(result).not.toContain("<image");
+  });
+
   test("prepares SVG roots, metadata, styles, backgrounds, and image URLs", async () => {
     const prepared = await prepareSvgForPng(
       `<svg class='map' style='color:red'><rect fill='#33a8ff'/><image xlink:href='machine.png'/></svg>`,
@@ -109,7 +131,7 @@ describe("SVG and PNG adapters", () => {
     expect(result).toContain('fill="#fff"');
     expect(result).toContain("#00ff99");
     expect(result).toContain('dominant-baseline="middle"');
-    expect(result).toContain(">Mac</text>");
+    expect(result).toContain(">Machin</text>");
   });
 
   test("renders outlines below foundations and belts, then structures and signals", () => {
