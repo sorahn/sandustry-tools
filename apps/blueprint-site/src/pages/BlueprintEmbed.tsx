@@ -3,15 +3,16 @@ import {
   decodeBlueprint,
   prepareSvgForPng,
   renderBlueprintToSvg,
-  structureLabel,
   UNKNOWN_STRUCTURE_FOOTPRINT,
 } from "@sandustry/blueprint-core";
 import { blueprintCatalog } from "../utils/catalog";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
-import { BlueprintMapPanel } from "../components/BlueprintMapPanel";
-import { BlueprintStructuresPanel } from "../components/BlueprintStructuresPanel";
+import { BlueprintMap } from "../components/BlueprintMap";
+import { readStorageValue } from "../utils/storage";
+import { REMEMBER_BLUEPRINT_KEY, SAVED_BLUEPRINT_KEY } from "../utils/storage-keys";
 import {
   isAllowedParentOrigin,
+  isRendererInspectorOptionsRequest,
   isRendererRequest,
   parentOrigin,
   rendererPreviewErrorEvent,
@@ -213,22 +214,49 @@ export function BlueprintEmbedPage() {
 }
 
 function BlueprintInspectorEmbed() {
+  const loadRemembered = useMemo(
+    () => new URLSearchParams(window.location.search).get("remember") === "1",
+    [],
+  );
   const [blueprint, setBlueprint] = useState<ReturnType<typeof decodeBlueprint> | null>(null);
   const [blueprintKey, setBlueprintKey] = useState("");
   const [status, setStatus] = useState("Waiting for a blueprint.");
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [showPngBackground, setShowPngBackground] = useState(false);
 
   useEffect(() => {
+    let rememberedLoaded = false;
+    if (loadRemembered && readStorageValue(REMEMBER_BLUEPRINT_KEY) === "true") {
+      const encoded = readStorageValue(SAVED_BLUEPRINT_KEY);
+      if (encoded) {
+        try {
+          const decoded = decodeBlueprint(encoded);
+          setBlueprint(decoded);
+          setBlueprintKey(encoded);
+          setStatus(`Remembered ${decoded.data.length} structure(s) from ${decoded.name}.`);
+          rememberedLoaded = true;
+        } catch {
+          setStatus("Unable to decode the remembered blueprint.");
+        }
+      }
+    }
     if (window.parent === window) return;
     const allowedOrigin = parentOrigin();
     if (!allowedOrigin) {
-      setStatus("Embed origin is not configured.");
+      if (!rememberedLoaded) setStatus("Embed origin is not configured.");
       return;
     }
     const handleMessage = (event: MessageEvent) => {
       if (event.source !== window.parent || !isAllowedParentOrigin(event.origin)) return;
+      if (isRendererInspectorOptionsRequest(event.data)) {
+        if (event.data.showGrid !== undefined) setShowGrid(event.data.showGrid);
+        if (event.data.showPngBackground !== undefined) {
+          setShowPngBackground(event.data.showPngBackground);
+        }
+        if (event.data.showSidebar !== undefined) setShowSidebar(event.data.showSidebar);
+        return;
+      }
       if (!isRendererRequest(event.data)) return;
       const { requestId, blueprint: encoded } = event.data;
       if (encoded.length > MAX_PREVIEW_BLUEPRINT_LENGTH) {
@@ -274,41 +302,24 @@ function BlueprintInspectorEmbed() {
     window.addEventListener("message", handleMessage);
     window.parent.postMessage(rendererReadyEvent(["inspector"]), allowedOrigin);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [loadRemembered]);
 
   return (
-    <main className="min-h-screen bg-sd-950 p-3 text-slate-100 sm:p-5" data-embed-mode="inspector">
-      <div className="mx-auto w-full max-w-7xl">
-        <div className="mb-3 flex items-center justify-between gap-4 px-1">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-500">
-            Blueprint inspector
-          </p>
-          <p className="text-right text-xs text-slate-500" role="status">
-            {status}
-          </p>
-        </div>
-        {blueprint ? (
-          <>
-            <BlueprintMapPanel
-              blueprint={blueprint}
-              remember={false}
-              blueprintKey={blueprintKey}
-              showSidebar={showSidebar}
-              onShowSidebarChange={setShowSidebar}
-              showGrid={showGrid}
-              onShowGridChange={setShowGrid}
-              showPngBackground={showPngBackground}
-              onShowPngBackgroundChange={setShowPngBackground}
-              onLoadBlueprint={setBlueprint}
-            />
-            <BlueprintStructuresPanel blueprint={blueprint} structureLabel={structureLabel} />
-          </>
-        ) : (
-          <section className="rounded border border-slate-800 bg-slate-950/70 p-6 text-sm text-slate-400">
-            Send a blueprint to begin inspecting it.
-          </section>
-        )}
-      </div>
-    </main>
+    <div data-embed-mode="inspector">
+      {blueprint ? (
+        <BlueprintMap
+          blueprint={blueprint}
+          remember={loadRemembered}
+          blueprintKey={blueprintKey}
+          showSidebar={showSidebar}
+          showGrid={showGrid}
+          showPngBackground={showPngBackground}
+          onLoadBlueprint={setBlueprint}
+          showDebugOptions={false}
+        />
+      ) : (
+        <p role="status">{status}</p>
+      )}
+    </div>
   );
 }

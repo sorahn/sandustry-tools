@@ -10,6 +10,14 @@ export type RendererRequest = {
   blueprint: string;
 };
 
+export type RendererInspectorOptionsRequest = {
+  namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
+  type: "set-inspector-options";
+  showGrid?: boolean;
+  showPngBackground?: boolean;
+  showSidebar?: boolean;
+};
+
 export type RendererReadyEvent = {
   namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
   type: "ready";
@@ -50,6 +58,20 @@ export function isRendererRequest(value: unknown): value is RendererRequest {
     typeof request.requestId === "string" &&
     REQUEST_ID_PATTERN.test(request.requestId) &&
     typeof request.blueprint === "string"
+  );
+}
+
+export function isRendererInspectorOptionsRequest(
+  value: unknown,
+): value is RendererInspectorOptionsRequest {
+  if (!value || typeof value !== "object") return false;
+  const request = value as Partial<RendererInspectorOptionsRequest>;
+  return (
+    request.namespace === BLUEPRINT_RENDERER_NAMESPACE &&
+    request.type === "set-inspector-options" &&
+    [request.showGrid, request.showPngBackground, request.showSidebar].every(
+      (option) => option === undefined || typeof option === "boolean",
+    )
   );
 }
 

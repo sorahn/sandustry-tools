@@ -167,6 +167,7 @@ export function BlueprintMap({
   showPngBackground,
   onLoadBlueprint,
   captureOnly,
+  showDebugOptions = true,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -176,6 +177,7 @@ export function BlueprintMap({
   showPngBackground: boolean;
   onLoadBlueprint: (blueprint: Blueprint) => void;
   captureOnly?: boolean;
+  showDebugOptions?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showDebugCells, setShowDebugCells] = useState(false);
@@ -734,7 +736,12 @@ export function BlueprintMap({
           />
         </svg>
       </div>
-      {showSidebar ? <BlueprintMapSidebar selected={selected} debugOptions={debugOptions} /> : null}
+      {showSidebar ? (
+        <BlueprintMapSidebar
+          selected={selected}
+          debugOptions={showDebugOptions ? debugOptions : null}
+        />
+      ) : null}
     </div>
   );
 }

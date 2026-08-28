@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   BLUEPRINT_RENDERER_NAMESPACE,
   isAllowedParentOrigin,
+  isRendererInspectorOptionsRequest,
   isRendererRequest,
   rendererPreviewErrorEvent,
   rendererPreviewReadyEvent,
@@ -32,6 +33,25 @@ describe("blueprint renderer embed protocol", () => {
   test("matches exact configured origins", () => {
     expect(isAllowedParentOrigin("https://vault.example", ["https://vault.example"])).toBe(true);
     expect(isAllowedParentOrigin("https://evil.example", ["https://vault.example"])).toBe(false);
+  });
+
+  test("accepts inspector display option requests", () => {
+    expect(
+      isRendererInspectorOptionsRequest({
+        namespace: BLUEPRINT_RENDERER_NAMESPACE,
+        type: "set-inspector-options",
+        showGrid: false,
+        showPngBackground: true,
+        showSidebar: false,
+      }),
+    ).toBe(true);
+    expect(
+      isRendererInspectorOptionsRequest({
+        namespace: BLUEPRINT_RENDERER_NAMESPACE,
+        type: "set-inspector-options",
+        showGrid: "false",
+      }),
+    ).toBe(false);
   });
 
   test("creates a versioned ready event", () => {
