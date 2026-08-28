@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import { renderBlueprintStringToPng } from "@sandustry/blueprint-core";
+import { renderBlueprintStringToPng, UNKNOWN_STRUCTURE_FOOTPRINT } from "@sandustry/blueprint-core";
 import { blueprintCatalog } from "./utils/catalog";
 import { createImageResolver, createWorkerPngPlatform } from "./utils/png-platform";
 
@@ -53,6 +53,7 @@ workerScope.onmessage = async ({ data }) => {
   try {
     const png = await renderBlueprintStringToPng(data.blueprint, {
       catalog: blueprintCatalog(),
+      unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
       assetBaseUrl: data.assetBaseUrl,
       scale: data.scale ?? 1,
       platform,

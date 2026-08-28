@@ -4,6 +4,7 @@ import {
   prepareSvgForPng,
   renderBlueprintToSvg,
   structureLabel,
+  UNKNOWN_STRUCTURE_FOOTPRINT,
 } from "@sandustry/blueprint-core";
 import { blueprintCatalog } from "../utils/catalog";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
@@ -119,6 +120,7 @@ export function BlueprintEmbedPage() {
       const assetBaseUrl = new URL(import.meta.env.BASE_URL, window.location.origin).href;
       const rendered = renderBlueprintToSvg(blueprint, {
         catalog: blueprintCatalog(),
+        unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
         padding: 6,
         cell: 8,
         assetBaseUrl,

@@ -10,7 +10,13 @@ describe("SVG and PNG adapters", () => {
         data: [{ type: "example.third-party:machine", x: 4, y: 8, data: { mode: "fast" } }],
         signalLinks: [],
       },
-      { padding: 1, cell: 8, showNames: true, catalog: { get: () => undefined } },
+      {
+        padding: 1,
+        cell: 8,
+        showNames: true,
+        unknownFootprint: { width: 4, height: 4 },
+        catalog: { get: () => undefined },
+      },
     ).svg;
 
     expect(result).toContain('data-structure-index="0"');
@@ -131,7 +137,7 @@ describe("SVG and PNG adapters", () => {
     expect(result).toContain('fill="#fff"');
     expect(result).toContain("#00ff99");
     expect(result).toContain('dominant-baseline="middle"');
-    expect(result).toContain(">Machin</text>");
+    expect(result).toContain(">Mac</text>");
   });
 
   test("renders outlines below foundations and belts, then structures and signals", () => {

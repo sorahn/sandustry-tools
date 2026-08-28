@@ -15,6 +15,7 @@ export type BlueprintRenderOptions = {
   catalog?: BlueprintCatalog;
   padding?: number;
   cell?: number;
+  unknownFootprint?: { width: number; height: number };
 };
 
 export type BlueprintRenderStructure = {

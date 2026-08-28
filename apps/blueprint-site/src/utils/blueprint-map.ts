@@ -80,7 +80,12 @@ export function structureShape(structure: Blueprint["data"][number]): StructureS
 }
 
 export function createBlueprintMapModel(blueprint: Blueprint, padding: number, cell: number) {
-  return createBlueprintRenderModel(blueprint, { catalog: blueprintCatalog(), padding, cell });
+  return createBlueprintRenderModel(blueprint, {
+    catalog: blueprintCatalog(),
+    padding,
+    cell,
+    unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
+  });
 }
 
 export function readStoredMapView(blueprintKey: string): MapView | null {

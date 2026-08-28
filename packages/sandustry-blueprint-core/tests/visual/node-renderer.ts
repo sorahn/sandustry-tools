@@ -1,4 +1,8 @@
-import { encodeBlueprint, type Blueprint } from "@sandustry/blueprint-core";
+import {
+  encodeBlueprint,
+  UNKNOWN_STRUCTURE_FOOTPRINT,
+  type Blueprint,
+} from "@sandustry/blueprint-core";
 import { renderBlueprintStringToNodePng } from "@sandustry/blueprint-node";
 import { blueprintCatalog } from "../../../../apps/blueprint-site/src/utils/catalog";
 import { catalogVisualFixture } from "../../../../apps/blueprint-site/src/visual-fixtures/catalog";
@@ -20,6 +24,7 @@ export function renderVisualBlueprint(
   return renderBlueprintStringToNodePng(input, {
     assetRoot,
     catalog: blueprintCatalog(),
+    unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
     assetBaseUrl: "",
     scale: 1,
     includeBackground: true,

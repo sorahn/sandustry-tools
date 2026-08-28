@@ -7,6 +7,7 @@ import {
   renderBlueprintToSvg,
   tileColor,
   NATIVE_PIXELS_PER_CELL,
+  UNKNOWN_STRUCTURE_FOOTPRINT,
 } from "@sandustry/blueprint-core";
 import { type Blueprint } from "../utils/blueprint";
 import { blueprintCatalog } from "../utils/catalog";
@@ -432,6 +433,7 @@ export function BlueprintMap({
   const exportPng = async () => {
     const rendered = renderBlueprintToSvg(blueprint, {
       catalog: blueprintCatalog(),
+      unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
       padding,
       cell,
       assetBaseUrl: import.meta.env.BASE_URL,

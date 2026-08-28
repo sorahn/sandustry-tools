@@ -105,6 +105,7 @@ export type PreparedBlueprint = Blueprint & {
 export type PrepareBlueprintOptions = {
   catalog?: BlueprintCatalog;
   resolveSignalPoints?: SignalPointResolver;
+  unknownFootprint?: { width: number; height: number };
 };
 
 const CORNER_INPUT: SignalPoint = { x: 0, y: 0 };
@@ -616,7 +617,7 @@ export function prepareBlueprint(
     const shape = shapeForStructure(structure, catalogEntry);
     const footprint = shape
       ? { width: shape[0].length, height: shape.length }
-      : (catalogEntry?.footprint ?? UNKNOWN_STRUCTURE_FOOTPRINT);
+      : (catalogEntry?.footprint ?? options.unknownFootprint ?? { width: 1, height: 1 });
     const renderAsset = catalogEntry?.renderAsset;
     const topY = structureTopY(structure, footprint, renderAsset);
     const visualTopY = structureVisualTopY(structure, footprint, renderAsset);

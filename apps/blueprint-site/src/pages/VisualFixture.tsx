@@ -4,6 +4,7 @@ import {
   prepareSvgForPng,
   renderBlueprintStringToPng,
   renderBlueprintToSvg,
+  UNKNOWN_STRUCTURE_FOOTPRINT,
 } from "@sandustry/blueprint-core";
 import { decodeBlueprint, encodeBlueprint } from "../utils/blueprint";
 import { blueprintCatalog } from "../utils/catalog";
@@ -72,6 +73,7 @@ function CorePngFixture({
       void (async () => {
         const rendered = renderBlueprintToSvg(blueprint, {
           catalog: blueprintCatalog(),
+          unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
           assetBaseUrl: import.meta.env.BASE_URL,
           includeBackground: true,
           showGrid: true,
@@ -110,6 +112,7 @@ function CorePngFixture({
     } else
       void renderBlueprintStringToPng(encoded, {
         catalog: blueprintCatalog(),
+        unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
         assetBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).href,
         scale: 1,
         includeBackground: true,
