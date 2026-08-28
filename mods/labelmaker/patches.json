@@ -1,21 +1,5 @@
 [
   {
-    "id": "labelmaker-prefab-tint-texture",
-    "file": "js/bundle.js",
-    "operation": "replace",
-    "find": "const u=c.shape,d=e.session.rendering.images.block;if(!d)return;",
-    "code": "const u=c.shape,d=e.session.rendering.images.block;if(!d)return;const z=t.color?Q(e,\"block\",t.color,\"colorize\"):null;",
-    "expectedMatches": 2
-  },
-  {
-    "id": "labelmaker-prefab-tint-render",
-    "file": "js/bundle.js",
-    "operation": "replace",
-    "find": "o?i.tile(e.session.rendering.pixi.textures.block,a,c,{u:r,v:s,tileWidth:h,tileHeight:h}):l.drawImage(d.image,r,s,h,h,a,c,h,h)",
-    "code": "o?i.tile(z||e.session.rendering.pixi.textures.block,a,c,{u:r,v:s,tileWidth:h,tileHeight:h}):l.drawImage(z?.baseTexture.resource.source||d.image,r,s,h,h,a,c,h,h)",
-    "expectedMatches": 2
-  },
-  {
     "id": "labelmaker-prefab-tint-main-texture",
     "file": "js/bundle.js",
     "operation": "replace",
