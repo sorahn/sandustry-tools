@@ -34,10 +34,18 @@ export type RendererPreviewReadyEvent = {
   height: number;
 };
 
+export type RendererResizeEvent = {
+  namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
+  type: "resize";
+  width: number;
+  height: number;
+};
+
 export type RendererEvent =
   | RendererReadyEvent
   | RendererPreviewReadyEvent
-  | RendererPreviewErrorEvent;
+  | RendererPreviewErrorEvent
+  | RendererResizeEvent;
 
 export type RendererPreviewErrorEvent = {
   namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
@@ -146,5 +154,14 @@ export function rendererPreviewErrorEvent(
     requestId,
     code,
     message,
+  };
+}
+
+export function rendererResizeEvent(width: number, height: number): RendererResizeEvent {
+  return {
+    namespace: BLUEPRINT_RENDERER_NAMESPACE,
+    type: "resize",
+    width,
+    height,
   };
 }

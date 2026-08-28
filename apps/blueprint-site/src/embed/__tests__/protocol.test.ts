@@ -6,6 +6,7 @@ import {
   isRendererRequest,
   rendererPreviewErrorEvent,
   rendererPreviewReadyEvent,
+  rendererResizeEvent,
   rendererReadyEvent,
 } from "../protocol";
 
@@ -78,6 +79,15 @@ describe("blueprint renderer embed protocol", () => {
       requestId: "paste-2",
       code: "invalid-blueprint",
       message: "Bad data",
+    });
+  });
+
+  test("creates resize events", () => {
+    expect(rendererResizeEvent(640, 480)).toEqual({
+      namespace: BLUEPRINT_RENDERER_NAMESPACE,
+      type: "resize",
+      width: 640,
+      height: 480,
     });
   });
 });

@@ -17,6 +17,7 @@ import {
   parentOrigin,
   rendererPreviewErrorEvent,
   rendererPreviewReadyEvent,
+  rendererResizeEvent,
   rendererReadyEvent,
   type BlueprintRendererMode,
 } from "../embed/protocol";
@@ -214,6 +215,7 @@ export function BlueprintEmbedPage() {
 }
 
 function BlueprintInspectorEmbed() {
+  const mapRootRef = useRef<HTMLDivElement>(null);
   const loadRemembered = useMemo(
     () => new URLSearchParams(window.location.search).get("remember") === "1",
     [],
@@ -224,6 +226,25 @@ function BlueprintInspectorEmbed() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [showPngBackground, setShowPngBackground] = useState(false);
+
+  useEffect(() => {
+    if (window.parent === window || typeof ResizeObserver === "undefined") return;
+    const allowedOrigin = parentOrigin();
+    const element = mapRootRef.current;
+    if (!allowedOrigin || !element) return;
+    const sendSize = () => {
+      const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      window.parent.postMessage(
+        rendererResizeEvent(Math.ceil(rect.width), Math.ceil(rect.height)),
+        allowedOrigin,
+      );
+    };
+    const observer = new ResizeObserver(sendSize);
+    observer.observe(element);
+    sendSize();
+    return () => observer.disconnect();
+  }, [blueprint, showGrid, showPngBackground, showSidebar]);
 
   useEffect(() => {
     let rememberedLoaded = false;
@@ -305,7 +326,7 @@ function BlueprintInspectorEmbed() {
   }, [loadRemembered]);
 
   return (
-    <div data-embed-mode="inspector">
+    <div ref={mapRootRef} data-embed-mode="inspector">
       {blueprint ? (
         <BlueprintMap
           blueprint={blueprint}
