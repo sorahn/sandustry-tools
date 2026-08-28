@@ -8,7 +8,7 @@ import { catalogVisualBlueprint, renderVisualBlueprintSvg } from "./svg-renderer
 const visualRoot = path.dirname(fileURLToPath(import.meta.url));
 const blueprintRoot = path.join(visualRoot, "blueprints");
 const snapshotRoot = path.join(visualRoot, "svg");
-const update = process.argv.includes("--update");
+const update = process.argv.includes("--update") || process.env.UPDATE_SVG_SNAPSHOTS === "1";
 const fixtures = [
   { name: "catalog", input: catalogVisualBlueprint() },
   ...(await readdir(blueprintRoot))
