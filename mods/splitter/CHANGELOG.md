@@ -6,3 +6,4 @@
 - Added Even, Left, and Right particle-routing modes.
 - Added click-to-cycle mode selection for each splitter.
 - Particles use the other side when the preferred side is full.
+- Fixed compatibility with vanilla Conveyor Portals.
