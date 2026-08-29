@@ -5,6 +5,7 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   readlinkSync,
   rmSync,
@@ -20,9 +21,14 @@ const TEMPLATE = join(ROOT, "resources", "SandustryModTemplate");
 const TEMPLATE_DIST = join(TEMPLATE, "dist");
 const STAGING_ROOT = join(ROOT, "artifacts", "sandustry-integration");
 const STAGING_MODS = join(STAGING_ROOT, "mods");
-const MOD_ID = "sorahn.sandustry-test-blocks";
-const MOD_DIR = join(ROOT, "mods", "test-blocks");
-const PACKAGE = join(ROOT, "mods", "test-blocks", "build", "package");
+const targetMod = process.env.SANDUSTRY_MOD ?? "test-blocks";
+const modNames = targetMod === "splitter" ? ["test-blocks", "splitter"] : [targetMod];
+const modPackages = modNames.map((name) => {
+  const dir = join(ROOT, "mods", name);
+  const manifest = JSON.parse(readFileSync(join(dir, "modinfo.json"), "utf8"));
+  return { name, id: manifest.id, dir, package: join(dir, "build", "package") };
+});
+const MOD_DIR = join(ROOT, "mods", targetMod);
 const visible = process.argv.includes("--view");
 if (
   !process.env.CHROME &&
@@ -65,14 +71,18 @@ if (!existsSync(join(TEMPLATE, "sandustry"))) {
   throw new Error("Private game extraction is missing. Run npm run test:integration:setup first.");
 }
 
-run("make", ["build", "MOD=test-blocks"]);
-if (!existsSync(join(PACKAGE, "entry.js"))) {
-  throw new Error(`Expected built package at ${PACKAGE}`);
+for (const mod of modPackages) {
+  run("make", ["build", `MOD=${mod.name}`]);
+  if (!existsSync(join(mod.package, "entry.js"))) {
+    throw new Error(`Expected built package at ${mod.package}`);
+  }
 }
 
 rmSync(STAGING_ROOT, { recursive: true, force: true });
 mkdirSync(STAGING_MODS, { recursive: true });
-cpSync(PACKAGE, join(STAGING_MODS, MOD_ID), { recursive: true });
+for (const mod of modPackages) {
+  cpSync(mod.package, join(STAGING_MODS, mod.id), { recursive: true });
+}
 
 const distState = lstatSync(TEMPLATE_DIST);
 if (!distState.isSymbolicLink()) {
@@ -87,7 +97,10 @@ let hostStarted = false;
 try {
   const tests = integrationTests(MOD_DIR);
   if (tests.length === 0) throw new Error(`No integration tests found under ${MOD_DIR}`);
-  const host = await startSandustryTestHost({ modIds: [MOD_ID], visible });
+  const host = await startSandustryTestHost({
+    modIds: modPackages.map((mod) => mod.id),
+    visible,
+  });
   if (!host.ok) throw new Error(host.reason);
   hostStarted = true;
   result =

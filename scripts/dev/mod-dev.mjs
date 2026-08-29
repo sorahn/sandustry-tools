@@ -86,11 +86,17 @@ const reloadConfigPath = join(modDir, "dev-reload.json");
 const manifest = readJson(manifestPath);
 const modId = requiredString(manifest.id, "modinfo.id");
 const entry = requiredString(manifest.entry, "modinfo.entry");
+const workerEntry = manifest.workerEntry
+  ? requiredString(manifest.workerEntry, "modinfo.workerEntry")
+  : null;
+const workerSourcePath = workerEntry ? join(modDir, "src", "worker.tsx") : null;
 
 if (entry !== "entry.js") {
   fail(`modinfo.entry must be entry.js, got ${JSON.stringify(entry)}`);
 }
 if (!existsSync(sourcePath)) fail(`missing ${relative(ROOT, sourcePath)}`);
+if (workerSourcePath && !existsSync(workerSourcePath))
+  fail(`missing ${relative(ROOT, workerSourcePath)}`);
 
 const installRoot = sandustryModsDir();
 const installDir = join(installRoot, modId);
@@ -434,6 +440,20 @@ async function buildAndInstall(reason, reloadModeOverride = null) {
       outfile: devEntryPath,
       logLevel: "info",
     });
+    if (workerSourcePath && workerEntry) {
+      await build({
+        entryPoints: [workerSourcePath],
+        bundle: true,
+        format: "esm",
+        platform: "neutral",
+        target: "es2022",
+        mainFields: ["browser", "module", "main"],
+        alias,
+        plugins: [gzipFontPlugin],
+        outfile: join(buildDir, workerEntry),
+        logLevel: "info",
+      });
+    }
 
     const entryPath = devEntryPath;
     const bundle = readFileSync(entryPath, "utf8");
@@ -452,7 +472,9 @@ async function buildAndInstall(reason, reloadModeOverride = null) {
     await installPackage();
     notifyHotReload(
       reloadModeOverride,
-      reason === "overlay change" ? ["overlay.html"] : ["entry.js"],
+      reason === "overlay change"
+        ? ["overlay.html"]
+        : ["entry.js", ...(workerEntry ? [workerEntry] : [])],
     );
     if (reason !== "initial build" && (reloadModeOverride ?? reloadMode()) === "restart")
       scheduleGameRestart("restart-mode change");
@@ -488,6 +510,7 @@ async function installPackage() {
   await rm(packageDir, { recursive: true, force: true });
   await mkdir(packageDir, { recursive: true });
   await cp(devEntryPath, join(packageDir, "entry.js"));
+  if (workerEntry) await cp(join(buildDir, workerEntry), join(packageDir, workerEntry));
   await cp(manifestPath, join(packageDir, "modinfo.json"));
 
   const patchesPath = join(modDir, "patches.json");

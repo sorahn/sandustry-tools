@@ -16,6 +16,7 @@
     "mcp:chrome-devtools": "chrome-devtools-mcp --browser-url=http://127.0.0.1:9222 --no-usage-statistics --no-performance-crux --no-update-checks",
     "test:integration:setup": "node scripts/test/setup-sandustry-integration.mjs",
     "test:integration": "node scripts/test/sandustry-integration.mjs",
+    "test:integration:splitter": "SANDUSTRY_MOD=splitter node scripts/test/sandustry-integration.mjs",
     "test:integration:view": "node scripts/test/sandustry-integration.mjs --view",
     "check": "npm run tsc && npm run tsc:tests && npm run lint && npm test",
     "format:bundles": "node scripts/format-bundles.mjs",

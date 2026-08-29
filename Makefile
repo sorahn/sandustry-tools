@@ -1,5 +1,6 @@
 SHELL := /bin/sh
 MOD ?=
+SANDUSTRY_MODS_DIR ?= /Users/daryl/Library/Application Support/sandustry/mods
 MODS := $(sort $(notdir $(wildcard mods/*)))
 # A mod can be kept in the repository but excluded from default install sweeps
 # by adding an empty `mods/<name>/.deprecated` marker file.
@@ -52,3 +53,4 @@ major minor patch:
 
 clean:
 	@if [ -n "$(MOD)" ]; then if [ -z "$(MOD_DIR)" ]; then echo "Unknown MOD='$(MOD)'. Available mods: $(MOD_NAMES)" >&2; exit 2; fi; $(MAKE) -C "mods/$(MOD_DIR)" clean; else for mod in $(MODS); do $(MAKE) -C "mods/$$mod" clean || exit $$?; done; fi
+	@node scripts/clean-installed-mods.mjs "$(SANDUSTRY_MODS_DIR)" "$(MOD_DIR)"

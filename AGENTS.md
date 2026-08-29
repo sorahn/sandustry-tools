@@ -9,6 +9,13 @@ registration timing, pattern-first implementation, injected UI host ownership,
 repaint state, disposal, and installed-versus-dev verification. Follow an
 existing working mod pattern closely before introducing a new lifecycle shape.
 
+All native bundle patches must be developed and anchored against the exact
+minified game bundle extracted directly from the installed game's `app.asar`.
+Do not derive patch anchors from pretty-printed captures, source maps, or
+repository reference bundles; those may differ from the bytes consumed by the
+patch loader. Validate the expected match against the extracted minified file
+before shipping or runtime testing a patch.
+
 ## Sandkit surface-map reference
 
 `resources/sandkit-surface-map/` is a high-value reference when investigating

@@ -12,6 +12,9 @@ PATCHES := $(MOD_DIR)/patches.json
 MOD_ID := $(shell node -p 'require("$(MANIFEST)").id')
 MOD_NAME := $(shell node -p 'require("$(MANIFEST)").name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$$/g,"")')
 MOD_VERSION := $(shell node -p 'require("$(MANIFEST)").version')
+WORKER_ENTRY := $(shell node -p 'require("$(MANIFEST)").workerEntry || ""')
+WORKER_SOURCE := $(if $(WORKER_ENTRY),$(SRC_DIR)/worker.tsx,)
+WORKER_BUILD := $(if $(WORKER_ENTRY),$(BUILD_DIR)/$(WORKER_ENTRY),)
 ARTIFACTS_DIR := $(REPO_ROOT)/artifacts/build
 ARCHIVE := $(ARTIFACTS_DIR)/$(MOD_NAME)-$(MOD_VERSION).zip
 PACKAGE_DIR := $(BUILD_DIR)/package
@@ -30,10 +33,17 @@ $(BUILD_DIR)/entry.js: FORCE $(shell find $(SRC_DIR) -type f -print 2>/dev/null)
 	@cd "$(REPO_ROOT)" && npx tsc --noEmit
 	@if [ -n "$(MOD_ESBUILD_SCRIPT)" ]; then node "$(MOD_ESBUILD_SCRIPT)" "$(SRC_DIR)/entry.tsx" "$(BUILD_DIR)/entry.js"; else cd "$(REPO_ROOT)" && npx esbuild "$(SRC_DIR)/entry.tsx" --bundle --format=esm --platform=neutral --target=es2022 --drop:console --jsx-factory=sandkit.react.createElement --jsx-fragment=sandkit.react.Fragment --alias:~shared="$(REPO_ROOT)/shared" --outfile="$(BUILD_DIR)/entry.js"; fi
 
-$(ARCHIVE): $(BUILD_DIR)/entry.js $(MANIFEST) $(DESCRIPTION) $(wildcard $(PATCHES)) $(shell find $(MOD_DIR)/assets -type f -print 2>/dev/null) $(PREVIEW)
+ifneq ($(strip $(WORKER_ENTRY)),)
+$(WORKER_BUILD): FORCE $(WORKER_SOURCE) $(REPO_ROOT)/tsconfig.json $(REPO_ROOT)/types/sandustry.d.ts
+	@mkdir -p "$(dir $(WORKER_BUILD))"
+	@cd "$(REPO_ROOT)" && npx esbuild "$(WORKER_SOURCE)" --bundle --format=esm --platform=neutral --target=es2022 --drop:console --outfile="$(WORKER_BUILD)"
+endif
+
+$(ARCHIVE): $(BUILD_DIR)/entry.js $(WORKER_BUILD) $(MANIFEST) $(DESCRIPTION) $(wildcard $(PATCHES)) $(shell find $(MOD_DIR)/assets -type f -print 2>/dev/null) $(PREVIEW)
 	@rm -rf "$(PACKAGE_DIR)"
 	@mkdir -p "$(PACKAGE_DIR)"
 	@cp "$(BUILD_DIR)/entry.js" "$(PACKAGE_DIR)/entry.js"
+	@if [ -n "$(WORKER_ENTRY)" ]; then cp "$(WORKER_BUILD)" "$(PACKAGE_DIR)/$(WORKER_ENTRY)"; fi
 	@if [ -n "$(DESCRIPTION)" ]; then node "$(REPO_ROOT)/scripts/render-modinfo.mjs" "$(MANIFEST)" "$(DESCRIPTION)" "$(PACKAGE_DIR)/modinfo.json"; else cp "$(MANIFEST)" "$(PACKAGE_DIR)/modinfo.json"; fi
 	@if [ -f "$(PATCHES)" ]; then node "$(REPO_ROOT)/scripts/validate-patches.mjs" "$(PATCHES)"; cp "$(PATCHES)" "$(PACKAGE_DIR)/patches.json"; fi
 	@if [ -d "$(MOD_DIR)/assets" ]; then mkdir -p "$(PACKAGE_DIR)/assets"; cp -R "$(MOD_DIR)/assets/." "$(PACKAGE_DIR)/assets/"; fi
@@ -58,6 +68,7 @@ publish:
 check: $(ARCHIVE)
 	@cd "$(REPO_ROOT)" && npx tsc --noEmit
 	@node --check "$(BUILD_DIR)/entry.js"
+	@if [ -n "$(WORKER_ENTRY)" ]; then node --check "$(WORKER_BUILD)"; fi
 	@if [ -f "$(PATCHES)" ]; then node "$(REPO_ROOT)/scripts/validate-patches.mjs" "$(PATCHES)"; fi
 	@cd "$(REPO_ROOT)" && npx oxlint "$(SRC_DIR)"
 	@cd "$(REPO_ROOT)" && npx oxfmt --check "$(SRC_DIR)" "$(MANIFEST)"

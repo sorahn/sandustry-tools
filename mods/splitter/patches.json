@@ -1,0 +1,13 @@
+[
+  {
+    "id": "splitter-element-move-bridge",
+    "file": "js/bundle.js",
+    "operation": "replace",
+    "regex": {
+      "pattern": "if\\s*\\(\\s*[A-Za-z_$][\\w$]*\\.structures\\.isTypeAt\\(e,\\s*t\\.destination\\.x,\\s*t\\.destination\\.y,\\s*[\\\"']quantumPortal[\\\"']\\)\\s*\\)\\s*\\{",
+      "flags": ""
+    },
+    "code": "if (globalThis.__sandustrySplitterElementMove && globalThis.__sandustrySplitterElementMove(e, t, n)) return; if (a.structures.isTypeAt(e, t.destination.x, t.destination.y, \"quantumPortal\")) {",
+    "expectedMatches": 1
+  }
+]

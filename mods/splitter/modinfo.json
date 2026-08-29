@@ -1,0 +1,13 @@
+{
+  "manifestVersion": 1,
+  "id": "sorahn.sandustry-splitter",
+  "name": "Splitter",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "author": "sorahn",
+  "entry": "entry.js",
+  "workerEntry": "worker.js",
+  "description": "Adds a 1x1 building that evenly routes particles to the left and right.",
+  "dependencies": [],
+  "loadOrder": 9007199254740991
+}
