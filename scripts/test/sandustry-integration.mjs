@@ -23,6 +23,7 @@ const STAGING_MODS = join(STAGING_ROOT, "mods");
 const MOD_ID = "sorahn.sandustry-test-blocks";
 const MOD_DIR = join(ROOT, "mods", "test-blocks");
 const PACKAGE = join(ROOT, "mods", "test-blocks", "build", "package");
+const visible = process.argv.includes("--view");
 if (
   !process.env.CHROME &&
   process.platform === "darwin" &&
@@ -86,23 +87,19 @@ let hostStarted = false;
 try {
   const tests = integrationTests(MOD_DIR);
   if (tests.length === 0) throw new Error(`No integration tests found under ${MOD_DIR}`);
-  const host = await startSandustryTestHost({ modIds: [MOD_ID] });
+  const host = await startSandustryTestHost({ modIds: [MOD_ID], visible });
   if (!host.ok) throw new Error(host.reason);
   hostStarted = true;
-  result = spawnSync(
-    process.execPath,
-    [
-      "--import",
-      join(TEMPLATE, "scripts", "test", "register-modkit.js"),
-      "--test",
-      ...tests,
-    ],
-    {
-      cwd: ROOT,
-      stdio: "inherit",
-      env: { ...process.env, SANDUSTRY_TEST_HOST: "1" },
-    },
-  ).status ?? 1;
+  result =
+    spawnSync(
+      process.execPath,
+      ["--import", join(TEMPLATE, "scripts", "test", "register-modkit.js"), "--test", ...tests],
+      {
+        cwd: ROOT,
+        stdio: "inherit",
+        env: { ...process.env, SANDUSTRY_TEST_HOST: "1" },
+      },
+    ).status ?? 1;
 } finally {
   if (hostStarted) await stopSandustryTestHost();
   unlinkSync(TEMPLATE_DIST);

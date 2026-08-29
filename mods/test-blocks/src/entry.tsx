@@ -984,6 +984,16 @@ const maintainGlobalEnergy = () => {
   api.resources.updateEnergy(delta);
 };
 
+const removePowerContribution = (event: unknown) => {
+  const structureId =
+    typeof event === "object" && event !== null && "structureId" in event
+      ? event.structureId
+      : undefined;
+  if (structureId !== POWER_ID) return;
+  const contribution = Math.min(POWER_GLOBAL_ENERGY_TARGET, Math.max(0, globalEnergy()));
+  if (contribution > 0) api.resources.updateEnergy(-contribution);
+};
+
 const maintainPowerStorage = (structure: SandustryStructure) => {
   const data = structure.data ?? {};
   if (data.maxEnergy === POWER_STORAGE_CAPACITY && data.storedEnergy === POWER_STORAGE_CAPACITY) {
@@ -1010,6 +1020,10 @@ const registerPowerTick = () => {
     });
     if (hasPowerBlock) maintainGlobalEnergy();
   });
+};
+
+const registerPowerRemoval = () => {
+  api.events.on("building:removed", (...args) => removePowerContribution(args.at(-1)));
 };
 
 // The native thermal consumers ask for the exact "thermalRelay" type. The
@@ -1221,6 +1235,7 @@ const setup = async () => {
   api.player.buildings.unlockByType(POWER_ID);
   registerThermalSourceTick();
   registerPowerTick();
+  registerPowerRemoval();
 
   api.triggers.register(`${MOD_ID}:source-tick`, {
     interval: SOURCE_BRUSH_INTERVAL_MS,
