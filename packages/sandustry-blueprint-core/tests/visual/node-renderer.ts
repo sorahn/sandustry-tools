@@ -2,7 +2,7 @@ import {
   encodeBlueprint,
   UNKNOWN_STRUCTURE_FOOTPRINT,
   type Blueprint,
-} from "@sorahn/sandustry-blueprint-core";
+} from "@daryl.roberts/sandustry-blueprint-core";
 import { renderBlueprintStringToNodePng } from "@sandustry/blueprint-node";
 import { blueprintCatalog } from "../../../../apps/blueprint-site/src/utils/catalog";
 import { catalogVisualFixture } from "../../../../apps/blueprint-site/src/visual-fixtures/catalog";

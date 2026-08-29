@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { structureLabel } from "@sorahn/sandustry-blueprint-core";
+import { structureLabel } from "@daryl.roberts/sandustry-blueprint-core";
 import { decodeBlueprint, encodeBlueprint, type Blueprint } from "../utils/blueprint";
 import { debugComponent } from "../components/DebugComponentWrapper";
 import { BlueprintMapPanel } from "../components/BlueprintMapPanel";

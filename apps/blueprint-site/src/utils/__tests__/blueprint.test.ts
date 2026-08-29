@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { wrapLabel } from "@sorahn/sandustry-blueprint-core";
+import { wrapLabel } from "@daryl.roberts/sandustry-blueprint-core";
 import { decodeBlueprint, emptyBlueprint, encodeBlueprint } from "../blueprint";
 import { snapMapZoom, structureShape, viewportHeightForWidth } from "../blueprint-map";
 

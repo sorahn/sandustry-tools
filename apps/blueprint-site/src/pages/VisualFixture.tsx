@@ -5,7 +5,7 @@ import {
   renderBlueprintStringToPng,
   renderBlueprintToSvg,
   UNKNOWN_STRUCTURE_FOOTPRINT,
-} from "@sorahn/sandustry-blueprint-core";
+} from "@daryl.roberts/sandustry-blueprint-core";
 import { decodeBlueprint, encodeBlueprint } from "../utils/blueprint";
 import { blueprintCatalog } from "../utils/catalog";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";

@@ -2,7 +2,7 @@ import {
   decodeBlueprint,
   encodeBlueprint,
   renderBlueprintToSvg,
-} from "@sorahn/sandustry-blueprint-core";
+} from "@daryl.roberts/sandustry-blueprint-core";
 import { blueprintCatalog } from "../../../../apps/blueprint-site/src/utils/catalog";
 import { catalogVisualFixture } from "../../../../apps/blueprint-site/src/visual-fixtures/catalog";
 

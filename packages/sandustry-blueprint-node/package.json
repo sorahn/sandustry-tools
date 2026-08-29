@@ -15,7 +15,7 @@
     "test": "node -e \"console.log('no tests')\""
   },
   "dependencies": {
-    "@resvg/resvg-js": "^2.6.2",
-    "@sorahn/sandustry-blueprint-core": "0.1.0"
+    "@daryl.roberts/sandustry-blueprint-core": "0.1.1",
+    "@resvg/resvg-js": "^2.6.2"
   }
 }

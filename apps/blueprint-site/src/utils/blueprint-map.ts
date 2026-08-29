@@ -6,7 +6,7 @@ import {
   createBlueprintRenderModel,
   NATIVE_PIXELS_PER_CELL,
   UNKNOWN_STRUCTURE_FOOTPRINT,
-} from "@sorahn/sandustry-blueprint-core";
+} from "@daryl.roberts/sandustry-blueprint-core";
 import { blueprintCatalog } from "./catalog";
 import { readStorageValue } from "./storage";
 import { SAVED_MAP_VIEW_KEY } from "./storage-keys";

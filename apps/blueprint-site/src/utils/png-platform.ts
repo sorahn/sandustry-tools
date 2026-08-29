@@ -1,4 +1,4 @@
-import type { BlueprintPngPlatform } from "@sorahn/sandustry-blueprint-core";
+import type { BlueprintPngPlatform } from "@daryl.roberts/sandustry-blueprint-core";
 
 export function bytesToDataUrl(bytes: Uint8Array, mimeType: string) {
   let binary = "";

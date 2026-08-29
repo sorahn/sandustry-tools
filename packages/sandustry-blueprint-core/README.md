@@ -1,4 +1,4 @@
-# @sorahn/sandustry-blueprint-core
+# @daryl.roberts/sandustry-blueprint-core
 
 Shared blueprint encoding, preparation, SVG rendering, and PNG-platform
 adapters for Sandustry tools.

@@ -1,6 +1,6 @@
 # Supported blueprint formats
 
-The renderer and shared `@sorahn/sandustry-blueprint-core` package accept the current
+The renderer and shared `@daryl.roberts/sandustry-blueprint-core` package accept the current
 v2 blueprint prefixes:
 
 - `SAND:BP:v2:` contains base64-encoded binary data.

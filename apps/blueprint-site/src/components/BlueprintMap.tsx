@@ -8,7 +8,7 @@ import {
   tileColor,
   NATIVE_PIXELS_PER_CELL,
   UNKNOWN_STRUCTURE_FOOTPRINT,
-} from "@sorahn/sandustry-blueprint-core";
+} from "@daryl.roberts/sandustry-blueprint-core";
 import { type Blueprint } from "../utils/blueprint";
 import { blueprintCatalog } from "../utils/catalog";
 import { debugComponent } from "./DebugComponentWrapper";
