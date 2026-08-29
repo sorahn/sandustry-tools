@@ -1,0 +1,33 @@
+<style>
+  .sand-hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    font-family: monospace;
+    font-size: 11px;
+    color: #e0e0e0;
+    image-rendering: pixelated;
+    box-sizing: border-box;
+  }
+
+  .sand-hud > * {
+    aspect-ratio: 1;
+  }
+
+  .text {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 100%);
+    display: grid;
+    font-family: Play;
+    font-size: calc(100px / 9 * 2);
+    height: calc(100% / 9 * 2);
+    place-items: center;
+    position: absolute;
+    text-align: center;
+    top: 0;
+    width: 100%;
+  }
+</style>
+
+<div class="sand-hud">
+  <span class="text">Test Blocks</span>
+</div>

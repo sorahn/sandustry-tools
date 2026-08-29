@@ -78,6 +78,7 @@ const initialSave =
   readSaveFile(DEFAULT_SAVE_PATH);
 const manifestPath = join(modDir, "modinfo.json");
 const sourcePath = join(modDir, "src", "entry.tsx");
+const overlayPath = join(modDir, "src", "overlay.html");
 const buildDir = join(modDir, "build");
 const packageDir = join(buildDir, "package");
 const devEntryPath = join(buildDir, "dev-entry.js");
@@ -96,6 +97,8 @@ const installDir = join(installRoot, modId);
 const devOwnerPath = join(installDir, ".sandustry-dev-owner.json");
 let building = false;
 let buildQueued = false;
+let queuedBuildReason = null;
+let queuedReloadMode = null;
 let buildTimer = null;
 let pollTimer = null;
 let shuttingDown = false;
@@ -392,10 +395,12 @@ function startTerminalControls() {
   }
 }
 
-async function buildAndInstall(reason) {
+async function buildAndInstall(reason, reloadModeOverride = null) {
   if (shuttingDown) return;
   if (building) {
     buildQueued = true;
+    queuedBuildReason = reason;
+    queuedReloadMode = reloadModeOverride;
     return;
   }
 
@@ -445,8 +450,11 @@ async function buildAndInstall(reason) {
     );
 
     await installPackage();
-    notifyHotReload();
-    if (reason !== "initial build" && reloadMode() === "restart")
+    notifyHotReload(
+      reloadModeOverride,
+      reason === "overlay change" ? ["overlay.html"] : ["entry.js"],
+    );
+    if (reason !== "initial build" && (reloadModeOverride ?? reloadMode()) === "restart")
       scheduleGameRestart("restart-mode change");
     console.log(`built ${modId} in ${Date.now() - started}ms`);
   } catch (error) {
@@ -455,7 +463,11 @@ async function buildAndInstall(reason) {
     building = false;
     if (buildQueued) {
       buildQueued = false;
-      scheduleBuild("queued change");
+      const nextReason = queuedBuildReason ?? "queued change";
+      const nextReloadMode = queuedReloadMode;
+      queuedBuildReason = null;
+      queuedReloadMode = null;
+      scheduleBuild(nextReason, nextReloadMode);
     }
   }
 }
@@ -494,6 +506,11 @@ async function installPackage() {
     if (name === "assets") await rm(target, { recursive: true, force: true });
     await cp(source, target, { recursive: true, force: true });
   }
+
+  // Development-only companion content for the HMR runtime. The screen
+  // recorder uses this file as its advanced overlay editor input.
+  const overlayPath = join(modDir, "src", "overlay.html");
+  if (existsSync(overlayPath)) await cp(overlayPath, join(packageDir, "overlay.html"));
 
   await mkdir(installDir, { recursive: true });
   await cp(packageDir, installDir, { recursive: true, force: true });
@@ -547,9 +564,23 @@ function startPolling() {
   pollTimer = setInterval(() => {
     const next = snapshotWatchedFiles();
     if (sameSnapshot(previous, next)) return;
+    const changed = changedPaths(previous, next);
     previous = next;
-    scheduleBuild("source or package change");
+    const overlayOnly = changed.length > 0 && changed.every((path) => path === overlayPath);
+    const selectedMode = overlayOnly ? "hmr" : reloadMode();
+    console.log(
+      `detected change (${selectedMode}): ${changed.map((path) => relative(ROOT, path)).join(", ")}`,
+    );
+    scheduleBuild(
+      overlayOnly ? "overlay change" : "source or package change",
+      overlayOnly ? "hmr" : null,
+    );
   }, POLL_MS);
+}
+
+function changedPaths(previous, next) {
+  const paths = new Set([...previous.keys(), ...next.keys()]);
+  return [...paths].filter((path) => previous.get(path) !== next.get(path));
 }
 
 function snapshotWatchedFiles() {
@@ -602,12 +633,12 @@ function sameSnapshot(a, b) {
   return true;
 }
 
-function scheduleBuild(reason) {
+function scheduleBuild(reason, reloadModeOverride = null) {
   if (shuttingDown) return;
   if (buildTimer) clearTimeout(buildTimer);
   buildTimer = setTimeout(() => {
     buildTimer = null;
-    void buildAndInstall(reason);
+    void buildAndInstall(reason, reloadModeOverride);
   }, DEBOUNCE_MS);
 }
 
@@ -689,12 +720,12 @@ function startHotReloadServer() {
   });
 }
 
-function notifyHotReload() {
+function notifyHotReload(modeOverride = null, changed = ["entry.js"]) {
   const chunk = `data: ${JSON.stringify({
     v: 1,
     modId,
-    changed: ["entry.js"],
-    mode: reloadMode(),
+    changed,
+    mode: modeOverride ?? reloadMode(),
   })}\n\n`;
   for (const response of hotReloadClients) {
     try {

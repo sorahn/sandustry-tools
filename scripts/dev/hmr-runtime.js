@@ -93,6 +93,9 @@
       booted: false,
       continueVisibleSince: 0,
       continueTimer: null,
+      overlayHtml: null,
+      overlayPresent: false,
+      overlayObserver: null,
     });
   const hotReloadEval = host.installed;
   const autoContinueStorageKey = `__sandustryDevAutoContinueDone__:${config.devSessionId || "legacy"}`;
@@ -146,6 +149,62 @@
         resolve(null);
       }
     });
+  }
+
+  // The screen recorder's advanced overlay editor is a controlled React
+  // textarea. Keep its contents sourced from the selected mod's optional
+  // src/overlay.html file, while still allowing the recorder to render the
+  // same HTML/CSS through its normal change handler.
+  function overlayUrl() {
+    try {
+      return sandkit.api.assets.getUrl("overlay.html");
+    } catch {
+      return null;
+    }
+  }
+
+  function applyOverlayHtml() {
+    if (typeof host.overlayHtml !== "string") return;
+    const textarea = document.querySelector('textarea[aria-label="Overlay HTML and CSS"]');
+    if (!textarea || textarea.value === host.overlayHtml) return;
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+    if (setter) setter.call(textarea, host.overlayHtml);
+    else textarea.value = host.overlayHtml;
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function installOverlaySync() {
+    if (host.overlayObserver || !document.body) return;
+    host.overlayObserver = new MutationObserver(applyOverlayHtml);
+    host.overlayObserver.observe(document.body, { childList: true, subtree: true });
+    applyOverlayHtml();
+  }
+
+  function syncOverlayHtml() {
+    const url = overlayUrl();
+    if (!url) return Promise.resolve();
+    const busted = `${url}${url.includes("?") ? "&" : "?"}hot=${Date.now()}`;
+    return fetch(busted, { cache: "no-store" })
+      .then((response) => {
+        // overlay.html is optional. A missing file is expected for most mods.
+        if (!response.ok) {
+          if (!host.overlayPresent) return null;
+          host.overlayPresent = false;
+          host.overlayHtml = "";
+          installOverlaySync();
+          applyOverlayHtml();
+          return null;
+        }
+        return response.text();
+      })
+      .then((html) => {
+        if (html === null) return;
+        host.overlayPresent = true;
+        host.overlayHtml = html;
+        installOverlaySync();
+        applyOverlayHtml();
+      })
+      .catch(() => {});
   }
 
   function dispose() {
@@ -205,6 +264,8 @@
           return;
         }
         if (payload.modId !== config.modId || payload.mode !== "hmr") return;
+        void syncOverlayHtml();
+        if (Array.isArray(payload.changed) && payload.changed.includes("overlay.html")) return;
         void readEntry().then((next) => {
           if (!next) return report("failed", new Error("could not read updated entry.js"));
           if (payload.force || next !== host.source) evaluate(next);
@@ -305,6 +366,15 @@
   }
 
   host.installed = true;
+  const installOverlayWhenReady = () => {
+    if (document.body) {
+      installOverlaySync();
+      void syncOverlayHtml();
+      return;
+    }
+    setTimeout(installOverlayWhenReady, 0);
+  };
+  installOverlayWhenReady();
   connect();
   autoContinue();
 })();
