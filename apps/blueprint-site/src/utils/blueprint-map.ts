@@ -1,5 +1,5 @@
 import { type Blueprint } from "./blueprint";
-import { catalogEntry, catalogRender } from "./catalog";
+import { catalogEntry } from "./catalog";
 import {
   customShapeFromStructure,
   shapeForStructure,

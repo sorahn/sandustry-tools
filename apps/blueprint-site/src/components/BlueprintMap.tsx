@@ -659,8 +659,7 @@ export function BlueprintMap({
             cell={cell}
           />
           {(() => {
-            const isFoundationShape = ({ structure, index }: (typeof renderStructures)[number]) => {
-              const prepared = preparedBlueprint.preparedStructures[index];
+            const isFoundationShape = ({ index }: (typeof renderStructures)[number]) => {
               return isFoundationStructure(preparedBlueprint.preparedStructures[index]);
             };
             const renderStructure = ({ structure, index }: (typeof renderStructures)[number]) => {
