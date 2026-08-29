@@ -10,3 +10,6 @@
 [submodule "resources/SandLoader-Mods"]
 	path = resources/SandLoader-Mods
 	url = https://github.com/LopeKinz/SandLoader-Mods
+[submodule "apps/sandustry-vault"]
+	path = apps/sandustry-vault
+	url = git@github.com:TrimBarktree/sandustry-vault.git
