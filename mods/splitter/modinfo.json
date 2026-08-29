@@ -1,13 +1,13 @@
 {
   "manifestVersion": 1,
   "id": "sorahn.sandustry-splitter",
-  "name": "Splitter",
+  "name": "Priority Splitters",
   "version": "0.1.0",
   "apiVersion": 1,
   "author": "sorahn",
   "entry": "entry.js",
   "workerEntry": "worker.js",
-  "description": "Adds a 1x1 building that evenly routes particles to the left and right.",
+  "description": "Adds a 1x1 building with toggleable Even, Left, and Right particle-routing modes.",
   "dependencies": [],
   "loadOrder": 9007199254740991
 }

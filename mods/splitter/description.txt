@@ -1,3 +1,3 @@
-Splitter adds a 1x1 production building that routes particles alternately to the left and right.
+Priority Splitters adds a 1x1 production building with toggleable Even, Left, and Right particle-routing modes.
 
-If the preferred destination is full, the particle uses the other side. If both destinations are full, the particle remains in the splitter.
+If the preferred side is full, the particle uses the other side.
