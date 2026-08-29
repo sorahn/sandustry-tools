@@ -1,6 +1,6 @@
 {
   "name": "@daryl.roberts/sandustry-blueprint-core",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "private": false,
   "description": "Shared Sandustry blueprint encoding and rendering core",
   "homepage": "https://github.com/sorahn/sandustry-blueprint-core",
@@ -9,7 +9,8 @@
     "url": "git+https://github.com/sorahn/sandustry-blueprint-core.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "assets"
   ],
   "type": "module",
   "types": "./dist/index.d.ts",

@@ -13,7 +13,7 @@
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
-    "@daryl.roberts/sandustry-blueprint-core": "0.1.1",
+    "@daryl.roberts/sandustry-blueprint-core": "0.1.3",
     "@sandustry/save-core": "0.0.0",
     "@sandustry/ui": "0.0.0",
     "@tanstack/react-router": "1.170.29",

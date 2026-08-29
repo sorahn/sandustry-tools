@@ -84,6 +84,13 @@ export {
   type RenderSvgToPngOptions,
   type RenderBlueprintStringToPngOptions,
 } from "./png.js";
+export {
+  CATALOG,
+  BLUEPRINT_ASSET_ROOT,
+  NATIVE_CATALOG_VERSION,
+  blueprintCatalog,
+  catalogEntry,
+} from "./catalog-data.js";
 
 const BINARY_PREFIX = "SAND:BP:v2:";
 const TEXT_PREFIX = "SAND:BP:v2t:";

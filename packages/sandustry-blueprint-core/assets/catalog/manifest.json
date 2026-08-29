@@ -1,0 +1,699 @@
+{
+  "generatedAt": "2026-08-27T04:46:04.952Z",
+  "source": "local Sandustry app.asar + building-menu.html",
+  "assets": [
+    {
+      "source": "dist/img/block.png",
+      "file": "catalog/img__block.png",
+      "bytes": 143,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/conveyor_left.png",
+      "file": "catalog/img__conveyor_left.png",
+      "bytes": 446,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/conveyor_right.png",
+      "file": "catalog/img__conveyor_right.png",
+      "bytes": 461,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/farm.png",
+      "file": "catalog/img__farm.png",
+      "bytes": 263,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/img/filter_left.png",
+      "file": "catalog/img__filter_left.png",
+      "bytes": 392,
+      "size": {
+        "width": 72,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/img/filter_right.png",
+      "file": "catalog/img__filter_right.png",
+      "bytes": 396,
+      "size": {
+        "width": 72,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/img/gloom_emitter.png",
+      "file": "catalog/img__gloom_emitter.png",
+      "bytes": 239,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/launcher_left.png",
+      "file": "catalog/img__launcher_left.png",
+      "bytes": 290,
+      "size": {
+        "width": 18,
+        "height": 26
+      }
+    },
+    {
+      "source": "dist/img/launcher_right.png",
+      "file": "catalog/img__launcher_right.png",
+      "bytes": 272,
+      "size": {
+        "width": 18,
+        "height": 26
+      }
+    },
+    {
+      "source": "dist/img/launcher.png",
+      "file": "catalog/img__launcher.png",
+      "bytes": 176,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/img/light.png",
+      "file": "catalog/img__light.png",
+      "bytes": 262,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/liquid_vent.png",
+      "file": "catalog/img__liquid_vent.png",
+      "bytes": 232,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/pipes_icon.png",
+      "file": "catalog/img__pipes_icon.png",
+      "bytes": 332,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/pump.png",
+      "file": "catalog/img__pump.png",
+      "bytes": 218,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/sell.png",
+      "file": "catalog/img__sell.png",
+      "bytes": 369,
+      "size": {
+        "width": 96,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/shaker_left.png",
+      "file": "catalog/img__shaker_left.png",
+      "bytes": 219,
+      "size": {
+        "width": 36,
+        "height": 22
+      }
+    },
+    {
+      "source": "dist/img/shaker_right.png",
+      "file": "catalog/img__shaker_right.png",
+      "bytes": 218,
+      "size": {
+        "width": 36,
+        "height": 22
+      }
+    },
+    {
+      "source": "dist/img/sound_box.png",
+      "file": "catalog/img__sound_box.png",
+      "bytes": 162,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/splitter_left.png",
+      "file": "catalog/img__splitter_left.png",
+      "bytes": 147,
+      "size": {
+        "width": 7,
+        "height": 4
+      }
+    },
+    {
+      "source": "dist/img/splitter_right.png",
+      "file": "catalog/img__splitter_right.png",
+      "bytes": 147,
+      "size": {
+        "width": 7,
+        "height": 4
+      }
+    },
+    {
+      "source": "dist/img/triangle_left_del.png",
+      "file": "catalog/img__triangle_left_del.png",
+      "bytes": 144,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/triangle_left.png",
+      "file": "catalog/img__triangle_left.png",
+      "bytes": 149,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/triangle_right_del.png",
+      "file": "catalog/img__triangle_right_del.png",
+      "bytes": 148,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/triangle_right.png",
+      "file": "catalog/img__triangle_right.png",
+      "bytes": 161,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/img/velocity.png",
+      "file": "catalog/img__velocity.png",
+      "bytes": 631,
+      "size": {
+        "width": 18,
+        "height": 417
+      }
+    },
+    {
+      "source": "dist/mods/aurixite_crystallizer.png",
+      "file": "catalog/mods__aurixite_crystallizer.png",
+      "bytes": 260,
+      "size": {
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "source": "dist/mods/burner_belt_left.png",
+      "file": "catalog/mods__burner_belt_left.png",
+      "bytes": 438,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/burner_belt_right.png",
+      "file": "catalog/mods__burner_belt_right.png",
+      "bytes": 441,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/clearing_frame_left.png",
+      "file": "catalog/mods__clearing_frame_left.png",
+      "bytes": 524,
+      "size": {
+        "width": 64,
+        "height": 20
+      }
+    },
+    {
+      "source": "dist/mods/clearing_frame_right.png",
+      "file": "catalog/mods__clearing_frame_right.png",
+      "bytes": 517,
+      "size": {
+        "width": 64,
+        "height": 20
+      }
+    },
+    {
+      "source": "dist/mods/conveyor_left_mk2.png",
+      "file": "catalog/mods__conveyor_left_mk2.png",
+      "bytes": 516,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/conveyor_right_mk2.png",
+      "file": "catalog/mods__conveyor_right_mk2.png",
+      "bytes": 505,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/copperMold.png",
+      "file": "catalog/mods__copperMold.png",
+      "bytes": 281,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/critter_fence.png",
+      "file": "catalog/mods__critter_fence.png",
+      "bytes": 344,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/earth_stratacore.png",
+      "file": "catalog/mods__earth_stratacore.png",
+      "bytes": 351,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/electricity_connector.png",
+      "file": "catalog/mods__electricity_connector.png",
+      "bytes": 388,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/filter_left_mk2.png",
+      "file": "catalog/mods__filter_left_mk2.png",
+      "bytes": 444,
+      "size": {
+        "width": 72,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/filter_right_mk2.png",
+      "file": "catalog/mods__filter_right_mk2.png",
+      "bytes": 451,
+      "size": {
+        "width": 72,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/filter_wall_mk2.png",
+      "file": "catalog/mods__filter_wall_mk2.png",
+      "bytes": 253,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/filter_wall.png",
+      "file": "catalog/mods__filter_wall.png",
+      "bytes": 216,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/goldBattery.png",
+      "file": "catalog/mods__goldBattery.png",
+      "bytes": 387,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/heat_cannon.png",
+      "file": "catalog/mods__heat_cannon.png",
+      "bytes": 410,
+      "size": {
+        "width": 23,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/kinetic_field_emitter_diagonal.png",
+      "file": "catalog/mods__kinetic_field_emitter_diagonal.png",
+      "bytes": 439,
+      "size": {
+        "width": 15,
+        "height": 15
+      }
+    },
+    {
+      "source": "dist/mods/kinetic_field_emitter.png",
+      "file": "catalog/mods__kinetic_field_emitter.png",
+      "bytes": 370,
+      "size": {
+        "width": 23,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/launcher_left_mk2.png",
+      "file": "catalog/mods__launcher_left_mk2.png",
+      "bytes": 350,
+      "size": {
+        "width": 18,
+        "height": 26
+      }
+    },
+    {
+      "source": "dist/mods/launcher_mk2.png",
+      "file": "catalog/mods__launcher_mk2.png",
+      "bytes": 190,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/launcher_right_mk2.png",
+      "file": "catalog/mods__launcher_right_mk2.png",
+      "bytes": 332,
+      "size": {
+        "width": 18,
+        "height": 26
+      }
+    },
+    {
+      "source": "dist/mods/powerBrick.png",
+      "file": "catalog/mods__powerBrick.png",
+      "bytes": 1267,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/prismite_well.png",
+      "file": "catalog/mods__prismite_well.png",
+      "bytes": 272,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/quantum_portal_exit.png",
+      "file": "catalog/mods__quantum_portal_exit.png",
+      "bytes": 382,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/quantum_portal.png",
+      "file": "catalog/mods__quantum_portal.png",
+      "bytes": 386,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/signalAnd.png",
+      "file": "catalog/mods__signalAnd.png",
+      "bytes": 305,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalBuffer.png",
+      "file": "catalog/mods__signalBuffer.png",
+      "bytes": 171,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalButton.png",
+      "file": "catalog/mods__signalButton.png",
+      "bytes": 266,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalCounter4.png",
+      "file": "catalog/mods__signalCounter4.png",
+      "bytes": 288,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalGate.png",
+      "file": "catalog/mods__signalGate.png",
+      "bytes": 381,
+      "size": {
+        "width": 54,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/signalLamp.png",
+      "file": "catalog/mods__signalLamp.png",
+      "bytes": 257,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalNand.png",
+      "file": "catalog/mods__signalNand.png",
+      "bytes": 310,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalNor.png",
+      "file": "catalog/mods__signalNor.png",
+      "bytes": 311,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalNot.png",
+      "file": "catalog/mods__signalNot.png",
+      "bytes": 286,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalOr.png",
+      "file": "catalog/mods__signalOr.png",
+      "bytes": 317,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalPresenceSensor.png",
+      "file": "catalog/mods__signalPresenceSensor.png",
+      "bytes": 396,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalPulseSensor.png",
+      "file": "catalog/mods__signalPulseSensor.png",
+      "bytes": 385,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalRepeater.png",
+      "file": "catalog/mods__signalRepeater.png",
+      "bytes": 301,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalSensor.png",
+      "file": "catalog/mods__signalSensor.png",
+      "bytes": 380,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalSwitch.png",
+      "file": "catalog/mods__signalSwitch.png",
+      "bytes": 324,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalToggle.png",
+      "file": "catalog/mods__signalToggle.png",
+      "bytes": 283,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalXnor.png",
+      "file": "catalog/mods__signalXnor.png",
+      "bytes": 327,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/signalXor.png",
+      "file": "catalog/mods__signalXor.png",
+      "bytes": 323,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/smelter.png",
+      "file": "catalog/mods__smelter.png",
+      "bytes": 290,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/snowmaker.png",
+      "file": "catalog/mods__snowmaker.png",
+      "bytes": 275,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/steamTurbine.png",
+      "file": "catalog/mods__steamTurbine.png",
+      "bytes": 291,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/swarm_console.png",
+      "file": "catalog/mods__swarm_console.png",
+      "bytes": 496,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/thermal_relay.png",
+      "file": "catalog/mods__thermal_relay.png",
+      "bytes": 256,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/thermodryer.png",
+      "file": "catalog/mods__thermodryer.png",
+      "bytes": 183,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/thermofroster.png",
+      "file": "catalog/mods__thermofroster.png",
+      "bytes": 415,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/voidRift.png",
+      "file": "catalog/mods__voidRift.png",
+      "bytes": 1298,
+      "size": {
+        "width": 64,
+        "height": 64
+      }
+    }
+  ]
+}
