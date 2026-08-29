@@ -23,8 +23,14 @@ try {
     if (!splitter) return true;
 
     const key = `${splitter.x},${splitter.y}`;
+    const preference = splitter.data?.preference ?? "even";
     const preferred: Side =
-      nextSideByPosition.get(key) ?? (splitter.data?.nextSide === "right" ? "right" : "left");
+      preference === "right"
+        ? "right"
+        : preference === "left"
+          ? "left"
+          : (nextSideByPosition.get(key) ??
+            (splitter.data?.nextSide === "right" ? "right" : "left"));
     const candidates: Side[] = preferred === "left" ? ["left", "right"] : ["right", "left"];
 
     for (const side of candidates) {
@@ -35,7 +41,7 @@ try {
       if (!workerApi.world.isCellEmpty(state, targetX, targetY)) continue;
 
       workerApi.elements.move(state, source.x, source.y, targetX, targetY);
-      nextSideByPosition.set(key, side === "left" ? "right" : "left");
+      if (preference === "even") nextSideByPosition.set(key, side === "left" ? "right" : "left");
       control.cancel();
       return true;
     }
