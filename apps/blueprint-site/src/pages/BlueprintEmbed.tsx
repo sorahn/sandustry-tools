@@ -85,24 +85,25 @@ function BlueprintInspectorEmbed() {
       }
       if (!isRendererRequest(event.data)) return;
       const { requestId, blueprint: encoded } = event.data;
+      const isLegacyV1 = encoded.startsWith("SAND:BP:v1:") || encoded.startsWith("SAND:BACKUP:v1:");
+      if (isLegacyV1) {
+        setBlueprint(null);
+        setStatus("Legacy v1 strings are not supported by the blueprint inspector.");
+        window.parent.postMessage(
+          rendererPreviewErrorEvent(
+            requestId,
+            "unsupported-format",
+            "Legacy v1 strings are not supported by the blueprint inspector.",
+          ),
+          event.origin,
+        );
+        return;
+      }
       if (encoded.length > MAX_PREVIEW_BLUEPRINT_LENGTH) {
         setBlueprint(null);
         setStatus("Blueprint string is too large.");
         window.parent.postMessage(
           rendererPreviewErrorEvent(requestId, "too-large", "Blueprint string is too large."),
-          event.origin,
-        );
-        return;
-      }
-      if (encoded.startsWith("SAND:BP:v1:") || encoded.startsWith("SAND:BACKUP:v1:")) {
-        setBlueprint(null);
-        setStatus("Legacy v1 strings are not supported by the renderer inspector.");
-        window.parent.postMessage(
-          rendererPreviewErrorEvent(
-            requestId,
-            "unsupported-format",
-            "Legacy v1 strings are not supported by the renderer inspector.",
-          ),
           event.origin,
         );
         return;
