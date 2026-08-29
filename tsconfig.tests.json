@@ -19,6 +19,7 @@
   ],
   "exclude": [
     "node_modules",
+    "apps/sandustry-vault/**",
     "**/build/**",
     "resources/SandustryModTemplate/**",
     "**/*.integration.test.ts",

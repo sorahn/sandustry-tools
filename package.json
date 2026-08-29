@@ -22,7 +22,7 @@
     "format:bundles": "node scripts/format-bundles.mjs",
     "format:check": "oxfmt --check .",
     "format": "oxfmt --write .",
-    "lint": "node scripts/check-jsx.mjs && oxlint --deny-warnings --ignore-pattern '**/build/**' --ignore-pattern 'resources/**' --ignore-pattern '*.zip' tests scripts types mods packages/*/src apps/*/src",
+    "lint": "node scripts/check-jsx.mjs && oxlint --deny-warnings --ignore-pattern '**/build/**' --ignore-pattern 'resources/**' --ignore-pattern '*.zip' tests scripts types mods packages/*/src apps/blueprint-site/src",
     "prepare": "husky",
     "test:all": "npm test && npm --workspace @daryl.roberts/sandustry-blueprint-core test && npm --workspace @sandustry/blueprint-node test && npm --workspace @sandustry/save-core test && npm --workspace @sandustry/ui test && npm --workspace @sandustry/blueprint-site test",
     "test": "bun test scripts/test-catalog-invariants.test.ts",
