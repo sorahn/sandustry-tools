@@ -41,7 +41,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Build blueprint site
         env:
-          VITE_BLUEPRINT_PARENT_ORIGINS: https://vault.sorahn.net,https://sandustryvault.com,http://localhost:5173
+          VITE_BLUEPRINT_PARENT_ORIGINS: https://vault.sorahn.net,https://sandustryvault.com,https://sandustry-vault-production.up.railway.app,http://localhost:5173
         run: npm run build --workspace @sandustry/blueprint-site
       - name: Setup Pages
         uses: actions/configure-pages@v6
