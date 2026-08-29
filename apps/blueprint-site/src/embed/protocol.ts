@@ -1,8 +1,6 @@
 export const BLUEPRINT_RENDERER_NAMESPACE = "sandustry:blueprint-renderer" as const;
 export const BLUEPRINT_RENDERER_PROTOCOL_VERSION = 1 as const;
 
-export type BlueprintRendererMode = "thumbnail" | "inspector";
-
 export type RendererRequest = {
   namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
   type: "set-blueprint";
@@ -22,16 +20,6 @@ export type RendererReadyEvent = {
   namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
   type: "ready";
   protocolVersion: typeof BLUEPRINT_RENDERER_PROTOCOL_VERSION;
-  modes: BlueprintRendererMode[];
-};
-
-export type RendererPreviewReadyEvent = {
-  namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
-  type: "preview-ready";
-  requestId: string;
-  blueprintName: string;
-  width: number;
-  height: number;
 };
 
 export type RendererResizeEvent = {
@@ -41,11 +29,7 @@ export type RendererResizeEvent = {
   height: number;
 };
 
-export type RendererEvent =
-  | RendererReadyEvent
-  | RendererPreviewReadyEvent
-  | RendererPreviewErrorEvent
-  | RendererResizeEvent;
+export type RendererEvent = RendererReadyEvent | RendererPreviewErrorEvent | RendererResizeEvent;
 
 export type RendererPreviewErrorEvent = {
   namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
@@ -118,28 +102,11 @@ export function parentOrigin(allowedOrigins = configuredParentOrigins()): string
   return allowedOrigins.length === 1 ? allowedOrigins[0] : undefined;
 }
 
-export function rendererReadyEvent(modes: BlueprintRendererMode[]): RendererReadyEvent {
+export function rendererReadyEvent(): RendererReadyEvent {
   return {
     namespace: BLUEPRINT_RENDERER_NAMESPACE,
     type: "ready",
     protocolVersion: BLUEPRINT_RENDERER_PROTOCOL_VERSION,
-    modes,
-  };
-}
-
-export function rendererPreviewReadyEvent(
-  requestId: string,
-  blueprintName: string,
-  width: number,
-  height: number,
-): RendererPreviewReadyEvent {
-  return {
-    namespace: BLUEPRINT_RENDERER_NAMESPACE,
-    type: "preview-ready",
-    requestId,
-    blueprintName,
-    width,
-    height,
   };
 }
 

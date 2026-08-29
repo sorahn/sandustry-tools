@@ -6,10 +6,7 @@ export function AppLayout() {
   const query =
     typeof window !== "undefined" ? new URLSearchParams(window.location.search) : undefined;
   const visualCapture = query?.get("visualCapture") === "1";
-  const embedMode = query?.get("mode");
-  const embed =
-    window.location.pathname.endsWith("/inspect/embed") &&
-    (embedMode === "thumbnail" || embedMode === "inspector");
+  const embed = window.location.pathname.endsWith("/inspect/embed");
   if (visualCapture || embed) return <Outlet />;
 
   return (

@@ -5,7 +5,6 @@ import {
   isRendererInspectorOptionsRequest,
   isRendererRequest,
   rendererPreviewErrorEvent,
-  rendererPreviewReadyEvent,
   rendererResizeEvent,
   rendererReadyEvent,
 } from "../protocol";
@@ -56,23 +55,14 @@ describe("blueprint renderer embed protocol", () => {
   });
 
   test("creates a versioned ready event", () => {
-    expect(rendererReadyEvent(["thumbnail", "inspector"])).toEqual({
+    expect(rendererReadyEvent()).toEqual({
       namespace: BLUEPRINT_RENDERER_NAMESPACE,
       type: "ready",
       protocolVersion: 1,
-      modes: ["thumbnail", "inspector"],
     });
   });
 
-  test("creates request-correlated preview events", () => {
-    expect(rendererPreviewReadyEvent("paste-1", "Factory", 320, 180)).toEqual({
-      namespace: BLUEPRINT_RENDERER_NAMESPACE,
-      type: "preview-ready",
-      requestId: "paste-1",
-      blueprintName: "Factory",
-      width: 320,
-      height: 180,
-    });
+  test("creates request-correlated preview errors", () => {
     expect(rendererPreviewErrorEvent("paste-2", "invalid-blueprint", "Bad data")).toEqual({
       namespace: BLUEPRINT_RENDERER_NAMESPACE,
       type: "preview-error",
