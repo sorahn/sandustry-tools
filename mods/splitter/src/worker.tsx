@@ -4,11 +4,12 @@ const SPLITTER_ID = "sandustrySplitter";
 
 type ExitSide = "left" | "right";
 const nextSideByPosition = new Map<string, ExitSide>();
-// Packed offsets are row * 4 + column, searched bottom-to-top and outward from
-// the splitter so the left and right sides are mirror images.
+// Packed offsets are row * 4 + column, searched bottom-to-top within each
+// column, starting beside the splitter and moving outward. The two sides are
+// mirror images.
 const EXIT_SEARCH_OFFSETS: Record<ExitSide, readonly number[]> = {
-  left: [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
-  right: [12, 13, 14, 15, 8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3],
+  left: [15, 11, 7, 3, 14, 10, 6, 2, 13, 9, 5, 1, 12, 8, 4, 0],
+  right: [12, 8, 4, 0, 13, 9, 5, 1, 14, 10, 6, 2, 15, 11, 7, 3],
 };
 
 try {
