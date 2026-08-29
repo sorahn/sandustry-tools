@@ -17,8 +17,9 @@ try {
     state: any,
     movement: any,
     control: { cancel: () => void },
+    workerApi?: any,
   ): boolean => {
-    const workerApi = state.sandkit.getApi();
+    workerApi ??= state.sandkit.getApi();
     const destination = movement?.destination;
     const source = movement?.source;
     if (!destination || !source) return false;

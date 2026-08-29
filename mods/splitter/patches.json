@@ -7,7 +7,7 @@
       "pattern": "if\\s*\\(\\s*[A-Za-z_$][\\w$]*\\.structures\\.isTypeAt\\(e,\\s*t\\.destination\\.x,\\s*t\\.destination\\.y,\\s*[\\\"']quantumPortal[\\\"']\\)\\s*\\)\\s*\\{",
       "flags": ""
     },
-    "code": "if (globalThis.__sandustrySplitterElementMove && globalThis.__sandustrySplitterElementMove(e, t, n)) return; if (a.structures.isTypeAt(e, t.destination.x, t.destination.y, \"quantumPortal\")) {",
+    "code": "if (!r.structures.isTypeAt(e, t.destination.x, t.destination.y, \"quantumPortal\") && globalThis.__sandustrySplitterElementMove) { try { if (globalThis.__sandustrySplitterElementMove(e, t, n, r)) return; } catch {} } if (r.structures.isTypeAt(e, t.destination.x, t.destination.y, \"quantumPortal\")) {",
     "expectedMatches": 1
   }
 ]
