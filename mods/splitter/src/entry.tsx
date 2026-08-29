@@ -21,6 +21,13 @@ api.i18n.register("en", {
 const preferenceLabel = (preference: Preference) =>
   preference === "left" ? "Left" : preference === "right" ? "Right" : "Even";
 
+const preferenceFrame = (preference: Preference) =>
+  preference === "left" ? 1 : preference === "right" ? 2 : 0;
+
+const setPreferenceFrame = (structure: any, preference: Preference) => {
+  api.structures.setSpritesheetIndexAtCell(structure.x, structure.y, preferenceFrame(preference));
+};
+
 const setup = async () => {
   await api.sprites.loadFromMod(SPLITTER_SPRITE_ID, "assets/splitter.png");
 
@@ -74,11 +81,20 @@ const setup = async () => {
         : "even";
       const next = PREFERENCES[(PREFERENCES.indexOf(current) + 1) % PREFERENCES.length];
       api.structures.updateData(structure, { preference: next }, { propagateToWorkers: true });
+      setPreferenceFrame(structure, next);
       api.ui.toast(`Splitter: ${preferenceLabel(next)}`);
     });
     interactableRegistered = true;
   };
-  api.events.on("game:ready", registerInteractable);
+  api.events.on("game:ready", () => {
+    registerInteractable();
+    api.structures.forEachOfType(SPLITTER_ID, (structure: any) => {
+      const preference = PREFERENCES.includes(structure.data?.preference)
+        ? structure.data.preference
+        : "even";
+      setPreferenceFrame(structure, preference);
+    });
+  });
 
   api.player.buildings.unlockByType(SPLITTER_ID);
 };
