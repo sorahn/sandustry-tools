@@ -14,6 +14,8 @@ export const NATIVE_PIXELS_PER_CELL = 4;
 export type BlueprintRenderOptions = {
   catalog?: BlueprintCatalog;
   padding?: number;
+  /** Minimum output width in display pixels, centered around the blueprint. */
+  minWidth?: number;
   cell?: number;
   unknownFootprint?: { width: number; height: number };
 };
@@ -28,6 +30,7 @@ export type BlueprintRenderModel = {
   blueprint: Blueprint;
   preparedBlueprint: PreparedBlueprint;
   padding: number;
+  paddingX: number;
   cell: number;
   minX: number;
   maxX: number;
@@ -123,7 +126,9 @@ export function createBlueprintRenderModel(
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
-  const width = (maxX - minX + padding * 2 + 1) * cell;
+  const naturalWidth = (maxX - minX + padding * 2 + 1) * cell;
+  const width = Math.max(naturalWidth, options.minWidth ?? 0);
+  const paddingX = padding + (width - naturalWidth) / (2 * cell);
   const height = (maxY - minY + padding * 2 + 1) * cell;
   const blueprintWidth = (maxX - minX + 1) * cell;
   const blueprintHeight = (maxY - minY + 1) * cell;
@@ -144,6 +149,7 @@ export function createBlueprintRenderModel(
     blueprint,
     preparedBlueprint,
     padding,
+    paddingX,
     cell,
     minX,
     maxX,

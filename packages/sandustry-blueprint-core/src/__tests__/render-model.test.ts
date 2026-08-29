@@ -57,6 +57,19 @@ describe("render-model helpers", () => {
     expect(model).toMatchObject({ minX: 3.5, maxX: 4.5, minY: 9, maxY: 10, width: 16, height: 16 });
   });
 
+  test("expands narrow renders to a centered minimum width", () => {
+    const model = createBlueprintRenderModel(
+      { name: "Small", data: [{ type: "machine", x: 0, y: 0 }], signalLinks: null },
+      {
+        padding: 2,
+        cell: 8,
+        minWidth: 400,
+        catalog: { get: () => ({ footprint: { width: 1, height: 1 } }) },
+      },
+    );
+    expect(model).toMatchObject({ width: 400, height: 40, padding: 2, paddingX: 24.5 });
+  });
+
   test("sorts structures by z, then position, then source index", () => {
     const model = createBlueprintRenderModel(
       {

@@ -49,7 +49,7 @@ function number(value: number) {
 
 function point(model: BlueprintRenderModel, x: number, y: number) {
   return {
-    x: (x - model.minX + model.padding + 0.5) * model.cell,
+    x: (x - model.minX + model.paddingX + 0.5) * model.cell,
     y: (y - model.minY + model.padding + 0.5) * model.cell,
   };
 }
@@ -57,8 +57,8 @@ function point(model: BlueprintRenderModel, x: number, y: number) {
 function renderGrid(model: BlueprintRenderModel) {
   const { cell, width, height } = model;
   return `<defs>
-  <pattern id="blueprint-block-grid" x="${number((model.padding - model.minX) * cell)}" y="${number((model.padding - model.minY) * cell)}" width="${number(cell)}" height="${number(cell)}" patternUnits="userSpaceOnUse"><path d="M ${number(cell)} 0 L 0 0 0 ${number(cell)} M ${number(cell)} 0 L ${number(cell)} ${number(cell)} M 0 ${number(cell)} L ${number(cell)} ${number(cell)}" fill="none" stroke="#718096" stroke-width="1"/></pattern>
-  <pattern id="blueprint-cell-grid" x="${number((model.padding - model.minX) * cell)}" y="${number((model.padding - model.minY) * cell)}" width="${number(cell * 4)}" height="${number(cell * 4)}" patternUnits="userSpaceOnUse"><path d="M ${number(cell * 4)} 0 L 0 0 0 ${number(cell * 4)} M ${number(cell * 4)} 0 L ${number(cell * 4)} ${number(cell * 4)} M 0 ${number(cell * 4)} L ${number(cell * 4)} ${number(cell * 4)}" fill="none" stroke="#17202c" stroke-width="1.25"/></pattern>
+  <pattern id="blueprint-block-grid" x="${number((model.paddingX - model.minX) * cell)}" y="${number((model.padding - model.minY) * cell)}" width="${number(cell)}" height="${number(cell)}" patternUnits="userSpaceOnUse"><path d="M ${number(cell)} 0 L 0 0 0 ${number(cell)} M ${number(cell)} 0 L ${number(cell)} ${number(cell)} M 0 ${number(cell)} L ${number(cell)} ${number(cell)}" fill="none" stroke="#718096" stroke-width="1"/></pattern>
+  <pattern id="blueprint-cell-grid" x="${number((model.paddingX - model.minX) * cell)}" y="${number((model.padding - model.minY) * cell)}" width="${number(cell * 4)}" height="${number(cell * 4)}" patternUnits="userSpaceOnUse"><path d="M ${number(cell * 4)} 0 L 0 0 0 ${number(cell * 4)} M ${number(cell * 4)} 0 L ${number(cell * 4)} ${number(cell * 4)} M 0 ${number(cell * 4)} L ${number(cell * 4)} ${number(cell * 4)}" fill="none" stroke="#17202c" stroke-width="1.25"/></pattern>
   </defs>${`<rect width="${number(width)}" height="${number(height)}" fill="#33a8ff"/>`}`;
 }
 
@@ -157,7 +157,7 @@ function renderStructure(
     );
   const isCustomShape =
     prepared.customShape !== undefined || (prepared.shape !== undefined && !prepared.sprite);
-  const left = (prepared.structure.x - model.minX + model.padding) * model.cell;
+  const left = (prepared.structure.x - model.minX + model.paddingX) * model.cell;
   const top = (prepared.topY - model.minY + model.padding) * model.cell;
   const tileWidth = prepared.footprint.width * model.cell;
   const tileHeight = prepared.footprint.height * model.cell;
@@ -281,6 +281,7 @@ export function renderBlueprintToSvg(
         model.minY,
         model.padding,
         model.cell,
+        model.paddingX,
       )
     : "";
   const background = includeBackground

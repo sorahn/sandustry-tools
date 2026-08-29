@@ -360,6 +360,7 @@ export function foundationOutlinePath(
   minY: number,
   padding: number,
   cell: number,
+  paddingX = padding,
 ) {
   const outlineOffset = 0.5 / 4;
   const occupied = new Set(underlyingCellCoordinates(structures).map(({ x, y }) => `${x},${y}`));
@@ -477,7 +478,7 @@ export function foundationOutlinePath(
       const previous = contourPoints[(index + contourPoints.length - 1) % contourPoints.length];
       const next = contourPoints[(index + 1) % contourPoints.length];
       const offset = offsetPoint(previous, current, next);
-      return [(offset[0] - minX + padding) * cell, (offset[1] - minY + padding) * cell];
+      return [(offset[0] - minX + paddingX) * cell, (offset[1] - minY + padding) * cell];
     });
     const contour = transformed.map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`);
     contours.push(`${contour.join(" ")} Z`);
