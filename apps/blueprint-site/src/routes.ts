@@ -2,6 +2,7 @@ import { createRootRoute, createRoute } from "@tanstack/react-router";
 import { AppLayout } from "./components/AppLayout";
 import { BlueprintCodecPage } from "./pages/Codec";
 import { BlueprintInspectorPage } from "./pages/Inspector";
+import { VaultBlueprintInspectorPage } from "./pages/VaultInspector";
 import { BlueprintVisualFixturePage } from "./pages/VisualFixture";
 import { BlueprintEmbedPage } from "./pages/BlueprintEmbed";
 import { ComponentsPage } from "./pages/Components";
@@ -19,6 +20,11 @@ const inspectorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/inspect",
   component: BlueprintInspectorPage,
+});
+const vaultInspectorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/inspect/vault/$vaultId",
+  component: VaultBlueprintInspectorPage,
 });
 const visualFixtureRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -45,6 +51,7 @@ export const routeTree = rootRoute.addChildren([
   indexRoute,
   codecRoute,
   inspectorRoute,
+  vaultInspectorRoute,
   visualFixtureRoute,
   blueprintEmbedRoute,
   componentsRoute,

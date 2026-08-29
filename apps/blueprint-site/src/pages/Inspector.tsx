@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { structureLabel } from "@sandustry/blueprint-core";
 import { decodeBlueprint, encodeBlueprint, type Blueprint } from "../utils/blueprint";
 import { debugComponent } from "../components/DebugComponentWrapper";
@@ -46,11 +46,33 @@ function summarizeBlueprint(input: string, blueprint: Blueprint): BlueprintSumma
 }
 
 const MAP_PANEL_SCROLL_OFFSET = 16;
-export function BlueprintInspectorPage() {
+type BlueprintInspectorPageProps = {
+  initialEncoded?: string;
+  title?: string;
+  description?: ReactNode;
+  initialMessage?: string;
+};
+
+export function BlueprintInspectorPage({
+  initialEncoded,
+  title = "Blueprint Inspector",
+  description = (
+    <>
+      Inspect your Sandustry blueprints here. <br />
+      Browse and share your prints with the community at the{" "}
+      <a rel="noopener noreferrer" target="_blank" href="https://sandustryvault.com/">
+        Sandustry Vault
+      </a>
+      !
+    </>
+  ),
+  initialMessage,
+}: BlueprintInspectorPageProps = {}) {
   const [remember, setRemember] = useState(
     () => readStorageValue(REMEMBER_BLUEPRINT_KEY) === "true",
   );
   const [encoded, setEncoded] = useState(() => {
+    if (initialEncoded !== undefined) return initialEncoded;
     if (readStorageValue(REMEMBER_BLUEPRINT_KEY) !== "true") {
       return "";
     }
@@ -66,7 +88,9 @@ export function BlueprintInspectorPage() {
   );
   const [inspectedBlueprintKey, setInspectedBlueprintKey] = useState("");
   const [summary, setSummary] = useState<BlueprintSummary | null>(null);
-  const [message, setMessage] = useState("Paste a v2 blueprint string to inspect it.");
+  const [message, setMessage] = useState(
+    initialMessage ?? "Paste a v2 blueprint string to inspect it.",
+  );
   const mapPanelRef = useRef<HTMLDivElement>(null);
   const inspect = () => {
     const value = encoded.trim();
@@ -100,10 +124,10 @@ export function BlueprintInspectorPage() {
     if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, nextEncoded);
   };
   useEffect(() => {
-    if (remember && encoded.trim()) inspect();
-    // The initial remembered value should be inspected once after the page mounts.
+    if (encoded.trim() && (initialEncoded !== undefined || remember)) inspect();
+    // The initial value should be inspected once after the page mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialEncoded]);
   useEffect(() => {
     if (!blueprint || !summary || !mapPanelRef.current) return;
     const frame = window.requestAnimationFrame(() => {
@@ -131,14 +155,7 @@ export function BlueprintInspectorPage() {
   });
   return (
     <section className="space-y-6">
-      <PageHeader title="Blueprint Inspector">
-        Inspect your Sandustry blueprints here. <br />
-        Browse and share your prints with the community at the{" "}
-        <a rel="noopener noreferrer" target="_blank" href="https://sandustryvault.com/">
-          Sandustry Vault
-        </a>
-        !
-      </PageHeader>
+      <PageHeader title={title}>{description}</PageHeader>
       <BlueprintSubmissionPanel
         encoded={encoded}
         message={message}
