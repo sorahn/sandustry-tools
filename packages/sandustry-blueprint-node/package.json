@@ -16,6 +16,6 @@
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
-    "@sandustry/blueprint-core": "0.0.0"
+    "@sorahn/sandustry-blueprint-core": "0.1.0"
   }
 }

@@ -1,14 +1,35 @@
 {
-  "name": "@sandustry/blueprint-core",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@sorahn/sandustry-blueprint-core",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Shared Sandustry blueprint encoding and rendering core",
+  "homepage": "https://github.com/sorahn/sandustry-blueprint-core",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sorahn/sandustry-blueprint-core.git"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
     "lint": "oxlint src tests",
     "tsc": "tsc --noEmit",
     "test": "bun test src tests"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
   }
 }

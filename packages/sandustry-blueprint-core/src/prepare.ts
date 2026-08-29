@@ -1,4 +1,4 @@
-import type { Blueprint, BlueprintStructure, BlueprintType, SignalLink } from "./index";
+import type { Blueprint, BlueprintStructure, BlueprintType, SignalLink } from "./index.js";
 
 export type BlueprintCoordinate = { x: number; y: number };
 

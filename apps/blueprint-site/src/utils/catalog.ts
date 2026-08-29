@@ -5,7 +5,7 @@ import {
   type RenderMetadata,
   catalogRender,
   catalogRenderSize,
-} from "@sandustry/blueprint-core";
+} from "@sorahn/sandustry-blueprint-core";
 import generatedCatalog from "../structure-catalog.json";
 
 export type { CatalogEntry, CatalogRenderAsset, RenderMetadata };

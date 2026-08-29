@@ -1,4 +1,4 @@
-import type { Blueprint } from "@sandustry/blueprint-core";
+import type { Blueprint } from "@sorahn/sandustry-blueprint-core";
 import { CORE_VISUAL_BASELINES } from "./core-baselines";
 
 // The catalog baseline is assembled from the captured native/mod catalog

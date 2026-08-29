@@ -45,14 +45,14 @@ export {
   structureVisualTopY,
   foundationOutlinePath,
   UNKNOWN_STRUCTURE_FOOTPRINT,
-} from "./prepare";
+} from "./prepare.js";
 export {
   catalogRender,
   catalogRenderSize,
   type CatalogEntry,
   type CatalogRenderAsset,
   type RenderMetadata,
-} from "./catalog";
+} from "./catalog.js";
 export {
   createBlueprintRenderModel,
   renderAnchorEdge,
@@ -69,12 +69,12 @@ export {
   type BlueprintRenderModel,
   type BlueprintRenderOptions,
   type BlueprintRenderStructure,
-} from "./render-model";
+} from "./render-model.js";
 export {
   renderBlueprintToSvg,
   type BlueprintSvgRenderOptions,
   type BlueprintSvgRenderResult,
-} from "./svg-renderer";
+} from "./svg-renderer.js";
 export {
   prepareSvgForPng,
   renderBlueprintStringToPng,
@@ -83,7 +83,7 @@ export {
   type PrepareSvgForPngOptions,
   type RenderSvgToPngOptions,
   type RenderBlueprintStringToPngOptions,
-} from "./png";
+} from "./png.js";
 
 const BINARY_PREFIX = "SAND:BP:v2:";
 const TEXT_PREFIX = "SAND:BP:v2t:";

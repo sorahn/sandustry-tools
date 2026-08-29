@@ -1,5 +1,5 @@
-import type { BlueprintType, SignalPoints } from "./index";
-import type { RenderAsset } from "./prepare";
+import type { BlueprintType, SignalPoints } from "./index.js";
+import type { RenderAsset } from "./prepare.js";
 
 export type RenderMetadata = {
   imageName?: string;

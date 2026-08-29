@@ -1,11 +1,11 @@
-import type { Blueprint, BlueprintType } from "./index";
+import type { Blueprint, BlueprintType } from "./index.js";
 import {
   prepareBlueprint,
   type BlueprintCatalog,
   type PreparedBlueprint,
   type PreparedStructure,
   type RenderAsset,
-} from "./prepare";
+} from "./prepare.js";
 
 export const DEFAULT_RENDER_PADDING = 6;
 export const DEFAULT_RENDER_CELL = 8;

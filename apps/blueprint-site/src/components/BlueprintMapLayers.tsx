@@ -3,7 +3,7 @@ import {
   NATIVE_PIXELS_PER_CELL,
   renderPixelScale,
   underlyingCellCoordinates,
-} from "@sandustry/blueprint-core";
+} from "@sorahn/sandustry-blueprint-core";
 import { memo } from "react";
 import { type BlueprintMapModel, mapLayerStyle } from "../utils/blueprint-map";
 

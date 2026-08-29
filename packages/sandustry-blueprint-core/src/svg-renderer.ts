@@ -10,8 +10,8 @@ import {
   wrapLabel,
   type BlueprintRenderModel,
   type BlueprintRenderOptions,
-} from "./render-model";
-import { foundationOutlinePath, isFoundationStructure } from "./prepare";
+} from "./render-model.js";
+import { foundationOutlinePath, isFoundationStructure } from "./prepare.js";
 
 export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   assetBaseUrl?: string;
@@ -253,7 +253,7 @@ function renderStructure(
 }
 
 export function renderBlueprintToSvg(
-  blueprint: import("./index").Blueprint,
+  blueprint: import("./index.js").Blueprint,
   options: BlueprintSvgRenderOptions = {},
 ): BlueprintSvgRenderResult {
   const model = createBlueprintRenderModel(blueprint, options);

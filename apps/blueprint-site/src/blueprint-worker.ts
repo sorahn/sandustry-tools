@@ -1,6 +1,9 @@
 /// <reference lib="webworker" />
 
-import { renderBlueprintStringToPng, UNKNOWN_STRUCTURE_FOOTPRINT } from "@sandustry/blueprint-core";
+import {
+  renderBlueprintStringToPng,
+  UNKNOWN_STRUCTURE_FOOTPRINT,
+} from "@sorahn/sandustry-blueprint-core";
 import { blueprintCatalog } from "./utils/catalog";
 import { createImageResolver, createWorkerPngPlatform } from "./utils/png-platform";
 

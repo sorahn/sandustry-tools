@@ -116,5 +116,5 @@ export async function renderBlueprintStringToPng<Image, Canvas>(
     title: blueprint.name,
   });
 }
-import { decodeBlueprint, type Blueprint } from "./index";
-import { renderBlueprintToSvg, type BlueprintSvgRenderOptions } from "./svg-renderer";
+import { decodeBlueprint, type Blueprint } from "./index.js";
+import { renderBlueprintToSvg, type BlueprintSvgRenderOptions } from "./svg-renderer.js";

@@ -9,7 +9,11 @@ type VaultBlueprint = {
   author: string;
 };
 
-const vaultApiBase = import.meta.env.VITE_VAULT_API_BASE_URL || "https://sandustryvault.com";
+const vaultApiBase =
+  import.meta.env.VITE_VAULT_API_BASE_URL ||
+  (import.meta.env.DEV
+    ? "https://sandustry-vault-production.up.railway.app"
+    : "https://sandustryvault.com");
 
 async function readResponse(response: Response) {
   if (response.ok) return response;

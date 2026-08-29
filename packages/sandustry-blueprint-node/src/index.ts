@@ -5,7 +5,7 @@ import {
   renderBlueprintStringToPng,
   type BlueprintPngPlatform,
   type RenderBlueprintStringToPngOptions,
-} from "@sandustry/blueprint-core";
+} from "@sorahn/sandustry-blueprint-core";
 
 type NodeImage = Resvg;
 type NodeCanvas = { png?: Uint8Array };

@@ -6,7 +6,7 @@ import {
   type BlueprintStructure,
   type BlueprintType,
   type SignalLink,
-} from "@sandustry/blueprint-core";
+} from "@sorahn/sandustry-blueprint-core";
 
 export type { Blueprint, BlueprintStructure, BlueprintType, SignalLink };
 export { emptyBlueprint };

@@ -9,7 +9,7 @@ import {
   structureLabel,
   tileColor,
   wrapLabel,
-} from "@sandustry/blueprint-core";
+} from "@sorahn/sandustry-blueprint-core";
 import { type BlueprintMapModel } from "../utils/blueprint-map";
 
 type PreparedBlueprint = BlueprintMapModel["preparedBlueprint"];
