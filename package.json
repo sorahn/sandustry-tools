@@ -14,6 +14,8 @@
     "repo-rag:status": "bun scripts/repo-rag/index.ts status",
     "repo-rag:search": "bun scripts/repo-rag/index.ts search",
     "mcp:chrome-devtools": "chrome-devtools-mcp --browser-url=http://127.0.0.1:9222 --no-usage-statistics --no-performance-crux --no-update-checks",
+    "test:integration:setup": "node scripts/test/setup-sandustry-integration.mjs",
+    "test:integration": "node scripts/test/sandustry-integration.mjs",
     "check": "npm run tsc && npm run tsc:tests && npm run lint && npm test",
     "format:bundles": "node scripts/format-bundles.mjs",
     "format:check": "oxfmt --check .",

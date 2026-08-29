@@ -6,7 +6,7 @@
 	url = https://github.com/flamableassassin/sandustry-modding-types.git
 [submodule "resources/SandustryModTemplate"]
 	path = resources/SandustryModTemplate
-	url = https://github.com/IrishBruse/SandustryModTemplate
+	url = https://github.com/sandustry-modding/SandustryModTemplate.git
 [submodule "resources/SandLoader-Mods"]
 	path = resources/SandLoader-Mods
 	url = https://github.com/LopeKinz/SandLoader-Mods
