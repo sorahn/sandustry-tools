@@ -1,2 +1,5 @@
 npm run check
 npm run test:all
+npm --workspace @daryl.roberts/sandustry-blueprint-core run build
+BLUEPRINT_CORE_TEST_DIST=1 npm run check
+BLUEPRINT_CORE_TEST_DIST=1 npm run test:all

@@ -374,6 +374,11 @@ real evidence of a renderer or catalog change. Updating PNG or SVG baselines
 requires explicit user approval for the intentional behavior change; record
 which fixtures changed and verify the resulting images afterward.
 
+Visual fixture helpers use blueprint-core source during ordinary test runs. The
+pre-push hook builds the publishable core package first and runs checks with
+`BLUEPRINT_CORE_TEST_DIST=1`, so the generated package entrypoint is tested
+before pushing.
+
 For Bun snapshot tests, use the repository's explicit update environment
 flags rather than `--update`, which Bun consumes for its own snapshot mode:
 `UPDATE_SVG_SNAPSHOTS=1 bun test ...` or

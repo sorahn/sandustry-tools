@@ -6,6 +6,15 @@ images are trimmed to the rendered map bounds, without the site navigation,
 test controls, or viewport chrome. Current images and ImageMagick diffs are
 written under `artifacts/visual/blueprint-core/`.
 
+Visual fixture helpers use the core source by default so ordinary runs exercise
+the current working tree. To exercise the publishable package entrypoint,
+build core first and set `BLUEPRINT_CORE_TEST_DIST=1`:
+
+```sh
+npm --workspace @daryl.roberts/sandustry-blueprint-core run build
+BLUEPRINT_CORE_TEST_DIST=1 bun test packages/sandustry-blueprint-core/tests/visual
+```
+
 Put one encoded blueprint per file in `packages/sandustry-blueprint-core/tests/visual/blueprints/`, for example
 `packages/sandustry-blueprint-core/tests/visual/blueprints/thermal-line.txt`. Both v2 binary strings and v2 text
 strings are accepted.
