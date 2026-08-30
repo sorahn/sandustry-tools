@@ -22,6 +22,7 @@ export function BlueprintEmbedPage() {
 
 function BlueprintInspectorEmbed() {
   const mapRootRef = useRef<HTMLDivElement>(null);
+  const lastReportedSizeRef = useRef<{ width: number; height: number } | null>(null);
   const loadRemembered = useMemo(
     () => new URLSearchParams(window.location.search).get("remember") === "1",
     [],
@@ -42,10 +43,11 @@ function BlueprintInspectorEmbed() {
     const sendSize = () => {
       const rect = element.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
-      window.parent.postMessage(
-        rendererResizeEvent(Math.ceil(rect.width), Math.ceil(rect.height)),
-        allowedOrigin,
-      );
+      const size = { width: Math.ceil(rect.width), height: Math.ceil(rect.height) };
+      const previous = lastReportedSizeRef.current;
+      if (previous?.width === size.width && previous.height === size.height) return;
+      lastReportedSizeRef.current = size;
+      window.parent.postMessage(rendererResizeEvent(size.width, size.height), allowedOrigin);
     };
     const observer = new ResizeObserver(sendSize);
     observer.observe(element);
