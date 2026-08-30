@@ -1,6 +1,5 @@
 {
-  "name": "sandustry-mods",
-  "private": true,
+  "name": "sandustry-tools",
   "workspaces": [
     "packages/*",
     "apps/*"
