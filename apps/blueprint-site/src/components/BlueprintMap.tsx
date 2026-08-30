@@ -50,7 +50,12 @@ import {
   SHOW_SPRITES_KEY,
 } from "../utils/storage-keys";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
-import { solveInitialFit, type FitPolicy } from "../utils/blueprint-fit";
+import {
+  resolveFitSpacing,
+  solveInitialFit,
+  type FitPolicy,
+  type FitSpacing,
+} from "../utils/blueprint-fit";
 
 const MAP_FIT_ZOOM_MIN = 0.25;
 const MAP_FIT_ZOOM_MAX = 2;
@@ -170,6 +175,9 @@ export function BlueprintMap({
   captureOnly,
   showDebugOptions = true,
   fitPolicy,
+  policySelection,
+  onPolicySelectionChange,
+  padding: paddingOverride,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -181,6 +189,9 @@ export function BlueprintMap({
   captureOnly?: boolean;
   showDebugOptions?: boolean;
   fitPolicy?: FitPolicy;
+  policySelection?: "legacy" | "default" | "test";
+  onPolicySelectionChange?: (value: "legacy" | "default" | "test") => void;
+  padding?: FitSpacing;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showDebugCells, setShowDebugCells] = useState(false);
@@ -247,11 +258,34 @@ export function BlueprintMap({
   const panCommitTimerRef = useRef<number | null>(null);
   const livePanRef = useRef(pan);
   const fitModeRef = useRef(captureOnly ? true : (readStoredMapView(blueprintKey)?.fit ?? true));
-  const padding = 6;
   // Blueprint coordinates are cell-sized units. Four native sprite pixels
   // make one cell, and four cells make one blueprint block. At 100% four
   // blueprint coordinates therefore render at 32 display pixels.
   const cell = DISPLAY_PIXELS_PER_BLOCK_AT_100 / NATIVE_PIXELS_PER_CELL;
+  const policyPadding = fitPolicy?.geometry.padding ?? paddingOverride ?? 6;
+  const policyMargin = fitPolicy?.geometry.margin ?? 12;
+  const [resolvedPaddingPx, setResolvedPaddingPx] = useState<number>();
+  const [resolvedMarginPx, setResolvedMarginPx] = useState<number>();
+  const viewportGridEnabled = Boolean(fitPolicy?.grid?.extendToViewport);
+  useLayoutEffect(() => {
+    if (!fitPolicy) {
+      setResolvedPaddingPx(undefined);
+      setResolvedMarginPx(undefined);
+      return;
+    }
+    const reference = document.body;
+    setResolvedPaddingPx(resolveFitSpacing(policyPadding, cell, reference));
+    setResolvedMarginPx(resolveFitSpacing(policyMargin, cell, reference));
+  }, [cell, fitPolicy, policyMargin, policyPadding]);
+  const padding = fitPolicy
+    ? (resolvedPaddingPx ?? (typeof policyPadding === "number" ? policyPadding * cell : 6 * cell)) /
+      cell
+    : typeof paddingOverride === "number"
+      ? paddingOverride
+      : 6;
+  const marginPx = fitPolicy
+    ? (resolvedMarginPx ?? (typeof policyMargin === "number" ? policyMargin * cell : 12 * cell))
+    : 12 * cell;
   const mapModel = useMemo(
     () => createBlueprintMapModel(blueprint, padding, cell),
     [blueprint, cell, padding],
@@ -302,6 +336,7 @@ export function BlueprintMap({
             contentHeight: height,
             viewportWidth,
             viewportHeight: defaultViewportHeight,
+            marginPx,
           },
           fitPolicy,
         ).zoom,
@@ -314,6 +349,7 @@ export function BlueprintMap({
           contentHeight: height,
           viewportWidth,
           viewportHeight: defaultViewportHeight,
+          marginPx,
         },
         fitPolicy,
       ).viewportHeight
@@ -363,6 +399,8 @@ export function BlueprintMap({
     resetVersion: debugResetVersion,
     onReset: resetDebugOptions,
     onLoadBlueprint,
+    policySelection,
+    onPolicySelectionChange,
   });
   useEffect(() => {
     const stored = remember && !captureOnly ? readStoredMapView(blueprintKey) : null;
@@ -390,28 +428,38 @@ export function BlueprintMap({
       captureOnly || (stored?.viewportWidth === viewportSize.width && viewportSize.width > 0),
     );
   }, [blueprint, blueprintKey, captureOnly]);
+  const fitToLegacyViewport = () => {
+    fitModeRef.current = true;
+    const availableWidth = viewportRef.current?.clientWidth || viewportSize.width;
+    const nextZoom = legacyBlueprintFitsDefaultViewport
+      ? legacyFitZoomForViewport(
+          availableWidth || width,
+          viewportRef.current?.clientHeight || defaultViewportHeight,
+        )
+      : legacyFitZoomForViewport(availableWidth || width, Number.POSITIVE_INFINITY, 1);
+    setZoom(nextZoom);
+    setPan({ x: 0, y: 0 });
+  };
   const fitToViewport = () => {
+    if (!fitPolicy) {
+      fitToLegacyViewport();
+      return;
+    }
     fitModeRef.current = true;
     const availableWidth = viewportRef.current?.clientWidth || viewportSize.width;
     setZoom(
-      fitPolicy
-        ? snapMapZoom(
-            solveInitialFit(
-              {
-                contentWidth: width,
-                contentHeight: height,
-                viewportWidth: availableWidth || width,
-                viewportHeight: viewportRef.current?.clientHeight || defaultViewportHeight,
-              },
-              fitPolicy,
-            ).zoom,
-          )
-        : legacyBlueprintFitsDefaultViewport
-          ? legacyFitZoomForViewport(
-              availableWidth || width,
-              viewportRef.current?.clientHeight || defaultViewportHeight,
-            )
-          : legacyFitZoomForViewport(availableWidth || width, Number.POSITIVE_INFINITY, 1),
+      snapMapZoom(
+        solveInitialFit(
+          {
+            contentWidth: width,
+            contentHeight: height,
+            viewportWidth: availableWidth || width,
+            viewportHeight: viewportRef.current?.clientHeight || defaultViewportHeight,
+            marginPx,
+          },
+          fitPolicy,
+        ).zoom,
+      ),
     );
     setPan({ x: 0, y: 0 });
   };
@@ -596,6 +644,8 @@ export function BlueprintMap({
             left: "50%",
             top: "50%",
             transform: `translate(-50%, -50%) translate(${-pan.x * zoom}px, ${-pan.y * zoom}px)`,
+            zIndex: viewportGridEnabled ? 1 : undefined,
+            overflow: viewportGridEnabled ? "visible" : undefined,
             cursor: dragRef.current ? "grabbing" : "grab",
             touchAction: "none",
             userSelect: "none",
@@ -672,6 +722,10 @@ export function BlueprintMap({
             gridOriginY={gridOriginY}
             cell={cell}
             showGrid={showGrid}
+            showBackground={!viewportGridEnabled}
+            extendToViewport={viewportGridEnabled}
+            viewportWidth={viewportSize.width || width}
+            viewportHeight={viewportSize.height || defaultViewportHeight}
           />
           {showDebugCells ? (
             <g opacity="0.8" pointerEvents="none" style={mapLayerStyle("debugCells")}>
@@ -759,7 +813,14 @@ export function BlueprintMap({
             visible={signalLinksVisible}
             point={point}
           />
-          <BlueprintMapEdgeFadeLayer width={width} height={height} cell={cell} />
+          {!viewportGridEnabled ? (
+            <BlueprintMapEdgeFadeLayer
+              width={width}
+              height={height}
+              padding={padding}
+              cell={cell}
+            />
+          ) : null}
           {selected ? (
             <rect
               x={(selected.x - minX + padding) * cell}

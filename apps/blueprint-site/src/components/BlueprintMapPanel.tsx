@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Panel } from "@sandustry/ui";
 import { type Blueprint } from "../utils/blueprint";
 import { BlueprintMap } from "./BlueprintMap";
@@ -6,7 +7,9 @@ import {
   SHOW_GRID_KEY,
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
+  USE_LEGACY_FIT_KEY,
 } from "../utils/storage-keys";
+import { FIT_POLICY_PRESETS } from "../utils/blueprint-fit";
 
 type BlueprintMapPanelProps = {
   blueprint: Blueprint;
@@ -21,6 +24,8 @@ type BlueprintMapPanelProps = {
   onLoadBlueprint: (blueprint: Blueprint) => void;
 };
 
+type PolicyTesterSelection = "legacy" | "default" | "test";
+
 export function BlueprintMapPanel({
   blueprint,
   remember,
@@ -33,11 +38,30 @@ export function BlueprintMapPanel({
   onShowPngBackgroundChange,
   onLoadBlueprint,
 }: BlueprintMapPanelProps) {
+  const [useLegacyFit, setUseLegacyFit] = useState(false);
+  const [policySelection, setPolicySelection] = useState<PolicyTesterSelection>("test");
+  const testFitPolicy = {
+    ...FIT_POLICY_PRESETS.default,
+    geometry: { padding: 8, margin: 0 },
+    grid: { extendToViewport: true },
+  };
+
   return (
     <Panel
       title="Blueprint map"
       header={
         <div className="flex gap-2">
+          {import.meta.env.DEV ? (
+            <PersistentCheckbox
+              boxed
+              size="small"
+              label="old fit"
+              storageKey={USE_LEGACY_FIT_KEY}
+              defaultChecked={false}
+              onInitialCheckedChange={setUseLegacyFit}
+              onCheckedChange={setUseLegacyFit}
+            />
+          ) : null}
           <PersistentCheckbox
             boxed
             size="small"
@@ -74,6 +98,20 @@ export function BlueprintMapPanel({
           showGrid={showGrid}
           showPngBackground={showPngBackground}
           onLoadBlueprint={onLoadBlueprint}
+          fitPolicy={
+            import.meta.env.DEV && !useLegacyFit
+              ? policySelection === "default"
+                ? FIT_POLICY_PRESETS.default
+                : policySelection === "test"
+                  ? testFitPolicy
+                  : undefined
+              : undefined
+          }
+          policySelection={useLegacyFit ? "legacy" : policySelection}
+          onPolicySelectionChange={(selection) => {
+            setPolicySelection(selection);
+            setUseLegacyFit(selection === "legacy");
+          }}
         />
         <p className="mt-4 text-xs text-slate-500">
           The captured native runtime catalog supplies names and footprints. Other content remains

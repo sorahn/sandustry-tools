@@ -4,8 +4,15 @@ import {
   MAP_VIEWPORT_BORDER_SIZE,
 } from "./blueprint-map";
 
+export type FitSpacing = number | string;
+export type FitGeometry = { padding: FitSpacing; margin: FitSpacing };
+export type FitGrid = {
+  extendToViewport: boolean;
+};
+
 export type FitPolicy = {
-  margin: { horizontal: number; vertical: number };
+  geometry: FitGeometry;
+  grid?: FitGrid;
   viewport: {
     orientation: "landscape" | "portrait" | "auto";
     aspect: { landscape: [number, number]; portrait: [number, number] };
@@ -34,6 +41,7 @@ export type FitInput = {
   contentHeight: number;
   viewportWidth: number;
   viewportHeight: number;
+  marginPx: number;
 };
 
 export type FitResult = {
@@ -44,9 +52,7 @@ export type FitResult = {
 };
 
 export const DEFAULT_FIT_POLICY: FitPolicy = {
-  // Preserve the current renderer's 24-cell combined margin at 8px per cell.
-  // Policy margins are expressed in rendered map pixels, matching FitInput.
-  margin: { horizontal: 96, vertical: 96 },
+  geometry: { padding: 6, margin: 6 },
   viewport: {
     orientation: "landscape",
     aspect: {
@@ -75,6 +81,25 @@ export function resolveFitPolicy(selection: FitPolicySelection): FitPolicy {
   return "preset" in selection ? FIT_POLICY_PRESETS[selection.preset] : selection;
 }
 
+export function resolveFitSpacing(value: FitSpacing, cellSize: number, reference?: HTMLElement) {
+  if (typeof value === "number") return value * cellSize;
+  if (!reference || typeof document === "undefined") {
+    const pixels = value.trim().match(/^(-?(?:\d+\.?\d*|\.\d+))px$/i);
+    if (pixels) return Number(pixels[1]);
+    if (value.trim() === "0") return 0;
+    return 0;
+  }
+  const probe = document.createElement("div");
+  probe.style.position = "absolute";
+  probe.style.visibility = "hidden";
+  probe.style.pointerEvents = "none";
+  probe.style.width = value;
+  reference.appendChild(probe);
+  const resolved = probe.getBoundingClientRect().width;
+  probe.remove();
+  return Number.isFinite(resolved) ? resolved : 0;
+}
+
 function aspectViewportHeight(width: number, policy: FitPolicy, input: FitInput) {
   const orientation =
     policy.viewport.orientation === "auto"
@@ -96,8 +121,8 @@ function largestFittingZoom(levels: readonly number[], maxZoom: number, minZoom:
 }
 
 export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): FitResult {
-  const fitWidth = input.contentWidth + policy.margin.horizontal * 2;
-  const fitHeight = input.contentHeight + policy.margin.vertical * 2;
+  const fitWidth = input.contentWidth + input.marginPx * 2;
+  const fitHeight = input.contentHeight + input.marginPx * 2;
   const defaultHeight = aspectViewportHeight(input.viewportWidth, policy, input);
   const fitsDefaultViewport = fitWidth <= input.viewportWidth && fitHeight <= defaultHeight;
   const widthLimit =
@@ -117,10 +142,10 @@ export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): F
     useHeightConstraint ? maxZoom : Math.min(maxZoom, policy.zoom.fallbackMax),
     policy.zoom.min,
   );
-  const contentWidthAtZoom = input.contentWidth * zoom;
-  const horizontalCanvasGap = Math.max(0, (input.viewportWidth - contentWidthAtZoom) / 2);
-  const requiredHeight =
-    input.contentHeight * zoom + horizontalCanvasGap * 2 + MAP_VIEWPORT_BORDER_SIZE;
+  // Height follows the fitted blueprint bounds and their minimum padding. Do
+  // not reuse horizontal free space here: doing so makes the viewport height
+  // track the blueprint's aspect ratio instead of its required footprint.
+  const requiredHeight = fitHeight * zoom + MAP_VIEWPORT_BORDER_SIZE;
   const viewportHeight = policy.viewport.allowHeightGrowth
     ? policy.viewport.neverShrinkHeight
       ? Math.max(input.viewportHeight, defaultHeight, requiredHeight)
@@ -141,14 +166,19 @@ export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): F
 export function isFitPolicy(value: unknown): value is FitPolicy {
   if (!value || typeof value !== "object") return false;
   const policy = value as Partial<FitPolicy>;
-  const margin = policy.margin;
+  const geometry = policy.geometry;
+  const grid = policy.grid;
   const viewport = policy.viewport;
   const zoom = policy.zoom;
   const fit = policy.fit;
   return Boolean(
-    margin &&
-    Number.isFinite(margin.horizontal) &&
-    Number.isFinite(margin.vertical) &&
+    geometry &&
+    [geometry.padding, geometry.margin].every(
+      (spacing) =>
+        (typeof spacing === "number" && Number.isFinite(spacing)) ||
+        (typeof spacing === "string" && spacing.trim().length > 0),
+    ) &&
+    (!grid || typeof grid.extendToViewport === "boolean") &&
     viewport &&
     ["landscape", "portrait", "auto"].includes(viewport.orientation ?? "") &&
     Array.isArray(viewport.aspect?.landscape) &&

@@ -5,6 +5,7 @@ export const SAVED_MAP_VIEW_KEY = "sandustry.blueprintInspector.mapView";
 export const SHOW_MAP_SIDEBAR_KEY = "sandustry.blueprintInspector.showMapSidebar";
 export const SHOW_GRID_KEY = "sandustry.blueprintInspector.showGrid";
 export const SHOW_PNG_BACKGROUND_KEY = "sandustry.blueprintInspector.showPngBackground";
+export const USE_LEGACY_FIT_KEY = "sandustry.blueprintInspector.useLegacyFit";
 
 export const SHOW_DEBUG_CELLS_KEY = "sandustry.blueprintInspector.showDebugCells";
 export const SHOW_NAMES_KEY = "sandustry.blueprintInspector.showNames";
@@ -13,6 +14,10 @@ export const SHOW_CUSTOM_SHAPES_KEY = "sandustry.blueprintInspector.showCustomSh
 export const SHOW_FOUNDATION_OUTLINES_KEY = "sandustry.blueprintInspector.showFoundationOutlines";
 export const SHOW_SIGNAL_LINKS_KEY = "sandustry.blueprintInspector.showSignalLinks";
 export const SHOW_RAW_STRUCTURES_KEY = "sandustry.blueprintInspector.showRawStructures";
+export const COLLAPSE_DEBUG_OPTIONS_KEY = "sandustry.blueprintInspector.collapseDebugOptions";
+export const COLLAPSE_TEST_BLUEPRINTS_KEY = "sandustry.blueprintInspector.collapseTestBlueprints";
+export const COLLAPSE_SELECTED_RECORD_KEY = "sandustry.blueprintInspector.collapseSelectedRecord";
+export const COLLAPSE_POLICY_TESTER_KEY = "sandustry.blueprintInspector.collapsePolicyTester";
 
 export const REMEMBER_SAVE_EXPLORER_KEY = "sandustry.saveExplorer.remember";
 export const SAVED_SAVE_EXPLORER_KEY = "sandustry.saveExplorer.save";

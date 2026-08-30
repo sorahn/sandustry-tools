@@ -41,6 +41,17 @@ and its sprite overrides:
 - **Cell**: four native pixels in one dimension (a 4×4 native-pixel unit).
 - **Blueprint Block**: sixteen native pixels in one dimension (a 16×16
   native-pixel unit, or four cells).
+- **Tile** and **Block** are synonyms when referring to a blueprint block.
+
+When discussing inspector or renderer configuration, use these equivalent
+names consistently:
+
+- **Blueprint padding** and **padding**: the space inside the rendered map,
+  between the blueprint content and its edge.
+- **Viewport margin** and **margin**: the space between the rendered map and
+  the viewport.
+- **Fit policy** and **policy**: the configuration that controls initial fit
+  behavior.
 
 Keep these native units separate from CSS/display pixels. A screen zoom or
 render scale may map one native blueprint block to a different number of

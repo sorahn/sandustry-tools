@@ -14,6 +14,7 @@ describe("blueprint initial-fit policies", () => {
         contentHeight: 1200,
         viewportWidth: 800,
         viewportHeight: 502,
+        marginPx: 96,
       },
       DEFAULT_FIT_POLICY,
     );
@@ -39,6 +40,7 @@ describe("blueprint initial-fit policies", () => {
         contentHeight: 1200,
         viewportWidth: 800,
         viewportHeight: 502,
+        marginPx: 96,
       },
       widthFirstPolicy,
     );

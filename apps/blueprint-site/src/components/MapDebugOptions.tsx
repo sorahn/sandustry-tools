@@ -1,6 +1,5 @@
-import { Fragment } from "react";
-import cx from "clsx";
 import { PersistentCheckbox } from "./PersistentCheckbox";
+import { BlueprintMapSidebarSection } from "./BlueprintMapSidebarSection";
 import {
   SHOW_CUSTOM_SHAPES_KEY,
   SHOW_DEBUG_CELLS_KEY,
@@ -9,7 +8,11 @@ import {
   SHOW_RAW_STRUCTURES_KEY,
   SHOW_SIGNAL_LINKS_KEY,
   SHOW_SPRITES_KEY,
+  COLLAPSE_DEBUG_OPTIONS_KEY,
+  COLLAPSE_TEST_BLUEPRINTS_KEY,
+  COLLAPSE_POLICY_TESTER_KEY,
 } from "../utils/storage-keys";
+import { FIT_POLICY_PRESETS } from "../utils/blueprint-fit";
 import { Divider, IconButton } from "@sandustry/ui";
 import { BLUEPRINT_VISUAL_FIXTURES } from "../visual-fixtures/catalog";
 
@@ -31,6 +34,8 @@ type MapDebugOptionsProps = {
   resetVersion?: number;
   onReset: () => void;
   onLoadBlueprint: (blueprint: (typeof BLUEPRINT_VISUAL_FIXTURES)[number]["blueprint"]) => void;
+  policySelection?: "legacy" | "default" | "test";
+  onPolicySelectionChange?: (value: "legacy" | "default" | "test") => void;
 };
 
 export function MapDebugOptions({
@@ -51,6 +56,8 @@ export function MapDebugOptions({
   resetVersion,
   onReset,
   onLoadBlueprint,
+  policySelection = "test",
+  onPolicySelectionChange,
 }: MapDebugOptionsProps) {
   const toggles = [
     <PersistentCheckbox
@@ -127,37 +134,80 @@ export function MapDebugOptions({
 
   return (
     <>
-      <p
-        className={cx(
-          "font-mono uppercase tracking-[0.18em] text-slate-500 flex flex-row items-center justify-between",
-        )}
+      <BlueprintMapSidebarSection
+        title="Debug Options"
+        collapsible
+        storageKey={COLLAPSE_DEBUG_OPTIONS_KEY}
+        headerAction={
+          <IconButton size="small" label="Reset" onClick={onReset}>
+            ↺
+          </IconButton>
+        }
       >
-        <span>Debug Options</span>
-        <IconButton size="small" label="Reset" onClick={onReset}>
-          ↺
-        </IconButton>
-      </p>
-
-      <div className="flex flex-row flex-wrap gap-2 mt-3">
-        {toggles.map((toggle, index) => (
-          <Fragment key={index}>{toggle}</Fragment>
-        ))}
-      </div>
+        <div className="flex flex-row flex-wrap gap-2">
+          {toggles.map((toggle, index) => (
+            <div key={index}>{toggle}</div>
+          ))}
+        </div>
+      </BlueprintMapSidebarSection>
       <Divider className="my-4" />
-      <p className="font-mono uppercase tracking-[0.18em] text-slate-500">Test blueprints</p>
-      <div className="mt-3 grid gap-2">
-        {BLUEPRINT_VISUAL_FIXTURES.map((fixture) => (
-          <button
-            key={fixture.id}
-            type="button"
-            className="rounded border border-slate-700 bg-slate-950/50 px-2 py-1.5 text-left text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
-            onClick={() => onLoadBlueprint(fixture.blueprint)}
+      <BlueprintMapSidebarSection
+        title="Policy Tester"
+        collapsible
+        storageKey={COLLAPSE_POLICY_TESTER_KEY}
+      >
+        <label className="flex items-center justify-between gap-3 text-xs text-slate-400">
+          <span>Initial fit policy</span>
+          <select
+            className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-300"
+            value={policySelection}
+            onChange={(event) =>
+              onPolicySelectionChange?.(event.target.value as "legacy" | "default" | "test")
+            }
           >
-            {fixture.label}
-          </button>
-        ))}
-        <Divider className="my-4" />
-      </div>
+            <option value="legacy">legacy fallback</option>
+            <option value="default">default preset</option>
+            <option value="test">viewport grid test</option>
+          </select>
+        </label>
+        <pre className="mt-3 overflow-auto text-[11px] leading-5 text-slate-500">
+          {JSON.stringify(
+            policySelection === "default"
+              ? { preset: "default", policy: FIT_POLICY_PRESETS.default }
+              : policySelection === "test"
+                ? {
+                    inherits: "default",
+                    overrides: {
+                      geometry: { padding: 8, margin: 0 },
+                      grid: { extendToViewport: true },
+                    },
+                  }
+                : { mode: "legacy fallback" },
+            null,
+            2,
+          )}
+        </pre>
+      </BlueprintMapSidebarSection>
+      <Divider className="my-4" />
+      <BlueprintMapSidebarSection
+        title="Test blueprints"
+        collapsible
+        storageKey={COLLAPSE_TEST_BLUEPRINTS_KEY}
+      >
+        <div className="grid gap-2">
+          {BLUEPRINT_VISUAL_FIXTURES.map((fixture) => (
+            <button
+              key={fixture.id}
+              type="button"
+              className="rounded border border-slate-700 bg-slate-950/50 px-2 py-1.5 text-left text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
+              onClick={() => onLoadBlueprint(fixture.blueprint)}
+            >
+              {fixture.label}
+            </button>
+          ))}
+        </div>
+      </BlueprintMapSidebarSection>
+      <Divider className="my-4" />
     </>
   );
 }

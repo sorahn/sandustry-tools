@@ -50,6 +50,10 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
   gridOriginY,
   cell,
   showGrid,
+  showBackground = true,
+  extendToViewport = false,
+  viewportWidth = width,
+  viewportHeight = height,
 }: {
   width: number;
   height: number;
@@ -57,7 +61,18 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
   gridOriginY: number;
   cell: number;
   showGrid: boolean;
+  showBackground?: boolean;
+  extendToViewport?: boolean;
+  viewportWidth?: number;
+  viewportHeight?: number;
 }) {
+  const bleed = extendToViewport
+    ? Math.max(viewportWidth, viewportHeight) / 0.25 + Math.max(width, height)
+    : 0;
+  const gridX = extendToViewport ? -bleed : 0;
+  const gridY = extendToViewport ? -bleed : 0;
+  const gridWidth = extendToViewport ? width + bleed * 2 : width;
+  const gridHeight = extendToViewport ? height + bleed * 2 : height;
   return (
     <>
       <defs>
@@ -92,11 +107,25 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
           />
         </pattern>
       </defs>
-      <rect width={width} height={height} fill="#33a8ff" style={mapLayerStyle("background")} />
+      {showBackground ? (
+        <rect width={width} height={height} fill="#33a8ff" style={mapLayerStyle("background")} />
+      ) : null}
       {showGrid ? (
         <g opacity="0.25" style={mapLayerStyle("grid")}>
-          <rect width={width} height={height} fill="url(#blueprint-block-grid)" />
-          <rect width={width} height={height} fill="url(#blueprint-cell-grid)" />
+          <rect
+            x={gridX}
+            y={gridY}
+            width={gridWidth}
+            height={gridHeight}
+            fill="url(#blueprint-block-grid)"
+          />
+          <rect
+            x={gridX}
+            y={gridY}
+            width={gridWidth}
+            height={gridHeight}
+            fill="url(#blueprint-cell-grid)"
+          />
         </g>
       ) : null}
     </>
@@ -106,13 +135,15 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
 export const BlueprintMapEdgeFadeLayer = memo(function BlueprintMapEdgeFadeLayer({
   width,
   height,
+  padding,
   cell,
 }: {
   width: number;
   height: number;
+  padding: number;
   cell: number;
 }) {
-  const fadeSize = cell * 6;
+  const fadeSize = padding * cell;
   const fadeBleed = 1;
   const gradients = [
     {
@@ -162,8 +193,8 @@ export const BlueprintMapEdgeFadeLayer = memo(function BlueprintMapEdgeFadeLayer
             y2={gradient.y2}
           >
             <stop offset="0%" stopColor="#33a8ff" />
-            <stop offset="16.6667%" stopColor="#33a8ff" />
-            <stop offset="83.3333%" stopColor="#33a8ff" stopOpacity="0" />
+            <stop offset="50%" stopColor="#33a8ff" stopOpacity="0.5" />
+            <stop offset="75%" stopColor="#33a8ff" stopOpacity="0" />
             <stop offset="100%" stopColor="#33a8ff" stopOpacity="0" />
           </linearGradient>
         ))}
