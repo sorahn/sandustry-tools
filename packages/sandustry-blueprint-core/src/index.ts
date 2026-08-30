@@ -231,6 +231,50 @@ function encodeBytes(blueprint: Blueprint) {
   return new Uint8Array(output);
 }
 
+function prefabDefinitionData(value: unknown) {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
+  const blueprint = (value as Record<string, unknown>).__prefabulatorBlueprint;
+  if (typeof blueprint !== "object" || blueprint === null || Array.isArray(blueprint)) {
+    return undefined;
+  }
+  const definition = (blueprint as Record<string, unknown>).definition;
+  if (typeof definition !== "object" || definition === null || Array.isArray(definition)) {
+    return undefined;
+  }
+  const shape = (definition as Record<string, unknown>).shape;
+  if (
+    !Array.isArray(shape) ||
+    shape.length === 0 ||
+    !shape.every(
+      (row) =>
+        Array.isArray(row) &&
+        row.length > 0 &&
+        row.every((value) => typeof value === "number" && Number.isFinite(value)),
+    )
+  ) {
+    return undefined;
+  }
+  const width = shape[0].length;
+  if (!shape.every((row) => row.length === width)) return undefined;
+  return value;
+}
+
+function normalizePrefabReferences(data: BlueprintStructure[]) {
+  const definitions = new Map<BlueprintType, unknown>();
+  for (const structure of data) {
+    const definition = prefabDefinitionData(structure.data);
+    if (definition !== undefined && !definitions.has(structure.type)) {
+      definitions.set(structure.type, definition);
+    }
+  }
+  if (!definitions.size) return data;
+  return data.map((structure) =>
+    structure.data === undefined && definitions.has(structure.type)
+      ? { ...structure, data: definitions.get(structure.type) }
+      : structure,
+  );
+}
+
 function decodeBytes(bytes: Uint8Array): Blueprint {
   const cursor = { value: 0 };
   const version = bytes[cursor.value++];
@@ -278,7 +322,7 @@ function decodeBytes(bytes: Uint8Array): Blueprint {
         on: bytes[cursor.value++] === 1,
       });
   }
-  return { name, data, signalLinks };
+  return { name, data: normalizePrefabReferences(data), signalLinks };
 }
 
 export function encodeBlueprint(blueprint: Blueprint, format: "binary" | "text" = "binary") {

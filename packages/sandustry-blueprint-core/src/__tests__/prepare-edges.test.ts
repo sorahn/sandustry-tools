@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { decodeBlueprint, encodeBlueprint } from "..";
 import {
   customShapeFromStructure,
   defaultSignalPoints,
@@ -246,6 +247,50 @@ describe("blueprint preparation edges", () => {
       signalLinks: null,
     });
     expect(foundationOutlinePath(prefab.preparedStructures, 0, 0, 1, 8)).not.toBe("");
+  });
+
+  test("uses normalized prefab definitions for reference-only records", () => {
+    const prepared = prepareBlueprint(
+      decodeBlueprint(
+        encodeBlueprint({
+          name: "Deduplicated prefab terrain",
+          data: [
+            {
+              type: "prefabTerrain_46",
+              x: 0,
+              y: 0,
+              data: {
+                __prefabulatorBlueprint: {
+                  definition: {
+                    shape: [
+                      [0, 0, 1, 0],
+                      [0, 0, 0, 0],
+                      [0, 0, 0, 1],
+                      [0, 0, 0, 0],
+                    ],
+                  },
+                },
+              },
+            },
+            { type: "prefabTerrain_46", x: 12, y: 16 },
+            { type: "prefabTerrain_46", x: 12, y: 20 },
+            { type: "prefabTerrain_46", x: 12, y: 24 },
+            { type: "prefabTerrain_46", x: 12, y: 28 },
+          ],
+          signalLinks: null,
+        }),
+      ),
+    );
+
+    for (const index of [1, 2, 3, 4]) {
+      expect(prepared.preparedStructures[index].customShape).toEqual(
+        prepared.preparedStructures[0].customShape,
+      );
+      expect(prepared.preparedStructures[index].shape).toEqual(
+        prepared.preparedStructures[0].shape,
+      );
+    }
+    expect(foundationOutlinePath(prepared.preparedStructures, 0, 0, 1, 8)).not.toBe("");
   });
 
   test("recognizes every remaining raw native and shipped mask", () => {

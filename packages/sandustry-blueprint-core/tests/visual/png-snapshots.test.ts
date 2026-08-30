@@ -11,7 +11,9 @@ const repoRoot = path.resolve(visualRoot, "../../../..");
 const blueprintRoot = path.join(visualRoot, "blueprints");
 const baselineRoot = path.join(visualRoot, "baselines");
 const outputRoot = path.join(repoRoot, "artifacts/visual/blueprint-core");
-const update = process.argv.includes("--update");
+// Bun consumes --update for its own snapshot machinery, so use the explicit
+// environment flag for this test's baseline replacement mode.
+const update = process.env.UPDATE_PNG_SNAPSHOTS === "1";
 
 const fixtures = [
   {

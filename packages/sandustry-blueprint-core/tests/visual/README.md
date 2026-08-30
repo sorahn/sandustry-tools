@@ -49,7 +49,7 @@ After explicit approval for an intentional SVG renderer change, refresh them
 with:
 
 ```sh
-bun test packages/sandustry-blueprint-core/tests/visual/svg-snapshots.test.ts --update
+UPDATE_SVG_SNAPSHOTS=1 bun test packages/sandustry-blueprint-core/tests/visual/svg-snapshots.test.ts
 ```
 
 PNG output snapshots are checked as individual Bun tests with:
@@ -62,7 +62,7 @@ After explicit approval for an intentional PNG renderer change, refresh the
 baselines with:
 
 ```sh
-bun test packages/sandustry-blueprint-core/tests/visual/png-snapshots.test.ts --update
+UPDATE_PNG_SNAPSHOTS=1 bun test packages/sandustry-blueprint-core/tests/visual/png-snapshots.test.ts
 ```
 
 The same selector can limit comparisons:

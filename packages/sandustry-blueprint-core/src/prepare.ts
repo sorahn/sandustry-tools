@@ -615,7 +615,7 @@ export function prepareBlueprint(
   const preparedStructures = blueprint.data.map((structure, index) => {
     const catalogEntry = options.catalog?.get(structure.type);
     const customShape = customShapeFromStructure(structure);
-    const shape = shapeForStructure(structure, catalogEntry);
+    const shape = customShape ?? catalogEntry?.shape;
     const footprint = shape
       ? { width: shape[0].length, height: shape.length }
       : (catalogEntry?.footprint ?? options.unknownFootprint ?? { width: 1, height: 1 });

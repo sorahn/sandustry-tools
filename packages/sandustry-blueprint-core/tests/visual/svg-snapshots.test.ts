@@ -8,7 +8,9 @@ import { catalogVisualBlueprint, renderVisualBlueprintSvg } from "./svg-renderer
 const visualRoot = path.dirname(fileURLToPath(import.meta.url));
 const blueprintRoot = path.join(visualRoot, "blueprints");
 const snapshotRoot = path.join(visualRoot, "svg");
-const update = process.argv.includes("--update") || process.env.UPDATE_SVG_SNAPSHOTS === "1";
+// Bun consumes --update for its own snapshot machinery, so use the explicit
+// environment flag for this test's baseline replacement mode.
+const update = process.env.UPDATE_SVG_SNAPSHOTS === "1";
 const fixtures = [
   { name: "catalog", input: catalogVisualBlueprint() },
   ...(await readdir(blueprintRoot))
@@ -37,7 +39,7 @@ describe("blueprint SVG snapshots", () => {
       assert.equal(
         actual,
         expected,
-        `SVG snapshot mismatch: ${fixture.name}.svg (run bun test packages/sandustry-blueprint-core/tests/visual/svg-snapshots.test.ts --update)`,
+        `SVG snapshot mismatch: ${fixture.name}.svg (run UPDATE_SVG_SNAPSHOTS=1 bun test packages/sandustry-blueprint-core/tests/visual/svg-snapshots.test.ts)`,
       );
     });
   }
