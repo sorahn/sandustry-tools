@@ -36,6 +36,22 @@ function BlueprintInspectorEmbed() {
   const [fitPolicy, setFitPolicy] = useState<FitPolicy | undefined>();
 
   useEffect(() => {
+    // The parent iframe owns sizing. Prevent the browser's fallback scrollbar
+    // from changing the measured width while the parent catches up with the
+    // renderer's reported height.
+    const documentElement = document.documentElement;
+    const body = document.body;
+    const previousDocumentOverflow = documentElement.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    documentElement.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      documentElement.style.overflow = previousDocumentOverflow;
+      body.style.overflow = previousBodyOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     if (window.parent === window || typeof ResizeObserver === "undefined") return;
     const allowedOrigin = parentOrigin();
     const element = mapRootRef.current;
