@@ -1,6 +1,3 @@
 [submodule "resources/SandustryModTemplate"]
 	path = resources/SandustryModTemplate
 	url = git@github.com:sorahn/SandustryModTemplate.git
-[submodule "apps/sandustry-vault"]
-	path = apps/sandustry-vault
-	url = git@github.com:TrimBarktree/sandustry-vault.git

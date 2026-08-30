@@ -44,8 +44,8 @@ export function mapLayerStyle(layer: MapLayer) {
   return { zIndex: MAP_LAYER_ORDER.indexOf(layer) };
 }
 
-export function snapMapZoom(value: number) {
-  return MAP_ZOOM_LEVELS.reduce((nearest, level) =>
+export function snapMapZoom(value: number, levels: readonly number[] = MAP_ZOOM_LEVELS) {
+  return levels.reduce((nearest, level) =>
     Math.abs(level - value) < Math.abs(nearest - value) ? level : nearest,
   );
 }
@@ -88,7 +88,10 @@ export function createBlueprintMapModel(blueprint: Blueprint, padding: number, c
   });
 }
 
-export function readStoredMapView(blueprintKey: string): MapView | null {
+export function readStoredMapView(
+  blueprintKey: string,
+  zoomLevels: readonly number[] = MAP_ZOOM_LEVELS,
+): MapView | null {
   if (typeof window === "undefined" || !blueprintKey) return null;
   const stored = readStorageValue(SAVED_MAP_VIEW_KEY);
   if (!stored) return null;
@@ -111,7 +114,7 @@ export function readStoredMapView(blueprintKey: string): MapView | null {
     )
       return null;
     return {
-      zoom: Math.max(MAP_ZOOM_LEVELS[0], Math.min(4, value.zoom)),
+      zoom: Math.max(zoomLevels[0], Math.min(zoomLevels.at(-1) ?? 4, value.zoom)),
       pan: { x: value.pan.x, y: value.pan.y },
       viewportWidth:
         typeof value.viewportWidth === "number" && Number.isFinite(value.viewportWidth)

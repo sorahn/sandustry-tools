@@ -33,7 +33,7 @@ export type FitPolicy = {
   anchor: "center" | "top" | "top-left";
 };
 
-export type FitPolicyPreset = "default";
+export type FitPolicyPreset = "default" | "vault" | "test";
 export type FitPolicySelection = FitPolicy | { preset: FitPolicyPreset };
 
 export type FitInput = {
@@ -75,6 +75,22 @@ export const DEFAULT_FIT_POLICY: FitPolicy = {
 
 export const FIT_POLICY_PRESETS: Record<FitPolicyPreset, FitPolicy> = {
   default: DEFAULT_FIT_POLICY,
+  vault: {
+    ...DEFAULT_FIT_POLICY,
+    geometry: { ...DEFAULT_FIT_POLICY.geometry, padding: 4 },
+    grid: { extendToViewport: true },
+    viewport: { ...DEFAULT_FIT_POLICY.viewport, allowHeightGrowth: false },
+    zoom: {
+      ...DEFAULT_FIT_POLICY.zoom,
+      levels: [0.125, ...DEFAULT_FIT_POLICY.zoom.levels],
+      min: 0.125,
+    },
+  },
+  test: {
+    ...DEFAULT_FIT_POLICY,
+    geometry: { padding: 8, margin: 0 },
+    grid: { extendToViewport: true },
+  },
 };
 
 export function resolveFitPolicy(selection: FitPolicySelection): FitPolicy {
@@ -124,14 +140,13 @@ export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): F
   const fitWidth = input.contentWidth + input.marginPx * 2;
   const fitHeight = input.contentHeight + input.marginPx * 2;
   const defaultHeight = aspectViewportHeight(input.viewportWidth, policy, input);
-  const fitsDefaultViewport = fitWidth <= input.viewportWidth && fitHeight <= defaultHeight;
   const widthLimit =
     policy.fit.width === "required" ? input.viewportWidth / fitWidth : Number.POSITIVE_INFINITY;
   const heightLimit = defaultHeight / fitHeight;
   const useHeightConstraint =
     policy.zoom.selection !== "largest-width-fitting" &&
     policy.fit.height === "required" &&
-    fitsDefaultViewport;
+    !policy.viewport.allowHeightGrowth;
   const maxZoom = Math.min(
     policy.zoom.max,
     widthLimit,
@@ -139,7 +154,9 @@ export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): F
   );
   const zoom = largestFittingZoom(
     policy.zoom.levels,
-    useHeightConstraint ? maxZoom : Math.min(maxZoom, policy.zoom.fallbackMax),
+    useHeightConstraint || policy.viewport.allowHeightGrowth
+      ? maxZoom
+      : Math.min(maxZoom, policy.zoom.fallbackMax),
     policy.zoom.min,
   );
   // Height follows the fitted blueprint bounds and their minimum padding. Do
@@ -211,6 +228,10 @@ export function isFitPolicySelection(value: unknown): value is FitPolicySelectio
     isFitPolicy(value) ||
     (Boolean(value) &&
       typeof value === "object" &&
-      (value as { preset?: unknown }).preset === "default")
+      typeof (value as { preset?: unknown }).preset === "string" &&
+      Object.prototype.hasOwnProperty.call(
+        FIT_POLICY_PRESETS,
+        (value as { preset: string }).preset,
+      ))
   );
 }

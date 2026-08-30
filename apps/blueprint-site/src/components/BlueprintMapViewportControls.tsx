@@ -29,7 +29,10 @@ export function BlueprintMapViewportControls({
   onZoomIn: () => void;
 }) {
   return (
-    <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded border border-slate-700/80 bg-slate-950/60 p-2 font-mono text-xs text-slate-300 shadow-lg backdrop-blur-sm">
+    <div
+      className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded border border-slate-700/80 bg-slate-950/60 p-2 font-mono text-xs text-slate-300 shadow-lg backdrop-blur-sm"
+      translate="no"
+    >
       <Button
         type="button"
         className={cx(buttonStyles.compact, buttonStyles.noShift)}
@@ -50,7 +53,7 @@ export function BlueprintMapViewportControls({
         <option value="2">2×</option>
         <option value="4">4×</option>
       </select>
-      <span className="mr-1">{Math.round(zoom * 100)}%</span>
+      <span className="mr-1">{Number((zoom * 100).toFixed(1))}%</span>
       <Button
         type="button"
         className={cx(buttonStyles.compact, buttonStyles.noShift)}

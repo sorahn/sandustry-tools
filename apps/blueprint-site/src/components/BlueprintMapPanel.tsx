@@ -8,8 +8,10 @@ import {
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
   USE_LEGACY_FIT_KEY,
+  POLICY_TESTER_SELECTION_KEY,
 } from "../utils/storage-keys";
-import { FIT_POLICY_PRESETS } from "../utils/blueprint-fit";
+import { FIT_POLICY_PRESETS, type FitPolicyPreset } from "../utils/blueprint-fit";
+import { readStorageValue, writeStorageValue } from "../utils/storage";
 
 type BlueprintMapPanelProps = {
   blueprint: Blueprint;
@@ -24,7 +26,16 @@ type BlueprintMapPanelProps = {
   onLoadBlueprint: (blueprint: Blueprint) => void;
 };
 
-type PolicyTesterSelection = "legacy" | "default" | "test";
+type PolicyTesterSelection = "legacy" | FitPolicyPreset;
+
+function readPolicyTesterSelection(): PolicyTesterSelection {
+  const stored = readStorageValue(POLICY_TESTER_SELECTION_KEY);
+  if (stored === "legacy") return stored;
+  if (stored && Object.prototype.hasOwnProperty.call(FIT_POLICY_PRESETS, stored)) {
+    return stored as FitPolicyPreset;
+  }
+  return "default";
+}
 
 export function BlueprintMapPanel({
   blueprint,
@@ -39,16 +50,12 @@ export function BlueprintMapPanel({
   onLoadBlueprint,
 }: BlueprintMapPanelProps) {
   const [useLegacyFit, setUseLegacyFit] = useState(false);
-  const [policySelection, setPolicySelection] = useState<PolicyTesterSelection>("default");
-  const testFitPolicy = {
-    ...FIT_POLICY_PRESETS.default,
-    geometry: { padding: 8, margin: 0 },
-    grid: { extendToViewport: true },
-  };
-
+  const [policySelection, setPolicySelection] =
+    useState<PolicyTesterSelection>(readPolicyTesterSelection);
   return (
     <Panel
       title="Blueprint map"
+      className="!overflow-visible"
       header={
         <div className="flex gap-2">
           {import.meta.env.DEV ? (
@@ -100,16 +107,15 @@ export function BlueprintMapPanel({
           onLoadBlueprint={onLoadBlueprint}
           fitPolicy={
             !useLegacyFit
-              ? policySelection === "default"
-                ? FIT_POLICY_PRESETS.default
-                : policySelection === "test"
-                  ? testFitPolicy
-                  : undefined
+              ? policySelection === "legacy"
+                ? undefined
+                : FIT_POLICY_PRESETS[policySelection]
               : undefined
           }
           policySelection={useLegacyFit ? "legacy" : policySelection}
           onPolicySelectionChange={(selection) => {
             setPolicySelection(selection);
+            writeStorageValue(POLICY_TESTER_SELECTION_KEY, selection);
             setUseLegacyFit(selection === "legacy");
           }}
         />

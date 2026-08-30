@@ -54,6 +54,7 @@ import {
   resolveFitSpacing,
   solveInitialFit,
   type FitPolicy,
+  type FitPolicyPreset,
   type FitSpacing,
 } from "../utils/blueprint-fit";
 
@@ -178,6 +179,7 @@ export function BlueprintMap({
   policySelection,
   onPolicySelectionChange,
   padding: paddingOverride,
+  stickyTop,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -189,9 +191,10 @@ export function BlueprintMap({
   captureOnly?: boolean;
   showDebugOptions?: boolean;
   fitPolicy?: FitPolicy;
-  policySelection?: "legacy" | "default" | "test";
-  onPolicySelectionChange?: (value: "legacy" | "default" | "test") => void;
+  policySelection?: "legacy" | FitPolicyPreset;
+  onPolicySelectionChange?: (value: "legacy" | FitPolicyPreset) => void;
   padding?: FitSpacing;
+  stickyTop?: string;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showDebugCells, setShowDebugCells] = useState(false);
@@ -202,6 +205,23 @@ export function BlueprintMap({
   const [showSignalLinks, setShowSignalLinks] = useState(true);
   const [showRawStructures, setShowRawStructures] = useState(false);
   const [exportScale, setExportScale] = useState(1);
+  const [siteHeaderHeight, setSiteHeaderHeight] = useState(() => {
+    if (typeof document === "undefined") return 0;
+    return (
+      document.querySelector<HTMLElement>("[data-site-header]")?.getBoundingClientRect().height ?? 0
+    );
+  });
+  useEffect(() => {
+    if (stickyTop !== undefined) return;
+    const header = document.querySelector<HTMLElement>("[data-site-header]");
+    if (!header) return;
+
+    const updateHeaderHeight = () => setSiteHeaderHeight(header.getBoundingClientRect().height);
+    updateHeaderHeight();
+    const observer = new ResizeObserver(updateHeaderHeight);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, [stickyTop]);
   const [debugResetVersion, setDebugResetVersion] = useState<number | undefined>(undefined);
   const resetDebugOptions = () => {
     const defaults = [
@@ -238,14 +258,19 @@ export function BlueprintMap({
   const spritesVisible = import.meta.env.PROD || showSprites;
   const foundationOutlinesVisible = import.meta.env.PROD || showFoundationOutlines;
   const signalLinksVisible = import.meta.env.PROD || showSignalLinks;
+  const zoomLevels = fitPolicy?.zoom.levels ?? MAP_ZOOM_LEVELS;
   const [zoom, setZoom] = useState(() =>
-    captureOnly ? 1 : snapMapZoom(readStoredMapView(blueprintKey)?.zoom ?? 1),
+    captureOnly
+      ? 1
+      : snapMapZoom(readStoredMapView(blueprintKey, zoomLevels)?.zoom ?? 1, zoomLevels),
   );
   const [pan, setPan] = useState(() =>
-    captureOnly ? { x: 0, y: 0 } : (readStoredMapView(blueprintKey)?.pan ?? { x: 0, y: 0 }),
+    captureOnly
+      ? { x: 0, y: 0 }
+      : (readStoredMapView(blueprintKey, zoomLevels)?.pan ?? { x: 0, y: 0 }),
   );
   const [mapSizeReady, setMapSizeReady] = useState(
-    () => captureOnly || readStoredMapView(blueprintKey) !== null,
+    () => captureOnly || readStoredMapView(blueprintKey, zoomLevels) !== null,
   );
   const svgRef = useRef<SVGSVGElement>(null);
   const dragRef = useRef<{
@@ -257,7 +282,10 @@ export function BlueprintMap({
   const suppressClickRef = useRef(false);
   const panCommitTimerRef = useRef<number | null>(null);
   const livePanRef = useRef(pan);
-  const fitModeRef = useRef(captureOnly ? true : (readStoredMapView(blueprintKey)?.fit ?? true));
+  const previousSidebarVisibilityRef = useRef(showSidebar);
+  const fitModeRef = useRef(
+    captureOnly ? true : (readStoredMapView(blueprintKey, zoomLevels)?.fit ?? true),
+  );
   // Blueprint coordinates are cell-sized units. Four native sprite pixels
   // make one cell, and four cells make one blueprint block. At 100% four
   // blueprint coordinates therefore render at 32 display pixels.
@@ -293,7 +321,7 @@ export function BlueprintMap({
   const { preparedBlueprint, minX, minY, width, height } = mapModel;
   const { viewportRef, viewportSize, hoverMarkerRef, updateHoverBlock, clearHoverBlock } =
     useBlueprintMapViewport({ cell, minX, minY, padding });
-  const viewportWidth = viewportSize.width || width;
+  const viewportWidth = viewportRef.current?.clientWidth || viewportSize.width || width;
   const defaultViewportHeight = viewportHeightForWidth(viewportWidth);
   const legacyFitWidth = width + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
   const legacyFitHeight = height + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
@@ -340,6 +368,7 @@ export function BlueprintMap({
           },
           fitPolicy,
         ).zoom,
+        zoomLevels,
       )
     : legacyMeasuredFitZoom;
   const aspectRatioViewportHeight = fitPolicy
@@ -403,9 +432,9 @@ export function BlueprintMap({
     onPolicySelectionChange,
   });
   useEffect(() => {
-    const stored = remember && !captureOnly ? readStoredMapView(blueprintKey) : null;
+    const stored = remember && !captureOnly ? readStoredMapView(blueprintKey, zoomLevels) : null;
     fitModeRef.current = stored?.fit ?? true;
-    const restoredZoom = captureOnly ? 1 : snapMapZoom(stored?.zoom ?? 1);
+    const restoredZoom = captureOnly ? 1 : snapMapZoom(stored?.zoom ?? 1, zoomLevels);
     const restoredMaxPanX = Math.max(
       0,
       (width * restoredZoom - (viewportSize.width || width)) / (2 * restoredZoom),
@@ -459,14 +488,17 @@ export function BlueprintMap({
           },
           fitPolicy,
         ).zoom,
+        zoomLevels,
       ),
     );
     setPan({ x: 0, y: 0 });
   };
   useLayoutEffect(() => {
     if (captureOnly) return;
-    const stored = remember ? readStoredMapView(blueprintKey) : null;
-    if (stored?.viewportWidth === viewportSize.width) return;
+    const sidebarVisibilityChanged = previousSidebarVisibilityRef.current !== showSidebar;
+    previousSidebarVisibilityRef.current = showSidebar;
+    const stored = remember ? readStoredMapView(blueprintKey, zoomLevels) : null;
+    if (!sidebarVisibilityChanged && stored?.viewportWidth === viewportSize.width) return;
     if (!viewportSize.width || !viewportSize.height) return;
     if (!viewportRef.current) return;
     if (!fitModeRef.current) {
@@ -480,6 +512,7 @@ export function BlueprintMap({
     captureOnly,
     fitPolicy,
     remember,
+    showSidebar,
     viewportSize.height,
     viewportSize.width,
     width,
@@ -507,7 +540,7 @@ export function BlueprintMap({
   }, [pan]);
   const setMapZoom = (nextZoom: number) => {
     fitModeRef.current = false;
-    const snappedZoom = snapMapZoom(nextZoom);
+    const snappedZoom = snapMapZoom(nextZoom, zoomLevels);
     const nextViewWidth = width / snappedZoom;
     const nextViewHeight = height / snappedZoom;
     const nextCenteredViewX = (width - nextViewWidth) / 2;
@@ -599,256 +632,262 @@ export function BlueprintMap({
           : "grid items-stretch"
       }
     >
-      <div
-        ref={viewportRef}
-        className="blueprint-map__viewport relative min-h-[32rem] overflow-hidden rounded border border-slate-800 bg-[#33a8ff]"
-        translate="no"
-        style={
-          captureOnly
-            ? { width: `${Math.ceil(width)}px`, height: `${Math.ceil(height)}px` }
-            : {
-                height: `${Math.max(512, Math.ceil(aspectRatioViewportHeight))}px`,
-              }
-        }
-      >
-        <BlueprintMapViewportControls
-          zoom={zoom}
-          minZoom={MAP_ZOOM_LEVELS[0]}
-          maxZoom={MAP_ZOOM_LEVELS[MAP_ZOOM_LEVELS.length - 1]}
-          measuredFitZoom={measuredFitZoom}
-          fitMode={fitModeRef.current}
-          pan={pan}
-          onExport={exportPng}
-          exportScale={exportScale}
-          onExportScaleChange={setExportScale}
-          onZoomOut={() => {
-            const index = MAP_ZOOM_LEVELS.indexOf(snapMapZoom(zoom));
-            setMapZoom(MAP_ZOOM_LEVELS[Math.max(0, index - 1)]);
-          }}
-          onFit={fitToViewport}
-          onZoomIn={() => {
-            const index = MAP_ZOOM_LEVELS.indexOf(snapMapZoom(zoom));
-            setMapZoom(MAP_ZOOM_LEVELS[Math.min(MAP_ZOOM_LEVELS.length - 1, index + 1)]);
-          }}
-        />
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${width} ${height}`}
-          role="img"
-          aria-label={`${blueprint.name} structure map`}
-          preserveAspectRatio="xMidYMid meet"
-          className="blueprint-map__canvas absolute max-w-none"
-          style={{
-            width: `${width * zoom}px`,
-            height: `${height * zoom}px`,
-            left: "50%",
-            top: "50%",
-            transform: `translate(-50%, -50%) translate(${-pan.x * zoom}px, ${-pan.y * zoom}px)`,
-            zIndex: viewportGridEnabled ? 1 : undefined,
-            overflow: viewportGridEnabled ? "visible" : undefined,
-            cursor: dragRef.current ? "grabbing" : "grab",
-            touchAction: "none",
-            userSelect: "none",
-          }}
-          onPointerDown={(event) => {
-            if (event.pointerType === "mouse" && event.button !== 0) return;
-            if (panCommitTimerRef.current !== null) {
-              window.clearTimeout(panCommitTimerRef.current);
-              panCommitTimerRef.current = null;
-              setPan(livePanRef.current);
-            } else {
-              livePanRef.current = pan;
-            }
-            dragRef.current = {
-              pointerId: event.pointerId,
-              lastX: event.clientX,
-              lastY: event.clientY,
-              moved: false,
-            };
-            event.currentTarget.style.cursor = "grabbing";
-          }}
-          onPointerMove={(event) => {
-            updateHoverBlock(event);
-            const drag = dragRef.current;
-            if (!drag || drag.pointerId !== event.pointerId) return;
-            const dx = event.clientX - drag.lastX;
-            const dy = event.clientY - drag.lastY;
-            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-              drag.moved = true;
-              fitModeRef.current = false;
-              if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-                event.currentTarget.setPointerCapture(event.pointerId);
-              }
-            }
-            const rect = event.currentTarget.getBoundingClientRect();
-            const nextPan = {
-              x: Math.max(
-                -maxPanX,
-                Math.min(maxPanX, livePanRef.current.x - (dx / rect.width) * width),
-              ),
-              y: Math.max(
-                -maxPanY,
-                Math.min(maxPanY, livePanRef.current.y - (dy / rect.height) * height),
-              ),
-            };
-            livePanRef.current = nextPan;
-            applyLivePan(nextPan);
-            schedulePanCommit();
-            drag.lastX = event.clientX;
-            drag.lastY = event.clientY;
-          }}
-          onPointerUp={(event) => {
-            const drag = dragRef.current;
-            if (!drag || drag.pointerId !== event.pointerId) return;
-            suppressClickRef.current = drag.moved;
-            dragRef.current = null;
-            event.currentTarget.style.cursor = "grab";
-            if (drag.moved) schedulePanCommit();
-            event.currentTarget.releasePointerCapture(event.pointerId);
-          }}
-          onPointerCancel={(event) => {
-            dragRef.current = null;
-            event.currentTarget.style.cursor = "grab";
-            schedulePanCommit();
-          }}
-          onPointerLeave={() => {
-            clearHoverBlock();
-          }}
+      <div className="min-w-0">
+        <div className="sticky z-20 h-0" style={{ top: stickyTop ?? `${siteHeaderHeight}px` }}>
+          <BlueprintMapViewportControls
+            zoom={zoom}
+            minZoom={zoomLevels[0]}
+            maxZoom={zoomLevels[zoomLevels.length - 1]}
+            measuredFitZoom={measuredFitZoom}
+            fitMode={fitModeRef.current}
+            pan={pan}
+            onExport={exportPng}
+            exportScale={exportScale}
+            onExportScaleChange={setExportScale}
+            onZoomOut={() => {
+              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
+              setMapZoom(zoomLevels[Math.max(0, index - 1)]);
+            }}
+            onFit={fitToViewport}
+            onZoomIn={() => {
+              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
+              setMapZoom(zoomLevels[Math.min(zoomLevels.length - 1, index + 1)]);
+            }}
+          />
+        </div>
+        <div
+          ref={viewportRef}
+          className="blueprint-map__viewport relative min-h-[32rem] overflow-hidden rounded border border-slate-800 bg-[#33a8ff]"
+          translate="no"
+          style={
+            captureOnly
+              ? { width: `${Math.ceil(width)}px`, height: `${Math.ceil(height)}px` }
+              : {
+                  height: `${Math.max(512, Math.ceil(aspectRatioViewportHeight))}px`,
+                }
+          }
         >
-          <BlueprintMapGridLayer
-            width={width}
-            height={height}
-            gridOriginX={gridOriginX}
-            gridOriginY={gridOriginY}
-            cell={cell}
-            showGrid={showGrid}
-            showBackground={!viewportGridEnabled}
-            extendToViewport={viewportGridEnabled}
-            viewportWidth={viewportSize.width || width}
-            viewportHeight={viewportSize.height || defaultViewportHeight}
-          />
-          {showDebugCells ? (
-            <g opacity="0.8" pointerEvents="none" style={mapLayerStyle("debugCells")}>
-              {blueprint.data.flatMap((structure, structureIndex) => {
-                const prepared = preparedBlueprint.preparedStructures[structureIndex];
-                const footprint = prepared.footprint;
-                const shape =
-                  prepared.shape ??
-                  Array.from({ length: footprint.height }, () =>
-                    Array.from({ length: footprint.width }, () => 1),
-                  );
-                const topY = prepared.topY;
-                const left = (structure.x - minX + padding) * cell;
-                const top = (topY - minY + padding) * cell;
-                return shape.flatMap((row, rowIndex) =>
-                  row.map((value, columnIndex) =>
-                    value === 0 ? null : (
-                      <rect
-                        key={`debug-cell-${structureIndex}-${rowIndex}-${columnIndex}`}
-                        x={left + columnIndex * cell}
-                        y={top + rowIndex * cell}
-                        width={cell}
-                        height={cell}
-                        rx="2"
-                        fill={tileColor(structure.type)}
-                      />
-                    ),
-                  ),
-                );
-              })}
-            </g>
-          ) : null}
-          <BlueprintMapFoundationOutlineLayer
-            preparedBlueprint={preparedBlueprint}
-            visible={foundationOutlinesVisible}
-            minX={minX}
-            minY={minY}
-            padding={padding}
-            cell={cell}
-          />
-          {(() => {
-            const isFoundationShape = ({ index }: (typeof renderStructures)[number]) => {
-              return isFoundationStructure(preparedBlueprint.preparedStructures[index]);
-            };
-            const renderStructure = ({ structure, index }: (typeof renderStructures)[number]) => {
-              return (
-                <BlueprintMapStructure
-                  key={`structure-${index}`}
-                  item={{ structure, index, z: preparedBlueprint.preparedStructures[index].z }}
-                  preparedBlueprint={preparedBlueprint}
-                  minX={minX}
-                  minY={minY}
-                  padding={padding}
-                  cell={cell}
-                  height={height}
-                  spritesVisible={spritesVisible}
-                  showCustomShapes={showCustomShapes}
-                  showNames={showNames}
-                  suppressClickRef={suppressClickRef}
-                  onSelect={setSelectedIndex}
-                />
-              );
-            };
-            return (
-              <>
-                <g style={mapLayerStyle("foundationShapes")}>
-                  {renderStructures.filter(isFoundationShape).map(renderStructure)}
-                </g>
-                <g style={mapLayerStyle("sprites")}>
-                  {renderStructures.filter((item) => !isFoundationShape(item)).map(renderStructure)}
-                </g>
-              </>
-            );
-          })()}
-          <BlueprintMapRawStructuresLayer
-            preparedBlueprint={preparedBlueprint}
-            visible={showRawStructures}
-            minX={minX}
-            minY={minY}
-            padding={padding}
-            cell={cell}
-          />
-          <BlueprintMapSignalLinksLayer
-            preparedBlueprint={preparedBlueprint}
-            visible={signalLinksVisible}
-            point={point}
-          />
-          {!viewportGridEnabled ? (
-            <BlueprintMapEdgeFadeLayer
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${width} ${height}`}
+            role="img"
+            aria-label={`${blueprint.name} structure map`}
+            preserveAspectRatio="xMidYMid meet"
+            className="blueprint-map__canvas absolute max-w-none"
+            style={{
+              width: `${width * zoom}px`,
+              height: `${height * zoom}px`,
+              left: "50%",
+              top: "50%",
+              transform: `translate(-50%, -50%) translate(${-pan.x * zoom}px, ${-pan.y * zoom}px)`,
+              zIndex: viewportGridEnabled ? 1 : undefined,
+              overflow: viewportGridEnabled ? "visible" : undefined,
+              cursor: dragRef.current ? "grabbing" : "grab",
+              touchAction: "none",
+              userSelect: "none",
+            }}
+            onPointerDown={(event) => {
+              if (event.pointerType === "mouse" && event.button !== 0) return;
+              if (panCommitTimerRef.current !== null) {
+                window.clearTimeout(panCommitTimerRef.current);
+                panCommitTimerRef.current = null;
+                setPan(livePanRef.current);
+              } else {
+                livePanRef.current = pan;
+              }
+              dragRef.current = {
+                pointerId: event.pointerId,
+                lastX: event.clientX,
+                lastY: event.clientY,
+                moved: false,
+              };
+              event.currentTarget.style.cursor = "grabbing";
+            }}
+            onPointerMove={(event) => {
+              updateHoverBlock(event);
+              const drag = dragRef.current;
+              if (!drag || drag.pointerId !== event.pointerId) return;
+              const dx = event.clientX - drag.lastX;
+              const dy = event.clientY - drag.lastY;
+              if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                drag.moved = true;
+                fitModeRef.current = false;
+                if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                }
+              }
+              const rect = event.currentTarget.getBoundingClientRect();
+              const nextPan = {
+                x: Math.max(
+                  -maxPanX,
+                  Math.min(maxPanX, livePanRef.current.x - (dx / rect.width) * width),
+                ),
+                y: Math.max(
+                  -maxPanY,
+                  Math.min(maxPanY, livePanRef.current.y - (dy / rect.height) * height),
+                ),
+              };
+              livePanRef.current = nextPan;
+              applyLivePan(nextPan);
+              schedulePanCommit();
+              drag.lastX = event.clientX;
+              drag.lastY = event.clientY;
+            }}
+            onPointerUp={(event) => {
+              const drag = dragRef.current;
+              if (!drag || drag.pointerId !== event.pointerId) return;
+              suppressClickRef.current = drag.moved;
+              dragRef.current = null;
+              event.currentTarget.style.cursor = "grab";
+              if (drag.moved) schedulePanCommit();
+              event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onPointerCancel={(event) => {
+              dragRef.current = null;
+              event.currentTarget.style.cursor = "grab";
+              schedulePanCommit();
+            }}
+            onPointerLeave={() => {
+              clearHoverBlock();
+            }}
+          >
+            <BlueprintMapGridLayer
               width={width}
               height={height}
+              gridOriginX={gridOriginX}
+              gridOriginY={gridOriginY}
+              cell={cell}
+              showGrid={showGrid}
+              showBackground={!viewportGridEnabled}
+              extendToViewport={viewportGridEnabled}
+              viewportWidth={viewportSize.width || width}
+              viewportHeight={viewportSize.height || defaultViewportHeight}
+            />
+            {showDebugCells ? (
+              <g opacity="0.8" pointerEvents="none" style={mapLayerStyle("debugCells")}>
+                {blueprint.data.flatMap((structure, structureIndex) => {
+                  const prepared = preparedBlueprint.preparedStructures[structureIndex];
+                  const footprint = prepared.footprint;
+                  const shape =
+                    prepared.shape ??
+                    Array.from({ length: footprint.height }, () =>
+                      Array.from({ length: footprint.width }, () => 1),
+                    );
+                  const topY = prepared.topY;
+                  const left = (structure.x - minX + padding) * cell;
+                  const top = (topY - minY + padding) * cell;
+                  return shape.flatMap((row, rowIndex) =>
+                    row.map((value, columnIndex) =>
+                      value === 0 ? null : (
+                        <rect
+                          key={`debug-cell-${structureIndex}-${rowIndex}-${columnIndex}`}
+                          x={left + columnIndex * cell}
+                          y={top + rowIndex * cell}
+                          width={cell}
+                          height={cell}
+                          rx="2"
+                          fill={tileColor(structure.type)}
+                        />
+                      ),
+                    ),
+                  );
+                })}
+              </g>
+            ) : null}
+            <BlueprintMapFoundationOutlineLayer
+              preparedBlueprint={preparedBlueprint}
+              visible={foundationOutlinesVisible}
+              minX={minX}
+              minY={minY}
               padding={padding}
               cell={cell}
             />
-          ) : null}
-          {selected ? (
+            {(() => {
+              const isFoundationShape = ({ index }: (typeof renderStructures)[number]) => {
+                return isFoundationStructure(preparedBlueprint.preparedStructures[index]);
+              };
+              const renderStructure = ({ structure, index }: (typeof renderStructures)[number]) => {
+                return (
+                  <BlueprintMapStructure
+                    key={`structure-${index}`}
+                    item={{ structure, index, z: preparedBlueprint.preparedStructures[index].z }}
+                    preparedBlueprint={preparedBlueprint}
+                    minX={minX}
+                    minY={minY}
+                    padding={padding}
+                    cell={cell}
+                    height={height}
+                    spritesVisible={spritesVisible}
+                    showCustomShapes={showCustomShapes}
+                    showNames={showNames}
+                    suppressClickRef={suppressClickRef}
+                    onSelect={setSelectedIndex}
+                  />
+                );
+              };
+              return (
+                <>
+                  <g style={mapLayerStyle("foundationShapes")}>
+                    {renderStructures.filter(isFoundationShape).map(renderStructure)}
+                  </g>
+                  <g style={mapLayerStyle("sprites")}>
+                    {renderStructures
+                      .filter((item) => !isFoundationShape(item))
+                      .map(renderStructure)}
+                  </g>
+                </>
+              );
+            })()}
+            <BlueprintMapRawStructuresLayer
+              preparedBlueprint={preparedBlueprint}
+              visible={showRawStructures}
+              minX={minX}
+              minY={minY}
+              padding={padding}
+              cell={cell}
+            />
+            <BlueprintMapSignalLinksLayer
+              preparedBlueprint={preparedBlueprint}
+              visible={signalLinksVisible}
+              point={point}
+            />
+            {!viewportGridEnabled ? (
+              <BlueprintMapEdgeFadeLayer
+                width={width}
+                height={height}
+                padding={padding}
+                cell={cell}
+              />
+            ) : null}
+            {selected ? (
+              <rect
+                x={(selected.x - minX + padding) * cell}
+                y={(selected.y - minY + padding) * cell}
+                width={BLOCK_COORDINATE_SIZE * cell}
+                height={BLOCK_COORDINATE_SIZE * cell}
+                fill="none"
+                stroke="#4ade80"
+                strokeWidth={renderPixelScale(cell)}
+                pointerEvents="none"
+                style={mapLayerStyle("selectedHighlight")}
+              />
+            ) : null}
             <rect
-              x={(selected.x - minX + padding) * cell}
-              y={(selected.y - minY + padding) * cell}
+              ref={hoverMarkerRef}
+              x="0"
+              y="0"
               width={BLOCK_COORDINATE_SIZE * cell}
               height={BLOCK_COORDINATE_SIZE * cell}
-              fill="none"
-              stroke="#4ade80"
-              strokeWidth={renderPixelScale(cell)}
+              fill="#ffe700"
+              fillOpacity="0.08"
+              stroke="#ffe700"
+              strokeWidth={renderPixelScale(cell) / 2}
+              visibility="hidden"
               pointerEvents="none"
-              style={mapLayerStyle("selectedHighlight")}
+              style={mapLayerStyle("hoverHighlight")}
             />
-          ) : null}
-          <rect
-            ref={hoverMarkerRef}
-            x="0"
-            y="0"
-            width={BLOCK_COORDINATE_SIZE * cell}
-            height={BLOCK_COORDINATE_SIZE * cell}
-            fill="#ffe700"
-            fillOpacity="0.08"
-            stroke="#ffe700"
-            strokeWidth={renderPixelScale(cell) / 2}
-            visibility="hidden"
-            pointerEvents="none"
-            style={mapLayerStyle("hoverHighlight")}
-          />
-        </svg>
+          </svg>
+        </div>
       </div>
       {showSidebar ? (
         <BlueprintMapSidebar

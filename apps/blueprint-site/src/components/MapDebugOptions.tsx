@@ -12,7 +12,7 @@ import {
   COLLAPSE_TEST_BLUEPRINTS_KEY,
   COLLAPSE_POLICY_TESTER_KEY,
 } from "../utils/storage-keys";
-import { FIT_POLICY_PRESETS } from "../utils/blueprint-fit";
+import { FIT_POLICY_PRESETS, type FitPolicyPreset } from "../utils/blueprint-fit";
 import { Divider, IconButton } from "@sandustry/ui";
 import { BLUEPRINT_VISUAL_FIXTURES } from "../visual-fixtures/catalog";
 
@@ -34,8 +34,8 @@ type MapDebugOptionsProps = {
   resetVersion?: number;
   onReset: () => void;
   onLoadBlueprint: (blueprint: (typeof BLUEPRINT_VISUAL_FIXTURES)[number]["blueprint"]) => void;
-  policySelection?: "legacy" | "default" | "test";
-  onPolicySelectionChange?: (value: "legacy" | "default" | "test") => void;
+  policySelection?: "legacy" | FitPolicyPreset;
+  onPolicySelectionChange?: (value: "legacy" | FitPolicyPreset) => void;
 };
 
 export function MapDebugOptions({
@@ -56,7 +56,7 @@ export function MapDebugOptions({
   resetVersion,
   onReset,
   onLoadBlueprint,
-  policySelection = "test",
+  policySelection = "default",
   onPolicySelectionChange,
 }: MapDebugOptionsProps) {
   const toggles = [
@@ -162,27 +162,22 @@ export function MapDebugOptions({
             className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-300"
             value={policySelection}
             onChange={(event) =>
-              onPolicySelectionChange?.(event.target.value as "legacy" | "default" | "test")
+              onPolicySelectionChange?.(event.target.value as "legacy" | FitPolicyPreset)
             }
           >
             <option value="legacy">legacy fallback</option>
-            <option value="default">default preset</option>
-            <option value="test">viewport grid test</option>
+            {Object.keys(FIT_POLICY_PRESETS).map((preset) => (
+              <option key={preset} value={preset}>
+                {preset} preset
+              </option>
+            ))}
           </select>
         </label>
         <pre className="mt-3 overflow-auto text-[11px] leading-5 text-slate-500">
           {JSON.stringify(
-            policySelection === "default"
-              ? { preset: "default", policy: FIT_POLICY_PRESETS.default }
-              : policySelection === "test"
-                ? {
-                    inherits: "default",
-                    overrides: {
-                      geometry: { padding: 8, margin: 0 },
-                      grid: { extendToViewport: true },
-                    },
-                  }
-                : { mode: "legacy fallback" },
+            policySelection !== "legacy"
+              ? { preset: policySelection, policy: FIT_POLICY_PRESETS[policySelection] }
+              : { mode: "legacy fallback" },
             null,
             2,
           )}
