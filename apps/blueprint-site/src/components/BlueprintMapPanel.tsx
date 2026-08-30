@@ -39,7 +39,7 @@ export function BlueprintMapPanel({
   onLoadBlueprint,
 }: BlueprintMapPanelProps) {
   const [useLegacyFit, setUseLegacyFit] = useState(false);
-  const [policySelection, setPolicySelection] = useState<PolicyTesterSelection>("test");
+  const [policySelection, setPolicySelection] = useState<PolicyTesterSelection>("default");
   const testFitPolicy = {
     ...FIT_POLICY_PRESETS.default,
     geometry: { padding: 8, margin: 0 },
@@ -99,7 +99,7 @@ export function BlueprintMapPanel({
           showPngBackground={showPngBackground}
           onLoadBlueprint={onLoadBlueprint}
           fitPolicy={
-            import.meta.env.DEV && !useLegacyFit
+            !useLegacyFit
               ? policySelection === "default"
                 ? FIT_POLICY_PRESETS.default
                 : policySelection === "test"
