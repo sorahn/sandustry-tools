@@ -62,6 +62,7 @@ export const BlueprintMapStructure = memo(function BlueprintMapStructure({
   const tileHeight = footprint.height * cell;
   const assetEntry = isCustomShape && !entry?.renderAsset ? catalogEntry(11) : entry;
   const isUnknown = entry === undefined;
+  const showUnknownPlaceholder = isUnknown && !isCustomShape && spritesVisible;
   const unknownBorderInset = 1;
   const unknownBorderWidth = 1;
   const labelX = left + tileWidth / 2;
@@ -95,7 +96,7 @@ export const BlueprintMapStructure = memo(function BlueprintMapStructure({
       className="blueprint-map__structure cursor-pointer"
       data-render-image={entry ? catalogRender(entry)?.imageName : undefined}
     >
-      {isUnknown && spritesVisible ? (
+      {showUnknownPlaceholder ? (
         <rect
           x={left}
           y={top}
@@ -108,28 +109,28 @@ export const BlueprintMapStructure = memo(function BlueprintMapStructure({
         />
       ) : null}
       <rect
-        x={left + (isUnknown ? unknownBorderInset : 0)}
-        y={top + (isUnknown ? unknownBorderInset : 0)}
-        width={tileWidth - (isUnknown ? unknownBorderInset * 2 : 0)}
-        height={tileHeight - (isUnknown ? unknownBorderInset * 2 : 0)}
-        rx={isUnknown ? "0" : "5"}
+        x={left + (showUnknownPlaceholder ? unknownBorderInset : 0)}
+        y={top + (showUnknownPlaceholder ? unknownBorderInset : 0)}
+        width={tileWidth - (showUnknownPlaceholder ? unknownBorderInset * 2 : 0)}
+        height={tileHeight - (showUnknownPlaceholder ? unknownBorderInset * 2 : 0)}
+        rx={showUnknownPlaceholder ? "0" : "5"}
         fill={
-          !spritesVisible || isUnknown || isCustomShape || entry?.renderAsset
+          !spritesVisible || showUnknownPlaceholder || isCustomShape || entry?.renderAsset
             ? "transparent"
             : tileColor(structure.type)
         }
         stroke={
           !spritesVisible || isCustomShape || entry?.renderAsset
             ? "none"
-            : isUnknown
+            : showUnknownPlaceholder
               ? "#f0b429"
               : "#8491a3"
         }
-        strokeWidth={isUnknown ? String(unknownBorderWidth) : "1.5"}
-        strokeDasharray={isUnknown ? "4 3" : undefined}
-        shapeRendering={isUnknown ? "crispEdges" : undefined}
+        strokeWidth={showUnknownPlaceholder ? String(unknownBorderWidth) : "1.5"}
+        strokeDasharray={showUnknownPlaceholder ? "4 3" : undefined}
+        shapeRendering={showUnknownPlaceholder ? "crispEdges" : undefined}
       />
-      {isUnknown && spritesVisible ? (
+      {showUnknownPlaceholder ? (
         <path
           d={`M ${left + cell} ${top + cell} L ${left + tileWidth - cell} ${top + tileHeight - cell} M ${left + tileWidth - cell} ${top + cell} L ${left + cell} ${top + tileHeight - cell}`}
           stroke="#f0b429"
