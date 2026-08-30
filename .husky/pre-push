@@ -1,5 +1,6 @@
-npm run check
-npm run test:all
+npm run tsc
+npm run tsc:tests
+npm run lint
+npm test -- --exclude=packages/sandustry-blueprint-core
 npm --workspace @daryl.roberts/sandustry-blueprint-core run build
-BLUEPRINT_CORE_TEST_DIST=1 npm run check
-BLUEPRINT_CORE_TEST_DIST=1 npm run test:all
+BLUEPRINT_CORE_TEST_DIST=1 npm test -- --only=packages/sandustry-blueprint-core

@@ -79,11 +79,12 @@ The installed-mod directory may contain a competing or stale copy and should
 not be used as the dev-mode handoff path.
 
 Each package or app with tests owns a `test` script that runs its Bun tests.
-The root `test` script runs only root-level tests, while `test:all` explicitly
-runs the root test and every test-bearing workspace test command. Keep
-`test:all` up to date whenever a new package, app, or other test-bearing
-project is added; focused test aliases should not be added to package manifests
-just for convenience.
+The root `test` script runs every test-bearing project by default. It accepts
+comma-separated `--only` and `--exclude` project paths, or the equivalent
+`TEST_ONLY` and `TEST_EXCLUDE` environment variables. Keep the test project list
+up to date whenever a new package, app, or other test-bearing project is added;
+focused test aliases should not be added to package manifests just for
+convenience.
 
 The repository toolchain is pinned in `package.json` and `package-lock.json`.
 TypeScript 7 and TSX support are configured with the Sandustry JSX factory, and
@@ -375,7 +376,8 @@ requires explicit user approval for the intentional behavior change; record
 which fixtures changed and verify the resulting images afterward.
 
 Visual fixture helpers use blueprint-core source during ordinary test runs. The
-pre-push hook builds the publishable core package first and runs checks with
+pre-push hook runs the static checks, then non-core workspace tests, builds the
+publishable core package, and runs only the core tests with
 `BLUEPRINT_CORE_TEST_DIST=1`, so the generated package entrypoint is tested
 before pushing.
 
