@@ -1,5 +1,5 @@
 {
-  "ignorePatterns": ["resources/sandkit-surface-map/**"],
+  "ignorePatterns": [],
   "overrides": [
     {
       "files": ["**/bundle*.js", "**/build/**/*.js"],

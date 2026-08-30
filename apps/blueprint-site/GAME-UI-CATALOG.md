@@ -9,8 +9,6 @@ the game's private React implementation.
 - **DOM** — directly visible in `resources/filter-html.html`.
 - **Bundle** — component names, labels, Tailwind class strings, or interaction
   hooks found in a captured or freshly extracted Sandustry renderer bundle.
-- **Surface map** — API/documentation evidence in
-  `resources/sandkit-surface-map/` and the repository's exploration notes.
 - **Inferred** — a reusable component hypothesis based on the evidence above;
   it needs a future DOM capture before being treated as visually authoritative.
 
@@ -43,7 +41,7 @@ implementation.
 | -------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------ |
 | Main menu shell            | Bundle                   | Top-level application/menu surface surrounding save, settings, workshop, and start-game actions. |
 | Top navigation/header      | Bundle                   | Global menu and status area; exact DOM still needed.                                             |
-| Sidebar/index navigation   | Bundle, Surface map site | Grouped navigation for tool/reference pages; likely useful for the blueprint site.               |
+| Sidebar/index navigation   | Bundle                   | Grouped navigation for tool/reference pages; likely useful for the blueprint site.               |
 | Tab bar                    | Bundle, settings guide   | Settings are grouped into `general`, `video`, `audio`, `controls`, and conditional `mods` tabs.  |
 | Selected tab               | Bundle                   | Tab state likely uses active text/border/accent and `aria-selected`.                             |
 | Category selector          | Bundle                   | Build/inventory category navigation, including `By Category` and structure categories.           |
@@ -85,10 +83,10 @@ implementation.
 | Full-screen diagnostic modal    | Bundle              | Debug panel uses a fixed `inset-0` backdrop and large scrollable content area.                           |
 | Drawer/popout                   | Inferred            | Side or anchored detail surface; game has several absolute popover patterns but no confirmed drawer DOM. |
 | Anchored popover                | Bundle              | Absolute black panel with border, shadow, and high z-index near a control.                               |
-| Tooltip                         | Bundle, Surface map | Hover/interaction detail for structures, elements, shortcuts, and controls.                              |
+| Tooltip                         | Bundle              | Hover/interaction detail for structures, elements, shortcuts, and controls.                              |
 | Structure tooltip               | Bundle              | Specialized tooltip with filter/building/structure information.                                          |
 | Element tooltip                 | Bundle, Inferred    | Element name, description, properties, and interactions.                                                 |
-| Toast notification              | Bundle, Surface map | Short-lived success/error/info message through the UI toast surface.                                     |
+| Toast notification              | Bundle              | Short-lived success/error/info message through the UI toast surface.                                     |
 | Notification stack              | Bundle              | Multiple notifications with delay/dismiss state.                                                         |
 | Banner/attention notice         | Bundle              | Persistent or semi-persistent warning such as element limits or upload status.                           |
 | Loading overlay                 | Bundle              | Full-screen or panel-level loading state with text, steps, and cancellation.                             |
@@ -238,8 +236,6 @@ The highest-value captures would be:
   strings, Tailwind class names, overlay names, and interaction identifiers.
 - `resources/sandustry-mod-settings-guide.md` — settings tab and schema
   behavior inferred from the bundle.
-- `resources/sandkit-surface-map/` — exposed UI/overlay/toast/tooltip surface
-  and limitations.
 - `resources/v1/debug-info/` — debug settings and developer-tool context.
 - `resources/custom-maps.md` — map-related manifest and file concepts.
 

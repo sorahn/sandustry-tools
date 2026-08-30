@@ -1,3 +1,5 @@
+import { isFitPolicySelection, type FitPolicySelection } from "../utils/blueprint-fit";
+
 export const BLUEPRINT_RENDERER_NAMESPACE = "sandustry:blueprint-renderer" as const;
 export const BLUEPRINT_RENDERER_PROTOCOL_VERSION = 1 as const;
 
@@ -6,6 +8,7 @@ export type RendererRequest = {
   type: "set-blueprint";
   requestId: string;
   blueprint: string;
+  fitPolicy?: FitPolicySelection;
 };
 
 export type RendererInspectorOptionsRequest = {
@@ -49,7 +52,8 @@ export function isRendererRequest(value: unknown): value is RendererRequest {
     request.type === "set-blueprint" &&
     typeof request.requestId === "string" &&
     REQUEST_ID_PATTERN.test(request.requestId) &&
-    typeof request.blueprint === "string"
+    typeof request.blueprint === "string" &&
+    (request.fitPolicy === undefined || isFitPolicySelection(request.fitPolicy))
   );
 }
 

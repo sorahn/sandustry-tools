@@ -50,6 +50,7 @@ import {
   SHOW_SPRITES_KEY,
 } from "../utils/storage-keys";
 import { createBrowserPngPlatform, createImageResolver } from "../utils/png-platform";
+import { solveInitialFit, type FitPolicy } from "../utils/blueprint-fit";
 
 const MAP_FIT_ZOOM_MIN = 0.25;
 const MAP_FIT_ZOOM_MAX = 2;
@@ -168,6 +169,7 @@ export function BlueprintMap({
   onLoadBlueprint,
   captureOnly,
   showDebugOptions = true,
+  fitPolicy,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -178,6 +180,7 @@ export function BlueprintMap({
   onLoadBlueprint: (blueprint: Blueprint) => void;
   captureOnly?: boolean;
   showDebugOptions?: boolean;
+  fitPolicy?: FitPolicy;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showDebugCells, setShowDebugCells] = useState(false);
@@ -258,32 +261,63 @@ export function BlueprintMap({
     useBlueprintMapViewport({ cell, minX, minY, padding });
   const viewportWidth = viewportSize.width || width;
   const defaultViewportHeight = viewportHeightForWidth(viewportWidth);
-  const fitWidth = width + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
-  const fitHeight = height + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
-  const blueprintFitsDefaultViewport =
-    fitWidth <= viewportWidth && fitHeight <= defaultViewportHeight;
-  const fitZoomForViewport = (
+  const legacyFitWidth = width + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
+  const legacyFitHeight = height + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
+  const legacyBlueprintFitsDefaultViewport =
+    legacyFitWidth <= viewportWidth && legacyFitHeight <= defaultViewportHeight;
+  const legacyFitZoomForViewport = (
     availableWidth: number,
     availableHeight = Number.POSITIVE_INFINITY,
     maxFitZoom = MAP_FIT_ZOOM_MAX,
   ) => {
-    const maxZoom = Math.min(maxFitZoom, availableWidth / fitWidth, availableHeight / fitHeight);
+    const maxZoom = Math.min(
+      maxFitZoom,
+      availableWidth / legacyFitWidth,
+      availableHeight / legacyFitHeight,
+    );
     return (
       MAP_ZOOM_LEVELS.filter(
         (level) => level >= MAP_FIT_ZOOM_MIN && level <= maxZoom,
       ).reverse()[0] ?? MAP_FIT_ZOOM_MIN
     );
   };
-  const measuredFitZoom = blueprintFitsDefaultViewport
-    ? fitZoomForViewport(viewportWidth, defaultViewportHeight)
-    : fitZoomForViewport(viewportWidth, Number.POSITIVE_INFINITY, 1);
-  const horizontalCanvasGap = Math.max(0, (viewportWidth - width * measuredFitZoom) / 2);
-  const aspectRatioViewportHeight = blueprintFitsDefaultViewport
+  const legacyMeasuredFitZoom = legacyBlueprintFitsDefaultViewport
+    ? legacyFitZoomForViewport(viewportWidth, defaultViewportHeight)
+    : legacyFitZoomForViewport(viewportWidth, Number.POSITIVE_INFINITY, 1);
+  const legacyHorizontalCanvasGap = Math.max(
+    0,
+    (viewportWidth - width * legacyMeasuredFitZoom) / 2,
+  );
+  const legacyAspectRatioViewportHeight = legacyBlueprintFitsDefaultViewport
     ? defaultViewportHeight
     : Math.max(
         defaultViewportHeight,
-        height * measuredFitZoom + horizontalCanvasGap * 2 + MAP_VIEWPORT_BORDER_SIZE,
+        height * legacyMeasuredFitZoom + legacyHorizontalCanvasGap * 2 + MAP_VIEWPORT_BORDER_SIZE,
       );
+  const measuredFitZoom = fitPolicy
+    ? snapMapZoom(
+        solveInitialFit(
+          {
+            contentWidth: width,
+            contentHeight: height,
+            viewportWidth,
+            viewportHeight: defaultViewportHeight,
+          },
+          fitPolicy,
+        ).zoom,
+      )
+    : legacyMeasuredFitZoom;
+  const aspectRatioViewportHeight = fitPolicy
+    ? solveInitialFit(
+        {
+          contentWidth: width,
+          contentHeight: height,
+          viewportWidth,
+          viewportHeight: defaultViewportHeight,
+        },
+        fitPolicy,
+      ).viewportHeight
+    : legacyAspectRatioViewportHeight;
   const maxPanX = Math.max(0, (width * zoom - (viewportSize.width || width)) / (2 * zoom));
   const maxPanY = Math.max(0, (height * zoom - (viewportSize.height || height)) / (2 * zoom));
   const applyLivePan = (nextPan: { x: number; y: number }) => {
@@ -360,12 +394,24 @@ export function BlueprintMap({
     fitModeRef.current = true;
     const availableWidth = viewportRef.current?.clientWidth || viewportSize.width;
     setZoom(
-      blueprintFitsDefaultViewport
-        ? fitZoomForViewport(
-            availableWidth || width,
-            viewportRef.current?.clientHeight || defaultViewportHeight,
+      fitPolicy
+        ? snapMapZoom(
+            solveInitialFit(
+              {
+                contentWidth: width,
+                contentHeight: height,
+                viewportWidth: availableWidth || width,
+                viewportHeight: viewportRef.current?.clientHeight || defaultViewportHeight,
+              },
+              fitPolicy,
+            ).zoom,
           )
-        : fitZoomForViewport(availableWidth || width, Number.POSITIVE_INFINITY, 1),
+        : legacyBlueprintFitsDefaultViewport
+          ? legacyFitZoomForViewport(
+              availableWidth || width,
+              viewportRef.current?.clientHeight || defaultViewportHeight,
+            )
+          : legacyFitZoomForViewport(availableWidth || width, Number.POSITIVE_INFINITY, 1),
     );
     setPan({ x: 0, y: 0 });
   };
@@ -381,7 +427,15 @@ export function BlueprintMap({
     }
     fitToViewport();
     setMapSizeReady(true);
-  }, [blueprintKey, captureOnly, remember, viewportSize.height, viewportSize.width, width]);
+  }, [
+    blueprintKey,
+    captureOnly,
+    fitPolicy,
+    remember,
+    viewportSize.height,
+    viewportSize.width,
+    width,
+  ]);
   useEffect(() => {
     if (!remember || !blueprintKey || !mapSizeReady) return;
     writeStorageValue(

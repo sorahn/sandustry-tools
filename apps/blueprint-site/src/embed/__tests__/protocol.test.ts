@@ -8,6 +8,7 @@ import {
   rendererResizeEvent,
   rendererReadyEvent,
 } from "../protocol";
+import { FIT_POLICY_PRESETS } from "../../utils/blueprint-fit";
 
 describe("blueprint renderer embed protocol", () => {
   test("accepts only well-formed renderer requests", () => {
@@ -17,6 +18,7 @@ describe("blueprint renderer embed protocol", () => {
         type: "set-blueprint",
         requestId: "paste-1",
         blueprint: "SAND:BP:v2:fixture",
+        fitPolicy: { preset: "default" },
       }),
     ).toBe(true);
     expect(
@@ -28,6 +30,16 @@ describe("blueprint renderer embed protocol", () => {
       }),
     ).toBe(false);
     expect(isRendererRequest(null)).toBe(false);
+    expect(FIT_POLICY_PRESETS.default).toBeDefined();
+    expect(
+      isRendererRequest({
+        namespace: BLUEPRINT_RENDERER_NAMESPACE,
+        type: "set-blueprint",
+        requestId: "paste-1",
+        blueprint: "SAND:BP:v2:fixture",
+        fitPolicy: { zoom: { levels: [] } },
+      }),
+    ).toBe(false);
   });
 
   test("matches exact configured origins", () => {

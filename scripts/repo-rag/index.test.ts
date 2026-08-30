@@ -27,7 +27,6 @@ test("official HTML extraction keeps anchors, signatures, and examples", () => {
 
 test("corpus manifest includes the Sandustry research sources", () => {
   const sourceIds = config.sources.map((source: { id: string }) => source.id);
-  expect(sourceIds).toContain("sandkit-surface-map");
   expect(sourceIds).toContain("sandustry-api-reference-material");
   expect(sourceIds).toContain("local-sandustry-types");
   expect(sourceIds).toContain("project-docs");

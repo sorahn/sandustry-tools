@@ -206,6 +206,3 @@ content colors.
   Caulk and Auralite). Those are material variants rather than one catalog
   color and should become a separate variant table if exact sprite rendering
   is needed.
-- The `resources/sandkit-surface-map/data/gameconfig.json` capture confirms
-  runtime color-related settings such as `debug.defaultBaseHue` and flashlight
-  color, but its redacted values do not provide additional usable hex colors.

@@ -16,14 +16,12 @@ repository reference bundles; those may differ from the bytes consumed by the
 patch loader. Validate the expected match against the extracted minified file
 before shipping or runtime testing a patch.
 
-## Sandkit surface-map reference
+## Sandustry runtime reference
 
-`resources/sandkit-surface-map/` is a high-value reference when investigating
-the Sandustry runtime API, engine state, namespaces, and captured behavior.
-Check it before inferring new `sandkit` or `SandustryApi` types. It contains
-runtime surface captures and reverse-engineering notes, so use it to guide
-investigation and type declarations while keeping unstable private engine
-internals local to the diagnostic code that needs them.
+`resources/SandustryModTemplate/` is the repository's reference for Sandustry
+runtime API usage, extraction, and mod tooling. Check its docs and extracted
+game sources before inferring new `sandkit` or `SandustryApi` types. Keep
+unstable private engine internals local to the diagnostic code that needs them.
 
 ## First-party bundled mod compatibility
 

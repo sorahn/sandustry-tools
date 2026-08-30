@@ -32,22 +32,9 @@
       "include": ["README.md", "AGENTS.md", "*.md", "planning/**/*.md"]
     },
     {
-      "id": "sandkit-surface-map",
-      "authority": "observed-runtime-capture",
-      "include": [
-        "resources/sandkit-surface-map/README*.md",
-        "resources/sandkit-surface-map/MAP*.md",
-        "resources/sandkit-surface-map/content/*.js",
-        "resources/sandkit-surface-map/data/*.json"
-      ],
-      "exclude": ["resources/sandkit-surface-map/work/**", "resources/sandkit-surface-map/docs/**"]
-    },
-    {
       "id": "sandustry-api-reference-material",
       "authority": "repository-reference",
       "include": [
-        "resources/sandustry-modding-types/src/**/*.d.ts",
-        "resources/sandustry-modding-types/docs/**/*.md",
         "resources/v1/**/*.js",
         "resources/v1/**/*.json",
         "resources/v1/**/*.md",
@@ -62,8 +49,7 @@
         "resources/**/*.webp",
         "resources/**/*.save",
         "resources/**/*.zip",
-        "resources/bundle*.js",
-        "resources/sandkit-surface-map/work/**"
+        "resources/bundle*.js"
       ]
     },
     {

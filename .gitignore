@@ -10,5 +10,4 @@ node_modules/
 .openai/
 .repo-rag/
 resources/*
-!resources/sandkit-surface-map/
 *-PLAN.md

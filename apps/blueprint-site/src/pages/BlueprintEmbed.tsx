@@ -12,6 +12,7 @@ import {
   rendererResizeEvent,
   rendererReadyEvent,
 } from "../embed/protocol";
+import { resolveFitPolicy, type FitPolicy, type FitPolicySelection } from "../utils/blueprint-fit";
 
 const MAX_PREVIEW_BLUEPRINT_LENGTH = 200_000;
 
@@ -31,6 +32,7 @@ function BlueprintInspectorEmbed() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [showPngBackground, setShowPngBackground] = useState(false);
+  const [fitPolicy, setFitPolicy] = useState<FitPolicy | undefined>();
 
   useEffect(() => {
     if (window.parent === window || typeof ResizeObserver === "undefined") return;
@@ -85,6 +87,11 @@ function BlueprintInspectorEmbed() {
       }
       if (!isRendererRequest(event.data)) return;
       const { requestId, blueprint: encoded } = event.data;
+      setFitPolicy(
+        event.data.fitPolicy === undefined
+          ? undefined
+          : resolveFitPolicy(event.data.fitPolicy as FitPolicySelection),
+      );
       const isLegacyV1 = encoded.startsWith("SAND:BP:v1:") || encoded.startsWith("SAND:BACKUP:v1:");
       if (isLegacyV1) {
         setBlueprint(null);
@@ -143,6 +150,7 @@ function BlueprintInspectorEmbed() {
           showPngBackground={showPngBackground}
           onLoadBlueprint={setBlueprint}
           showDebugOptions={false}
+          fitPolicy={fitPolicy}
         />
       ) : (
         <p role="status">{status}</p>
