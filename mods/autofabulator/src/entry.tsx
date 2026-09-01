@@ -20,17 +20,19 @@ let previousCursorStyle: unknown = null;
 let marqueeCursorActive = false;
 
 type OccupiedBlock = boolean[][];
+type PaintMode = "prefab" | "solidite" | "erase";
 type PainterEditorState = {
   originX: number;
   originY: number;
   painted: boolean[][][][];
+  solidite: boolean[][][][];
   occupied: OccupiedBlock[][];
 };
 
 let editorState: PainterEditorState | null = null;
 let editorRepaint: ((update: (value: number) => number) => void) | null = null;
 let editorDispose: (() => void) | null = null;
-let activePaintMode: boolean | null = null;
+let activePaintMode: PaintMode | null = null;
 let nativePickerKeyActive = false;
 let activePaintPointerId: number | null = null;
 let activePaintCanvas: HTMLElement | null = null;
@@ -79,7 +81,7 @@ function stopPaintingGesture(): void {
 }
 
 function startNativeRightMouseWatch(): void {
-  if (activePaintMode !== false || nativeRightWatchOwned) return;
+  if (activePaintMode !== "erase" || nativeRightWatchOwned) return;
   const bridge = macRightMouseBridge();
   if (typeof bridge?.watch !== "function" || typeof bridge.onUp !== "function") return;
   nativeRightWatchOwned = true;
@@ -335,6 +337,7 @@ function openEditor(cursor = api.input.getMouseCellPosition()): void {
     originX,
     originY,
     painted: emptyPaintedGrid(),
+    solidite: emptyPaintedGrid(),
     occupied: readOccupiedBlocks(originX, originY),
   };
   restoreCursor();
@@ -373,11 +376,20 @@ function paintEditorCell(
   blockY: number,
   cellX: number,
   cellY: number,
-  painted: boolean,
+  mode: PaintMode,
 ): void {
   if (!editorState) return;
   if (editorState.occupied[blockY][blockX][cellY][cellX]) return;
-  editorState.painted[blockY][blockX][cellY][cellX] = painted;
+  if (mode === "prefab") {
+    editorState.painted[blockY][blockX][cellY][cellX] = true;
+    editorState.solidite[blockY][blockX][cellY][cellX] = false;
+  } else if (mode === "solidite") {
+    editorState.painted[blockY][blockX][cellY][cellX] = false;
+    editorState.solidite[blockY][blockX][cellY][cellX] = true;
+  } else {
+    editorState.painted[blockY][blockX][cellY][cellX] = false;
+    editorState.solidite[blockY][blockX][cellY][cellX] = false;
+  }
   refreshEditor();
 }
 
@@ -393,7 +405,7 @@ function paintEditorCellElement(cell: HTMLElement): void {
   if (coordinates.some((value) => !Number.isInteger(value))) return;
   const [blockX, blockY, cellX, cellY] = coordinates;
   activePaintLastCell = key;
-  paintEditorCell(blockX, blockY, cellX, cellY, activePaintMode === true);
+  if (activePaintMode) paintEditorCell(blockX, blockY, cellX, cellY, activePaintMode);
 }
 
 function paintEditorCellAtClientPoint(clientX: number, clientY: number): void {
@@ -404,6 +416,7 @@ function paintEditorCellAtClientPoint(clientX: number, clientY: number): void {
 function clearEditor(): void {
   if (!editorState) return;
   editorState.painted = emptyPaintedGrid();
+  editorState.solidite = emptyPaintedGrid();
   refreshEditor();
 }
 
@@ -472,35 +485,47 @@ function applyPrefabPattern(): void {
     data: Record<string, unknown>;
     merged: boolean;
   }> = [];
+  const soliditePlacements: Array<{ x: number; y: number }> = [];
   for (let blockY = 0; blockY < GRID_SIZE; blockY += 1) {
     for (let blockX = 0; blockX < GRID_SIZE; blockX += 1) {
       const painted = editorState.painted[blockY][blockX];
-      if (!painted.flat().some(Boolean)) continue;
       const x = editorState.originX + blockX * CELLS_PER_BLOCK;
       const y = editorState.originY + blockY * CELLS_PER_BLOCK;
-      const existingCellIds = mergeWithExistingPrefab(x, y, painted);
-      const cellIds =
-        existingCellIds ?? painted.map((row) => row.map((cell) => (cell ? PREFAB_CELL_ID : 0)));
-      placements.push({
-        x,
-        y,
-        data: {
-          __prefabulatorBlueprint: {
-            definition: {
-              shape: cellIds.map((row) => row.map((cellId) => (cellId ? 1 : 0))),
-              cellIds,
+      const solidite = editorState.solidite[blockY][blockX];
+      for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+        for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+          if (solidite[cellY][cellX]) soliditePlacements.push({ x: x + cellX, y: y + cellY });
+        }
+      }
+      if (painted.flat().some(Boolean)) {
+        const existingCellIds = mergeWithExistingPrefab(x, y, painted);
+        const cellIds =
+          existingCellIds ?? painted.map((row) => row.map((cell) => (cell ? PREFAB_CELL_ID : 0)));
+        placements.push({
+          x,
+          y,
+          data: {
+            __prefabulatorBlueprint: {
+              definition: {
+                shape: cellIds.map((row) => row.map((cellId) => (cellId ? 1 : 0))),
+                cellIds,
+              },
             },
           },
-        },
-        merged: existingCellIds !== null,
-      });
+          merged: existingCellIds !== null,
+        });
+      }
     }
   }
-  if (!placements.length) {
+  if (!placements.length && !soliditePlacements.length) {
     api.ui.toast("Paint at least one cell before applying.");
     return;
   }
-  if (typeof api.structures?.buildAtCell !== "function") {
+  if (
+    placements.length &&
+    (typeof api.structures?.buildAtCell !== "function" ||
+      typeof api.blueprints?.localizeStructures !== "function")
+  ) {
     api.ui.toast("Autofabulator placement is unavailable.");
     return;
   }
@@ -516,8 +541,40 @@ function applyPrefabPattern(): void {
         } as SandustryBlueprintRecord,
       ]);
       const localizedType = localized[0]?.type;
-      if (localizedType === undefined) continue;
-      api.structures.buildAtCell(placement.x, placement.y, localizedType);
+      if (typeof localizedType !== "string") continue;
+      const cellIds = (
+        placement.data.__prefabulatorBlueprint as { definition?: { cellIds?: number[][] } }
+      ).definition?.cellIds;
+      if (!cellIds) continue;
+      api.structures.register({
+        id: localizedType,
+        blockGridType: "prefabTerrain",
+        nameKey: "mods|autofabulator|name",
+        descriptionKey: "mods|autofabulator|description",
+        shape: cellIds.map((row) => row.map((cellId) => (cellId ? 1 : 0))),
+        buildModes: [{ type: "single" }],
+        rejectWhenBlocked: true,
+        alwaysUnlocked: true,
+        variants: [{ id: localizedType, angles: [0] }],
+        render: { imageName: "block", size: { width: 16, height: 16 } },
+      });
+      api.player.buildings.unlockByType(localizedType);
+      api.structures.buildAtCell(placement.x, placement.y, localizedType, {
+        data: placement.data,
+        bypassPlacementChecks: true,
+      });
+      if (cellIds && typeof api.terrains?.createAtCellWhenIdle === "function") {
+        for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+          for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+            if (
+              cellIds[cellY]?.[cellX] &&
+              api.world.isCellEmptyAtCell(placement.x + cellX, placement.y + cellY)
+            ) {
+              api.terrains.createAtCellWhenIdle(placement.x + cellX, placement.y + cellY, "Block");
+            }
+          }
+        }
+      }
       const setData = () => {
         const structure = api.structures.getAtCell?.(placement.x, placement.y);
         if (structure && typeof api.structures.setData === "function") {
@@ -527,9 +584,28 @@ function applyPrefabPattern(): void {
       if (placement.merged) api.world.runWhenSimulationIdle(setData);
       else setData();
     }
+    if (soliditePlacements.length && typeof api.terrains?.createAtCellWhenIdle === "function") {
+      for (const target of soliditePlacements) {
+        if (api.world.isCellEmptyAtCell(target.x, target.y)) {
+          api.terrains.createAtCellWhenIdle(target.x, target.y, "solidite");
+        }
+      }
+    }
   };
   place();
   closeEditor();
+}
+
+function registerIntegrationApplyHook(): void {
+  if (!(globalThis as Record<string, unknown>).__sandustryTestHost) return;
+  const globals = globalThis as Record<string, unknown>;
+  globals.__autofabulatorApply = (state: PainterEditorState) => {
+    editorState = state;
+    applyPrefabPattern();
+  };
+  onDispose(() => {
+    delete globals.__autofabulatorApply;
+  });
 }
 
 function AutofabulatorEditor() {
@@ -543,7 +619,7 @@ function AutofabulatorEditor() {
   }, []);
   UIReact.useEffect(() => {
     const stopPaintingFromMouse = (event: MouseEvent) => {
-      if (activePaintMode === false && !event.isTrusted) return;
+      if (activePaintMode === "erase" && !event.isTrusted) return;
       stopPaintingGesture();
     };
     const stopPainting = () => stopPaintingGesture();
@@ -551,10 +627,10 @@ function AutofabulatorEditor() {
     if (!nativeRightListenersRegistered && bridge) {
       nativeRightListenersRegistered = true;
       bridge.onPos?.((x, y) => {
-        if (activePaintMode === false) paintEditorCellAtClientPoint(x, y);
+        if (activePaintMode === "erase") paintEditorCellAtClientPoint(x, y);
       });
       bridge.onUp?.(() => {
-        if (activePaintMode === false) stopPaintingGesture();
+        if (activePaintMode === "erase") stopPaintingGesture();
       });
     }
     window.addEventListener("mouseup", stopPaintingFromMouse, true);
@@ -632,22 +708,23 @@ function AutofabulatorEditor() {
         </div>
         <div style={{ padding: "12px 16px 14px" }}>
           <div style={{ color: "#aeb5c0", fontSize: 11, marginBottom: 10 }}>
-            5×5 Blueprint Blocks · left-click paint · right-click erase
+            5×5 Blueprint Blocks · left-click prefab · middle-click Solidite · right-click erase
           </div>
           <div
             data-autofab-canvas
             onPointerDown={(event: any) => {
-              if (event.button !== 0 && event.button !== 2) return;
+              if (event.button !== 0 && event.button !== 1 && event.button !== 2) return;
               const cell = cellAtClientPoint(event.clientX, event.clientY);
               if (!cell) return;
               event.preventDefault();
               event.stopPropagation();
-              activePaintMode = event.button === 0;
+              activePaintMode =
+                event.button === 0 ? "prefab" : event.button === 1 ? "solidite" : "erase";
               activePaintPointerId = event.pointerId;
               activePaintCanvas = event.currentTarget;
               activePaintLastCell = null;
               event.currentTarget.setPointerCapture?.(event.pointerId);
-              if (activePaintMode === false) startNativeRightMouseWatch();
+              if (activePaintMode === "erase") startNativeRightMouseWatch();
               paintEditorCellElement(cell);
             }}
             onPointerMove={(event: any) => {
@@ -661,7 +738,7 @@ function AutofabulatorEditor() {
             onPointerUp={(event: any) => stopPointerPainting(event.nativeEvent)}
             onPointerCancel={(event: any) => stopPointerPainting(event.nativeEvent)}
             onLostPointerCapture={(event: any) => {
-              if (activePaintMode === false && nativeRightWatchOwned) return;
+              if (activePaintMode === "erase" && nativeRightWatchOwned) return;
               stopPointerPainting(event.nativeEvent);
             }}
             onContextMenu={(event: any) => {
@@ -720,7 +797,9 @@ function AutofabulatorEditor() {
                                 ? "#b7bec8"
                                 : paintedBlock[cellY][cellX]
                                   ? "#dea61f"
-                                  : "transparent",
+                                  : current.solidite[blockY][blockX][cellY][cellX]
+                                    ? "#d47735"
+                                    : "transparent",
                               border: "1px solid rgba(130, 140, 150, 0.2)",
                               cursor: "crosshair",
                             }}
@@ -781,6 +860,7 @@ function AutofabulatorEditor() {
 
 function registerAutofabulator(): void {
   registerClickInterceptor();
+  registerIntegrationApplyHook();
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.code === "KeyF") nativePickerKeyActive = true;

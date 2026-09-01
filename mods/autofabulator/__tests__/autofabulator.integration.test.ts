@@ -35,7 +35,7 @@ async function dispatchMouseEvent(
   type: "mouseMoved" | "mousePressed" | "mouseReleased",
   x: number,
   y: number,
-  button: "none" | "left" | "right" = "none",
+  button: "none" | "left" | "middle" | "right" = "none",
   buttons = 0,
 ): Promise<void> {
   await browserCdp.sendQueued("Input.dispatchMouseEvent", {
@@ -457,8 +457,9 @@ test("Autofabulator middle-click paints a Solidite cell", async () => {
   await game.resumeSimulation();
 
   const origin = { x: 2900, y: 2000 };
-  await game.evaluate(({ x, y }) => {
+  await game.evaluate(async ({ x, y }) => {
     sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }, origin);
 
   const clickPoint = await game.evaluate(({ x, y }) => {
@@ -487,7 +488,7 @@ test("Autofabulator middle-click paints a Solidite cell", async () => {
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   });
   await dispatchMouseEvent("mouseMoved", cell.x, cell.y);
-  await dispatchMouseEvent("mousePressed", cell.x, cell.y, "none", 4);
+  await dispatchMouseEvent("mousePressed", cell.x, cell.y, "middle", 4);
 
   const background = await game.evaluate(() => {
     const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 3, 3"]');
@@ -498,62 +499,90 @@ test("Autofabulator middle-click paints a Solidite cell", async () => {
   }
 });
 
-test("Autofabulator can build a mixed prefab cell definition", async () => {
+test("Autofabulator Apply path places an sspp block in the world", async () => {
   await dispatchKey("Escape");
   await game.resumeSimulation();
 
-  const origin = { x: 3000, y: 2100 };
-  const result = await game.evaluate(({ x, y }) => {
-    const cellIds = [
-      [31, 15, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ];
-    const localized = sandkit.api.blueprints.localizeStructures([
-      {
-        type: "prefabTerrain_5",
-        x: 0,
-        y: 0,
-        color: "#ffffff",
-        data: {
-          __prefabulatorBlueprint: {
-            definition: {
-              shape: cellIds.map((row) => row.map((cell) => (cell ? 1 : 0))),
-              cellIds,
-            },
-          },
-        },
-      },
-    ]);
-    const type = localized[0]?.type;
-    if (type === undefined) throw new Error("Could not localize the mixed prefab fixture");
-    sandkit.api.structures.buildAtCell(x, y, type);
+  const origin = await game.evaluate(() => {
+    for (let y = 1600; y < 2000; y += 4) {
+      for (let x = 2200; x < 2600; x += 4) {
+        const clear = Array.from({ length: 4 }, (_, row) =>
+          Array.from(
+            { length: 4 },
+            (_, col) =>
+              sandkit.api.world.isCellEmptyAtCell(x + col, y + row) &&
+              sandkit.api.structures.getAtCell(x + col, y + row) === null,
+          ),
+        ).every((row) => row.every(Boolean));
+        if (clear) return { x, y };
+      }
+    }
+    throw new Error("Could not find an empty area for the sspp test");
+  });
+  await game.evaluate(async ({ x, y }) => {
     sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
-    return { type, cellIds };
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }, origin);
+
+  await game.evaluate(({ x, y }) => {
+    type PainterState = {
+      originX: number;
+      originY: number;
+      painted: boolean[][][][];
+      solidite: boolean[][][][];
+      occupied: boolean[][][][];
+    };
+    const makeGrid = () =>
+      Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () =>
+          Array.from({ length: 4 }, () => Array<boolean>(4).fill(false)),
+        ),
+      );
+    const painted = makeGrid();
+    const solidite = makeGrid();
+    for (let row = 0; row < 4; row += 1) {
+      for (let col = 0; col < 2; col += 1) solidite[2][2][row][col] = true;
+      for (let col = 2; col < 4; col += 1) painted[2][2][row][col] = true;
+    }
+    const apply = (globalThis as Record<string, unknown>).__autofabulatorApply;
+    if (typeof apply !== "function")
+      throw new Error("Autofabulator Apply test hook is unavailable");
+    (apply as (state: PainterState) => void)({
+      originX: x,
+      originY: y,
+      painted,
+      solidite,
+      occupied: Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () => Array.from({ length: 4 }, () => Array(4).fill(false))),
+      ),
+    });
   }, origin);
 
   await game.waitFor(
-    (cellX, cellY) => sandkit.api.structures.getAtCell(cellX, cellY)?.type ?? null,
-    (type) => type === result.type,
-    { args: [origin.x, origin.y], message: "Mixed prefab fixture was not built" },
+    ({ x, y }) =>
+      Array.from({ length: 4 }, (_, row) =>
+        Array.from({ length: 4 }, (_, col) =>
+          sandkit.api.world.getCellIdAtCell(x + 8 + col, y + 8 + row),
+        ),
+      ),
+    (cellIds) =>
+      JSON.stringify(cellIds) === JSON.stringify(Array.from({ length: 4 }, () => [31, 31, 15, 15])),
+    { args: [origin], message: "Apply path did not create the mixed sspp block" },
   );
-
-  const built = await game.evaluate(
+  const result = await game.evaluate(
     ({ x, y }) => ({
-      structure: sandkit.api.structures.getAtCell(x, y) ?? null,
       cellIds: Array.from({ length: 4 }, (_, row) =>
-        Array.from({ length: 4 }, (_, col) => sandkit.api.world.getCellIdAtCell(x + col, y + row)),
+        Array.from({ length: 4 }, (_, col) =>
+          sandkit.api.world.getCellIdAtCell(x + 8 + col, y + 8 + row),
+        ),
       ),
     }),
     origin,
   );
-  if (built.structure === null) {
-    throw new Error("Mixed prefab structure disappeared after building");
-  }
-  if (JSON.stringify(built.cellIds) !== JSON.stringify(result.cellIds)) {
+  const expected = Array.from({ length: 4 }, () => [31, 31, 15, 15]);
+  if (JSON.stringify(result.cellIds) !== JSON.stringify(expected)) {
     throw new Error(
-      `Expected mixed cells to survive placement, got ${JSON.stringify({ expected: result.cellIds, actual: built.cellIds })}`,
+      `Expected Solidite and prefab cells after Apply, got ${JSON.stringify(result)}`,
     );
   }
 });
