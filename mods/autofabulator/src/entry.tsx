@@ -1,6 +1,7 @@
 import { onDispose } from "../../../shared/dev-hmr";
 
 const api = sandkit.api;
+const engine = sandkit.engine;
 
 const MOD_ID = "sorahn.sandustry-autofabulator";
 const ITEM_ID = "sorahnAutofabulator";
@@ -8,6 +9,7 @@ const TOOL_SPRITE_ID = "sorahnAutofabulatorSprite";
 const EDITOR_ID = "sorahn-autofabulator-editor";
 const GRID_SIZE = 5;
 const CELLS_PER_BLOCK = 4;
+const CANVAS_SIZE = 360;
 const ACTION_START = "1";
 const UIReact = sandkit.react ?? null;
 let previousCursorStyle: unknown = null;
@@ -24,6 +26,36 @@ type PainterEditorState = {
 let editorState: PainterEditorState | null = null;
 let editorRepaint: ((update: (value: number) => number) => void) | null = null;
 let editorDispose: (() => void) | null = null;
+
+type Point = { x: number; y: number };
+type InternalRenderingApi = {
+  getCellDrawPos(state: SandustryEngineState, x: number, y: number): Point;
+  getGridMetrics(): { cellSize: number; snapGridCellSize: number };
+  withOverlayContext(
+    state: SandustryEngineState,
+    callback: (context: CanvasRenderingContext2D) => void,
+  ): void;
+};
+const internalRendering = (engine.api as unknown as { rendering?: InternalRenderingApi }).rendering;
+const PANEL_BUTTON_STYLE = {
+  position: "relative" as const,
+  minHeight: 0,
+  overflow: "hidden" as const,
+  borderRadius: "0 4px 0 4px",
+  border: "1px solid #cbd5e1",
+  padding: "3px 6px",
+  background: "#000",
+  color: "#fff",
+  fontSize: 10,
+  fontWeight: 400,
+  cursor: "pointer",
+};
+const ACCENT_BUTTON_STYLE = {
+  ...PANEL_BUTTON_STYLE,
+  border: "1px solid rgba(253, 224, 71, 0.5)",
+  background: "rgba(253, 224, 71, 0.1)",
+  color: "#fde047",
+};
 
 const TRANSLATIONS = {
   "mods|autofabulator|name": "Autofabulator",
@@ -47,6 +79,10 @@ function grantDevelopmentItem(): void {
 }
 
 function setMarqueeCursor(state: SandustryEngineState): void {
+  if (api.action?.getSelected()?.id !== ITEM_ID) {
+    restoreCursor(state);
+    return;
+  }
   const pixi = (state?.session as { rendering?: { pixi?: unknown } } | undefined)?.rendering
     ?.pixi as
     | {
@@ -90,6 +126,51 @@ function restoreCursor(state: SandustryEngineState = sandkit.engine.state): void
   }
   previousCursorStyle = null;
   marqueeCursorActive = false;
+}
+
+function drawBlockHighlight(state: SandustryEngineState): void {
+  if (
+    editorState ||
+    api.action?.getSelected()?.id !== ITEM_ID ||
+    !internalRendering?.withOverlayContext ||
+    !internalRendering.getCellDrawPos
+  )
+    return;
+  const cursor = api.input.getMouseCellPosition();
+  const blockX = Math.floor(cursor.x / CELLS_PER_BLOCK) * CELLS_PER_BLOCK;
+  const blockY = Math.floor(cursor.y / CELLS_PER_BLOCK) * CELLS_PER_BLOCK;
+  const metrics = internalRendering.getGridMetrics();
+  const size = metrics.cellSize * CELLS_PER_BLOCK;
+  const draw = internalRendering.getCellDrawPos(state, blockX, blockY);
+
+  internalRendering.withOverlayContext(state, (context) => {
+    context.save();
+    context.fillStyle = "rgba(255, 210, 60, 0.16)";
+    context.strokeStyle = "rgba(255, 210, 60, 0.9)";
+    context.lineWidth = 2;
+    context.fillRect(draw.x, draw.y, size, size);
+    const inset = 1;
+    const corner = Math.max(4, Math.min(12, size * 0.22));
+    const left = draw.x + inset;
+    const top = draw.y + inset;
+    const right = draw.x + size - inset;
+    const bottom = draw.y + size - inset;
+    context.beginPath();
+    context.moveTo(left, top + corner);
+    context.lineTo(left, top);
+    context.lineTo(left + corner, top);
+    context.moveTo(right - corner, top);
+    context.lineTo(right, top);
+    context.lineTo(right, top + corner);
+    context.moveTo(right, bottom - corner);
+    context.lineTo(right, bottom);
+    context.lineTo(right - corner, bottom);
+    context.moveTo(left + corner, bottom);
+    context.lineTo(left, bottom);
+    context.lineTo(left, bottom - corner);
+    context.stroke();
+    context.restore();
+  });
 }
 
 function emptyPaintedGrid(): boolean[][] {
@@ -235,6 +316,8 @@ function AutofabulatorEditor() {
         alignItems: "center",
         justifyContent: "center",
         background: "rgba(0, 0, 0, 0.42)",
+        padding: 16,
+        boxSizing: "border-box",
         fontFamily: "system-ui, sans-serif",
       }}
       onContextMenu={(event: any) => event.preventDefault()}
@@ -244,92 +327,145 @@ function AutofabulatorEditor() {
     >
       <div
         style={{
-          width: 390,
-          maxWidth: "calc(100vw - 32px)",
-          padding: 16,
-          border: "1px solid rgba(255, 210, 60, 0.72)",
-          borderRadius: 8,
-          background: "rgba(20, 24, 31, 0.98)",
+          width: "fit-content",
+          maxWidth: "100%",
+          maxHeight: "100%",
+          overflow: "auto",
+          boxSizing: "border-box",
+          padding: 0,
+          border: "1px solid #47505d",
+          borderRadius: 4,
+          background: "rgba(0, 0, 0, 0.75)",
           color: "#f5f1df",
-          boxShadow: "0 0 28px rgba(0, 0, 0, 0.45)",
+          boxShadow: "0 12px 28px rgba(0, 0, 0, 0.45)",
         }}
         onClick={(event: any) => event.stopPropagation()}
       >
-        <div style={{ fontSize: 18, marginBottom: 4 }}>Autofabulator</div>
-        <div style={{ color: "#aeb5c0", fontSize: 12, marginBottom: 14 }}>
-          5×5 Blueprint Blocks · left-click paint · right-click erase
-        </div>
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-            gap: 3,
-            padding: 4,
-            background: "#090b0e",
-            border: "1px solid #4c535e",
+            minHeight: 32,
+            boxSizing: "border-box",
+            padding: "8px 16px",
+            borderBottom: "1px solid #1e252e",
+            color: "rgba(255, 255, 255, 0.7)",
+            fontSize: 11,
           }}
         >
-          {current.painted.map((row, blockY) =>
-            row.map((painted, blockX) => {
-              const occupied = current.occupied[blockY][blockX];
-              return (
-                <button
-                  key={`${blockX}:${blockY}`}
-                  type="button"
-                  aria-label={`block ${blockX + 1}, ${blockY + 1}`}
-                  style={{
-                    position: "relative",
-                    aspectRatio: "1",
-                    padding: 4,
-                    border: painted ? "2px solid #ffe14a" : "1px solid #59616b",
-                    background: painted ? "#151515" : "#20252b",
-                    cursor: "crosshair",
-                  }}
-                  onClick={() => paintEditorCell(blockX, blockY, true)}
-                  onContextMenu={(event: any) => {
-                    event.preventDefault();
-                    paintEditorCell(blockX, blockY, false);
-                  }}
-                >
-                  <span
+          Autofabulator
+        </div>
+        <div style={{ padding: "12px 16px 14px" }}>
+          <div style={{ color: "#aeb5c0", fontSize: 11, marginBottom: 10 }}>
+            5×5 Blueprint Blocks · left-click paint · right-click erase
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+              width: CANVAS_SIZE,
+              maxWidth: "100%",
+              margin: "0 auto",
+              aspectRatio: "1",
+              gap: 0,
+              padding: 0,
+              background: "#090b0e",
+              border: "1px solid #4c535e",
+            }}
+          >
+            {current.painted.map((row, blockY) =>
+              row.map((painted, blockX) => {
+                const occupied = current.occupied[blockY][blockX];
+                const isAnchor =
+                  blockX === Math.floor(GRID_SIZE / 2) && blockY === Math.floor(GRID_SIZE / 2);
+                return (
+                  <button
+                    key={`${blockX}:${blockY}`}
+                    type="button"
+                    aria-label={`block ${blockX + 1}, ${blockY + 1}`}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: `repeat(${CELLS_PER_BLOCK}, 1fr)`,
-                      width: "100%",
-                      height: "100%",
-                      opacity: painted ? 0.18 : 1,
+                      position: "relative",
+                      aspectRatio: "1",
+                      padding: 0,
+                      border: "1px solid #303740",
+                      boxShadow: painted ? "inset 0 0 0 1px #ffe14a" : "none",
+                      background: painted ? "#151515" : "#20252b",
+                      cursor: "crosshair",
+                    }}
+                    onClick={() => paintEditorCell(blockX, blockY, true)}
+                    onContextMenu={(event: any) => {
+                      event.preventDefault();
+                      paintEditorCell(blockX, blockY, false);
                     }}
                   >
-                    {occupied.flatMap((cellRow, cellY) =>
-                      cellRow.map((cellOccupied, cellX) => (
-                        <span
-                          key={`${cellX}:${cellY}`}
-                          style={{
-                            background: cellOccupied ? "#b7bec8" : "transparent",
-                            border: "1px solid rgba(130, 140, 150, 0.2)",
-                          }}
+                    <span
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${CELLS_PER_BLOCK}, 1fr)`,
+                        width: "100%",
+                        height: "100%",
+                        opacity: painted ? 0.18 : 1,
+                      }}
+                    >
+                      {occupied.flatMap((cellRow, cellY) =>
+                        cellRow.map((cellOccupied, cellX) => (
+                          <span
+                            key={`${cellX}:${cellY}`}
+                            style={{
+                              background: cellOccupied ? "#b7bec8" : "transparent",
+                              border: "1px solid rgba(130, 140, 150, 0.2)",
+                            }}
+                          />
+                        )),
+                      )}
+                    </span>
+                    {isAnchor && (
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 100 100"
+                        preserveAspectRatio="none"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          width: "100%",
+                          height: "100%",
+                          pointerEvents: "none",
+                        }}
+                      >
+                        <path
+                          d="M 18 2 H 2 V 18 M 82 2 H 98 V 18 M 98 82 V 98 H 82 M 18 98 H 2 V 82"
+                          fill="none"
+                          stroke="#ffe14a"
+                          strokeWidth="3"
                         />
-                      )),
+                      </svg>
                     )}
-                  </span>
-                </button>
-              );
-            }),
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 14, justifyContent: "flex-end" }}>
-          <button type="button" onClick={clearEditor}>
-            Clear
-          </button>
-          <button type="button" onClick={closeEditor}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => api.ui.toast("Autofabulator placement is not implemented yet.")}
+                  </button>
+                );
+              }),
+            )}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 6,
+              marginTop: 10,
+              justifyContent: "flex-end",
+            }}
           >
-            Apply
-          </button>
+            <button type="button" onClick={clearEditor} style={PANEL_BUTTON_STYLE}>
+              Clear
+            </button>
+            <button type="button" onClick={closeEditor} style={PANEL_BUTTON_STYLE}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => api.ui.toast("Autofabulator placement is not implemented yet.")}
+              style={ACCENT_BUTTON_STYLE}
+            >
+              Apply
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -351,7 +487,10 @@ function registerAutofabulator(): void {
     handleAction: (state) => {
       if (state?.session?.action?.state?.[ACTION_START]) openEditor();
     },
-    afterRender: (state) => setMarqueeCursor(state),
+    afterRender: (state) => {
+      setMarqueeCursor(state);
+      drawBlockHighlight(state);
+    },
   });
 
   api.events.on("action:changed", () => {
