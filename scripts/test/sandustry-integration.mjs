@@ -30,6 +30,7 @@ const modPackages = modNames.map((name) => {
 });
 const MOD_DIR = join(ROOT, "mods", targetMod);
 const visible = process.argv.includes("--view");
+const search = process.env.SEARCH;
 if (
   !process.env.CHROME &&
   process.platform === "darwin" &&
@@ -106,7 +107,13 @@ try {
   result =
     spawnSync(
       process.execPath,
-      ["--import", join(TEMPLATE, "scripts", "test", "register-modkit.js"), "--test", ...tests],
+      [
+        "--import",
+        join(TEMPLATE, "scripts", "test", "register-modkit.js"),
+        "--test",
+        ...(search ? [`--test-name-pattern=${search}`] : []),
+        ...tests,
+      ],
       {
         cwd: ROOT,
         stdio: "inherit",
