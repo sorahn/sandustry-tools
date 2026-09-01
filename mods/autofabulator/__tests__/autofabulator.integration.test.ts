@@ -451,3 +451,109 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
     );
   }
 });
+
+test("Autofabulator middle-click paints a Solidite cell", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = { x: 2900, y: 2000 };
+  await game.evaluate(({ x, y }) => {
+    sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
+  }, origin);
+
+  const clickPoint = await game.evaluate(({ x, y }) => {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) throw new Error("Game canvas was not found");
+    const rect = canvas.getBoundingClientRect();
+    const renderer = (sandkit.engine.state.session as any).rendering?.pixi?.app?.renderer;
+    const camera = (sandkit.engine.state.session as any).camera;
+    return {
+      x: rect.left + ((x * 4 + 8 - camera.x) / renderer.width) * rect.width,
+      y: rect.top + ((y * 4 - camera.y) / renderer.height) * rect.height,
+    };
+  }, origin);
+  await dispatchMouseClick(clickPoint.x, clickPoint.y);
+  await game.waitFor(
+    () => Boolean(document.body.textContent?.includes("5×5 Blueprint Blocks")),
+    (open) => open,
+    { message: "Autofabulator editor did not open for the middle-click test" },
+  );
+
+  const cell = await game.evaluate(() => {
+    const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 3, 3"]');
+    const target = tile?.querySelectorAll<HTMLElement>("span")[1];
+    if (!target) throw new Error("Center canvas cell was not found");
+    const rect = target.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+  await dispatchMouseEvent("mouseMoved", cell.x, cell.y);
+  await dispatchMouseEvent("mousePressed", cell.x, cell.y, "none", 4);
+
+  const background = await game.evaluate(() => {
+    const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 3, 3"]');
+    return getComputedStyle(tile?.querySelectorAll<HTMLElement>("span")[1]!).backgroundColor;
+  });
+  if (background === "rgba(0, 0, 0, 0)" || background === "transparent") {
+    throw new Error("Middle-click did not paint a Solidite cell");
+  }
+});
+
+test("Autofabulator can build a mixed prefab cell definition", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = { x: 3000, y: 2100 };
+  const result = await game.evaluate(({ x, y }) => {
+    const cellIds = [
+      [31, 15, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ];
+    const localized = sandkit.api.blueprints.localizeStructures([
+      {
+        type: "prefabTerrain_5",
+        x: 0,
+        y: 0,
+        color: "#ffffff",
+        data: {
+          __prefabulatorBlueprint: {
+            definition: {
+              shape: cellIds.map((row) => row.map((cell) => (cell ? 1 : 0))),
+              cellIds,
+            },
+          },
+        },
+      },
+    ]);
+    const type = localized[0]?.type;
+    if (type === undefined) throw new Error("Could not localize the mixed prefab fixture");
+    sandkit.api.structures.buildAtCell(x, y, type);
+    sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
+    return { type, cellIds };
+  }, origin);
+
+  await game.waitFor(
+    (cellX, cellY) => sandkit.api.structures.getAtCell(cellX, cellY)?.type ?? null,
+    (type) => type === result.type,
+    { args: [origin.x, origin.y], message: "Mixed prefab fixture was not built" },
+  );
+
+  const built = await game.evaluate(
+    ({ x, y }) => ({
+      structure: sandkit.api.structures.getAtCell(x, y) ?? null,
+      cellIds: Array.from({ length: 4 }, (_, row) =>
+        Array.from({ length: 4 }, (_, col) => sandkit.api.world.getCellIdAtCell(x + col, y + row)),
+      ),
+    }),
+    origin,
+  );
+  if (built.structure === null) {
+    throw new Error("Mixed prefab structure disappeared after building");
+  }
+  if (JSON.stringify(built.cellIds) !== JSON.stringify(result.cellIds)) {
+    throw new Error(
+      `Expected mixed cells to survive placement, got ${JSON.stringify({ expected: result.cellIds, actual: built.cellIds })}`,
+    );
+  }
+});
