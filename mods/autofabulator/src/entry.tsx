@@ -333,6 +333,7 @@ function paintEditorCell(
   painted: boolean,
 ): void {
   if (!editorState) return;
+  if (editorState.occupied[blockY][blockX][cellY][cellX]) return;
   editorState.painted[blockY][blockX][cellY][cellX] = painted;
   refreshEditor();
 }
@@ -597,10 +598,10 @@ function AutofabulatorEditor() {
                             key={`${cellX}:${cellY}`}
                             data-autofab-cell={`${blockX}:${blockY}:${cellX}:${cellY}`}
                             style={{
-                              background: paintedBlock[cellY][cellX]
-                                ? "#dea61f"
-                                : cellOccupied
-                                  ? "#b7bec8"
+                              background: cellOccupied
+                                ? "#b7bec8"
+                                : paintedBlock[cellY][cellX]
+                                  ? "#dea61f"
                                   : "transparent",
                               border: "1px solid rgba(130, 140, 150, 0.2)",
                               cursor: "crosshair",
