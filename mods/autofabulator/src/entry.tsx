@@ -125,8 +125,25 @@ function grantDevelopmentItem(): void {
   api.player.inventory.addFromId(ITEM_ID);
 }
 
+function nativeSelectionActive(state: SandustryEngineState = sandkit.engine.state): boolean {
+  const session = state?.session as {
+    construction?: { demolisherActive?: boolean; marqueeActive?: boolean };
+    action?: { customData?: { marqueeSelected?: boolean } | null };
+    ui?: { overlays?: { hotbar?: { foundationColorPicker?: unknown } } };
+    input?: { keys?: Record<string, unknown> };
+  };
+  return Boolean(
+    session?.construction?.demolisherActive ||
+    session?.construction?.marqueeActive ||
+    session?.action?.customData?.marqueeSelected ||
+    session?.ui?.overlays?.hotbar?.foundationColorPicker ||
+    Boolean(session?.input?.keys?.KeyF) ||
+    state?.store?.player?.action?.id === 7,
+  );
+}
+
 function setMarqueeCursor(state: SandustryEngineState): void {
-  if (api.action?.getSelected()?.id !== ITEM_ID) {
+  if (api.action?.getSelected()?.id !== ITEM_ID || nativeSelectionActive(state)) {
     restoreCursor(state);
     return;
   }
@@ -179,6 +196,7 @@ function drawBlockHighlight(state: SandustryEngineState): void {
   if (
     editorState ||
     api.action?.getSelected()?.id !== ITEM_ID ||
+    nativeSelectionActive(state) ||
     !internalRendering?.withOverlayContext ||
     !internalRendering.getCellDrawPos
   )
@@ -313,7 +331,8 @@ function registerClickInterceptor(): void {
   const dispose = intercept(
     "action:intercept",
     (payload: any, control: any) => {
-      if (editorState || api.action?.getSelected()?.id !== ITEM_ID) return;
+      if (editorState || api.action?.getSelected()?.id !== ITEM_ID || nativeSelectionActive())
+        return;
       if (!Number.isInteger(payload?.cellX) || !Number.isInteger(payload?.cellY)) return;
 
       openEditor({ x: payload.cellX, y: payload.cellY });
