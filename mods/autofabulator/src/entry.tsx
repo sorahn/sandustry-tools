@@ -407,24 +407,92 @@ function clearEditor(): void {
   refreshEditor();
 }
 
+function isPrefabTerrainType(type: unknown): boolean {
+  return String(type ?? "").startsWith("prefabTerrain");
+}
+
+function findPrefabStructureAtBlock(x: number, y: number): SandustryStructure | null {
+  for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+    for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+      const structure = api.structures.getAtCell?.(x + cellX, y + cellY);
+      if (structure && isPrefabTerrainType(structure.type)) {
+        return structure;
+      }
+    }
+  }
+  return null;
+}
+
+function readPrefabCellIds(existing: SandustryStructure, x: number, y: number): number[][] {
+  const definition = (
+    existing.data as
+      | { __prefabulatorBlueprint?: { definition?: { cellIds?: number[][] } } }
+      | undefined
+  )?.__prefabulatorBlueprint?.definition;
+  if (
+    definition?.cellIds?.length === CELLS_PER_BLOCK &&
+    definition.cellIds.every(
+      (row) =>
+        row.length === CELLS_PER_BLOCK &&
+        row.every((cellId) => Number.isInteger(cellId) && cellId >= 0),
+    )
+  ) {
+    return definition.cellIds.map((row) => row.slice());
+  }
+  return Array.from({ length: CELLS_PER_BLOCK }, (_, cellY) =>
+    Array.from({ length: CELLS_PER_BLOCK }, (_, cellX) => {
+      const cellId = api.world.getCellIdAtCell(x + cellX, y + cellY);
+      return Number.isInteger(cellId) && cellId !== 0 && api.terrains.isCellIdTerrain(cellId)
+        ? cellId
+        : 0;
+    }),
+  );
+}
+
+function mergeWithExistingPrefab(x: number, y: number, painted: boolean[][]): number[][] | null {
+  const existing = findPrefabStructureAtBlock(x, y);
+  if (!existing || typeof api.structures.removeAtCell !== "function") return null;
+
+  const cellIds = readPrefabCellIds(existing, x, y);
+  const existingCellId = cellIds.flat().find((cellId) => cellId !== 0) ?? PREFAB_CELL_ID;
+  for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+    for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+      if (painted[cellY][cellX]) cellIds[cellY][cellX] = existingCellId;
+    }
+  }
+  api.structures.removeAtCell(x, y, { removeCells: true });
+  return cellIds;
+}
+
 function applyPrefabPattern(): void {
   if (!editorState) return;
-  const placements: Array<{ x: number; y: number; data: Record<string, unknown> }> = [];
+  const placements: Array<{
+    x: number;
+    y: number;
+    data: Record<string, unknown>;
+    merged: boolean;
+  }> = [];
   for (let blockY = 0; blockY < GRID_SIZE; blockY += 1) {
     for (let blockX = 0; blockX < GRID_SIZE; blockX += 1) {
       const painted = editorState.painted[blockY][blockX];
       if (!painted.flat().some(Boolean)) continue;
+      const x = editorState.originX + blockX * CELLS_PER_BLOCK;
+      const y = editorState.originY + blockY * CELLS_PER_BLOCK;
+      const existingCellIds = mergeWithExistingPrefab(x, y, painted);
+      const cellIds =
+        existingCellIds ?? painted.map((row) => row.map((cell) => (cell ? PREFAB_CELL_ID : 0)));
       placements.push({
-        x: editorState.originX + blockX * CELLS_PER_BLOCK,
-        y: editorState.originY + blockY * CELLS_PER_BLOCK,
+        x,
+        y,
         data: {
           __prefabulatorBlueprint: {
             definition: {
-              shape: painted.map((row) => row.map((cell) => (cell ? 1 : 0))),
-              cellIds: painted.map((row) => row.map((cell) => (cell ? PREFAB_CELL_ID : 0))),
+              shape: cellIds.map((row) => row.map((cellId) => (cellId ? 1 : 0))),
+              cellIds,
             },
           },
         },
+        merged: existingCellIds !== null,
       });
     }
   }
@@ -436,24 +504,31 @@ function applyPrefabPattern(): void {
     api.ui.toast("Autofabulator placement is unavailable.");
     return;
   }
-  for (const placement of placements) {
-    const localized = api.blueprints.localizeStructures([
-      {
-        type: PREFAB_TERRAIN_TYPE,
-        x: 0,
-        y: 0,
-        color: "#ffffff",
-        data: placement.data,
-      } as SandustryBlueprintRecord,
-    ]);
-    const localizedType = localized[0]?.type;
-    if (localizedType === undefined) continue;
-    api.structures.buildAtCell(placement.x, placement.y, localizedType);
-    const structure = api.structures.getAtCell?.(placement.x, placement.y);
-    if (structure && typeof api.structures.setData === "function") {
-      api.structures.setData(structure, placement.data);
+  const place = () => {
+    for (const placement of placements) {
+      const localized = api.blueprints.localizeStructures([
+        {
+          type: PREFAB_TERRAIN_TYPE,
+          x: 0,
+          y: 0,
+          color: "#ffffff",
+          data: placement.data,
+        } as SandustryBlueprintRecord,
+      ]);
+      const localizedType = localized[0]?.type;
+      if (localizedType === undefined) continue;
+      api.structures.buildAtCell(placement.x, placement.y, localizedType);
+      const setData = () => {
+        const structure = api.structures.getAtCell?.(placement.x, placement.y);
+        if (structure && typeof api.structures.setData === "function") {
+          api.structures.setData(structure, placement.data);
+        }
+      };
+      if (placement.merged) api.world.runWhenSimulationIdle(setData);
+      else setData();
     }
-  }
+  };
+  place();
   closeEditor();
 }
 

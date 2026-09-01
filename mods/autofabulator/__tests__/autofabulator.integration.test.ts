@@ -314,3 +314,140 @@ test("Autofabulator right-button drag erases until release", async () => {
     throw new Error(`Expected erase drag to stop on release, got ${JSON.stringify(painted)}`);
   }
 });
+
+test("Autofabulator merges new cells into an existing prefab block", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = { x: 2800, y: 1900 };
+  const prefabType = await game.evaluate(({ x, y }) => {
+    const cellIds = [
+      [31, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ];
+    const localized = sandkit.api.blueprints.localizeStructures([
+      {
+        type: "prefabTerrain_5",
+        x: 0,
+        y: 0,
+        color: "#ffffff",
+        data: {
+          __prefabulatorBlueprint: {
+            definition: {
+              shape: cellIds.map((row) => row.map((cell) => (cell ? 1 : 0))),
+              cellIds,
+            },
+          },
+        },
+      },
+    ]);
+    const type = localized[0]?.type;
+    if (type === undefined) throw new Error("Could not localize the prefab fixture");
+    sandkit.api.structures.buildAtCell(x, y, type);
+    sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
+    return type;
+  }, origin);
+
+  await game.waitFor(
+    (cellX, cellY) => sandkit.api.structures.getAtCell(cellX, cellY)?.type ?? null,
+    (type) => type === prefabType,
+    { args: [origin.x, origin.y], message: "Initial prefab fixture was not built" },
+  );
+  await game.evaluate(({ x, y }) => {
+    const structure = sandkit.api.structures.getAtCell(x, y);
+    if (!structure) throw new Error("Initial prefab structure disappeared");
+    sandkit.api.structures.setData(structure, {
+      __prefabulatorBlueprint: {
+        definition: {
+          shape: [
+            [1, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+          ],
+          cellIds: [
+            [31, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+          ],
+        },
+      },
+    });
+  }, origin);
+
+  const clickPoint = await game.evaluate(({ x, y }) => {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) throw new Error("Game canvas was not found");
+    const rect = canvas.getBoundingClientRect();
+    const renderer = (sandkit.engine.state.session as any).rendering?.pixi?.app?.renderer;
+    const camera = (sandkit.engine.state.session as any).camera;
+    return {
+      x: rect.left + ((x * 4 + 8 - camera.x) / renderer.width) * rect.width,
+      y: rect.top + ((y * 4 - camera.y) / renderer.height) * rect.height,
+    };
+  }, origin);
+  await dispatchMouseClick(clickPoint.x, clickPoint.y);
+  await game.waitFor(
+    () => Boolean(document.body.textContent?.includes("5×5 Blueprint Blocks")),
+    (open) => open,
+    { message: "Autofabulator editor did not open for the merge test" },
+  );
+
+  const newCell = await game.evaluate(() => {
+    const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 3, 3"]');
+    const cell = tile?.querySelectorAll<HTMLElement>("span")[2];
+    if (!cell) throw new Error("Center canvas cell was not found");
+    const rect = cell.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+  await dispatchMouseClick(newCell.x, newCell.y);
+  const paintedNewCell = await game.evaluate(() => {
+    const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 3, 3"]');
+    const cell = tile?.querySelectorAll<HTMLElement>("span")[2];
+    return cell ? getComputedStyle(cell).backgroundColor : null;
+  });
+  if (paintedNewCell !== "rgb(222, 166, 31)") {
+    throw new Error(`Expected adjacent prefab cell to be painted, got ${paintedNewCell}`);
+  }
+
+  const applyPoint = await game.evaluate(() => {
+    const button = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+      (candidate) => candidate.textContent?.trim() === "Apply",
+    );
+    if (!button) throw new Error("Autofabulator Apply button was not found");
+    const rect = button.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+  await dispatchMouseClick(applyPoint.x, applyPoint.y);
+
+  await game.waitFor(
+    (cellX, cellY) =>
+      (sandkit.api.structures.getAtCell(cellX, cellY) as any)?.data?.__prefabulatorBlueprint
+        ?.definition?.cellIds?.[0]?.[1] ?? 0,
+    (cellId) => cellId !== 0,
+    { args: [origin.x, origin.y], message: "Merged prefab fixture was not rebuilt" },
+  );
+  const result = await game.evaluate(
+    ({ x, y }) => ({
+      structure: sandkit.api.structures.getAtCell(x, y) ?? null,
+      prefabRegistry: (sandkit.engine.state.store.mods as any).prefabulator?.prefabRegistry ?? null,
+      cellIds: Array.from({ length: 4 }, (_, cellY) =>
+        Array.from({ length: 4 }, (_, cellX) =>
+          sandkit.api.world.getCellIdAtCell(x + cellX, y + cellY),
+        ),
+      ),
+    }),
+    origin,
+  );
+  if (result.structure === null || !String(result.structure.type).startsWith("prefabTerrain_")) {
+    throw new Error(`Expected a merged prefab structure, got ${JSON.stringify(result.structure)}`);
+  }
+  if (result.cellIds[0][0] === 0 || result.cellIds[0][1] === 0) {
+    throw new Error(
+      `Expected both prefab cells after merge, got ${JSON.stringify({ structure: result.structure, cellIds: result.cellIds })}`,
+    );
+  }
+});
