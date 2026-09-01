@@ -1,0 +1,12 @@
+{
+  "manifestVersion": 1,
+  "id": "sorahn.sandustry-autofabulator",
+  "name": "Autofabulator",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "author": "sorahn",
+  "entry": "entry.js",
+  "description": "Paint and place small prefab patterns.",
+  "dependencies": [],
+  "loadOrder": 0
+}
