@@ -182,3 +182,62 @@ test("Autofabulator preview includes solid foundations but not loose sand", asyn
     );
   }
 });
+
+test("Autofabulator paints only the clicked canvas cell", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const editorAnchor = { x: 2500, y: 1700 };
+  const anchorPoint = await game.evaluate(({ x, y }) => {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) throw new Error("Game canvas was not found");
+    const rect = canvas.getBoundingClientRect();
+    const renderer = (sandkit.engine.state.session as any).rendering?.pixi?.app?.renderer;
+    const camera = (sandkit.engine.state.session as any).camera;
+    return {
+      x: rect.left + ((x * 4 + 8 - camera.x) / renderer.width) * rect.width,
+      y: rect.top + ((y * 4 - camera.y) / renderer.height) * rect.height,
+    };
+  }, editorAnchor);
+  await dispatchMouseClick(anchorPoint.x, anchorPoint.y);
+  await game.waitFor(
+    () => Boolean(document.body.textContent?.includes("5×5 Blueprint Blocks")),
+    (open) => open,
+    { message: "Autofabulator editor did not open for the cell-paint test" },
+  );
+
+  const clickPoint = await game.evaluate(() => {
+    const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 1, 1"]');
+    const cell = tile?.querySelectorAll<HTMLElement>("span")[5];
+    if (!cell) throw new Error("Autofabulator canvas cell was not found");
+    const rect = cell.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+
+  await dispatchMouseClick(clickPoint.x, clickPoint.y);
+
+  const canvasState = await game.evaluate(() => {
+    const tiles = [...document.querySelectorAll<HTMLButtonElement>('button[aria-label^="block "]')];
+    return {
+      paintedCells: tiles.flatMap((tile) =>
+        [...tile.querySelectorAll<HTMLElement>("span")].map(
+          (cell) => getComputedStyle(cell).backgroundColor === "rgb(222, 166, 31)",
+        ),
+      ),
+      blockBackgrounds: tiles.map((tile) => getComputedStyle(tile).backgroundColor),
+    };
+  });
+  const { paintedCells } = canvasState;
+  const expected = Array.from({ length: 25 * 17 }, () => false);
+  expected[5] = true;
+  if (JSON.stringify(paintedCells) !== JSON.stringify(expected)) {
+    throw new Error(
+      `Expected only one painted canvas cell, got ${paintedCells.filter(Boolean).length} at ${paintedCells
+        .map((painted, index) => (painted ? index : null))
+        .filter((index) => index !== null)}`,
+    );
+  }
+  if (canvasState.blockBackgrounds.some((background) => background === "rgb(222, 166, 31)")) {
+    throw new Error("Painting one canvas cell colored its entire Blueprint Block");
+  }
+});

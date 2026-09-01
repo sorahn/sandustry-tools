@@ -19,7 +19,7 @@ type OccupiedBlock = boolean[][];
 type PainterEditorState = {
   originX: number;
   originY: number;
-  painted: boolean[][];
+  painted: boolean[][][][];
   occupied: OccupiedBlock[][];
 };
 
@@ -173,8 +173,12 @@ function drawBlockHighlight(state: SandustryEngineState): void {
   });
 }
 
-function emptyPaintedGrid(): boolean[][] {
-  return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false));
+function emptyPaintedGrid(): boolean[][][][] {
+  return Array.from({ length: GRID_SIZE }, () =>
+    Array.from({ length: GRID_SIZE }, () =>
+      Array.from({ length: CELLS_PER_BLOCK }, () => Array(CELLS_PER_BLOCK).fill(false)),
+    ),
+  );
 }
 
 function readOccupiedBlocks(originX: number, originY: number): OccupiedBlock[][] {
@@ -272,9 +276,15 @@ function registerClickInterceptor(): void {
   if (typeof dispose === "function") onDispose(dispose);
 }
 
-function paintEditorCell(blockX: number, blockY: number, painted: boolean): void {
+function paintEditorCell(
+  blockX: number,
+  blockY: number,
+  cellX: number,
+  cellY: number,
+  painted: boolean,
+): void {
   if (!editorState) return;
-  editorState.painted[blockY][blockX] = painted;
+  editorState.painted[blockY][blockX][cellY][cellX] = painted;
   refreshEditor();
 }
 
@@ -372,7 +382,7 @@ function AutofabulatorEditor() {
             }}
           >
             {current.painted.map((row, blockY) =>
-              row.map((painted, blockX) => {
+              row.map((paintedBlock, blockX) => {
                 const occupied = current.occupied[blockY][blockX];
                 const isAnchor =
                   blockX === Math.floor(GRID_SIZE / 2) && blockY === Math.floor(GRID_SIZE / 2);
@@ -386,14 +396,9 @@ function AutofabulatorEditor() {
                       aspectRatio: "1",
                       padding: 0,
                       border: "1px solid #303740",
-                      boxShadow: painted ? "inset 0 0 0 1px #ffe14a" : "none",
-                      background: painted ? "#151515" : "#20252b",
+                      boxShadow: "none",
+                      background: "#20252b",
                       cursor: "crosshair",
-                    }}
-                    onClick={() => paintEditorCell(blockX, blockY, true)}
-                    onContextMenu={(event: any) => {
-                      event.preventDefault();
-                      paintEditorCell(blockX, blockY, false);
                     }}
                   >
                     <span
@@ -402,7 +407,7 @@ function AutofabulatorEditor() {
                         gridTemplateColumns: `repeat(${CELLS_PER_BLOCK}, 1fr)`,
                         width: "100%",
                         height: "100%",
-                        opacity: painted ? 0.18 : 1,
+                        opacity: 1,
                       }}
                     >
                       {occupied.flatMap((cellRow, cellY) =>
@@ -410,8 +415,22 @@ function AutofabulatorEditor() {
                           <span
                             key={`${cellX}:${cellY}`}
                             style={{
-                              background: cellOccupied ? "#b7bec8" : "transparent",
+                              background: paintedBlock[cellY][cellX]
+                                ? "#dea61f"
+                                : cellOccupied
+                                  ? "#b7bec8"
+                                  : "transparent",
                               border: "1px solid rgba(130, 140, 150, 0.2)",
+                              cursor: "crosshair",
+                            }}
+                            onClick={(event: any) => {
+                              event.stopPropagation();
+                              paintEditorCell(blockX, blockY, cellX, cellY, true);
+                            }}
+                            onContextMenu={(event: any) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              paintEditorCell(blockX, blockY, cellX, cellY, false);
                             }}
                           />
                         )),
