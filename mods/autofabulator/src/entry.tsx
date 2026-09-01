@@ -546,51 +546,45 @@ function applyPrefabPattern(): void {
         placement.data.__prefabulatorBlueprint as { definition?: { cellIds?: number[][] } }
       ).definition?.cellIds;
       if (!cellIds) continue;
-      api.structures.register({
-        id: localizedType,
-        blockGridType: "prefabTerrain",
-        nameKey: "mods|autofabulator|name",
-        descriptionKey: "mods|autofabulator|description",
-        shape: cellIds.map((row) => row.map((cellId) => (cellId ? 1 : 0))),
-        buildModes: [{ type: "single" }],
-        rejectWhenBlocked: true,
-        alwaysUnlocked: true,
-        variants: [{ id: localizedType, angles: [0] }],
-        render: { imageName: "block", size: { width: 16, height: 16 } },
-      });
-      api.player.buildings.unlockByType(localizedType);
       api.structures.buildAtCell(placement.x, placement.y, localizedType, {
         data: placement.data,
         bypassPlacementChecks: true,
       });
-      if (cellIds && typeof api.terrains?.createAtCellWhenIdle === "function") {
-        for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
-          for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
-            if (
-              cellIds[cellY]?.[cellX] &&
-              api.world.isCellEmptyAtCell(placement.x + cellX, placement.y + cellY)
-            ) {
-              api.terrains.createAtCellWhenIdle(placement.x + cellX, placement.y + cellY, "Block");
+    }
+    api.world.runWhenSimulationIdle(() => {
+      for (const placement of placements) {
+        const cellIds = (
+          placement.data.__prefabulatorBlueprint as { definition?: { cellIds?: number[][] } }
+        ).definition?.cellIds;
+        if (cellIds && typeof api.terrains?.createAtCellWhenIdle === "function") {
+          for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+            for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+              if (
+                cellIds[cellY]?.[cellX] &&
+                api.world.isCellEmptyAtCell(placement.x + cellX, placement.y + cellY)
+              ) {
+                api.terrains.createAtCellWhenIdle(
+                  placement.x + cellX,
+                  placement.y + cellY,
+                  "Block",
+                );
+              }
             }
           }
         }
-      }
-      const setData = () => {
         const structure = api.structures.getAtCell?.(placement.x, placement.y);
         if (structure && typeof api.structures.setData === "function") {
           api.structures.setData(structure, placement.data);
         }
-      };
-      if (placement.merged) api.world.runWhenSimulationIdle(setData);
-      else setData();
-    }
-    if (soliditePlacements.length && typeof api.terrains?.createAtCellWhenIdle === "function") {
-      for (const target of soliditePlacements) {
-        if (api.world.isCellEmptyAtCell(target.x, target.y)) {
-          api.terrains.createAtCellWhenIdle(target.x, target.y, "solidite");
+      }
+      if (typeof api.terrains?.createAtCellWhenIdle === "function") {
+        for (const target of soliditePlacements) {
+          if (api.world.isCellEmptyAtCell(target.x, target.y)) {
+            api.terrains.createAtCellWhenIdle(target.x, target.y, "solidite");
+          }
         }
       }
-    }
+    });
   };
   place();
   closeEditor();
