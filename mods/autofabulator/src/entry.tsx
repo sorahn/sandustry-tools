@@ -31,6 +31,7 @@ let editorState: PainterEditorState | null = null;
 let editorRepaint: ((update: (value: number) => number) => void) | null = null;
 let editorDispose: (() => void) | null = null;
 let activePaintMode: boolean | null = null;
+let nativePickerKeyActive = false;
 let activePaintPointerId: number | null = null;
 let activePaintCanvas: HTMLElement | null = null;
 let activePaintLastCell: string | null = null;
@@ -129,15 +130,15 @@ function nativeSelectionActive(state: SandustryEngineState = sandkit.engine.stat
   const session = state?.session as {
     construction?: { demolisherActive?: boolean; marqueeActive?: boolean };
     action?: { customData?: { marqueeSelected?: boolean } | null };
-    ui?: { overlays?: { hotbar?: { foundationColorPicker?: unknown } } };
     input?: { keys?: Record<string, unknown> };
   };
   return Boolean(
     session?.construction?.demolisherActive ||
     session?.construction?.marqueeActive ||
     session?.action?.customData?.marqueeSelected ||
-    session?.ui?.overlays?.hotbar?.foundationColorPicker ||
-    Boolean(session?.input?.keys?.KeyF) ||
+    session?.input?.keys?.KeyF === 0 ||
+    session?.input?.keys?.KeyF === 3 ||
+    nativePickerKeyActive ||
     state?.store?.player?.action?.id === 7,
   );
 }
@@ -254,7 +255,12 @@ function readOccupiedBlocks(originX: number, originY: number): OccupiedBlock[][]
           const x = originX + blockX * CELLS_PER_BLOCK + cellX;
           const y = originY + blockY * CELLS_PER_BLOCK + cellY;
           try {
-            return api.world.isTerrainAtCell(x, y);
+            if (api.world.isTerrainAtCell(x, y)) return true;
+            const structure = api.structures.getAtCell?.(x, y);
+            const structureType = String(structure?.type ?? "").toLowerCase();
+            return Boolean(
+              structure && !structureType.includes("pipe") && !structureType.includes("vent"),
+            );
           } catch {
             return false;
           }
@@ -331,8 +337,11 @@ function registerClickInterceptor(): void {
   const dispose = intercept(
     "action:intercept",
     (payload: any, control: any) => {
-      if (editorState || api.action?.getSelected()?.id !== ITEM_ID || nativeSelectionActive())
+      if (api.action?.getSelected()?.id !== ITEM_ID) return;
+      if (editorState || nativeSelectionActive()) {
+        control?.cancel?.();
         return;
+      }
       if (!Number.isInteger(payload?.cellX) || !Number.isInteger(payload?.cellY)) return;
 
       openEditor({ x: payload.cellX, y: payload.cellY });
@@ -682,6 +691,20 @@ function AutofabulatorEditor() {
 
 function registerAutofabulator(): void {
   registerClickInterceptor();
+
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.code === "KeyF") nativePickerKeyActive = true;
+  };
+  const onKeyUp = (event: KeyboardEvent) => {
+    if (event.code === "KeyF") nativePickerKeyActive = false;
+  };
+  window.addEventListener("keydown", onKeyDown, true);
+  window.addEventListener("keyup", onKeyUp, true);
+  onDispose(() => {
+    window.removeEventListener("keydown", onKeyDown, true);
+    window.removeEventListener("keyup", onKeyUp, true);
+    nativePickerKeyActive = false;
+  });
 
   api.items.register({
     id: ITEM_ID,
