@@ -126,20 +126,28 @@ function grantDevelopmentItem(): void {
   api.player.inventory.addFromId(ITEM_ID);
 }
 
+function nativePickerActive(state: SandustryEngineState = sandkit.engine.state): boolean {
+  const session = state?.session as {
+    input?: { keys?: Record<string, unknown> };
+  };
+  return Boolean(
+    session?.input?.keys?.KeyF === 0 ||
+    session?.input?.keys?.KeyF === 3 ||
+    nativePickerKeyActive ||
+    state?.store?.player?.action?.id === 7,
+  );
+}
+
 function nativeSelectionActive(state: SandustryEngineState = sandkit.engine.state): boolean {
   const session = state?.session as {
     construction?: { demolisherActive?: boolean; marqueeActive?: boolean };
     action?: { customData?: { marqueeSelected?: boolean } | null };
-    input?: { keys?: Record<string, unknown> };
   };
   return Boolean(
     session?.construction?.demolisherActive ||
     session?.construction?.marqueeActive ||
     session?.action?.customData?.marqueeSelected ||
-    session?.input?.keys?.KeyF === 0 ||
-    session?.input?.keys?.KeyF === 3 ||
-    nativePickerKeyActive ||
-    state?.store?.player?.action?.id === 7,
+    nativePickerActive(state),
   );
 }
 
@@ -338,10 +346,11 @@ function registerClickInterceptor(): void {
     "action:intercept",
     (payload: any, control: any) => {
       if (api.action?.getSelected()?.id !== ITEM_ID) return;
-      if (editorState || nativeSelectionActive()) {
+      if (editorState || nativePickerActive()) {
         control?.cancel?.();
         return;
       }
+      if (nativeSelectionActive()) return;
       if (!Number.isInteger(payload?.cellX) || !Number.isInteger(payload?.cellY)) return;
 
       openEditor({ x: payload.cellX, y: payload.cellY });
