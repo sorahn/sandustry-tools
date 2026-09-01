@@ -1,0 +1,6 @@
+Autofabulator lets you draw small patterns and place them as reusable prefab blocks.
+
+- Select the Autofabulator and click a block in the world.
+- Paint a pattern on the five-by-five canvas.
+- The canvas shows occupied cells as a faded background, so you can see where to draw.
+- Click Apply to place the painted prefab blocks in the world.
