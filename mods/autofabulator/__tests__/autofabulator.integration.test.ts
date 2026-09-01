@@ -396,17 +396,31 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
     { message: "Autofabulator editor did not open for the merge test" },
   );
 
-  const newCell = await game.evaluate(() => {
+  const cells = await game.evaluate(() => {
     const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 3, 3"]');
-    const cell = tile?.querySelectorAll<HTMLElement>("span")[2];
-    if (!cell) throw new Error("Center canvas cell was not found");
-    const rect = cell.getBoundingClientRect();
-    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    const spans = tile?.querySelectorAll<HTMLElement>("span");
+    if (!spans || spans.length < 4) throw new Error("Center canvas cells were not found");
+    return [1, 2, 3].map((index) => {
+      const rect = spans[index].getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    });
   });
-  await dispatchMouseClick(newCell.x, newCell.y);
+  const existingCellColor = await game.evaluate(() => {
+    const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 3, 3"]');
+    const cell = tile?.querySelectorAll<HTMLElement>("span")[1];
+    return cell ? getComputedStyle(cell).backgroundColor : null;
+  });
+  if (existingCellColor !== "rgb(222, 166, 31)") {
+    throw new Error(`Expected the existing prefab cell to be captured, got ${existingCellColor}`);
+  }
+  await dispatchMouseEvent("mouseMoved", cells[0].x, cells[0].y);
+  await dispatchMouseEvent("mousePressed", cells[0].x, cells[0].y, "right", 2);
+  await dispatchMouseEvent("mouseReleased", cells[0].x, cells[0].y, "right");
+  await dispatchMouseClick(cells[1].x, cells[1].y);
+  await dispatchMouseClick(cells[2].x, cells[2].y);
   const paintedNewCell = await game.evaluate(() => {
     const tile = document.querySelector<HTMLButtonElement>('button[aria-label="block 3, 3"]');
-    const cell = tile?.querySelectorAll<HTMLElement>("span")[2];
+    const cell = tile?.querySelectorAll<HTMLElement>("span")[3];
     return cell ? getComputedStyle(cell).backgroundColor : null;
   });
   if (paintedNewCell !== "rgb(222, 166, 31)") {
@@ -426,7 +440,7 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
   await game.waitFor(
     (cellX, cellY) =>
       (sandkit.api.structures.getAtCell(cellX, cellY) as any)?.data?.__prefabulatorBlueprint
-        ?.definition?.cellIds?.[0]?.[1] ?? 0,
+        ?.definition?.cellIds?.[0]?.[2] ?? 0,
     (cellId) => cellId !== 0,
     { args: [origin.x, origin.y], message: "Merged prefab fixture was not rebuilt" },
   );
@@ -445,9 +459,9 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
   if (result.structure === null || !String(result.structure.type).startsWith("prefabTerrain_")) {
     throw new Error(`Expected a merged prefab structure, got ${JSON.stringify(result.structure)}`);
   }
-  if (result.cellIds[0][0] === 0 || result.cellIds[0][1] === 0) {
+  if (result.cellIds[0][0] !== 0 || result.cellIds[0][1] === 0 || result.cellIds[0][2] === 0) {
     throw new Error(
-      `Expected both prefab cells after merge, got ${JSON.stringify({ structure: result.structure, cellIds: result.cellIds })}`,
+      `Expected the erased cell to be gone and the new cells to remain, got ${JSON.stringify({ structure: result.structure, cellIds: result.cellIds })}`,
     );
   }
 });
@@ -585,4 +599,134 @@ test("Autofabulator Apply path places an sspp block in the world", async () => {
       `Expected Solidite and prefab cells after Apply, got ${JSON.stringify(result)}`,
     );
   }
+});
+
+test("Autofabulator Apply path replaces an sspp block with s..p", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = await game.evaluate(() => {
+    for (let y = 2100; y < 2500; y += 4) {
+      for (let x = 2200; x < 2600; x += 4) {
+        const clear = Array.from({ length: 4 }, (_, row) =>
+          Array.from(
+            { length: 4 },
+            (_, col) =>
+              sandkit.api.world.isCellEmptyAtCell(x + col, y + row) &&
+              sandkit.api.structures.getAtCell(x + col, y + row) === null,
+          ),
+        ).every((row) => row.every(Boolean));
+        if (clear) return { x, y };
+      }
+    }
+    throw new Error("Could not find an empty area for the replacement test");
+  });
+  await game.evaluate(async ({ x, y }) => {
+    sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }, origin);
+
+  await game.evaluate(({ x, y }) => {
+    type PainterState = {
+      originX: number;
+      originY: number;
+      painted: boolean[][][][];
+      solidite: boolean[][][][];
+      capturedSolidite: boolean[][][][];
+      occupied: boolean[][][][];
+    };
+    const makeGrid = () =>
+      Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () =>
+          Array.from({ length: 4 }, () => Array<boolean>(4).fill(false)),
+        ),
+      );
+    const applyPattern = (
+      prefabColumns: number[],
+      soliditeColumns: number[],
+      capturedColumns: number[] = [],
+    ) => {
+      const painted = makeGrid();
+      const solidite = makeGrid();
+      const capturedSolidite = makeGrid();
+      for (const col of prefabColumns) {
+        for (let row = 0; row < 4; row += 1) painted[2][2][row][col] = true;
+      }
+      for (const col of soliditeColumns) {
+        for (let row = 0; row < 4; row += 1) solidite[2][2][row][col] = true;
+      }
+      for (const col of capturedColumns) {
+        for (let row = 0; row < 4; row += 1) capturedSolidite[2][2][row][col] = true;
+      }
+      const apply = (globalThis as Record<string, unknown>).__autofabulatorApply;
+      if (typeof apply !== "function")
+        throw new Error("Autofabulator Apply test hook is unavailable");
+      (apply as (state: PainterState) => void)({
+        originX: x,
+        originY: y,
+        painted,
+        solidite,
+        capturedSolidite,
+        occupied: Array.from({ length: 5 }, () =>
+          Array.from({ length: 5 }, () => Array.from({ length: 4 }, () => Array(4).fill(false))),
+        ),
+      });
+    };
+    applyPattern([2, 3], [0, 1]);
+  }, origin);
+
+  const fullExpected = Array.from({ length: 4 }, () => [31, 31, 15, 15]);
+  await game.waitFor(
+    ({ x, y }) =>
+      Array.from({ length: 4 }, (_, row) =>
+        Array.from({ length: 4 }, (_, col) =>
+          sandkit.api.world.getCellIdAtCell(x + 8 + col, y + 8 + row),
+        ),
+      ),
+    (cellIds) => JSON.stringify(cellIds) === JSON.stringify(fullExpected),
+    { args: [origin], message: "Apply path did not create the initial sspp block" },
+  );
+
+  await game.evaluate(({ x, y }) => {
+    const makeGrid = () =>
+      Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () =>
+          Array.from({ length: 4 }, () => Array<boolean>(4).fill(false)),
+        ),
+      );
+    const painted = makeGrid();
+    const solidite = makeGrid();
+    const capturedSolidite = makeGrid();
+    for (let row = 0; row < 4; row += 1) {
+      painted[2][2][row][3] = true;
+      solidite[2][2][row][0] = true;
+      capturedSolidite[2][2][row][0] = true;
+      capturedSolidite[2][2][row][1] = true;
+    }
+    const apply = (globalThis as Record<string, unknown>).__autofabulatorApply;
+    if (typeof apply !== "function")
+      throw new Error("Autofabulator Apply test hook is unavailable");
+    (apply as (state: Record<string, unknown>) => void)({
+      originX: x,
+      originY: y,
+      painted,
+      solidite,
+      capturedSolidite,
+      occupied: Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () => Array.from({ length: 4 }, () => Array(4).fill(false))),
+      ),
+    });
+  }, origin);
+
+  const expected = Array.from({ length: 4 }, () => [31, 0, 0, 15]);
+  await game.waitFor(
+    ({ x, y }) =>
+      Array.from({ length: 4 }, (_, row) =>
+        Array.from({ length: 4 }, (_, col) =>
+          sandkit.api.world.getCellIdAtCell(x + 8 + col, y + 8 + row),
+        ),
+      ),
+    (cellIds) => JSON.stringify(cellIds) === JSON.stringify(expected),
+    { args: [origin], message: "Apply path did not replace sspp with s..p" },
+  );
 });

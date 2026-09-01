@@ -20,12 +20,19 @@ let previousCursorStyle: unknown = null;
 let marqueeCursorActive = false;
 
 type OccupiedBlock = boolean[][];
+type CapturedBlocks = {
+  occupied: OccupiedBlock[][];
+  painted: boolean[][][][];
+  solidite: boolean[][][][];
+  capturedSolidite: boolean[][][][];
+};
 type PaintMode = "prefab" | "solidite" | "erase";
 type PainterEditorState = {
   originX: number;
   originY: number;
   painted: boolean[][][][];
   solidite: boolean[][][][];
+  capturedSolidite: boolean[][][][];
   occupied: OccupiedBlock[][];
 };
 
@@ -257,33 +264,70 @@ function emptyPaintedGrid(): boolean[][][][] {
   );
 }
 
-function readOccupiedBlocks(originX: number, originY: number): OccupiedBlock[][] {
-  return Array.from({ length: GRID_SIZE }, (_, blockY) =>
-    Array.from({ length: GRID_SIZE }, (_, blockX) =>
-      Array.from({ length: CELLS_PER_BLOCK }, (_, cellY) =>
-        Array.from({ length: CELLS_PER_BLOCK }, (_, cellX) => {
-          const x = originX + blockX * CELLS_PER_BLOCK + cellX;
-          const y = originY + blockY * CELLS_PER_BLOCK + cellY;
+function readCapturedBlocks(originX: number, originY: number): CapturedBlocks {
+  const occupied = Array.from({ length: GRID_SIZE }, () =>
+    Array.from({ length: GRID_SIZE }, () =>
+      Array.from({ length: CELLS_PER_BLOCK }, () => Array(CELLS_PER_BLOCK).fill(false)),
+    ),
+  );
+  const painted = emptyPaintedGrid();
+  const solidite = emptyPaintedGrid();
+  const capturedSolidite = emptyPaintedGrid();
+
+  for (let blockY = 0; blockY < GRID_SIZE; blockY += 1) {
+    for (let blockX = 0; blockX < GRID_SIZE; blockX += 1) {
+      const blockOriginX = originX + blockX * CELLS_PER_BLOCK;
+      const blockOriginY = originY + blockY * CELLS_PER_BLOCK;
+      for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+        for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+          const x = blockOriginX + cellX;
+          const y = blockOriginY + cellY;
           try {
+            if (api.terrains?.isTypeAtCell?.(x, y, "solidite")) {
+              solidite[blockY][blockX][cellY][cellX] = true;
+              capturedSolidite[blockY][blockX][cellY][cellX] = true;
+              continue;
+            }
+            const prefab = findPrefabStructureAtBlock(blockOriginX, blockOriginY);
+            if (prefab) {
+              const prefabX = x - prefab.x;
+              const prefabY = y - prefab.y;
+              const cellIds = readPrefabCellIds(prefab, prefab.x, prefab.y);
+              if (
+                prefabX >= 0 &&
+                prefabX < CELLS_PER_BLOCK &&
+                prefabY >= 0 &&
+                prefabY < CELLS_PER_BLOCK &&
+                cellIds[prefabY]?.[prefabX] === PREFAB_CELL_ID
+              ) {
+                painted[blockY][blockX][cellY][cellX] = true;
+                continue;
+              }
+            }
             const cellId = api.world.getCellIdAtCell?.(x, y);
             if (Number.isInteger(cellId)) {
-              if (cellId === 0) return false;
-              if (api.terrains?.isCellIdTerrain?.(cellId) === true) return true;
+              if (cellId === 0) continue;
+              if (api.terrains?.isCellIdTerrain?.(cellId) === true) {
+                occupied[blockY][blockX][cellY][cellX] = true;
+                continue;
+              }
             } else if (api.world.isTerrainAtCell(x, y)) {
-              return true;
+              occupied[blockY][blockX][cellY][cellX] = true;
+              continue;
             }
             const structure = api.structures.getAtCell?.(x, y);
             const structureType = String(structure?.type ?? "").toLowerCase();
-            return Boolean(
+            occupied[blockY][blockX][cellY][cellX] = Boolean(
               structure && !structureType.includes("pipe") && !structureType.includes("vent"),
             );
           } catch {
-            return false;
+            occupied[blockY][blockX][cellY][cellX] = false;
           }
-        }),
-      ),
-    ),
-  );
+        }
+      }
+    }
+  }
+  return { occupied, painted, solidite, capturedSolidite };
 }
 
 function refreshEditor(): void {
@@ -333,12 +377,14 @@ function openEditor(cursor = api.input.getMouseCellPosition()): void {
   const half = Math.floor(GRID_SIZE / 2) * CELLS_PER_BLOCK;
   const originX = selectedBlockX - half;
   const originY = selectedBlockY - half;
+  const captured = readCapturedBlocks(originX, originY);
   editorState = {
     originX,
     originY,
-    painted: emptyPaintedGrid(),
-    solidite: emptyPaintedGrid(),
-    occupied: readOccupiedBlocks(originX, originY),
+    painted: captured.painted,
+    solidite: captured.solidite,
+    capturedSolidite: captured.capturedSolidite,
+    occupied: captured.occupied,
   };
   restoreCursor();
   refreshEditor();
@@ -470,7 +516,7 @@ function mergeWithExistingPrefab(x: number, y: number, painted: boolean[][]): nu
   const existingCellId = cellIds.flat().find((cellId) => cellId !== 0) ?? PREFAB_CELL_ID;
   for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
     for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
-      if (painted[cellY][cellX]) cellIds[cellY][cellX] = existingCellId;
+      cellIds[cellY][cellX] = painted[cellY][cellX] ? existingCellId : 0;
     }
   }
   api.structures.removeAtCell(x, y, { removeCells: true });
@@ -486,6 +532,7 @@ function applyPrefabPattern(): void {
     merged: boolean;
   }> = [];
   const soliditePlacements: Array<{ x: number; y: number }> = [];
+  const soliditeRemovals: Array<{ x: number; y: number }> = [];
   for (let blockY = 0; blockY < GRID_SIZE; blockY += 1) {
     for (let blockX = 0; blockX < GRID_SIZE; blockX += 1) {
       const painted = editorState.painted[blockY][blockX];
@@ -494,30 +541,38 @@ function applyPrefabPattern(): void {
       const solidite = editorState.solidite[blockY][blockX];
       for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
         for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
-          if (solidite[cellY][cellX]) soliditePlacements.push({ x: x + cellX, y: y + cellY });
+          if (solidite[cellY][cellX]) {
+            soliditePlacements.push({ x: x + cellX, y: y + cellY });
+          }
+          if (editorState.capturedSolidite?.[blockY]?.[blockX]?.[cellY]?.[cellX]) {
+            soliditeRemovals.push({ x: x + cellX, y: y + cellY });
+          }
         }
       }
-      if (painted.flat().some(Boolean)) {
-        const existingCellIds = mergeWithExistingPrefab(x, y, painted);
+      const existingPrefab = findPrefabStructureAtBlock(x, y);
+      if (painted.flat().some(Boolean) || existingPrefab) {
+        const existingCellIds = existingPrefab ? mergeWithExistingPrefab(x, y, painted) : null;
         const cellIds =
           existingCellIds ?? painted.map((row) => row.map((cell) => (cell ? PREFAB_CELL_ID : 0)));
-        placements.push({
-          x,
-          y,
-          data: {
-            __prefabulatorBlueprint: {
-              definition: {
-                shape: cellIds.map((row) => row.map((cellId) => (cellId ? 1 : 0))),
-                cellIds,
+        if (cellIds.flat().some(Boolean)) {
+          placements.push({
+            x,
+            y,
+            data: {
+              __prefabulatorBlueprint: {
+                definition: {
+                  shape: cellIds.map((row) => row.map((cellId) => (cellId ? 1 : 0))),
+                  cellIds,
+                },
               },
             },
-          },
-          merged: existingCellIds !== null,
-        });
+            merged: existingCellIds !== null,
+          });
+        }
       }
     }
   }
-  if (!placements.length && !soliditePlacements.length) {
+  if (!placements.length && !soliditePlacements.length && !soliditeRemovals.length) {
     api.ui.toast("Paint at least one cell before applying.");
     return;
   }
@@ -530,61 +585,68 @@ function applyPrefabPattern(): void {
     return;
   }
   const place = () => {
-    for (const placement of placements) {
-      const localized = api.blueprints.localizeStructures([
-        {
-          type: PREFAB_TERRAIN_TYPE,
-          x: 0,
-          y: 0,
-          color: "#ffffff",
-          data: placement.data,
-        } as SandustryBlueprintRecord,
-      ]);
-      const localizedType = localized[0]?.type;
-      if (typeof localizedType !== "string") continue;
-      const cellIds = (
-        placement.data.__prefabulatorBlueprint as { definition?: { cellIds?: number[][] } }
-      ).definition?.cellIds;
-      if (!cellIds) continue;
-      api.structures.buildAtCell(placement.x, placement.y, localizedType, {
-        data: placement.data,
-        bypassPlacementChecks: true,
-      });
+    for (const target of soliditeRemovals) {
+      api.terrains.removeAtCellWhenIdle?.(target.x, target.y);
     }
-    api.world.runWhenSimulationIdle(() => {
-      for (const placement of placements) {
-        const cellIds = (
-          placement.data.__prefabulatorBlueprint as { definition?: { cellIds?: number[][] } }
-        ).definition?.cellIds;
-        if (cellIds && typeof api.terrains?.createAtCellWhenIdle === "function") {
-          for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
-            for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
-              if (
-                cellIds[cellY]?.[cellX] &&
-                api.world.isCellEmptyAtCell(placement.x + cellX, placement.y + cellY)
-              ) {
-                api.terrains.createAtCellWhenIdle(
-                  placement.x + cellX,
-                  placement.y + cellY,
-                  "Block",
-                );
+    setTimeout(() => {
+      api.world.runWhenSimulationIdle(() => {
+        for (const placement of placements) {
+          const localized = api.blueprints.localizeStructures([
+            {
+              type: PREFAB_TERRAIN_TYPE,
+              x: 0,
+              y: 0,
+              color: "#ffffff",
+              data: placement.data,
+            } as SandustryBlueprintRecord,
+          ]);
+          const localizedType = localized[0]?.type;
+          if (typeof localizedType !== "string") continue;
+          api.structures.buildAtCell(placement.x, placement.y, localizedType, {
+            data: placement.data,
+            bypassPlacementChecks: true,
+          });
+        }
+        setTimeout(() => {
+          api.world.runWhenSimulationIdle(() => {
+            for (const placement of placements) {
+              const cellIds = (
+                placement.data.__prefabulatorBlueprint as {
+                  definition?: { cellIds?: number[][] };
+                }
+              ).definition?.cellIds;
+              if (cellIds && typeof api.terrains?.createAtCellWhenIdle === "function") {
+                for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+                  for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+                    if (
+                      cellIds[cellY]?.[cellX] &&
+                      api.world.isCellEmptyAtCell(placement.x + cellX, placement.y + cellY)
+                    ) {
+                      api.terrains.createAtCellWhenIdle(
+                        placement.x + cellX,
+                        placement.y + cellY,
+                        "Block",
+                      );
+                    }
+                  }
+                }
+              }
+              const structure = api.structures.getAtCell?.(placement.x, placement.y);
+              if (structure && typeof api.structures.setData === "function") {
+                api.structures.setData(structure, placement.data);
               }
             }
-          }
-        }
-        const structure = api.structures.getAtCell?.(placement.x, placement.y);
-        if (structure && typeof api.structures.setData === "function") {
-          api.structures.setData(structure, placement.data);
-        }
-      }
-      if (typeof api.terrains?.createAtCellWhenIdle === "function") {
-        for (const target of soliditePlacements) {
-          if (api.world.isCellEmptyAtCell(target.x, target.y)) {
-            api.terrains.createAtCellWhenIdle(target.x, target.y, "solidite");
-          }
-        }
-      }
-    });
+            if (typeof api.terrains?.createAtCellWhenIdle === "function") {
+              for (const target of soliditePlacements) {
+                if (api.world.isCellEmptyAtCell(target.x, target.y)) {
+                  api.terrains.createAtCellWhenIdle(target.x, target.y, "solidite");
+                }
+              }
+            }
+          });
+        }, 0);
+      });
+    }, 0);
   };
   place();
   closeEditor();
