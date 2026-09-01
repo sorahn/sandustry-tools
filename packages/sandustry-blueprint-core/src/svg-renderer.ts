@@ -21,6 +21,8 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   showCustomShapes?: boolean;
   /** Render custom shapes as exact Cell rectangles without the fallback asset. */
   useCustomShapeAsset?: boolean;
+  /** Hide sprite assets while retaining structure geometry and labels. */
+  showSprites?: boolean;
   showNames?: boolean;
   showFoundationOutlines?: boolean;
   showSignalLinks?: boolean;
@@ -30,6 +32,8 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
 
 export type BlueprintSvgRenderResult = {
   svg: string;
+  /** SVG markup for the map contents, without the outer svg element. */
+  markup: string;
   model: BlueprintRenderModel;
 };
 
@@ -188,7 +192,7 @@ function renderStructure(
   if (isCustomShape && options.showCustomShapes) {
     output += renderShapeRects(shape, left, top, model.cell, "#a47a45");
   }
-  if (asset?.path) {
+  if (asset?.path && options.showSprites !== false) {
     const sourceWidth = asset.sourceSize?.width ?? asset.frame?.width ?? 1;
     const sourceHeight = asset.sourceSize?.height ?? asset.frame?.height ?? 1;
     const frameWidth = asset.frame?.width ?? asset.renderSize?.width ?? sourceWidth;
@@ -298,8 +302,10 @@ export function renderBlueprintToSvg(
     : "";
   const signals = showSignalLinks ? renderSignalLinks(model) : "";
   const edgeFade = showEdgeFade && includeBackground ? renderEdgeFade(model) : "";
+  const markup = `${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}${edgeFade}`;
   return {
     model,
-    svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${number(model.width)} ${number(model.height)}" width="${number(model.width)}" height="${number(model.height)}" preserveAspectRatio="xMidYMid meet"><title>${escapeXml(blueprint.name || "Sandustry blueprint")}</title><desc>Rendered Sandustry blueprint map</desc><style>image{image-rendering:pixelated}</style>${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}${edgeFade}</svg>`,
+    markup,
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${number(model.width)} ${number(model.height)}" width="${number(model.width)}" height="${number(model.height)}" preserveAspectRatio="xMidYMid meet"><title>${escapeXml(blueprint.name || "Sandustry blueprint")}</title><desc>Rendered Sandustry blueprint map</desc><style>image{image-rendering:pixelated}</style>${markup}</svg>`,
   };
 }

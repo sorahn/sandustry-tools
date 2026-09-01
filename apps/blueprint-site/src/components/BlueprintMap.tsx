@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   customShapeFromStructure,
-  isFoundationStructure,
   prepareSvgForPng,
   renderPixelScale,
   renderBlueprintToSvg,
@@ -18,10 +17,8 @@ import { BlueprintMapStructure } from "./BlueprintMapStructure";
 import { BlueprintMapViewportControls } from "./BlueprintMapViewportControls";
 import {
   BlueprintMapEdgeFadeLayer,
-  BlueprintMapFoundationOutlineLayer,
   BlueprintMapGridLayer,
   BlueprintMapRawStructuresLayer,
-  BlueprintMapSignalLinksLayer,
 } from "./BlueprintMapLayers";
 import { useBlueprintMapViewport } from "../hooks/useBlueprintMapViewport";
 import {
@@ -319,6 +316,34 @@ export function BlueprintMap({
     [blueprint, cell, padding],
   );
   const { preparedBlueprint, minX, minY, width, height } = mapModel;
+  const coreRender = useMemo(
+    () =>
+      renderBlueprintToSvg(blueprint, {
+        catalog: blueprintCatalog(),
+        assetBaseUrl: import.meta.env.BASE_URL,
+        padding,
+        cell,
+        unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
+        includeBackground: false,
+        showGrid: false,
+        showSprites: spritesVisible,
+        showCustomShapes,
+        showNames,
+        showFoundationOutlines: foundationOutlinesVisible,
+        showSignalLinks: signalLinksVisible,
+      }),
+    [
+      blueprint,
+      cell,
+      foundationOutlinesVisible,
+      padding,
+      showCustomShapes,
+      showNames,
+      showSprites,
+      signalLinksVisible,
+      spritesVisible,
+    ],
+  );
   const { viewportRef, viewportSize, hoverMarkerRef, updateHoverBlock, clearHoverBlock } =
     useBlueprintMapViewport({ cell, minX, minY, padding });
   const viewportWidth = viewportRef.current?.clientWidth || viewportSize.width || width;
@@ -401,13 +426,6 @@ export function BlueprintMap({
   };
   const gridOriginX = (padding - minX) * cell;
   const gridOriginY = (padding - minY) * cell;
-  const point = useCallback(
-    (x: number, y: number) => ({
-      x: (x - minX + padding + 0.5) * cell,
-      y: (y - minY + padding + 0.5) * cell,
-    }),
-    [cell, minX, minY, padding],
-  );
   const selected = selectedIndex === null ? null : blueprint.data[selectedIndex];
   const { renderStructures } = mapModel;
   const debugOptions = debugComponent(MapDebugOptions, {
@@ -794,50 +812,22 @@ export function BlueprintMap({
                 })}
               </g>
             ) : null}
-            <BlueprintMapFoundationOutlineLayer
-              preparedBlueprint={preparedBlueprint}
-              visible={foundationOutlinesVisible}
-              minX={minX}
-              minY={minY}
-              padding={padding}
-              cell={cell}
-            />
-            {(() => {
-              const isFoundationShape = ({ index }: (typeof renderStructures)[number]) => {
-                return isFoundationStructure(preparedBlueprint.preparedStructures[index]);
-              };
-              const renderStructure = ({ structure, index }: (typeof renderStructures)[number]) => {
-                return (
-                  <BlueprintMapStructure
-                    key={`structure-${index}`}
-                    item={{ structure, index, z: preparedBlueprint.preparedStructures[index].z }}
-                    preparedBlueprint={preparedBlueprint}
-                    minX={minX}
-                    minY={minY}
-                    padding={padding}
-                    cell={cell}
-                    height={height}
-                    spritesVisible={spritesVisible}
-                    showCustomShapes={showCustomShapes}
-                    showNames={showNames}
-                    suppressClickRef={suppressClickRef}
-                    onSelect={setSelectedIndex}
-                  />
-                );
-              };
-              return (
-                <>
-                  <g style={mapLayerStyle("foundationShapes")}>
-                    {renderStructures.filter(isFoundationShape).map(renderStructure)}
-                  </g>
-                  <g style={mapLayerStyle("sprites")}>
-                    {renderStructures
-                      .filter((item) => !isFoundationShape(item))
-                      .map(renderStructure)}
-                  </g>
-                </>
-              );
-            })()}
+            <g dangerouslySetInnerHTML={{ __html: coreRender.markup }} pointerEvents="none" />
+            <g style={mapLayerStyle("selectedHighlight")}>
+              {renderStructures.map((item) => (
+                <BlueprintMapStructure
+                  key={`structure-${item.index}`}
+                  item={item}
+                  preparedBlueprint={preparedBlueprint}
+                  minX={minX}
+                  minY={minY}
+                  padding={padding}
+                  cell={cell}
+                  suppressClickRef={suppressClickRef}
+                  onSelect={setSelectedIndex}
+                />
+              ))}
+            </g>
             <BlueprintMapRawStructuresLayer
               preparedBlueprint={preparedBlueprint}
               visible={showRawStructures}
@@ -845,11 +835,6 @@ export function BlueprintMap({
               minY={minY}
               padding={padding}
               cell={cell}
-            />
-            <BlueprintMapSignalLinksLayer
-              preparedBlueprint={preparedBlueprint}
-              visible={signalLinksVisible}
-              point={point}
             />
             {!viewportGridEnabled ? (
               <BlueprintMapEdgeFadeLayer
