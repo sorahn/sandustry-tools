@@ -11,6 +11,8 @@ const GRID_SIZE = 5;
 const CELLS_PER_BLOCK = 4;
 const CANVAS_SIZE = 360;
 const ACTION_START = "1";
+const PREFAB_TERRAIN_TYPE = "prefabTerrain_5";
+const PREFAB_CELL_ID = 31;
 const MAC_RIGHT_MOUSE_PROBE =
   "T2JqQy5pbXBvcnQoJ0NvY29hJyk7ZnVuY3Rpb24gYigpe2NvbnN0IHY9JC5OU0V2ZW50LnByZXNzZWRNb3VzZUJ1dHRvbnM7cmV0dXJuIE51bWJlcih0eXBlb2Ygdj09PSdmdW5jdGlvbic/digpOnYpO31pZighTnVtYmVyLmlzRmluaXRlKGIoKSkpdGhyb3cgbmV3IEVycm9yKCdubyBidXR0b24gc3RhdGUnKTt3aGlsZShiKCkmMil7ZGVsYXkoMC4wMTYpO30=";
 const UIReact = sandkit.react ?? null;
@@ -361,6 +363,56 @@ function clearEditor(): void {
   refreshEditor();
 }
 
+function applyPrefabPattern(): void {
+  if (!editorState) return;
+  const placements: Array<{ x: number; y: number; data: Record<string, unknown> }> = [];
+  for (let blockY = 0; blockY < GRID_SIZE; blockY += 1) {
+    for (let blockX = 0; blockX < GRID_SIZE; blockX += 1) {
+      const painted = editorState.painted[blockY][blockX];
+      if (!painted.flat().some(Boolean)) continue;
+      placements.push({
+        x: editorState.originX + blockX * CELLS_PER_BLOCK,
+        y: editorState.originY + blockY * CELLS_PER_BLOCK,
+        data: {
+          __prefabulatorBlueprint: {
+            definition: {
+              shape: painted.map((row) => row.map((cell) => (cell ? 1 : 0))),
+              cellIds: painted.map((row) => row.map((cell) => (cell ? PREFAB_CELL_ID : 0))),
+            },
+          },
+        },
+      });
+    }
+  }
+  if (!placements.length) {
+    api.ui.toast("Paint at least one cell before applying.");
+    return;
+  }
+  if (typeof api.structures?.buildAtCell !== "function") {
+    api.ui.toast("Autofabulator placement is unavailable.");
+    return;
+  }
+  for (const placement of placements) {
+    const localized = api.blueprints.localizeStructures([
+      {
+        type: PREFAB_TERRAIN_TYPE,
+        x: 0,
+        y: 0,
+        color: "#ffffff",
+        data: placement.data,
+      } as SandustryBlueprintRecord,
+    ]);
+    const localizedType = localized[0]?.type;
+    if (localizedType === undefined) continue;
+    api.structures.buildAtCell(placement.x, placement.y, localizedType);
+    const structure = api.structures.getAtCell?.(placement.x, placement.y);
+    if (structure && typeof api.structures.setData === "function") {
+      api.structures.setData(structure, placement.data);
+    }
+  }
+  closeEditor();
+}
+
 function AutofabulatorEditor() {
   if (!UIReact) return null;
   const [, bump] = UIReact.useState(0);
@@ -598,11 +650,7 @@ function AutofabulatorEditor() {
             <button type="button" onClick={closeEditor} style={PANEL_BUTTON_STYLE}>
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={() => api.ui.toast("Autofabulator placement is not implemented yet.")}
-              style={ACCENT_BUTTON_STYLE}
-            >
+            <button type="button" onClick={applyPrefabPattern} style={ACCENT_BUTTON_STYLE}>
               Apply
             </button>
           </div>
