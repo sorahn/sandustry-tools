@@ -31,6 +31,23 @@ async function dispatchMouseClick(x: number, y: number): Promise<void> {
   });
 }
 
+async function dispatchMouseEvent(
+  type: "mouseMoved" | "mousePressed" | "mouseReleased",
+  x: number,
+  y: number,
+  button: "none" | "left" | "right" = "none",
+  buttons = 0,
+): Promise<void> {
+  await browserCdp.sendQueued("Input.dispatchMouseEvent", {
+    type,
+    x,
+    y,
+    button,
+    buttons,
+    clickCount: type === "mouseMoved" ? 0 : 1,
+  });
+}
+
 async function dispatchKey(key: string): Promise<void> {
   await browserCdp.sendQueued("Input.dispatchKeyEvent", {
     type: "keyDown",
@@ -239,5 +256,61 @@ test("Autofabulator paints only the clicked canvas cell", async () => {
   }
   if (canvasState.blockBackgrounds.some((background) => background === "rgb(222, 166, 31)")) {
     throw new Error("Painting one canvas cell colored its entire Blueprint Block");
+  }
+});
+
+test("Autofabulator right-button drag erases until release", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const anchorPoint = await game.evaluate(() => {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) throw new Error("Game canvas was not found");
+    const rect = canvas.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+  await dispatchMouseClick(anchorPoint.x, anchorPoint.y);
+  await game.waitFor(
+    () => Boolean(document.body.textContent?.includes("5×5 Blueprint Blocks")),
+    (open) => open,
+    { message: "Autofabulator editor did not open for the erase-drag test" },
+  );
+
+  const [first, second, third] = await game.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("[data-autofab-cell]")].slice(0, 3).map((cell) => {
+      const rect = cell.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    }),
+  );
+
+  await dispatchMouseEvent("mouseMoved", first.x, first.y);
+  await dispatchMouseEvent("mousePressed", first.x, first.y, "left", 1);
+  await dispatchMouseEvent("mouseMoved", second.x, second.y, "left", 1);
+  await dispatchMouseEvent("mouseMoved", third.x, third.y, "left", 1);
+  await dispatchMouseEvent("mouseReleased", third.x, third.y, "left");
+
+  await dispatchMouseEvent("mouseMoved", first.x, first.y);
+  await dispatchMouseEvent("mousePressed", first.x, first.y, "right", 2);
+  const erasedOnPress = await game.evaluate(
+    () =>
+      getComputedStyle(document.querySelector<HTMLElement>("[data-autofab-cell]")!).backgroundColor,
+  );
+  if (erasedOnPress === "rgb(222, 166, 31)") {
+    throw new Error("Right mouse down did not erase the first cell immediately");
+  }
+
+  // The live macOS Electron window reports zero buttons during a physical
+  // right-button drag even though the button remains held.
+  await dispatchMouseEvent("mouseMoved", second.x, second.y, "right", 0);
+  await dispatchMouseEvent("mouseReleased", second.x, second.y, "right");
+  await dispatchMouseEvent("mouseMoved", third.x, third.y);
+
+  const painted = await game.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("[data-autofab-cell]")]
+      .slice(0, 3)
+      .map((cell) => getComputedStyle(cell).backgroundColor === "rgb(222, 166, 31)"),
+  );
+  if (JSON.stringify(painted) !== JSON.stringify([false, false, true])) {
+    throw new Error(`Expected erase drag to stop on release, got ${JSON.stringify(painted)}`);
   }
 });

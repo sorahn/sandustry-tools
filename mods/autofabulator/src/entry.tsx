@@ -11,6 +11,8 @@ const GRID_SIZE = 5;
 const CELLS_PER_BLOCK = 4;
 const CANVAS_SIZE = 360;
 const ACTION_START = "1";
+const MAC_RIGHT_MOUSE_PROBE =
+  "T2JqQy5pbXBvcnQoJ0NvY29hJyk7ZnVuY3Rpb24gYigpe2NvbnN0IHY9JC5OU0V2ZW50LnByZXNzZWRNb3VzZUJ1dHRvbnM7cmV0dXJuIE51bWJlcih0eXBlb2Ygdj09PSdmdW5jdGlvbic/digpOnYpO31pZighTnVtYmVyLmlzRmluaXRlKGIoKSkpdGhyb3cgbmV3IEVycm9yKCdubyBidXR0b24gc3RhdGUnKTt3aGlsZShiKCkmMil7ZGVsYXkoMC4wMTYpO30=";
 const UIReact = sandkit.react ?? null;
 let previousCursorStyle: unknown = null;
 let marqueeCursorActive = false;
@@ -26,6 +28,18 @@ type PainterEditorState = {
 let editorState: PainterEditorState | null = null;
 let editorRepaint: ((update: (value: number) => number) => void) | null = null;
 let editorDispose: (() => void) | null = null;
+let activePaintMode: boolean | null = null;
+let activePaintPointerId: number | null = null;
+let activePaintCanvas: HTMLElement | null = null;
+let activePaintLastCell: string | null = null;
+let nativeRightWatchOwned = false;
+let nativeRightListenersRegistered = false;
+
+type MacRightMouseBridge = {
+  watch?: (active: boolean, probeScript?: string) => void;
+  onPos?: (callback: (x: number, y: number) => void) => void;
+  onUp?: (callback: () => void) => void;
+};
 
 type Point = { x: number; y: number };
 type InternalRenderingApi = {
@@ -37,6 +51,37 @@ type InternalRenderingApi = {
   ): void;
 };
 const internalRendering = (engine.api as unknown as { rendering?: InternalRenderingApi }).rendering;
+
+function macRightMouseBridge(): MacRightMouseBridge | null {
+  return (
+    ((window as unknown as { electron?: { macRightMouse?: MacRightMouseBridge } }).electron
+      ?.macRightMouse as MacRightMouseBridge | undefined) ?? null
+  );
+}
+
+function stopPaintingGesture(): void {
+  const pointerId = activePaintPointerId;
+  const canvas = activePaintCanvas;
+  activePaintMode = null;
+  activePaintPointerId = null;
+  activePaintCanvas = null;
+  activePaintLastCell = null;
+  if (pointerId !== null && canvas?.hasPointerCapture?.(pointerId)) {
+    canvas.releasePointerCapture(pointerId);
+  }
+  if (nativeRightWatchOwned) {
+    nativeRightWatchOwned = false;
+    macRightMouseBridge()?.watch?.(false);
+  }
+}
+
+function startNativeRightMouseWatch(): void {
+  if (activePaintMode !== false || nativeRightWatchOwned) return;
+  const bridge = macRightMouseBridge();
+  if (typeof bridge?.watch !== "function" || typeof bridge.onUp !== "function") return;
+  nativeRightWatchOwned = true;
+  bridge.watch(true, atob(MAC_RIGHT_MOUSE_PROBE));
+}
 const PANEL_BUTTON_STYLE = {
   position: "relative" as const,
   minHeight: 0,
@@ -210,6 +255,7 @@ function refreshEditor(): void {
 
 function closeEditor(): void {
   editorState = null;
+  stopPaintingGesture();
   refreshEditor();
 }
 
@@ -225,6 +271,7 @@ function registerEditor(): boolean {
       editorDispose = null;
       editorState = null;
       editorRepaint = null;
+      stopPaintingGesture();
     });
     return true;
   } catch (error) {
@@ -288,6 +335,26 @@ function paintEditorCell(
   refreshEditor();
 }
 
+function cellAtClientPoint(clientX: number, clientY: number): HTMLElement | null {
+  const target = document.elementFromPoint(clientX, clientY);
+  return target instanceof HTMLElement ? target.closest<HTMLElement>("[data-autofab-cell]") : null;
+}
+
+function paintEditorCellElement(cell: HTMLElement): void {
+  const key = cell.dataset.autofabCell;
+  if (!key || key === activePaintLastCell) return;
+  const coordinates = key.split(":").map(Number);
+  if (coordinates.some((value) => !Number.isInteger(value))) return;
+  const [blockX, blockY, cellX, cellY] = coordinates;
+  activePaintLastCell = key;
+  paintEditorCell(blockX, blockY, cellX, cellY, activePaintMode === true);
+}
+
+function paintEditorCellAtClientPoint(clientX: number, clientY: number): void {
+  const cell = cellAtClientPoint(clientX, clientY);
+  if (cell) paintEditorCellElement(cell);
+}
+
 function clearEditor(): void {
   if (!editorState) return;
   editorState.painted = emptyPaintedGrid();
@@ -304,6 +371,31 @@ function AutofabulatorEditor() {
     };
   }, []);
   UIReact.useEffect(() => {
+    const stopPaintingFromMouse = (event: MouseEvent) => {
+      if (activePaintMode === false && !event.isTrusted) return;
+      stopPaintingGesture();
+    };
+    const stopPainting = () => stopPaintingGesture();
+    const bridge = macRightMouseBridge();
+    if (!nativeRightListenersRegistered && bridge) {
+      nativeRightListenersRegistered = true;
+      bridge.onPos?.((x, y) => {
+        if (activePaintMode === false) paintEditorCellAtClientPoint(x, y);
+      });
+      bridge.onUp?.(() => {
+        if (activePaintMode === false) stopPaintingGesture();
+      });
+    }
+    window.addEventListener("mouseup", stopPaintingFromMouse, true);
+    window.addEventListener("blur", stopPainting);
+    document.addEventListener("visibilitychange", stopPainting);
+    return () => {
+      window.removeEventListener("mouseup", stopPaintingFromMouse, true);
+      window.removeEventListener("blur", stopPainting);
+      document.removeEventListener("visibilitychange", stopPainting);
+    };
+  }, []);
+  UIReact.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || !editorState) return;
       event.preventDefault();
@@ -316,6 +408,10 @@ function AutofabulatorEditor() {
 
   if (!editorState) return null;
   const current = editorState;
+  const stopPointerPainting = (event: PointerEvent) => {
+    if (activePaintPointerId !== event.pointerId) return;
+    stopPaintingGesture();
+  };
   return (
     <div
       style={{
@@ -368,6 +464,39 @@ function AutofabulatorEditor() {
             5×5 Blueprint Blocks · left-click paint · right-click erase
           </div>
           <div
+            data-autofab-canvas
+            onPointerDown={(event: any) => {
+              if (event.button !== 0 && event.button !== 2) return;
+              const cell = cellAtClientPoint(event.clientX, event.clientY);
+              if (!cell) return;
+              event.preventDefault();
+              event.stopPropagation();
+              activePaintMode = event.button === 0;
+              activePaintPointerId = event.pointerId;
+              activePaintCanvas = event.currentTarget;
+              activePaintLastCell = null;
+              event.currentTarget.setPointerCapture?.(event.pointerId);
+              if (activePaintMode === false) startNativeRightMouseWatch();
+              paintEditorCellElement(cell);
+            }}
+            onPointerMove={(event: any) => {
+              if (activePaintMode === null || activePaintPointerId !== event.pointerId) return;
+              const cell = cellAtClientPoint(event.clientX, event.clientY);
+              if (!cell) return;
+              event.preventDefault();
+              event.stopPropagation();
+              paintEditorCellElement(cell);
+            }}
+            onPointerUp={(event: any) => stopPointerPainting(event.nativeEvent)}
+            onPointerCancel={(event: any) => stopPointerPainting(event.nativeEvent)}
+            onLostPointerCapture={(event: any) => {
+              if (activePaintMode === false && nativeRightWatchOwned) return;
+              stopPointerPainting(event.nativeEvent);
+            }}
+            onContextMenu={(event: any) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
             style={{
               display: "grid",
               gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
@@ -414,6 +543,7 @@ function AutofabulatorEditor() {
                         cellRow.map((cellOccupied, cellX) => (
                           <span
                             key={`${cellX}:${cellY}`}
+                            data-autofab-cell={`${blockX}:${blockY}:${cellX}:${cellY}`}
                             style={{
                               background: paintedBlock[cellY][cellX]
                                 ? "#dea61f"
@@ -422,15 +552,6 @@ function AutofabulatorEditor() {
                                   : "transparent",
                               border: "1px solid rgba(130, 140, 150, 0.2)",
                               cursor: "crosshair",
-                            }}
-                            onClick={(event: any) => {
-                              event.stopPropagation();
-                              paintEditorCell(blockX, blockY, cellX, cellY, true);
-                            }}
-                            onContextMenu={(event: any) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              paintEditorCell(blockX, blockY, cellX, cellY, false);
                             }}
                           />
                         )),
