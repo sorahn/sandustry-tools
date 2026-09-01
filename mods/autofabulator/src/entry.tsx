@@ -121,17 +121,13 @@ const TRANSLATIONS = {
   "items|autofabulator|description": "Paint and place a small prefab pattern.",
 };
 
-function isDevelopmentSession(): boolean {
-  return Boolean((globalThis as Record<string, unknown>).__sandustryDevHmrConfig__);
-}
-
 function inventoryContains(): boolean {
   const inventory = sandkit.engine.state?.store?.player?.inventory;
   return Array.isArray(inventory) && inventory.some((item) => String(item?.id) === ITEM_ID);
 }
 
-function grantDevelopmentItem(): void {
-  if (!isDevelopmentSession() || inventoryContains()) return;
+function grantAutofabulatorItem(): void {
+  if (inventoryContains()) return;
   api.player.inventory.addFromId(ITEM_ID);
 }
 
@@ -958,9 +954,10 @@ function registerAutofabulator(): void {
   });
 
   api.events.on("game:ready", () => {
-    // TODO: replace this dev-only grant with a Conservatory ticket reward for
-    // release. Keep the grant idempotent while the tool is being developed.
-    grantDevelopmentItem();
+    // Keep the starter grant idempotent so reloads and existing saves never
+    // duplicate the tool. A Conservatory purchase can replace this later if
+    // the availability decision changes.
+    grantAutofabulatorItem();
   });
 }
 

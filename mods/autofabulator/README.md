@@ -1,11 +1,11 @@
 # Autofabulator
 
-Development scaffold for the Autofabulator player tool.
+The Autofabulator is available to every player and is granted automatically when
+the game is ready. The grant is inventory-safe and will not duplicate an
+existing item in a save.
 
-The current scaffold registers the tool and grants it only in a dev watcher
-session. The grant is inventory-safe and will not duplicate an existing item.
-The production availability path will be a Conservatory ticket reward once the
-ticket price and reward-tech integration are decided.
+Planned follow-up work includes the Conservatory ticket reward decision,
+occupied-cell editing, and the remaining Solidite behavior.
 
-Planned follow-up work includes the hover cursor, anchored 3×3/5×5 editor,
-occupied-cell background, Prefab Block mode, and Solidite mode.
+The hover cursor, anchored 5×5 editor, occupied-cell background, and Prefab
+Block mode are already implemented.
