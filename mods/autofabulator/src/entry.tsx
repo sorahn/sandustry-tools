@@ -263,7 +263,13 @@ function readOccupiedBlocks(originX: number, originY: number): OccupiedBlock[][]
           const x = originX + blockX * CELLS_PER_BLOCK + cellX;
           const y = originY + blockY * CELLS_PER_BLOCK + cellY;
           try {
-            if (api.world.isTerrainAtCell(x, y)) return true;
+            const cellId = api.world.getCellIdAtCell?.(x, y);
+            if (Number.isInteger(cellId)) {
+              if (cellId === 0) return false;
+              if (api.terrains?.isCellIdTerrain?.(cellId) === true) return true;
+            } else if (api.world.isTerrainAtCell(x, y)) {
+              return true;
+            }
             const structure = api.structures.getAtCell?.(x, y);
             const structureType = String(structure?.type ?? "").toLowerCase();
             return Boolean(
