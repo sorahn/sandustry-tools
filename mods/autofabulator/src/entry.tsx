@@ -3,6 +3,14 @@ import { onDispose } from "../../../shared/dev-hmr";
 const api = sandkit.api;
 const engine = sandkit.engine;
 
+const internalTerrainApi = engine.api as unknown as {
+  terrains?: {
+    replaceAt?: (state: unknown, x: number, y: number, type: string) => void;
+    removeAt?: (state: unknown, x: number, y: number) => void;
+  };
+};
+const SET_PAUSED_MESSAGE = 54;
+
 const MOD_ID = "sorahn.sandustry-autofabulator";
 const ITEM_ID = "sorahnAutofabulator";
 const TOOL_SPRITE_ID = "sorahnAutofabulatorSprite";
@@ -85,6 +93,38 @@ function stopPaintingGesture(): void {
     nativeRightWatchOwned = false;
     macRightMouseBridge()?.watch?.(false);
   }
+}
+
+function setSimulationPaused(paused: boolean): void {
+  const state = engine.state as unknown as {
+    session?: { paused?: boolean };
+    environment?: {
+      multithreading?: {
+        simulation?: { manager?: { postMessage?: (message: unknown[]) => void } };
+      };
+    };
+  };
+  if (state.session) state.session.paused = paused;
+  state.environment?.multithreading?.simulation?.manager?.postMessage?.([
+    SET_PAUSED_MESSAGE,
+    paused,
+  ]);
+}
+
+function replaceTerrainImmediately(x: number, y: number, type: string): void {
+  if (typeof internalTerrainApi.terrains?.replaceAt === "function") {
+    internalTerrainApi.terrains.replaceAt(engine.state, x, y, type);
+    return;
+  }
+  api.terrains.replaceAtCellWhenIdle(x, y, type);
+}
+
+function removeTerrainImmediately(x: number, y: number): void {
+  if (typeof internalTerrainApi.terrains?.removeAt === "function") {
+    internalTerrainApi.terrains.removeAt(engine.state, x, y);
+    return;
+  }
+  api.terrains.removeAtCellWhenIdle(x, y);
 }
 
 function startNativeRightMouseWatch(): void {
@@ -585,62 +625,58 @@ function applyPrefabPattern(): void {
   }
   const place = () => {
     for (const target of soliditeRemovals) {
-      api.terrains.removeAtCellWhenIdle?.(target.x, target.y);
+      removeTerrainImmediately(target.x, target.y);
     }
-    setTimeout(() => {
-      api.world.runWhenSimulationIdle(() => {
-        for (const placement of placements) {
-          const localized = api.blueprints.localizeStructures([
-            {
-              type: PREFAB_TERRAIN_TYPE,
-              x: 0,
-              y: 0,
-              color: "#ffffff",
-              data: placement.data,
-            } as SandustryBlueprintRecord,
-          ]);
-          const localizedType = localized[0]?.type;
-          if (typeof localizedType !== "string") continue;
-          api.structures.buildAtCell(placement.x, placement.y, localizedType, {
-            data: placement.data,
-            bypassPlacementChecks: true,
-          });
-        }
-        setTimeout(() => {
-          api.world.runWhenSimulationIdle(() => {
-            for (const placement of placements) {
-              const cellIds = (
-                placement.data.__prefabulatorBlueprint as {
-                  definition?: { cellIds?: number[][] };
-                }
-              ).definition?.cellIds;
-              if (cellIds && typeof api.terrains?.createAtCellWhenIdle === "function") {
-                for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
-                  for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
-                    if (cellIds[cellY]?.[cellX] === PREFAB_CELL_ID) {
-                      const targetX = placement.x + cellX;
-                      const targetY = placement.y + cellY;
-                      api.terrains.replaceAtCellWhenIdle(targetX, targetY, "Block");
-                    }
-                  }
-                }
-              }
-              const structure = api.structures.getAtCell?.(placement.x, placement.y);
-              if (structure && typeof api.structures.setData === "function") {
-                api.structures.setData(structure, placement.data);
-              }
-            }
-            if (typeof api.terrains?.replaceAtCellWhenIdle === "function") {
-              for (const target of soliditePlacements) {
-                api.terrains.replaceAtCellWhenIdle(target.x, target.y, "solidite");
-              }
-            }
-          });
-        }, 0);
+    for (const placement of placements) {
+      const localized = api.blueprints.localizeStructures([
+        {
+          type: PREFAB_TERRAIN_TYPE,
+          x: 0,
+          y: 0,
+          color: "#ffffff",
+          data: placement.data,
+        } as SandustryBlueprintRecord,
+      ]);
+      const localizedType = localized[0]?.type;
+      if (typeof localizedType !== "string") continue;
+      api.structures.buildAtCell(placement.x, placement.y, localizedType, {
+        data: placement.data,
+        bypassPlacementChecks: true,
       });
-    }, 0);
+    }
+    for (const placement of placements) {
+      const cellIds = (
+        placement.data.__prefabulatorBlueprint as {
+          definition?: { cellIds?: number[][] };
+        }
+      ).definition?.cellIds;
+      if (cellIds) {
+        for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+          for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+            if (cellIds[cellY]?.[cellX] === PREFAB_CELL_ID) {
+              replaceTerrainImmediately(placement.x + cellX, placement.y + cellY, "Block");
+            }
+          }
+        }
+      }
+      const structure = api.structures.getAtCell?.(placement.x, placement.y);
+      if (structure && typeof api.structures.setData === "function") {
+        api.structures.setData(structure, placement.data);
+      }
+    }
+    for (const target of soliditePlacements) {
+      replaceTerrainImmediately(target.x, target.y, "solidite");
+    }
   };
-  place();
+  const wasPaused = Boolean(
+    (engine.state as unknown as { session?: { paused?: boolean } }).session?.paused,
+  );
+  setSimulationPaused(true);
+  try {
+    place();
+  } finally {
+    setSimulationPaused(wasPaused);
+  }
   closeEditor();
 }
 
