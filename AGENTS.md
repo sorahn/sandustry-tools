@@ -78,6 +78,14 @@ reload path for mod changes; do not run `make install` during that session.
 The installed-mod directory may contain a competing or stale copy and should
 not be used as the dev-mode handoff path.
 
+### Sandustry integration test permissions
+
+The root `npm run test:integration` command starts a local Sandustry test host
+on `127.0.0.1:4173` and connects to the game through its local debugging
+interface. Always request elevated permission before running this command,
+including focused runs using `SANDUSTRY_MOD` or `SEARCH`, because the sandbox
+may reject the local port bind with `EPERM` before the test starts.
+
 Each package or app with tests owns a `test` script that runs its Bun tests.
 The root `test` script runs every test-bearing project by default. It accepts
 comma-separated `--only` and `--exclude` project paths, or the equivalent
