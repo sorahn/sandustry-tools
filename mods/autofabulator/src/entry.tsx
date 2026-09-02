@@ -12,7 +12,7 @@ const CELLS_PER_BLOCK = 4;
 const CANVAS_SIZE = 360;
 const ACTION_START = "1";
 const PREFAB_TERRAIN_TYPE = "prefabTerrain_5";
-const PREFAB_CELL_ID = 31;
+const PREFAB_CELL_ID = 15;
 const MAC_RIGHT_MOUSE_PROBE =
   "T2JqQy5pbXBvcnQoJ0NvY29hJyk7ZnVuY3Rpb24gYigpe2NvbnN0IHY9JC5OU0V2ZW50LnByZXNzZWRNb3VzZUJ1dHRvbnM7cmV0dXJuIE51bWJlcih0eXBlb2Ygdj09PSdmdW5jdGlvbic/digpOnYpO31pZighTnVtYmVyLmlzRmluaXRlKGIoKSkpdGhyb3cgbmV3IEVycm9yKCdubyBidXR0b24gc3RhdGUnKTt3aGlsZShiKCkmMil7ZGVsYXkoMC4wMTYpO30=";
 const UIReact = sandkit.react ?? null;
@@ -509,7 +509,8 @@ function mergeWithExistingPrefab(x: number, y: number, painted: boolean[][]): nu
   if (!existing || typeof api.structures.removeAtCell !== "function") return null;
 
   const cellIds = readPrefabCellIds(existing, x, y);
-  const existingCellId = cellIds.flat().find((cellId) => cellId !== 0) ?? PREFAB_CELL_ID;
+  const existingCellId =
+    cellIds.flat().find((cellId) => cellId === PREFAB_CELL_ID) ?? PREFAB_CELL_ID;
   for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
     for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
       cellIds[cellY][cellX] = painted[cellY][cellX] ? existingCellId : 0;
@@ -557,7 +558,9 @@ function applyPrefabPattern(): void {
             data: {
               __prefabulatorBlueprint: {
                 definition: {
-                  shape: cellIds.map((row) => row.map((cellId) => (cellId ? 1 : 0))),
+                  shape: cellIds.map((row) =>
+                    row.map((cellId) => (cellId === PREFAB_CELL_ID ? 1 : 0)),
+                  ),
                   cellIds,
                 },
               },
@@ -614,15 +617,10 @@ function applyPrefabPattern(): void {
               if (cellIds && typeof api.terrains?.createAtCellWhenIdle === "function") {
                 for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
                   for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
-                    if (
-                      cellIds[cellY]?.[cellX] &&
-                      api.world.isCellEmptyAtCell(placement.x + cellX, placement.y + cellY)
-                    ) {
-                      api.terrains.createAtCellWhenIdle(
-                        placement.x + cellX,
-                        placement.y + cellY,
-                        "Block",
-                      );
+                    if (cellIds[cellY]?.[cellX] === PREFAB_CELL_ID) {
+                      const targetX = placement.x + cellX;
+                      const targetY = placement.y + cellY;
+                      api.terrains.replaceAtCellWhenIdle(targetX, targetY, "Block");
                     }
                   }
                 }
@@ -632,11 +630,9 @@ function applyPrefabPattern(): void {
                 api.structures.setData(structure, placement.data);
               }
             }
-            if (typeof api.terrains?.createAtCellWhenIdle === "function") {
+            if (typeof api.terrains?.replaceAtCellWhenIdle === "function") {
               for (const target of soliditePlacements) {
-                if (api.world.isCellEmptyAtCell(target.x, target.y)) {
-                  api.terrains.createAtCellWhenIdle(target.x, target.y, "solidite");
-                }
+                api.terrains.replaceAtCellWhenIdle(target.x, target.y, "solidite");
               }
             }
           });

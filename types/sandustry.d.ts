@@ -560,7 +560,11 @@ interface SandustryApi {
     getTypeAtCell(x: number, y: number): number | null;
     isCellIdTerrain(cellId: number): boolean;
     isTypeAtCell(x: number, y: number, type: string): boolean;
+    createAtCell(x: number, y: number, type: string): void;
     createAtCellWhenIdle(x: number, y: number, type: string): void;
+    replaceAtCell(x: number, y: number, type: string): void;
+    replaceAtCellWhenIdle(x: number, y: number, type: string): void;
+    removeAtCell(x: number, y: number, options?: SandustryPropagationOptions): void;
     removeAtCellWhenIdle(x: number, y: number, options?: SandustryPropagationOptions): void;
   };
   triggers: { register(id: string, definition: { interval: number; callback: () => void }): void };

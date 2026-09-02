@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import assert from "node:assert/strict";
 import { setupGame } from "../../../resources/SandustryModTemplate/modkit/test/setup-game.ts";
 
 const game = await setupGame();
@@ -57,6 +58,13 @@ async function dispatchKey(key: string): Promise<void> {
     type: "keyUp",
     key,
   });
+}
+
+async function assertSimulationPaused(): Promise<void> {
+  const paused = await game.evaluate(() =>
+    Boolean((sandkit.engine.state as { session?: { paused?: boolean } }).session?.paused),
+  );
+  assert.equal(paused, true, "The simulation should be paused during Apply");
 }
 
 test("Autofabulator takes priority over a Signal Button click", async () => {
@@ -598,6 +606,286 @@ test("Autofabulator Apply path places an sspp block in the world", async () => {
     throw new Error(
       `Expected Solidite and prefab cells after Apply, got ${JSON.stringify(result)}`,
     );
+  }
+});
+
+test("Autofabulator Apply path completes while the simulation is paused", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = await game.evaluate(() => {
+    for (let y = 2600; y < 3000; y += 4) {
+      for (let x = 2200; x < 2600; x += 4) {
+        const clear = Array.from({ length: 4 }, (_, row) =>
+          Array.from(
+            { length: 4 },
+            (_, col) =>
+              sandkit.api.world.isCellEmptyAtCell(x + col, y + row) &&
+              sandkit.api.structures.getAtCell(x + col, y + row) === null,
+          ),
+        ).every((row) => row.every(Boolean));
+        if (clear) return { x, y };
+      }
+    }
+    throw new Error("Could not find an empty area for the paused Apply test");
+  });
+
+  try {
+    await game.pauseSimulation();
+    await assertSimulationPaused();
+
+    await game.evaluate(({ x, y }) => {
+      type PainterState = {
+        originX: number;
+        originY: number;
+        painted: boolean[][][][];
+        solidite: boolean[][][][];
+        capturedSolidite: boolean[][][][];
+        occupied: boolean[][][][];
+      };
+      const makeGrid = () =>
+        Array.from({ length: 5 }, () =>
+          Array.from({ length: 5 }, () =>
+            Array.from({ length: 4 }, () => Array<boolean>(4).fill(false)),
+          ),
+        );
+      const painted = makeGrid();
+      const solidite = makeGrid();
+      const capturedSolidite = makeGrid();
+      for (let row = 0; row < 4; row += 1) {
+        solidite[2][2][row][0] = true;
+        solidite[2][2][row][1] = true;
+        painted[2][2][row][2] = true;
+        painted[2][2][row][3] = true;
+      }
+      const apply = (globalThis as Record<string, unknown>).__autofabulatorApply;
+      if (typeof apply !== "function")
+        throw new Error("Autofabulator Apply test hook is unavailable");
+      (apply as (state: PainterState) => void)({
+        originX: x,
+        originY: y,
+        painted,
+        solidite,
+        capturedSolidite,
+        occupied: Array.from({ length: 5 }, () =>
+          Array.from({ length: 5 }, () => Array.from({ length: 4 }, () => Array(4).fill(false))),
+        ),
+      });
+    }, origin);
+
+    await game.waitFor(
+      ({ x, y }) =>
+        Array.from({ length: 4 }, (_, row) =>
+          Array.from({ length: 4 }, (_, col) =>
+            sandkit.api.world.getCellIdAtCell(x + 8 + col, y + 8 + row),
+          ),
+        ),
+      (cellIds) =>
+        JSON.stringify(cellIds) ===
+        JSON.stringify(Array.from({ length: 4 }, () => [31, 31, 15, 15])),
+      { args: [origin], message: "Paused Apply path did not create the mixed sspp block" },
+    );
+
+    await assertSimulationPaused();
+  } finally {
+    await game.resumeSimulation();
+  }
+});
+
+test("direct prefab and Solidite mutations work while the simulation is paused", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = await game.evaluate(() => {
+    for (let y = 3000; y < 3400; y += 4) {
+      for (let x = 2200; x < 2600; x += 4) {
+        const clear = Array.from({ length: 4 }, (_, row) =>
+          Array.from(
+            { length: 4 },
+            (_, col) =>
+              sandkit.api.world.isCellEmptyAtCell(x + col, y + row) &&
+              sandkit.api.structures.getAtCell(x + col, y + row) === null,
+          ),
+        ).every((row) => row.every(Boolean));
+        if (clear) return { x, y };
+      }
+    }
+    throw new Error("Could not find an empty area for direct paused mutations");
+  });
+
+  try {
+    await game.pauseSimulation();
+    await assertSimulationPaused();
+
+    await game.evaluate(({ x, y }) => {
+      const cellIds = Array.from({ length: 4 }, () => [31, 31, 15, 15]);
+      const localized = sandkit.api.blueprints.localizeStructures([
+        {
+          type: "prefabTerrain_5",
+          x: 0,
+          y: 0,
+          color: "#ffffff",
+          data: {
+            __prefabulatorBlueprint: {
+              definition: {
+                shape: cellIds.map((row) => row.map((cell) => (cell ? 1 : 0))),
+                cellIds,
+              },
+            },
+          },
+        },
+      ]);
+      const type = localized[0]?.type;
+      if (typeof type !== "string") throw new Error("Could not localize the prefab fixture");
+      sandkit.api.structures.buildAtCell(x, y, type, {
+        data: localized[0]?.data,
+        bypassPlacementChecks: true,
+      });
+      for (let row = 0; row < 4; row += 1) {
+        sandkit.api.terrains.createAtCell(x + 8, y + 8 + row, "solidite");
+        sandkit.api.terrains.createAtCell(x + 9, y + 8 + row, "solidite");
+      }
+    }, origin);
+
+    // The renderer stays in gameplay-paused mode while the manager gets one
+    // bounded window to drain the main-thread mutation queue.
+    await game.resumeSimulation();
+    await game.waitFor(
+      ({ x, y }) =>
+        Array.from({ length: 4 }, (_, row) =>
+          Array.from({ length: 4 }, (_, col) =>
+            sandkit.api.world.getCellIdAtCell(x + 8 + col, y + 8 + row),
+          ),
+        ),
+      (cellIds) =>
+        JSON.stringify(cellIds) ===
+        JSON.stringify(Array.from({ length: 4 }, () => [15, 15, 31, 31])),
+      { args: [origin], message: "Direct paused mutations did not create the mixed block" },
+    );
+    await game.pauseSimulation();
+    await assertSimulationPaused();
+  } finally {
+    await game.resumeSimulation();
+  }
+});
+
+test("Solidite terrain mutations drain after a paused gameplay window", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = await game.evaluate(() => {
+    for (let y = 3400; y < 3800; y += 4) {
+      for (let x = 2200; x < 2600; x += 4) {
+        const clear = Array.from({ length: 4 }, (_, row) =>
+          Array.from(
+            { length: 4 },
+            (_, col) =>
+              sandkit.api.world.isCellEmptyAtCell(x + col, y + row) &&
+              sandkit.api.structures.getAtCell(x + col, y + row) === null,
+          ),
+        ).every((row) => row.every(Boolean));
+        if (clear) return { x, y };
+      }
+    }
+    throw new Error("Could not find an empty area for the Solidite drain probe");
+  });
+
+  try {
+    await game.pauseSimulation();
+    await assertSimulationPaused();
+    await game.evaluate(({ x, y }) => {
+      for (let row = 0; row < 4; row += 1) {
+        sandkit.api.terrains.createAtCell(x + row, y, "solidite");
+      }
+    }, origin);
+
+    await game.resumeSimulation();
+    await game.waitFor(
+      ({ x, y }) =>
+        Array.from({ length: 4 }, (_, col) => sandkit.api.world.getCellIdAtCell(x + col, y)),
+      (cellIds) => JSON.stringify(cellIds) === JSON.stringify([31, 31, 31, 31]),
+      { args: [origin], message: "Solidite-only mutations did not drain" },
+    );
+    await game.pauseSimulation();
+    await assertSimulationPaused();
+  } finally {
+    await game.resumeSimulation();
+  }
+});
+
+test("Solidite can replace a prefab cell after a paused gameplay window", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = await game.evaluate(() => {
+    for (let y = 3800; y < 4200; y += 4) {
+      for (let x = 2200; x < 2600; x += 4) {
+        const clear = Array.from({ length: 4 }, (_, row) =>
+          Array.from(
+            { length: 4 },
+            (_, col) =>
+              sandkit.api.world.isCellEmptyAtCell(x + col, y + row) &&
+              sandkit.api.structures.getAtCell(x + col, y + row) === null,
+          ),
+        ).every((row) => row.every(Boolean));
+        if (clear) return { x, y };
+      }
+    }
+    throw new Error("Could not find an empty area for the Solidite replacement probe");
+  });
+
+  try {
+    await game.pauseSimulation();
+    await assertSimulationPaused();
+    await game.evaluate(({ x, y }) => {
+      const localized = sandkit.api.blueprints.localizeStructures([
+        {
+          type: "prefabTerrain_5",
+          x: 0,
+          y: 0,
+          color: "#ffffff",
+          data: {
+            __prefabulatorBlueprint: {
+              definition: {
+                shape: Array.from({ length: 4 }, () => Array(4).fill(1)),
+                cellIds: Array.from({ length: 4 }, () => [31, 31, 31, 31]),
+              },
+            },
+          },
+        },
+      ]);
+      const type = localized[0]?.type;
+      if (typeof type !== "string")
+        throw new Error("Could not localize the prefab replacement fixture");
+      sandkit.api.structures.buildAtCell(x, y, type, {
+        data: localized[0]?.data,
+        bypassPlacementChecks: true,
+      });
+    }, origin);
+
+    await game.resumeSimulation();
+    await game.waitFor(
+      ({ x, y }) => sandkit.api.world.getCellIdAtCell(x, y),
+      (cellId) => cellId === 15,
+      { args: [origin], message: "Prefab replacement fixture did not drain" },
+    );
+
+    await game.pauseSimulation();
+    await assertSimulationPaused();
+    await game.evaluate(({ x, y }) => {
+      sandkit.api.terrains.replaceAtCell(x, y, "solidite");
+    }, origin);
+
+    await game.resumeSimulation();
+    await game.waitFor(
+      ({ x, y }) => sandkit.api.world.getCellIdAtCell(x, y),
+      (cellId) => cellId === 31,
+      { args: [origin], message: "Solidite did not replace the prefab cell" },
+    );
+    await game.pauseSimulation();
+    await assertSimulationPaused();
+  } finally {
+    await game.resumeSimulation();
   }
 });
 
