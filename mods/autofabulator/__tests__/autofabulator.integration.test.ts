@@ -330,7 +330,7 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
   const origin = { x: 2800, y: 1900 };
   const prefabType = await game.evaluate(({ x, y }) => {
     const cellIds = [
-      [31, 0, 0, 0],
+      [15, 0, 0, 0],
       [0, 0, 0, 0],
       [0, 0, 0, 0],
       [0, 0, 0, 0],
@@ -354,7 +354,6 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
     const type = localized[0]?.type;
     if (type === undefined) throw new Error("Could not localize the prefab fixture");
     sandkit.api.structures.buildAtCell(x, y, type);
-    sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
     return type;
   }, origin);
 
@@ -363,6 +362,10 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
     (type) => type === prefabType,
     { args: [origin.x, origin.y], message: "Initial prefab fixture was not built" },
   );
+  await game.evaluate(async ({ x, y }) => {
+    sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }, origin);
   await game.evaluate(({ x, y }) => {
     const structure = sandkit.api.structures.getAtCell(x, y);
     if (!structure) throw new Error("Initial prefab structure disappeared");
@@ -376,7 +379,7 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
             [0, 0, 0, 0],
           ],
           cellIds: [
-            [31, 0, 0, 0],
+            [15, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0],
@@ -521,7 +524,7 @@ test("Autofabulator middle-click paints a Solidite cell", async () => {
   }
 });
 
-test("Autofabulator Apply path places an sspp block in the world", async () => {
+test("Autofabulator Apply path replaces an obstructing element with an sspp block", async () => {
   await dispatchKey("Escape");
   await game.resumeSimulation();
 
@@ -566,6 +569,14 @@ test("Autofabulator Apply path places an sspp block in the world", async () => {
       for (let col = 0; col < 2; col += 1) solidite[2][2][row][col] = true;
       for (let col = 2; col < 4; col += 1) painted[2][2][row][col] = true;
     }
+    const sandType = sandkit.api.elements.getTypeById("sand");
+    if (sandType === null) throw new Error("Sand type is unavailable");
+    sandkit.engine.api.elements?.createAt(sandkit.engine.state, x + 10, y + 8, sandType, {
+      particle: { velocity: { x: 0, y: 1 } },
+    });
+    if (!sandkit.api.elements.getInfoAtCell(x + 10, y + 8)) {
+      throw new Error("Could not seed the obstructing element");
+    }
     const apply = (globalThis as Record<string, unknown>).__autofabulatorApply;
     if (typeof apply !== "function")
       throw new Error("Autofabulator Apply test hook is unavailable");
@@ -591,20 +602,34 @@ test("Autofabulator Apply path places an sspp block in the world", async () => {
       JSON.stringify(cellIds) === JSON.stringify(Array.from({ length: 4 }, () => [31, 31, 15, 15])),
     { args: [origin], message: "Apply path did not create the mixed sspp block" },
   );
-  const result = await game.evaluate(
-    ({ x, y }) => ({
+  const result = await game.evaluate(({ x, y }) => {
+    const structure = sandkit.api.structures.getAtCell(x + 10, y + 8);
+    return {
       cellIds: Array.from({ length: 4 }, (_, row) =>
         Array.from({ length: 4 }, (_, col) =>
           sandkit.api.world.getCellIdAtCell(x + 8 + col, y + 8 + row),
         ),
       ),
-    }),
-    origin,
-  );
+      structureType: structure?.type ?? null,
+      structureQueued: Boolean(structure?.queued),
+      obstructingElement: sandkit.api.elements.getInfoAtCell(x + 10, y + 8),
+    };
+  }, origin);
   const expected = Array.from({ length: 4 }, () => [31, 31, 15, 15]);
   if (JSON.stringify(result.cellIds) !== JSON.stringify(expected)) {
     throw new Error(
       `Expected Solidite and prefab cells after Apply, got ${JSON.stringify(result)}`,
+    );
+  }
+  if (!String(result.structureType).startsWith("prefabTerrain_")) {
+    throw new Error(`Expected an owning prefab structure, got ${JSON.stringify(result)}`);
+  }
+  if (result.structureQueued) {
+    throw new Error(`Expected a completed prefab structure, got ${JSON.stringify(result)}`);
+  }
+  if (result.obstructingElement !== null) {
+    throw new Error(
+      `Expected the obstructing element to be removed, got ${JSON.stringify(result)}`,
     );
   }
 });

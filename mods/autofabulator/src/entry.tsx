@@ -9,6 +9,24 @@ const internalTerrainApi = engine.api as unknown as {
     removeAt?: (state: unknown, x: number, y: number) => void;
   };
 };
+const internalElementApi = engine.api as unknown as {
+  elements?: {
+    removeAt?: (state: unknown, x: number, y: number, options?: Record<string, unknown>) => void;
+  };
+};
+const internalStructureApi = engine.api as unknown as {
+  structures?: {
+    build?: (
+      state: unknown,
+      position: { x: number; y: number },
+      type: string,
+      options?: Record<string, unknown>,
+    ) => SandustryStructure | null;
+    removeAt?: (state: unknown, x: number, y: number, options?: Record<string, unknown>) => void;
+    beginBatchWrite?: () => void;
+    endBatchWrite?: () => void;
+  };
+};
 const SET_PAUSED_MESSAGE = 54;
 
 const MOD_ID = "sorahn.sandustry-autofabulator";
@@ -515,6 +533,19 @@ function findPrefabStructureAtBlock(x: number, y: number): SandustryStructure | 
       }
     }
   }
+  const stored = Object.values(
+    (engine.state as unknown as { store?: { structures?: Record<string, SandustryStructure> } })
+      .store?.structures ?? {},
+  ).find(
+    (structure) =>
+      structure &&
+      isPrefabTerrainType(structure.type) &&
+      structure.x >= x &&
+      structure.x < x + CELLS_PER_BLOCK &&
+      structure.y >= y &&
+      structure.y < y + CELLS_PER_BLOCK,
+  );
+  if (stored) return stored;
   return null;
 }
 
@@ -546,7 +577,7 @@ function readPrefabCellIds(existing: SandustryStructure, x: number, y: number): 
 
 function mergeWithExistingPrefab(x: number, y: number, painted: boolean[][]): number[][] | null {
   const existing = findPrefabStructureAtBlock(x, y);
-  if (!existing || typeof api.structures.removeAtCell !== "function") return null;
+  if (!existing) return null;
 
   const cellIds = readPrefabCellIds(existing, x, y);
   const existingCellId =
@@ -556,7 +587,6 @@ function mergeWithExistingPrefab(x: number, y: number, painted: boolean[][]): nu
       cellIds[cellY][cellX] = painted[cellY][cellX] ? existingCellId : 0;
     }
   }
-  api.structures.removeAtCell(x, y, { removeCells: true });
   return cellIds;
 }
 
@@ -566,8 +596,9 @@ function applyPrefabPattern(): void {
     x: number;
     y: number;
     data: Record<string, unknown>;
-    merged: boolean;
+    existing: SandustryStructure | null;
   }> = [];
+  const prefabRemovals: SandustryStructure[] = [];
   const soliditePlacements: Array<{ x: number; y: number }> = [];
   const soliditeRemovals: Array<{ x: number; y: number }> = [];
   for (let blockY = 0; blockY < GRID_SIZE; blockY += 1) {
@@ -605,67 +636,106 @@ function applyPrefabPattern(): void {
                 },
               },
             },
-            merged: existingCellIds !== null,
+            existing: existingPrefab,
           });
+        } else if (existingPrefab) {
+          prefabRemovals.push(existingPrefab);
         }
       }
     }
   }
-  if (!placements.length && !soliditePlacements.length && !soliditeRemovals.length) {
+  if (
+    !placements.length &&
+    !prefabRemovals.length &&
+    !soliditePlacements.length &&
+    !soliditeRemovals.length
+  ) {
     api.ui.toast("Paint at least one cell before applying.");
     return;
   }
   if (
-    placements.length &&
-    (typeof api.structures?.buildAtCell !== "function" ||
-      typeof api.blueprints?.localizeStructures !== "function")
+    (placements.length &&
+      (typeof internalElementApi.elements?.removeAt !== "function" ||
+        typeof internalStructureApi.structures?.build !== "function" ||
+        typeof api.blueprints?.localizeStructures !== "function")) ||
+    ((placements.some((placement) => placement.existing) || prefabRemovals.length > 0) &&
+      typeof internalStructureApi.structures?.removeAt !== "function")
   ) {
     api.ui.toast("Autofabulator placement is unavailable.");
     return;
   }
   const place = () => {
-    for (const target of soliditeRemovals) {
-      removeTerrainImmediately(target.x, target.y);
-    }
-    for (const placement of placements) {
-      const localized = api.blueprints.localizeStructures([
-        {
-          type: PREFAB_TERRAIN_TYPE,
-          x: 0,
-          y: 0,
-          color: "#ffffff",
-          data: placement.data,
-        } as SandustryBlueprintRecord,
-      ]);
-      const localizedType = localized[0]?.type;
-      if (typeof localizedType !== "string") continue;
-      api.structures.buildAtCell(placement.x, placement.y, localizedType, {
-        data: placement.data,
-        bypassPlacementChecks: true,
-      });
-    }
-    for (const placement of placements) {
-      const cellIds = (
-        placement.data.__prefabulatorBlueprint as {
-          definition?: { cellIds?: number[][] };
-        }
-      ).definition?.cellIds;
-      if (cellIds) {
+    internalStructureApi.structures?.beginBatchWrite?.();
+    try {
+      for (const existing of [
+        ...prefabRemovals,
+        ...placements.flatMap((placement) => (placement.existing ? [placement.existing] : [])),
+      ]) {
+        internalStructureApi.structures?.removeAt?.(engine.state, existing.x, existing.y, {
+          removeCells: true,
+        });
+      }
+      for (const target of soliditeRemovals) {
+        removeTerrainImmediately(target.x, target.y);
+      }
+      // Prefabulator structures reject blocked placement. Clear each target
+      // with the mutation API matching its current cell kind so the native
+      // builder can register a non-queued structure and element bookkeeping
+      // remains consistent.
+      for (const placement of placements) {
+        const cellIds = (
+          placement.data.__prefabulatorBlueprint as {
+            definition?: { cellIds?: number[][] };
+          }
+        ).definition?.cellIds;
+        if (!cellIds) continue;
         for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
           for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
             if (cellIds[cellY]?.[cellX] === PREFAB_CELL_ID) {
-              replaceTerrainImmediately(placement.x + cellX, placement.y + cellY, "Block");
+              const cellXPosition = placement.x + cellX;
+              const cellYPosition = placement.y + cellY;
+              const cellId = api.world.getCellIdAtCell(cellXPosition, cellYPosition);
+              if (cellId === 0) continue;
+              if (api.terrains.isCellIdTerrain(cellId)) {
+                removeTerrainImmediately(cellXPosition, cellYPosition);
+              } else {
+                internalElementApi.elements?.removeAt?.(engine.state, cellXPosition, cellYPosition);
+              }
             }
           }
         }
       }
-      const structure = api.structures.getAtCell?.(placement.x, placement.y);
-      if (structure && typeof api.structures.setData === "function") {
-        api.structures.setData(structure, placement.data);
+      for (const placement of placements) {
+        const localized = api.blueprints.localizeStructures([
+          {
+            type: PREFAB_TERRAIN_TYPE,
+            x: 0,
+            y: 0,
+            color: "#ffffff",
+            data: placement.data,
+          } as SandustryBlueprintRecord,
+        ]);
+        const localizedType = localized[0]?.type;
+        if (typeof localizedType !== "string") continue;
+        const structure = internalStructureApi.structures?.build?.(
+          engine.state,
+          { x: placement.x, y: placement.y },
+          localizedType,
+          {
+            data: placement.data,
+            ignorePlayer: true,
+          },
+        );
+        if (!structure || structure.queued) {
+          console.warn(`[${MOD_ID}] native prefab placement failed at`, placement.x, placement.y);
+          continue;
+        }
       }
-    }
-    for (const target of soliditePlacements) {
-      replaceTerrainImmediately(target.x, target.y, "solidite");
+      for (const target of soliditePlacements) {
+        replaceTerrainImmediately(target.x, target.y, "solidite");
+      }
+    } finally {
+      internalStructureApi.structures?.endBatchWrite?.();
     }
   };
   const wasPaused = Boolean(
