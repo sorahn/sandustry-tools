@@ -422,7 +422,17 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
     return cell ? getComputedStyle(cell).backgroundColor : null;
   });
   if (existingCellColor !== "rgb(222, 166, 31)") {
-    throw new Error(`Expected the existing prefab cell to be captured, got ${existingCellColor}`);
+    const captureDebug = await game.evaluate(
+      ({ x, y }) => ({
+        structure: sandkit.api.structures.getAtCell(x, y),
+        element: sandkit.api.elements.getInfoAtCell(x, y),
+        cellId: sandkit.api.world.getCellIdAtCell(x, y),
+      }),
+      origin,
+    );
+    throw new Error(
+      `Expected the existing prefab cell to be captured, got ${existingCellColor}: ${JSON.stringify(captureDebug)}`,
+    );
   }
   await dispatchMouseEvent("mouseMoved", cells[0].x, cells[0].y);
   await dispatchMouseEvent("mousePressed", cells[0].x, cells[0].y, "right", 2);
@@ -631,6 +641,96 @@ test("Autofabulator Apply path replaces an obstructing element with an sspp bloc
     throw new Error(
       `Expected the obstructing element to be removed, got ${JSON.stringify(result)}`,
     );
+  }
+});
+
+test("Autofabulator applies only dirty cells and ignores transparent-cell obstructions", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+
+  const origin = await game.evaluate(() => {
+    for (let y = 2200; y < 2600; y += 4) {
+      for (let x = 2700; x < 3100; x += 4) {
+        const clear = Array.from({ length: 4 }, (_, row) =>
+          Array.from(
+            { length: 4 },
+            (_, col) =>
+              sandkit.api.world.isCellEmptyAtCell(x + col, y + row) &&
+              sandkit.api.structures.getAtCell(x + col, y + row) === null,
+          ),
+        ).every((row) => row.every(Boolean));
+        if (clear) return { x, y };
+      }
+    }
+    throw new Error("Could not find an empty area for the dirty-cell test");
+  });
+
+  await game.evaluate(({ x, y }) => {
+    const makeGrid = () =>
+      Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () =>
+          Array.from({ length: 4 }, () => Array<boolean>(4).fill(false)),
+        ),
+      );
+    const painted = makeGrid();
+    const solidite = makeGrid();
+    const initialPainted = makeGrid();
+    const initialSolidite = makeGrid();
+    const dirty = makeGrid();
+    painted[2][2][0][3] = true;
+    dirty[2][2][0][3] = true;
+
+    const sandType = sandkit.api.elements.getTypeById("sand");
+    if (sandType === null) throw new Error("Sand type is unavailable");
+    sandkit.engine.api.elements?.createAt(sandkit.engine.state, x + 8, y + 8, sandType, {
+      isFreeFalling: false,
+    });
+    sandkit.engine.api.elements?.createAt(sandkit.engine.state, x + 11, y + 8, sandType, {
+      particle: { velocity: { x: 0, y: 1 } },
+    });
+
+    const apply = (globalThis as Record<string, unknown>).__autofabulatorApply;
+    if (typeof apply !== "function") {
+      throw new Error("Autofabulator Apply test hook is unavailable");
+    }
+    (apply as (state: Record<string, unknown>) => void)({
+      originX: x,
+      originY: y,
+      painted,
+      solidite,
+      capturedSolidite: initialSolidite,
+      initialPainted,
+      initialSolidite,
+      dirty,
+      occupied: Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () => Array.from({ length: 4 }, () => Array(4).fill(false))),
+      ),
+    });
+  }, origin);
+
+  const result = await game.evaluate(({ x, y }) => {
+    const structure = sandkit.api.structures.getAtCell(x + 11, y + 8);
+    return {
+      row: Array.from({ length: 4 }, (_, col) =>
+        sandkit.api.world.getCellIdAtCell(x + 8 + col, y + 8),
+      ),
+      untouchedElement: sandkit.api.elements.getInfoAtCell(x + 8, y + 8),
+      replacedElement: sandkit.api.elements.getInfoAtCell(x + 11, y + 8),
+      structureType: structure?.type ?? null,
+      structureQueued: Boolean(structure?.queued),
+    };
+  }, origin);
+
+  if (!result.untouchedElement) {
+    throw new Error(`Expected the untouched settled element to remain: ${JSON.stringify(result)}`);
+  }
+  if (result.replacedElement !== null || result.row[3] !== 15) {
+    throw new Error(
+      `Expected only the dirty prefab cell to replace sand: ${JSON.stringify(result)}`,
+    );
+  }
+  if (!String(result.structureType).startsWith("prefabTerrain_") || result.structureQueued) {
+    throw new Error(`Expected a completed owning prefab structure: ${JSON.stringify(result)}`);
   }
 });
 

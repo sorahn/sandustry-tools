@@ -18,16 +18,18 @@ const internalStructureApi = engine.api as unknown as {
   structures?: {
     build?: (
       state: unknown,
-      position: { x: number; y: number },
+      position: { x: number; y: number; clearance?: number },
       type: string,
       options?: Record<string, unknown>,
     ) => SandustryStructure | null;
     removeAt?: (state: unknown, x: number, y: number, options?: Record<string, unknown>) => void;
     beginBatchWrite?: () => void;
     endBatchWrite?: () => void;
+    getConfig?: (type: string) => Record<string, unknown> | undefined;
   };
 };
 const SET_PAUSED_MESSAGE = 54;
+const BUILDING_CLEARANCE_AVAILABLE = 1;
 
 const MOD_ID = "sorahn.sandustry-autofabulator";
 const ITEM_ID = "sorahnAutofabulator";
@@ -60,6 +62,9 @@ type PainterEditorState = {
   solidite: boolean[][][][];
   capturedSolidite: boolean[][][][];
   occupied: OccupiedBlock[][];
+  initialPainted?: boolean[][][][];
+  initialSolidite?: boolean[][][][];
+  dirty?: boolean[][][][];
 };
 
 let editorState: PainterEditorState | null = null;
@@ -318,6 +323,10 @@ function emptyPaintedGrid(): boolean[][][][] {
   );
 }
 
+function clonePaintedGrid(grid: boolean[][][][]): boolean[][][][] {
+  return grid.map((blockRow) => blockRow.map((block) => block.map((cellRow) => cellRow.slice())));
+}
+
 function readCapturedBlocks(originX: number, originY: number): CapturedBlocks {
   const occupied = Array.from({ length: GRID_SIZE }, () =>
     Array.from({ length: GRID_SIZE }, () =>
@@ -358,6 +367,18 @@ function readCapturedBlocks(originX: number, originY: number): CapturedBlocks {
                 continue;
               }
             }
+            const structure = api.structures.getAtCell?.(x, y);
+            const structureType = String(structure?.type ?? "").toLowerCase();
+            if (
+              structure &&
+              !structureType.startsWith("prefabterrain") &&
+              !structureType.includes("pipe") &&
+              !structureType.includes("vent")
+            ) {
+              occupied[blockY][blockX][cellY][cellX] = true;
+              continue;
+            }
+            if (api.elements?.getInfoAtCell?.(x, y)) continue;
             const cellId = api.world.getCellIdAtCell?.(x, y);
             if (Number.isInteger(cellId)) {
               if (cellId === 0) continue;
@@ -369,11 +390,6 @@ function readCapturedBlocks(originX: number, originY: number): CapturedBlocks {
               occupied[blockY][blockX][cellY][cellX] = true;
               continue;
             }
-            const structure = api.structures.getAtCell?.(x, y);
-            const structureType = String(structure?.type ?? "").toLowerCase();
-            occupied[blockY][blockX][cellY][cellX] = Boolean(
-              structure && !structureType.includes("pipe") && !structureType.includes("vent"),
-            );
           } catch {
             occupied[blockY][blockX][cellY][cellX] = false;
           }
@@ -439,6 +455,9 @@ function openEditor(cursor = api.input.getMouseCellPosition()): void {
     solidite: captured.solidite,
     capturedSolidite: captured.capturedSolidite,
     occupied: captured.occupied,
+    initialPainted: clonePaintedGrid(captured.painted),
+    initialSolidite: clonePaintedGrid(captured.solidite),
+    dirty: emptyPaintedGrid(),
   };
   restoreCursor();
   refreshEditor();
@@ -480,15 +499,19 @@ function paintEditorCell(
 ): void {
   if (!editorState) return;
   if (editorState.occupied[blockY][blockX][cellY][cellX]) return;
+  let painted = false;
+  let solidite = false;
   if (mode === "prefab") {
-    editorState.painted[blockY][blockX][cellY][cellX] = true;
-    editorState.solidite[blockY][blockX][cellY][cellX] = false;
+    painted = true;
   } else if (mode === "solidite") {
-    editorState.painted[blockY][blockX][cellY][cellX] = false;
-    editorState.solidite[blockY][blockX][cellY][cellX] = true;
-  } else {
-    editorState.painted[blockY][blockX][cellY][cellX] = false;
-    editorState.solidite[blockY][blockX][cellY][cellX] = false;
+    solidite = true;
+  }
+  editorState.painted[blockY][blockX][cellY][cellX] = painted;
+  editorState.solidite[blockY][blockX][cellY][cellX] = solidite;
+  if (editorState.dirty) {
+    editorState.dirty[blockY][blockX][cellY][cellX] =
+      painted !== Boolean(editorState.initialPainted?.[blockY]?.[blockX]?.[cellY]?.[cellX]) ||
+      solidite !== Boolean(editorState.initialSolidite?.[blockY]?.[blockX]?.[cellY]?.[cellX]);
   }
   refreshEditor();
 }
@@ -515,8 +538,22 @@ function paintEditorCellAtClientPoint(clientX: number, clientY: number): void {
 
 function clearEditor(): void {
   if (!editorState) return;
-  editorState.painted = emptyPaintedGrid();
-  editorState.solidite = emptyPaintedGrid();
+  for (let blockY = 0; blockY < GRID_SIZE; blockY += 1) {
+    for (let blockX = 0; blockX < GRID_SIZE; blockX += 1) {
+      for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
+        for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
+          if (editorState.occupied[blockY][blockX][cellY][cellX]) continue;
+          editorState.painted[blockY][blockX][cellY][cellX] = false;
+          editorState.solidite[blockY][blockX][cellY][cellX] = false;
+          if (editorState.dirty) {
+            editorState.dirty[blockY][blockX][cellY][cellX] =
+              Boolean(editorState.initialPainted?.[blockY]?.[blockX]?.[cellY]?.[cellX]) ||
+              Boolean(editorState.initialSolidite?.[blockY]?.[blockX]?.[cellY]?.[cellX]);
+          }
+        }
+      }
+    }
+  }
   refreshEditor();
 }
 
@@ -607,16 +644,29 @@ function applyPrefabPattern(): void {
       const x = editorState.originX + blockX * CELLS_PER_BLOCK;
       const y = editorState.originY + blockY * CELLS_PER_BLOCK;
       const solidite = editorState.solidite[blockY][blockX];
+      let prefabChanged = false;
       for (let cellY = 0; cellY < CELLS_PER_BLOCK; cellY += 1) {
         for (let cellX = 0; cellX < CELLS_PER_BLOCK; cellX += 1) {
-          if (solidite[cellY][cellX]) {
-            soliditePlacements.push({ x: x + cellX, y: y + cellY });
+          const dirty = editorState.dirty?.[blockY]?.[blockX]?.[cellY]?.[cellX] ?? true;
+          if (!dirty) continue;
+          const initialPrefab = Boolean(
+            editorState.initialPainted?.[blockY]?.[blockX]?.[cellY]?.[cellX],
+          );
+          const initialSolidite = Boolean(
+            editorState.initialSolidite?.[blockY]?.[blockX]?.[cellY]?.[cellX] ??
+            editorState.capturedSolidite?.[blockY]?.[blockX]?.[cellY]?.[cellX],
+          );
+          if (!editorState.initialPainted || painted[cellY][cellX] !== initialPrefab) {
+            prefabChanged = true;
           }
-          if (editorState.capturedSolidite?.[blockY]?.[blockX]?.[cellY]?.[cellX]) {
+          if (solidite[cellY][cellX] && !initialSolidite) {
+            soliditePlacements.push({ x: x + cellX, y: y + cellY });
+          } else if (!solidite[cellY][cellX] && initialSolidite) {
             soliditeRemovals.push({ x: x + cellX, y: y + cellY });
           }
         }
       }
+      if (!prefabChanged) continue;
       const existingPrefab = findPrefabStructureAtBlock(x, y);
       if (painted.flat().some(Boolean) || existingPrefab) {
         const existingCellIds = existingPrefab ? mergeWithExistingPrefab(x, y, painted) : null;
@@ -657,6 +707,7 @@ function applyPrefabPattern(): void {
     (placements.length &&
       (typeof internalElementApi.elements?.removeAt !== "function" ||
         typeof internalStructureApi.structures?.build !== "function" ||
+        typeof internalStructureApi.structures?.getConfig !== "function" ||
         typeof api.blueprints?.localizeStructures !== "function")) ||
     ((placements.some((placement) => placement.existing) || prefabRemovals.length > 0) &&
       typeof internalStructureApi.structures?.removeAt !== "function")
@@ -717,13 +768,20 @@ function applyPrefabPattern(): void {
         ]);
         const localizedType = localized[0]?.type;
         if (typeof localizedType !== "string") continue;
+        const structureConfig = internalStructureApi.structures?.getConfig?.(localizedType);
+        if (!structureConfig) continue;
         const structure = internalStructureApi.structures?.build?.(
           engine.state,
-          { x: placement.x, y: placement.y },
+          { x: placement.x, y: placement.y, clearance: BUILDING_CLEARANCE_AVAILABLE },
           localizedType,
           {
             data: placement.data,
             ignorePlayer: true,
+            structureConfig: {
+              ...structureConfig,
+              structureType: localizedType,
+              rejectWhenBlocked: false,
+            },
           },
         );
         if (!structure || structure.queued) {
