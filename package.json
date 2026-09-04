@@ -25,7 +25,7 @@
     "prepare": "husky",
     "test": "node scripts/run-tests.mjs",
     "tsc:tests": "tsc --noEmit -p tsconfig.tests.json",
-    "tsc": "tsc --noEmit",
+    "tsc": "tsc --noEmit && npm run tsc --workspaces --if-present",
     "visual:diff": "bun packages/sandustry-blueprint-core/tests/visual/render-visual.mjs --diff",
     "visual:render": "bun packages/sandustry-blueprint-core/tests/visual/render-visual.mjs",
     "visual:update": "bun packages/sandustry-blueprint-core/tests/visual/render-visual.mjs --update"
