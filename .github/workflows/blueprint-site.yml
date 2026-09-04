@@ -5,9 +5,16 @@ on:
     branches: [main]
     paths:
       - "apps/blueprint-site/**"
+      - "!apps/blueprint-site/**/*.md"
+      - "!apps/blueprint-site/**/__tests__/**"
       - "packages/sandustry-ui/**"
-      - "package.json"
-      - "package-lock.json"
+      - "!packages/sandustry-ui/**/*.md"
+      - "packages/sandustry-blueprint-core/**"
+      - "!packages/sandustry-blueprint-core/**/*.md"
+      - "!packages/sandustry-blueprint-core/tests/**"
+      - "packages/sandustry-save-core/**"
+      - "!packages/sandustry-save-core/**/*.md"
+      - "!packages/sandustry-save-core/tests/**"
       - ".github/workflows/blueprint-site.yml"
   workflow_dispatch:
 
@@ -39,6 +46,8 @@ jobs:
         # packages are platform-specific. npm install resolves the Linux
         # packages required by the Pages runner while honoring the lockfile.
         run: npm install --no-audit --no-fund
+      - name: Build blueprint core
+        run: npm run build --workspace @daryl.roberts/sandustry-blueprint-core
       - name: Build blueprint site
         env:
           VITE_BLUEPRINT_PARENT_ORIGINS: ${{ vars.BLUEPRINT_PARENT_ORIGINS }}
