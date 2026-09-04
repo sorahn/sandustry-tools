@@ -14,7 +14,20 @@ export {
 } from "./components/SegmentedControl";
 export { Switch, type SwitchProps } from "./components/Switch";
 export { Badge, type BadgeProps } from "./components/Badge";
-export { Tooltip, type TooltipProps } from "./components/Tooltip";
+export {
+  Tooltip,
+  TooltipSurface,
+  type TooltipProps,
+  type TooltipSurfaceProps,
+} from "./components/Tooltip";
+export {
+  FilterOverlay,
+  type FilterOverlayDirection,
+  type FilterOverlayEndpoint,
+  type FilterOverlayItem,
+  type FilterOverlayProps,
+  type FilterOverlayTone,
+} from "./components/FilterOverlay";
 export { Popover, type PopoverProps } from "./components/Popover";
 export { ProgressBar, type ProgressBarProps } from "./components/ProgressBar";
 export { ItemCard, type ItemCardProps } from "./components/ItemCard";

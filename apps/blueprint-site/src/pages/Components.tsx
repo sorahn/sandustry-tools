@@ -7,6 +7,7 @@ import {
   Divider,
   ElementPicker,
   Fieldset,
+  FilterOverlay,
   FormField,
   Hotbar,
   IconButton,
@@ -28,6 +29,7 @@ import {
   TextInput,
   TextAction,
   Tooltip,
+  TooltipSurface,
 } from "@sandustry/ui";
 
 const modeOptions = [
@@ -173,6 +175,38 @@ function ShowcaseSection({ title, children }: { title: string; children: React.R
       </h2>
       {children}
     </section>
+  );
+}
+
+function TerrainTooltipContent() {
+  return (
+    <>
+      <div>Grass</div>
+      <div className="mt-1 flex flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="shrink-0 text-gray-400">Destroyed by:</span>
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] ring-1 ring-black ring-inset"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(100, 100, 100, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%)",
+              }}
+            >
+              ⛏
+            </span>
+            <span
+              aria-hidden="true"
+              className="inline-flex h-6 w-4 items-center justify-center shrink-0"
+            >
+              +
+            </span>
+          </span>
+        </div>
+        <div className="text-xs text-green-400">HP: 4 / 4</div>
+      </div>
+    </>
   );
 }
 
@@ -431,8 +465,8 @@ export function ComponentsPage() {
             <Button variant="accent" onClick={() => setDialogOpen(true)}>
               Open dialog
             </Button>
-            <Tooltip content="A compact contextual explanation.">
-              <Button>Hover tooltip</Button>
+            <Tooltip content={<TerrainTooltipContent />}>
+              <Button>Hover terrain tooltip</Button>
             </Tooltip>
             <Popover
               open={popoverOpen}
@@ -442,6 +476,54 @@ export function ComponentsPage() {
             >
               <Button onClick={() => setPopoverOpen((open) => !open)}>Toggle popover</Button>
             </Popover>
+          </div>
+          <div className="mt-5 flex flex-wrap items-start gap-3">
+            <span className="pt-1 text-xs text-slate-500">Always visible:</span>
+            <TooltipSurface>
+              <TerrainTooltipContent />
+            </TooltipSurface>
+          </div>
+          <div className="mt-5 border-t border-slate-800 pt-4">
+            <p className="mb-3 text-xs text-slate-500">Active filter labels:</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <FilterOverlay
+                status="block"
+                from={{
+                  items: [{ label: "Others" }],
+                  direction: "down",
+                }}
+                to={{
+                  items: [{ label: "Wet Seed", swatchColor: "#66cc66" }],
+                  direction: "right",
+                  directionTone: "block",
+                }}
+              />
+              <FilterOverlay
+                from={{
+                  items: [{ label: "Others" }],
+                  direction: "left",
+                  directionTone: "block",
+                }}
+                to={{
+                  items: [{ label: "Sand", swatchColor: "#e7cd74" }],
+                  direction: "right",
+                }}
+              />
+              <FilterOverlay
+                from={{
+                  items: [
+                    { label: "Voidjuice", swatchColor: "#9b5fcf" },
+                    { label: "Voidbloom", swatchColor: "#7a00a8" },
+                  ],
+                  direction: "right",
+                }}
+                to={{
+                  items: [{ label: "Others" }],
+                  direction: "left",
+                  directionTone: "block",
+                }}
+              />
+            </div>
           </div>
           <div className="mt-5 flex items-center gap-3 overflow-x-auto">
             <Hotbar

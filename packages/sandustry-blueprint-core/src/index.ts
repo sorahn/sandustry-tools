@@ -91,6 +91,37 @@ export {
   blueprintCatalog,
   catalogEntry,
 } from "./catalog-data.js";
+export {
+  type ElementCatalog,
+  type ElementCatalogEntry,
+  DEFAULT_ELEMENT_CATALOG,
+  DEFAULT_FALLBACK_ELEMENT_COLOR,
+  ELEMENT_ENTRIES,
+  MATTER_TYPE,
+  resolveElement,
+} from "./element-catalog.js";
+export {
+  type FilterOverlayCluster,
+  type FilterClusterItem,
+  type PlacedFilterLabel,
+  type ClusterFilterStructuresOptions,
+  type LayoutFilterLabelsOptions,
+  type RenderFilterOverlaySvgOptions,
+  FILTER_TYPES,
+  HORIZONTAL_FILTER_TYPES,
+  VERTICAL_FILTER_TYPES,
+  LEFT_FILTER_TYPES,
+  MK2_FILTER_TYPES,
+  canonicalizeFilterSignature,
+  clusterFilterStructures,
+  isFilterStructure,
+  isHorizontalFilter,
+  isVerticalFilter,
+  isLeftFilter,
+  layoutFilterLabels,
+  measureFilterChip,
+  renderFilterOverlaySvg,
+} from "./filter-overlay.js";
 
 const BINARY_PREFIX = "SAND:BP:v2:";
 const TEXT_PREFIX = "SAND:BP:v2t:";

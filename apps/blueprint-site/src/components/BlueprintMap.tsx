@@ -63,6 +63,7 @@ export function BlueprintMap({
   showSidebar,
   showGrid,
   showPngBackground,
+  showFilters = false,
   onLoadBlueprint,
   captureOnly,
   showDebugOptions = true,
@@ -78,6 +79,7 @@ export function BlueprintMap({
   showSidebar: boolean;
   showGrid: boolean;
   showPngBackground: boolean;
+  showFilters?: boolean;
   onLoadBlueprint: (blueprint: Blueprint) => void;
   captureOnly?: boolean;
   showDebugOptions?: boolean;
@@ -210,6 +212,7 @@ export function BlueprintMap({
     [blueprint, cell, padding],
   );
   const { preparedBlueprint, minX, minY, width, height } = mapModel;
+  const filterOverlayLabelScale = showFilters ? 1 / zoom : 1;
   const coreRender = useMemo(
     () =>
       renderBlueprintToSvg(blueprint, {
@@ -225,13 +228,17 @@ export function BlueprintMap({
         showNames,
         showFoundationOutlines: foundationOutlinesVisible,
         showSignalLinks: signalLinksVisible,
+        showFilterOverlay: showFilters,
+        filterOverlayLabelScale,
       }),
     [
       blueprint,
       cell,
+      filterOverlayLabelScale,
       foundationOutlinesVisible,
       padding,
       showCustomShapes,
+      showFilters,
       showNames,
       showSprites,
       signalLinksVisible,

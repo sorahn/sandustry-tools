@@ -5,6 +5,7 @@ export const SAVED_MAP_VIEW_KEY = "sandustry.blueprintInspector.mapView";
 export const SHOW_MAP_SIDEBAR_KEY = "sandustry.blueprintInspector.showMapSidebar";
 export const SHOW_GRID_KEY = "sandustry.blueprintInspector.showGrid";
 export const SHOW_PNG_BACKGROUND_KEY = "sandustry.blueprintInspector.showPngBackground";
+export const SHOW_FILTERS_KEY = "sandustry.blueprintInspector.showFilters";
 export const USE_LEGACY_FIT_KEY = "sandustry.blueprintInspector.useLegacyFit";
 
 export const SHOW_DEBUG_CELLS_KEY = "sandustry.blueprintInspector.showDebugCells";

@@ -4,6 +4,7 @@ import { type Blueprint } from "../utils/blueprint";
 import { BlueprintMap } from "./BlueprintMap";
 import { PersistentCheckbox } from "./PersistentCheckbox";
 import {
+  SHOW_FILTERS_KEY,
   SHOW_GRID_KEY,
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
@@ -23,6 +24,8 @@ type BlueprintMapPanelProps = {
   onShowGridChange: (value: boolean) => void;
   showPngBackground: boolean;
   onShowPngBackgroundChange: (value: boolean) => void;
+  showFilters?: boolean;
+  onShowFiltersChange?: (value: boolean) => void;
   onLoadBlueprint: (blueprint: Blueprint) => void;
 };
 
@@ -47,6 +50,8 @@ export function BlueprintMapPanel({
   onShowGridChange,
   showPngBackground,
   onShowPngBackgroundChange,
+  showFilters = false,
+  onShowFiltersChange,
   onLoadBlueprint,
 }: BlueprintMapPanelProps) {
   const [useLegacyFit, setUseLegacyFit] = useState(false);
@@ -88,6 +93,14 @@ export function BlueprintMapPanel({
           <PersistentCheckbox
             boxed
             size="small"
+            label="filters"
+            storageKey={SHOW_FILTERS_KEY}
+            defaultChecked={showFilters}
+            onCheckedChange={onShowFiltersChange}
+          />
+          <PersistentCheckbox
+            boxed
+            size="small"
             label="sidebar"
             storageKey={SHOW_MAP_SIDEBAR_KEY}
             defaultChecked={showSidebar}
@@ -104,6 +117,7 @@ export function BlueprintMapPanel({
           showSidebar={showSidebar}
           showGrid={showGrid}
           showPngBackground={showPngBackground}
+          showFilters={showFilters}
           onLoadBlueprint={onLoadBlueprint}
           fitPolicy={
             !useLegacyFit

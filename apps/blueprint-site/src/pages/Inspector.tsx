@@ -20,6 +20,7 @@ import {
   REMEMBER_BLUEPRINT_KEY,
   SAVED_BLUEPRINT_KEY,
   SAVED_MAP_VIEW_KEY,
+  SHOW_FILTERS_KEY,
   SHOW_GRID_KEY,
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
@@ -86,6 +87,7 @@ export function BlueprintInspectorPage({
   const [showPngBackground, setShowPngBackground] = useState(() =>
     readStoredBoolean(SHOW_PNG_BACKGROUND_KEY, false),
   );
+  const [showFilters, setShowFilters] = useState(() => readStoredBoolean(SHOW_FILTERS_KEY, false));
   const [inspectedBlueprintKey, setInspectedBlueprintKey] = useState("");
   const [summary, setSummary] = useState<BlueprintSummary | null>(null);
   const [message, setMessage] = useState(
@@ -185,6 +187,8 @@ export function BlueprintInspectorPage({
               onShowGridChange={setShowGrid}
               showPngBackground={showPngBackground}
               onShowPngBackgroundChange={setShowPngBackground}
+              showFilters={showFilters}
+              onShowFiltersChange={setShowFilters}
               onLoadBlueprint={loadTestBlueprint}
             />
           </div>
