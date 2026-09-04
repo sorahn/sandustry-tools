@@ -37,20 +37,20 @@ implementation.
 
 ## Application chrome and navigation
 
-| Component                  | Evidence                 | Likely purpose                                                                                   |
-| -------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------ |
-| Main menu shell            | Bundle                   | Top-level application/menu surface surrounding save, settings, workshop, and start-game actions. |
-| Top navigation/header      | Bundle                   | Global menu and status area; exact DOM still needed.                                             |
-| Sidebar/index navigation   | Bundle                   | Grouped navigation for tool/reference pages; likely useful for the blueprint site.               |
-| Tab bar                    | Bundle, settings guide   | Settings are grouped into `general`, `video`, `audio`, `controls`, and conditional `mods` tabs.  |
-| Selected tab               | Bundle                   | Tab state likely uses active text/border/accent and `aria-selected`.                             |
-| Category selector          | Bundle                   | Build/inventory category navigation, including `By Category` and structure categories.           |
-| Breadcrumb/section heading | Inferred                 | Needed for nested blueprint/catalog/detail pages; no direct game DOM capture yet.                |
-| Build mode selector        | Bundle                   | Chooses `single`, directional, rectangle, launcher rectangle, or line building modes.            |
-| Shortcut helper            | Bundle                   | Small key/action hint associated with a selected tool or build mode.                             |
-| Contextual action bar      | Bundle                   | Actions that appear around an active building, selection, blueprint, or tool.                    |
-| Pause/menu overlay         | Inferred                 | Likely full-screen menu surface; requires capture.                                               |
-| Workspace/project switcher | Inferred                 | A useful browser-kit extension, not yet evidenced in the game.                                   |
+| Component                  | Evidence               | Likely purpose                                                                                   |
+| -------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| Main menu shell            | Bundle                 | Top-level application/menu surface surrounding save, settings, workshop, and start-game actions. |
+| Top navigation/header      | Bundle                 | Global menu and status area; exact DOM still needed.                                             |
+| Sidebar/index navigation   | Bundle                 | Grouped navigation for tool/reference pages; likely useful for the blueprint site.               |
+| Tab bar                    | Bundle, settings guide | Settings are grouped into `general`, `video`, `audio`, `controls`, and conditional `mods` tabs.  |
+| Selected tab               | Bundle                 | Tab state likely uses active text/border/accent and `aria-selected`.                             |
+| Category selector          | Bundle                 | Build/inventory category navigation, including `By Category` and structure categories.           |
+| Breadcrumb/section heading | Inferred               | Needed for nested blueprint/catalog/detail pages; no direct game DOM capture yet.                |
+| Build mode selector        | Bundle                 | Chooses `single`, directional, rectangle, launcher rectangle, or line building modes.            |
+| Shortcut helper            | Bundle                 | Small key/action hint associated with a selected tool or build mode.                             |
+| Contextual action bar      | Bundle                 | Actions that appear around an active building, selection, blueprint, or tool.                    |
+| Pause/menu overlay         | Inferred               | Likely full-screen menu surface; requires capture.                                               |
+| Workspace/project switcher | Inferred               | A useful browser-kit extension, not yet evidenced in the game.                                   |
 
 ## Controls and forms
 
@@ -75,24 +75,24 @@ implementation.
 
 ## Panels, overlays, and popovers
 
-| Component                       | Evidence            | Likely purpose                                                                                           |
-| ------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
-| Standard panel                  | DOM, Bundle         | Flexible content container with header/body/footer regions.                                              |
-| Modal dialog                    | Bundle              | Centered dialog with black scrim, title, body, and action footer.                                        |
-| Destructive confirmation dialog | Bundle              | Delete blueprint and other irreversible actions; explicit confirm/cancel.                                |
-| Full-screen diagnostic modal    | Bundle              | Debug panel uses a fixed `inset-0` backdrop and large scrollable content area.                           |
-| Drawer/popout                   | Inferred            | Side or anchored detail surface; game has several absolute popover patterns but no confirmed drawer DOM. |
-| Anchored popover                | Bundle              | Absolute black panel with border, shadow, and high z-index near a control.                               |
-| Tooltip                         | Bundle              | Hover/interaction detail for structures, elements, shortcuts, and controls.                              |
-| Structure tooltip               | Bundle              | Specialized tooltip with filter/building/structure information.                                          |
-| Element tooltip                 | Bundle, Inferred    | Element name, description, properties, and interactions.                                                 |
-| Toast notification              | Bundle              | Short-lived success/error/info message through the UI toast surface.                                     |
-| Notification stack              | Bundle              | Multiple notifications with delay/dismiss state.                                                         |
-| Banner/attention notice         | Bundle              | Persistent or semi-persistent warning such as element limits or upload status.                           |
-| Loading overlay                 | Bundle              | Full-screen or panel-level loading state with text, steps, and cancellation.                             |
-| Loading spinner                 | Bundle              | `menuSpinner` and `shaderSpin` indicate animated progress indicators.                                    |
-| Error surface                   | Bundle              | Red bordered error card with message and recovery action.                                                |
-| Empty state                     | Bundle, Inferred    | No blueprint, no structures, empty inventory, or no search results.                                      |
+| Component                       | Evidence         | Likely purpose                                                                                           |
+| ------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
+| Standard panel                  | DOM, Bundle      | Flexible content container with header/body/footer regions.                                              |
+| Modal dialog                    | Bundle           | Centered dialog with black scrim, title, body, and action footer.                                        |
+| Destructive confirmation dialog | Bundle           | Delete blueprint and other irreversible actions; explicit confirm/cancel.                                |
+| Full-screen diagnostic modal    | Bundle           | Debug panel uses a fixed `inset-0` backdrop and large scrollable content area.                           |
+| Drawer/popout                   | Inferred         | Side or anchored detail surface; game has several absolute popover patterns but no confirmed drawer DOM. |
+| Anchored popover                | Bundle           | Absolute black panel with border, shadow, and high z-index near a control.                               |
+| Tooltip                         | Bundle           | Hover/interaction detail for structures, elements, shortcuts, and controls.                              |
+| Structure tooltip               | Bundle           | Specialized tooltip with filter/building/structure information.                                          |
+| Element tooltip                 | Bundle, Inferred | Element name, description, properties, and interactions.                                                 |
+| Toast notification              | Bundle           | Short-lived success/error/info message through the UI toast surface.                                     |
+| Notification stack              | Bundle           | Multiple notifications with delay/dismiss state.                                                         |
+| Banner/attention notice         | Bundle           | Persistent or semi-persistent warning such as element limits or upload status.                           |
+| Loading overlay                 | Bundle           | Full-screen or panel-level loading state with text, steps, and cancellation.                             |
+| Loading spinner                 | Bundle           | `menuSpinner` and `shaderSpin` indicate animated progress indicators.                                    |
+| Error surface                   | Bundle           | Red bordered error card with message and recovery action.                                                |
+| Empty state                     | Bundle, Inferred | No blueprint, no structures, empty inventory, or no search results.                                      |
 
 ## Build, inventory, and game-tool components
 

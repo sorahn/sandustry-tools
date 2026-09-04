@@ -11,6 +11,7 @@ export type ElementCatalogSource = {
   getRegisteredTypes: () => number[];
   getDefinition: (type: number) => ElementDefinition | null;
   getName: (definition: ElementDefinition, fallback: string) => string;
+  getId?: (type: number) => string | null;
   isTypeAllowed: (type: number) => boolean;
   isElementAllowed: (id: string | null, definition: ElementDefinition) => boolean;
 };
@@ -24,7 +25,7 @@ export const createElementCatalog = (source: ElementCatalogSource): PickerElemen
     .map<PickerElement | null>((type) => {
       if (!source.isTypeAllowed(type)) return null;
       const definition = source.getDefinition(type);
-      const id = definition?.id || null;
+      const id = definition?.id || source.getId?.(type) || null;
       if (!definition || !source.isElementAllowed(id, definition)) return null;
       return {
         id,

@@ -24,11 +24,8 @@ try {
     const destination = movement?.destination;
     const source = movement?.source;
     if (!destination || !source) return false;
-    if (!workerApi.structures.isTypeAt(state, destination.x, destination.y, SPLITTER_ID))
-      return false;
-
     const splitter = workerApi.structures.getAtCell(state, destination.x, destination.y);
-    if (!splitter) return true;
+    if (!splitter || splitter.type !== SPLITTER_ID) return false;
 
     const key = `${splitter.x},${splitter.y}`;
     const preference = splitter.data?.preference ?? "even";

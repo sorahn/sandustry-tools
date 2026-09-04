@@ -21,6 +21,18 @@ each standalone entrypoint. Shared build rules live in `make/mod.mk`; reference
 material remains under `resources/`. The Test Blocks entrypoint is TypeScript
 and compiles to the plain JavaScript file Sandustry expects.
 
+## Project documentation
+
+The Obsidian Kanban board at `Boards/Sandustry Board.md` is the source of truth
+for Sandustry planning, priorities, status, and task tracking. The linked
+plans in `Sandustry/Plans/` are historical archive material. Research notes in
+`Sandustry/Notes/` remain living technical context and can continue to be
+updated with new discoveries.
+
+The repository's `planning/` directory contains archived Markdown copies of
+plans and research notes. Update the Kanban board for planning and status;
+update research notes when new technical findings need to be recorded.
+
 ## Packaging
 
 The root Makefile builds all active mods. Use a short mod name to target one
@@ -130,8 +142,9 @@ by native catalog extraction. The catalog extractor uses `@electron/asar` and
 does not require a checked-in game bundle.
 
 The dev runner starts Sandustry when it is not already running and owns that
-process. For an already-running game, use `make dev MOD=test-blocks TAKEOVER=1`
-to explicitly hand ownership to the dev runner. Restart-mode changes then
+process. `make dev` enables `TAKEOVER=1` and `DEBUG=1` by default so it can
+take over an already-running game and open debug ports (pass `TAKEOVER=0` or
+`DEBUG=0` in the environment to disable them). Restart-mode changes then
 restart the owned game automatically.
 
 From the repository root, run `make install` to build the current version and

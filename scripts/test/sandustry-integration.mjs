@@ -21,14 +21,11 @@ const TEMPLATE = join(ROOT, "resources", "SandustryModTemplate");
 const TEMPLATE_DIST = join(TEMPLATE, "dist");
 const STAGING_ROOT = join(ROOT, "artifacts", "sandustry-integration");
 const STAGING_MODS = join(STAGING_ROOT, "mods");
-const targetMod = process.env.SANDUSTRY_MOD ?? "test-blocks";
-const modNames = targetMod === "splitter" ? ["test-blocks", "splitter"] : [targetMod];
-const modPackages = modNames.map((name) => {
-  const dir = join(ROOT, "mods", name);
-  const manifest = JSON.parse(readFileSync(join(dir, "modinfo.json"), "utf8"));
-  return { name, id: manifest.id, dir, package: join(dir, "build", "package") };
-});
-const MOD_DIR = join(ROOT, "mods", targetMod);
+const modArgumentIndex = process.argv.indexOf("--mod");
+const cliMod =
+  process.argv.find((argument) => argument.startsWith("--mod="))?.slice(6) ||
+  (modArgumentIndex >= 0 ? process.argv[modArgumentIndex + 1] : null);
+const targetMod = cliMod?.trim() || process.env.SANDUSTRY_MOD?.trim() || null;
 const visible = process.argv.includes("--view");
 const search = process.env.SEARCH;
 if (
@@ -41,6 +38,7 @@ if (
 const { startSandustryTestHost, stopSandustryTestHost } = await import(
   join(TEMPLATE, "modkit", "test", "host.ts")
 );
+const { sandustryUserDataDir } = await import(join(TEMPLATE, "modkit", "test", "paths.ts"));
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { cwd: ROOT, stdio: "inherit", ...options });
@@ -64,6 +62,32 @@ function integrationTests(root) {
   walk(root);
   return files.sort();
 }
+
+function integrationModNames() {
+  if (targetMod) {
+    return targetMod === "splitter" ? ["test-blocks", "splitter"] : [targetMod];
+  }
+  return readdirSync(join(ROOT, "mods"), { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        !existsSync(join(ROOT, "mods", entry.name, ".deprecated")) &&
+        integrationTests(join(ROOT, "mods", entry.name)).length > 0,
+    )
+    .map((entry) => entry.name)
+    .sort();
+}
+
+const modNames = integrationModNames();
+const modPackages = modNames.map((name) => {
+  const dir = join(ROOT, "mods", name);
+  const manifest = JSON.parse(readFileSync(join(dir, "modinfo.json"), "utf8"));
+  return { name, id: manifest.id, dir, package: join(dir, "build", "package") };
+});
+
+console.log(
+  `${targetMod ? "Running" : "Discovered"} integration tests for: ${modNames.join(", ") || "none"}`,
+);
 
 if (!existsSync(join(TEMPLATE, "node_modules"))) {
   throw new Error("Template dependencies are missing. Run npm run test:integration:setup once.");
@@ -89,15 +113,31 @@ const distState = lstatSync(TEMPLATE_DIST);
 if (!distState.isSymbolicLink()) {
   throw new Error(`Expected template dist/ to be a symlink, found ${TEMPLATE_DIST}`);
 }
-const originalDistTarget = readlinkSync(TEMPLATE_DIST);
+const configuredDistTarget = readlinkSync(TEMPLATE_DIST);
+const fallbackDistTarget = join(sandustryUserDataDir(), "mods");
+const configuredDistPath = resolve(dirname(TEMPLATE_DIST), configuredDistTarget);
+const originalDistTarget =
+  configuredDistTarget.includes(STAGING_ROOT) || !existsSync(configuredDistPath)
+    ? fallbackDistTarget
+    : configuredDistTarget;
+if (originalDistTarget !== configuredDistTarget) {
+  unlinkSync(TEMPLATE_DIST);
+  symlinkSync(originalDistTarget, TEMPLATE_DIST, "dir");
+}
 unlinkSync(TEMPLATE_DIST);
 symlinkSync(STAGING_MODS, TEMPLATE_DIST, "dir");
 
 let result = 1;
 let hostStarted = false;
 try {
-  const tests = integrationTests(MOD_DIR);
-  if (tests.length === 0) throw new Error(`No integration tests found under ${MOD_DIR}`);
+  const tests = modPackages.flatMap((mod) => integrationTests(mod.dir));
+  if (tests.length === 0) {
+    throw new Error(
+      targetMod
+        ? `No integration tests found under ${join(ROOT, "mods", targetMod)}`
+        : "No integration tests found under active mods",
+    );
+  }
   const host = await startSandustryTestHost({
     modIds: modPackages.map((mod) => mod.id),
     visible,

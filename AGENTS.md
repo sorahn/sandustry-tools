@@ -1,13 +1,30 @@
 # Agent Notes
 
+## Documentation source of truth
+
+The Obsidian Kanban board at `Boards/Sandustry Board.md` is the source of truth
+for Sandustry planning, priorities, status, and task tracking. Linked plans in
+the Obsidian vault under `Sandustry/Plans/` are historical archive material.
+Research notes under `Sandustry/Notes/` remain living technical context and may
+be updated with new discoveries.
+
+The repository's `planning/` Markdown contains archived plan and research-note
+copies. Do not create or update plans there as part of normal planning work;
+update the Kanban board instead. Research-note copies may be updated when a
+discovery needs to be preserved in the repository as well. When Obsidian is
+unavailable, use the archived files for context and update the board when it
+is available again.
+
 ## Runtime lifecycle notes (read first for runtime/mod work)
 
 Before adding or changing registrations, UI, `game:ready` behavior, dev-mode
-reload handling, or other runtime integrations, read
-`planning/notes/runtime-lifecycle.md`. It is the canonical repository note for
+reload handling, or other runtime integrations, read the archived Obsidian
+note `[[Sandustry/Notes/runtime-lifecycle]]`. It provides context for
 registration timing, pattern-first implementation, injected UI host ownership,
-repaint state, disposal, and installed-versus-dev verification. Follow an
-existing working mod pattern closely before introducing a new lifecycle shape.
+repaint state, disposal, and installed-versus-dev verification. The archived
+repository copy at `planning/notes/runtime-lifecycle.md` is a fallback
+reference only. Follow an existing working mod pattern closely before
+introducing a new lifecycle shape.
 
 All native bundle patches must be developed and anchored against the exact
 minified game bundle extracted directly from the installed game's `app.asar`.
@@ -65,8 +82,8 @@ Makefile discovers active mods and supports `make build`, `make install`,
 `make check`, and `make format`; add `MOD=<name>` to target one mod. Per-mod
 Makefiles expose the same commands.
 
-Mods explicitly marked deprecated, including `signal-gate-repair` and
-`zoom-hotkeys`, are retained for reference only. Do not add new features,
+Mods explicitly marked deprecated, including `debug-lab`, `signal-gate-repair`,
+and `zoom-hotkeys`, are retained for reference only. Do not add new features,
 documentation, changelogs, or other maintenance work to them unless the user
 specifically asks to revive one.
 
@@ -151,52 +168,52 @@ merging, rebasing, and other repository metadata updates.
 
 ## Planning workflow
 
-Repository-level implementation plans live locally in the `planning/` directory
-as descriptive Markdown files. Every plan filename must end with `-PLAN.md`,
-such as `PICKER-CLEANUP-PLAN.md`, `BLUEPRINT-RENDERER-PLAN.md`, and
-`HOTBAR-PRESETS-PLAN.md`. Plans and reverse-engineering resources are local
-working material and are ignored by Git; do not rely on them being present in a
-fresh clone.
+The Obsidian Kanban board at `Boards/Sandustry Board.md` owns the active
+implementation plan, priorities, status, and completion state. The linked
+plan files under `Sandustry/Plans/` are historical archives, while the
+research notes under `Sandustry/Notes/` are living technical context. The
+matching repository files under `planning/` are archived copies. Neither plan
+or note files replace the board as the active work queue or status source of
+truth.
 
-- Create or update a plan when a task spans multiple implementation areas,
+- Create or update a Kanban card when a task spans multiple implementation areas,
   involves discovery or reverse engineering, or has meaningful compatibility,
   safety, or deployment concerns.
 - Use Markdown checkboxes for actionable work: unchecked items are pending and
   checked items are complete.
-- Organize plans into implementation phases, verification work, and completion
+- Organize board cards into implementation phases, verification work, and completion
   criteria. Include a suggested implementation order when the steps have
   dependencies.
-- Keep the plan behavior-focused and specific enough that another agent can
+- Keep each card behavior-focused and specific enough that another agent can
   continue the work without reconstructing the original conversation.
 - Record important constraints, discovered runtime behavior, fallback behavior,
-  and licensing or deployment limitations in the plan.
-- Update the plan as implementation progresses; do not leave completed work
-  represented only in conversation notes.
+  and licensing or deployment limitations in the card or linked research note.
+- Update the board card as implementation progresses; do not leave status or
+  completed work represented only in conversation notes.
 - Do not mark a checkbox complete merely because code was written. Mark it
   complete after the relevant check, inspection, or runtime verification has
   been performed.
-- Keep generated build output and archives out of plans and commits unless the
+- Keep generated build output and archives out of board cards and commits unless the
   task explicitly requires them.
-- When a plan is complete, leave the completed checklist as a record and add
-  follow-up work as a new section or a new plan rather than replacing the
-  historical context.
+- When work is complete, move or check off the board card and preserve the
+  linked archived notes as historical context.
 
 ## Research notes
 
-Use `planning/notes/` as the persistent notebook for discoveries made while
+Use the Obsidian `Sandustry/Notes/` folder for discoveries made while
 inspecting reference bundles, runtime captures, reverse-engineering material,
 or other repository evidence. Before starting related investigation, read the
-relevant notes; as new facts are learned, update the notes during the task so
-future agents do not have to rediscover them.
+relevant notes for context and update them with new findings. Keep status,
+priorities, and follow-up work on the Kanban board. The matching
+`planning/notes/` files are repository archive copies.
 
 - Keep notes in descriptive Markdown files, grouped by topic or subsystem.
 - Record the evidence or source, the observed behavior, confidence or
   inferences, unresolved questions, and any compatibility limitations.
-- Put actionable implementation steps and completion checkboxes in the
-  relevant `*-PLAN.md`; cross-reference the research note instead of copying
-  large investigations into the plan.
-- Treat notes as local working material. Do not add generated output, archives,
-  secrets, or transient logs.
+- Put actionable implementation steps and completion state in the relevant
+  Kanban card; link to archived notes when context is needed.
+- Treat research notes as durable working material. Do not add generated
+  output, archives, secrets, or transient logs.
 
 ## Project goal
 
@@ -311,12 +328,11 @@ The implementation lives in `mods/test-blocks/src/entry.tsx` and its manifest is
   with `api.ui.inject`. It reads registered element definitions for names, IDs,
   matter types, and colors. If injection or the React runtime is unavailable,
   it falls back to the text prompt.
-- `BLACKLISTED_ELEMENT_IDS` in `mods/test-blocks/src/entry.tsx` is the explicit blacklist for
-  unfinished or unwanted elements. The same check is applied to picker entries,
-  manual ID input, and runtime spawning. Definitions with `hidden: true` are
-  also excluded automatically.
-- `BLACKLISTED_ELEMENT_TYPES` handles core elements that have no string ID; type
-  `2` is currently excluded because it appears as `[NO KEY]`/`[NO NAME]`.
+- The Test Blocks picker, manual ID input, and runtime spawning reject the
+  three retro-console definitions (`retroConsoleCasing`,
+  `retroConsolePixelOff`, and `retroConsolePixelOn`) plus the anonymous core
+  type `2`, which appears as `[NO KEY]`/`[NO NAME]`. Hidden definitions,
+  unknown IDs, and missing definitions are also rejected.
 
 The source tracks three states by structure position:
 

@@ -88,27 +88,12 @@ const THERMAL_SOURCE_MAX_TEMPERATURE = 1000;
 const THERMAL_SOURCE_EXCHANGE_RATE = 0.5;
 const DEFAULT_ELEMENT_ID = "sand";
 const LAST_ELEMENT_KEY = `${MOD_ID}.lastElement`;
-// Add unfinished or unwanted element IDs here. The picker, manual fallback,
-// and runtime source check all use this same list.
 const BLACKLISTED_ELEMENT_IDS = new Set([
-  "caulk",
-  "cloud",
-  "coolant",
-  "growingVoidSeed",
-  "hyperpressure",
-  "oil",
-  "pressurizedWater",
-  "pyronol",
-  "reactorCore",
   "retroConsoleCasing",
   "retroConsolePixelOff",
   "retroConsolePixelOn",
-  "slowFlow",
-  "sunsand",
-  "waterPressure",
 ]);
-// Core elements without a string ID are filtered by numeric type instead.
-// Type 2 is the element reported as [NO KEY]/[NO NAME].
+// This anonymous core element is exposed by the game as [NO KEY]/[NO NAME].
 const BLACKLISTED_ELEMENT_TYPES = new Set([2]);
 const SIZE = 4;
 const SOURCE_BRUSH_INTERVAL_MS = SOURCE_TICK_MS / (SIZE * SIZE);
@@ -197,17 +182,53 @@ const selectionData = (selection: ElementSelection): SandustryStructureData => (
   elementType: selection.type,
 });
 
+const isElementTypeAllowed = (elementType: number) => !BLACKLISTED_ELEMENT_TYPES.has(elementType);
+
+const resolveElementType = (identifier: string): number | null => {
+  const direct = safe(() => api.elements.getTypeFromId(identifier), null);
+  if (direct !== null && Number.isInteger(direct)) return direct;
+  const lower = identifier.trim().toLowerCase();
+  const types = safe(() => api.elements.getRegisteredTypes(), []) || [];
+  for (const type of types) {
+    const typeId = safe(() => api.elements.getIdByType(type), null);
+    if (typeId && typeId.toLowerCase() === lower) return type;
+    const definition = safe(() => api.elements.getDefinitionByType(type), null);
+    if (definition) {
+      const name = safe(() => api.i18n.getName(definition), null);
+      if (name && name.toLowerCase() === lower) return type;
+    }
+  }
+  return null;
+};
+
+const isElementAllowed = (
+  elementId: string | null | undefined,
+  definition: SandustryElementDefinition | null = null,
+) => {
+  if (elementId && BLACKLISTED_ELEMENT_IDS.has(elementId)) return false;
+  const resolved =
+    definition ||
+    safe(() => {
+      const type = elementId ? resolveElementType(elementId) : null;
+      return type !== null ? api.elements.getDefinitionByType(type) : null;
+    }, null);
+  return !!resolved && resolved.hidden !== true;
+};
+
 const validElementSelection = (
   selection: ElementSelection | null | undefined,
 ): ValidElementSelection | null => {
   if (!selection || typeof selection.type !== "number" || !Number.isInteger(selection.type))
     return null;
-  const definition = safe(() => api.elements.getDefinitionByType(selection.type), null);
-  if (!definition || !isElementTypeAllowed(selection.type)) return null;
-  if (!isElementAllowed(selection.id, definition)) return null;
+  const elementType = selection.type;
+  const definition = safe(() => api.elements.getDefinitionByType(elementType), null);
+  if (!definition || !isElementTypeAllowed(elementType)) return null;
+  const resolvedId =
+    definition.id || selection.id || safe(() => api.elements.getIdByType(elementType), null);
+  if (!isElementAllowed(resolvedId, definition)) return null;
   return {
-    id: definition.id || selection.id || null,
-    type: selection.type,
+    id: resolvedId,
+    type: elementType,
   };
 };
 
@@ -221,7 +242,7 @@ const getLastElement = () => {
       const id = saved.slice(3);
       candidate = {
         id,
-        type: safe(() => api.elements.getTypeFromId(id), null),
+        type: resolveElementType(id),
       };
     }
   } else if (Number.isInteger(saved)) {
@@ -248,7 +269,7 @@ const defaultElementSelection = () => {
   const remembered = getLastElement();
   if (remembered) return remembered;
 
-  const type = safe(() => api.elements.getTypeFromId(DEFAULT_ELEMENT_ID), null);
+  const type = resolveElementType(DEFAULT_ELEMENT_ID);
   return (
     validElementSelection({ id: DEFAULT_ELEMENT_ID, type }) || {
       id: DEFAULT_ELEMENT_ID,
@@ -257,41 +278,82 @@ const defaultElementSelection = () => {
   );
 };
 
-const sourceElementSelection = (structure: SandustryStructure) => {
-  if (Number.isInteger(structure.data?.elementType)) {
-    const storedId = structure.data?.elementId;
-    const elementType = structure.data?.elementType;
-    const idMatchesType =
-      storedId && safe(() => api.elements.getTypeFromId(storedId), null) === elementType;
+const sourceSelectionFromData = (
+  data: SandustryStructureData | null | undefined,
+): ValidElementSelection | null => {
+  if (!data) return null;
+  if (typeof data.elementType === "number" && Number.isInteger(data.elementType)) {
+    const storedId = typeof data.elementId === "string" ? data.elementId : null;
+    const elementType = data.elementType;
+    const resolvedId =
+      storedId && resolveElementType(storedId) === elementType
+        ? storedId
+        : safe(() => api.elements.getIdByType(elementType), null);
     return validElementSelection({
-      id: idMatchesType ? storedId : null,
-      type: elementType ?? null,
+      id: resolvedId,
+      type: elementType,
     });
   }
 
-  if (structure.data?.elementId) {
-    const id = structure.data.elementId;
+  if (typeof data.elementId === "string" && data.elementId) {
+    const id = data.elementId;
     return validElementSelection({
       id,
-      type: safe(() => api.elements.getTypeFromId(id), null),
+      type: resolveElementType(id),
     });
   }
 
-  return defaultElementSelection();
+  return null;
 };
 
-const isElementAllowed = (
-  elementId: string | null | undefined,
-  definition: SandustryElementDefinition | null = null,
-) => {
-  if (elementId && BLACKLISTED_ELEMENT_IDS.has(elementId)) return false;
-  const resolved =
-    definition ||
-    safe(() => api.elements.getDefinitionByType(api.elements.getTypeFromId(elementId)), null);
-  return !!resolved && resolved.hidden !== true;
+const sourceElementSelection = (structure: SandustryStructure) => {
+  return sourceSelectionFromData(structure.data) || defaultElementSelection();
 };
 
-const isElementTypeAllowed = (elementType: number) => !BLACKLISTED_ELEMENT_TYPES.has(elementType);
+const getCopiedSourceSelection = (): ValidElementSelection | null => {
+  const customData = safe(() => engine.state?.session?.action?.customData) as
+    | { copiedStructure?: { data?: SandustryStructureData } }
+    | null
+    | undefined;
+  return sourceSelectionFromData(customData?.copiedStructure?.data);
+};
+
+const selectedActionIsSource = () => {
+  if (!api.action) return null;
+  const selected = safe(() => api.action?.getSelected(), null);
+  return selected?.id === SOURCE_ID;
+};
+
+const syncActionCustomData = (selection: ElementSelection) => {
+  if (!selectedActionIsSource() || selection.type === null) return;
+  const currentCustom = safe(() => engine.state?.session?.action?.customData) as
+    | Record<string, unknown>
+    | null
+    | undefined;
+  const existingCopied =
+    (currentCustom?.copiedStructure as Record<string, unknown> | undefined) || {};
+  const existingData = existingCopied.data as SandustryStructureData | undefined;
+
+  if (
+    existingData?.elementId === (selection.id || null) &&
+    existingData?.elementType === selection.type
+  ) {
+    return;
+  }
+
+  const nextCustom = {
+    ...currentCustom,
+    copiedStructure: {
+      ...existingCopied,
+      data: selectionData(selection),
+    },
+  };
+  if (api.action?.setCustomData) {
+    safe(() => api.action?.setCustomData(nextCustom));
+  } else if (engine.state?.session?.action) {
+    engine.state.session.action.customData = nextCustom;
+  }
+};
 
 const elementIdFromSource = (structure: SandustryStructure) => {
   const requested = structure.data?.elementId || DEFAULT_ELEMENT_ID;
@@ -302,14 +364,11 @@ const elementTypeFromSource = (structure: SandustryStructure) => {
   const storedType = structure.data?.elementType;
   if (typeof storedType === "number" && Number.isInteger(storedType)) {
     const definition = safe(() => api.elements.getDefinitionByType(storedType), null);
-    return definition && definition.hidden !== true && isElementTypeAllowed(storedType)
-      ? storedType
-      : null;
+    return definition && isElementTypeAllowed(storedType) ? storedType : null;
   }
 
   const elementId = elementIdFromSource(structure);
-  const elementType =
-    elementId === null ? null : safe(() => api.elements.getTypeFromId(elementId), null);
+  const elementType = elementId === null ? null : resolveElementType(elementId);
   return elementType !== null && isElementTypeAllowed(elementType) ? elementType : null;
 };
 
@@ -319,6 +378,7 @@ const elementEntries = (): PickerElement[] =>
       createElementCatalog({
         getRegisteredTypes: () => api.elements.getRegisteredTypes(),
         getDefinition: (type) => api.elements.getDefinitionByType(type),
+        getId: (type) => safe(() => api.elements.getIdByType(type), null),
         getName: (definition, fallback) =>
           safe(() => api.i18n.getName(definition), fallback) || fallback,
         isTypeAllowed: isElementTypeAllowed,
@@ -339,6 +399,7 @@ const applySourceSelection = (structure: SandustryStructure, value: ElementSelec
     propagateToWorkers: true,
   });
   rememberElement(selection);
+  syncActionCustomData(selection);
   disabledSources.delete(key);
   return true;
 };
@@ -362,9 +423,13 @@ const closePicker = (value: unknown) => {
   };
   const resolve = current.resolve;
   pickerPromise = null;
-  if (selected) rememberElement(selected);
+  if (selected) {
+    rememberElement(selected);
+    syncActionCustomData(selected);
+  }
   if (resolve) resolve(selected);
   if (pickerRepaint) pickerRepaint((value) => value + 1);
+  safe(() => api.ui.overlays.update(HOTBAR_OVERLAY_SLOT));
 };
 
 const expandPicker = () => {
@@ -375,12 +440,14 @@ const expandPicker = () => {
     pickerState = { ...state, minimized: false, resolve };
   });
   if (pickerRepaint) pickerRepaint((value) => value + 1);
+  safe(() => api.ui.overlays.update(HOTBAR_OVERLAY_SLOT));
 };
 
 const minimizePicker = () => {
   if (!pickerState || pickerState.minimized) return;
   pickerState = { ...pickerState, minimized: true };
   if (pickerRepaint) pickerRepaint((value) => value + 1);
+  safe(() => api.ui.overlays.update(HOTBAR_OVERLAY_SLOT));
 };
 
 const NAV_SCOPE = `${PICKER_ID}-scope`;
@@ -478,34 +545,77 @@ const currentPickerEntry = (): PickerElement | null => {
   );
 };
 
-const selectedActionIsSource = () => {
-  if (!api.action) return null;
-  const selected = safe(() => api.action?.getSelected(), null);
-  return selected?.id === SOURCE_ID;
+const isSelectionDifferent = (
+  current: { id: string | null; type: number | null },
+  incoming: { id: string | null; type: number },
+) => {
+  if (current.type !== incoming.type) return true;
+  if (current.id && incoming.id && current.id !== incoming.id) return true;
+  if (!current.id && incoming.id) return true;
+  return false;
 };
 
 const syncPickerToSelectedAction = () => {
   if (!UIReact || !registerPicker()) return;
 
   const sourceSelected = selectedActionIsSource();
-  if (sourceSelected && !pickerState) {
-    const current = defaultElementSelection();
+  if (!sourceSelected) {
+    if (pickerState && configuringSources.size === 0) {
+      const resolve = pickerState.resolve;
+      pickerState = null;
+      pickerPromise = null;
+      if (resolve) resolve(null);
+      if (pickerRepaint) pickerRepaint((value) => value + 1);
+      safe(() => api.ui.overlays.update(HOTBAR_OVERLAY_SLOT));
+    }
+    return;
+  }
+
+  const copiedSelection = getCopiedSourceSelection();
+
+  if (!pickerState) {
+    const current = copiedSelection || defaultElementSelection();
     pickerState = {
       current: current.id,
       currentType: current.type,
       minimized: true,
       resolve: null,
     };
+    if (current.type !== null) {
+      rememberElement(current);
+      syncActionCustomData(current);
+    }
     if (pickerRepaint) pickerRepaint((value) => value + 1);
+    safe(() => api.ui.overlays.update(HOTBAR_OVERLAY_SLOT));
     return;
   }
 
-  if (sourceSelected === false && pickerState && configuringSources.size === 0) {
+  if (
+    copiedSelection &&
+    isSelectionDifferent(
+      { id: pickerState.current, type: pickerState.currentType },
+      copiedSelection,
+    )
+  ) {
     const resolve = pickerState.resolve;
-    pickerState = null;
+    pickerState = {
+      ...pickerState,
+      current: copiedSelection.id,
+      currentType: copiedSelection.type,
+      minimized: true,
+      resolve: null,
+    };
     pickerPromise = null;
-    if (resolve) resolve(null);
+    rememberElement(copiedSelection);
+    syncActionCustomData(copiedSelection);
+    if (resolve) resolve(copiedSelection);
     if (pickerRepaint) pickerRepaint((value) => value + 1);
+    safe(() => api.ui.overlays.update(HOTBAR_OVERLAY_SLOT));
+    return;
+  }
+
+  if (!copiedSelection && pickerState.currentType !== null) {
+    syncActionCustomData({ id: pickerState.current, type: pickerState.currentType });
   }
 };
 
@@ -718,6 +828,7 @@ const openElementPicker = async (
         resolve,
       };
       if (pickerRepaint) pickerRepaint((value) => value + 1);
+      safe(() => api.ui.overlays.update(HOTBAR_OVERLAY_SLOT));
     });
     return pickerPromise;
   }
@@ -760,7 +871,7 @@ const configureSource = async (
 
     if (typeof value !== "string") return;
     const elementId = value.trim();
-    const elementType = safe(() => api.elements.getTypeFromId(elementId), null);
+    const elementType = resolveElementType(elementId);
     if (
       elementType === null ||
       !isElementTypeAllowed(elementType) ||
@@ -810,6 +921,9 @@ const sourceTick = () => {
         // Do not emit the default element while the placement configuration
         // prompt is still open.
         return;
+      } else {
+        const selection = sourceElementSelection(structure);
+        if (selection) sourceSelections.set(key, selection);
       }
     }
 
@@ -1236,6 +1350,22 @@ const setup = async () => {
   registerThermalSourceTick();
   registerPowerTick();
   registerPowerRemoval();
+
+  api.events.on("action:changed", () => {
+    try {
+      syncPickerToSelectedAction();
+    } catch (error) {
+      noop(error);
+    }
+  });
+
+  api.events.on("frame:render", () => {
+    try {
+      syncPickerToSelectedAction();
+    } catch (error) {
+      noop(error);
+    }
+  });
 
   api.triggers.register(`${MOD_ID}:source-tick`, {
     interval: SOURCE_BRUSH_INTERVAL_MS,

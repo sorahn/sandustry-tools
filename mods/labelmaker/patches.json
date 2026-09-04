@@ -4,7 +4,7 @@
     "file": "js/bundle.js",
     "operation": "replace",
     "find": "const d=c.shape,u=e.session.rendering.images.block;if(!u)return;",
-    "code": "const d=c.shape,u=e.session.rendering.images.block;if(!u)return;const z=t.color?Q(e,\"block\",t.color,\"colorize\"):null;",
+    "code": "const d=c.shape,u=e.session.rendering.images.block;if(!u)return;const z=t.color?Z(e,\"block\",t.color,\"colorize\"):null;",
     "expectedMatches": 1
   },
   {

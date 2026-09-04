@@ -1,0 +1,56 @@
+{
+  "name": "sandustry-themes",
+  "displayName": "Sandustry Themes",
+  "version": "0.1.0",
+  "description": "Terminal and VS Code color schemes inspired by Sandustry elements and terrain",
+  "categories": [
+    "Themes"
+  ],
+  "keywords": [
+    "color-theme",
+    "dark",
+    "iterm",
+    "sandustry",
+    "terminal",
+    "theme"
+  ],
+  "license": "MIT",
+  "author": "Daryl Roberts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sorahn/sandustry-tools.git",
+    "directory": "packages/sandustry-themes"
+  },
+  "publisher": "sorahn",
+  "files": [
+    "themes",
+    "iterm",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "package": "vsce package --no-dependencies"
+  },
+  "contributes": {
+    "themes": [
+      {
+        "label": "Sandustry - Unified",
+        "uiTheme": "vs-dark",
+        "path": "./themes/sandustry-unified-color-theme.json"
+      },
+      {
+        "label": "Sandustry - Elements",
+        "uiTheme": "vs-dark",
+        "path": "./themes/sandustry-elements-color-theme.json"
+      },
+      {
+        "label": "Sandustry - Terrain Light",
+        "uiTheme": "vs",
+        "path": "./themes/sandustry-terrain-light-color-theme.json"
+      }
+    ]
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  }
+}

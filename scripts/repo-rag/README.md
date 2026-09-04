@@ -51,7 +51,10 @@ or removing a server so the client reloads its MCP inventory.
 The corpus is controlled by `corpus-config.json`. `index --changed` compares
 content hashes and is safe to run repeatedly. `repo-rag:refresh-docs`
 conditionally fetches the official Sandkit HTML into the ignored
-`.repo-rag/cache/` directory. A subsequent index run extracts heading
-sections, API signatures, and code examples. Cache metadata keeps the URL,
-fetch time, content hash, and conditional HTTP headers; if the site is
+`.repo-rag/cache/` directory. Every changed response also preserves a
+timestamped HTML and metadata snapshot in
+`.repo-rag/cache/official-sandkit-snapshots/`; unchanged content hashes do not
+create duplicates, including `304` responses. A subsequent index run extracts
+heading sections, API signatures, and code examples. Cache metadata keeps the
+URL, fetch time, content hash, and conditional HTTP headers; if the site is
 unavailable, the last successful cache remains usable.

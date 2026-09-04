@@ -1,5 +1,14 @@
 # Priority Splitters changelog
 
+## 0.1.3
+
+- Fixed freshly placed splitters failing to route particles entering non-anchor
+  cells of their footprint.
+
+## 0.1.2
+
+- 0.5.6 support
+
 ## 0.1.1
 
 - Fixed compatibility with vanilla Conveyor Portals.

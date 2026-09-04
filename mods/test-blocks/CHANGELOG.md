@@ -1,10 +1,18 @@
 # Test Blocks changelog
 
+## 0.1.18
+
+- Preserved Infinite Source element selections while copying or placing Sources, including core elements without string IDs.
+
+## 0.1.17
+
+- Update to 0.5.6 support.
+
 ## 0.1.16
 
 - Fixed Infinite Thermal Source adjacency so it shares heat with buffers on all four sides.
 
-## 0.1.16
+## 0.1.15
 
 - Updated the thermal-consumption patch for Sandustry 0.5.5.
 - Switched Source spawning and Trash footprint iteration to the public runtime API.

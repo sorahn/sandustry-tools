@@ -2,7 +2,6 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const [path, part, changelogPath] = process.argv.slice(2);
 const manifest = JSON.parse(readFileSync(path, "utf8"));
-const previousVersion = manifest.version;
 const version = manifest.version.split(".").map(Number);
 const index = { major: 0, minor: 1, patch: 2 }[part];
 if (index === undefined || version.length !== 3 || version.some(Number.isNaN)) {
@@ -15,13 +14,9 @@ writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
 
 if (changelogPath && existsSync(changelogPath)) {
   const changelog = readFileSync(changelogPath, "utf8");
-  const heading = new RegExp(`^(##\\s+)v?${escapeRegExp(previousVersion)}(\\s*)$`, "mi");
-  if (heading.test(changelog)) {
-    writeFileSync(changelogPath, changelog.replace(heading, `$1${manifest.version}$2`));
-  } else {
-    console.warn(
-      `No CHANGELOG.md entry for v${previousVersion}; add one for v${manifest.version} before publishing.`,
-    );
+  const heading = new RegExp(`^##\\s+v?${escapeRegExp(manifest.version)}\\s*$`, "mi");
+  if (!heading.test(changelog)) {
+    console.warn(`No CHANGELOG.md entry for v${manifest.version}; add one before publishing.`);
   }
 }
 

@@ -2,11 +2,11 @@
   "manifestVersion": 1,
   "id": "sorahn.sandustry-filtered-lenses",
   "name": "Filtered Laser Lenses",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "apiVersion": 1,
   "author": "sorahn",
   "entry": "entry.js",
-  "description": "Adds a purchasable filter for your laser that mines only a selected element.",
+  "description": "Adds a purchasable filter for your laser that mines only selected terrains.",
   "dependencies": [],
   "loadOrder": 1000,
   "configSchema": {

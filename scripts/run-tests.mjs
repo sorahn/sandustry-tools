@@ -4,7 +4,12 @@ import { resolve } from "node:path";
 const projects = [
   {
     path: ".",
-    command: ["bun", "test", "scripts/test-catalog-invariants.test.ts"],
+    command: [
+      "bun",
+      "test",
+      "scripts/test-catalog-invariants.test.ts",
+      "scripts/bump-version.test.ts",
+    ],
   },
   {
     path: "packages/sandustry-blueprint-core",

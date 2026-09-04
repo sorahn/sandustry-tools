@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { parseExternalHtml } from "./external";
+import { parseExternalHtml, snapshotStem } from "./external";
 
 const config = await Bun.file(new URL("./corpus-config.json", import.meta.url)).json();
 
@@ -23,6 +23,10 @@ test("official HTML extraction keeps anchors, signatures, and examples", () => {
   expect(chunks[1].anchor).toBe("api-heading");
   expect(chunks[2].content).toContain("api.world.getCell(1, 2);");
   expect(chunks[2].content).toContain("https://sandustry.com/sandkit.html#api-heading");
+});
+
+test("external snapshots use filesystem-safe timestamp names", () => {
+  expect(snapshotStem("2026-09-03T17:08:33.814Z")).toBe("2026-09-03T17-08-33-814Z");
 });
 
 test("corpus manifest includes the Sandustry research sources", () => {

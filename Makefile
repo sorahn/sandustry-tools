@@ -1,9 +1,11 @@
 SHELL := /bin/sh
 MOD ?=
+DEBUG ?= 1
+TAKEOVER ?= 1
 SANDUSTRY_MODS_DIR ?= /Users/daryl/Library/Application Support/sandustry/mods
 MODS := $(sort $(notdir $(wildcard mods/*)))
-# A mod can be kept in the repository but excluded from default install sweeps
-# by adding an empty `mods/<name>/.deprecated` marker file.
+# A mod can be kept in the repository but excluded from default build/install
+# sweeps by adding an empty `mods/<name>/.deprecated` marker file.
 DEPRECATED_MODS := $(sort $(patsubst mods/%/.deprecated,%,$(wildcard mods/*/.deprecated)))
 INSTALL_MODS := $(filter-out $(DEPRECATED_MODS),$(MODS))
 # Accept the repository directory name as well as its short name. For example,
@@ -19,7 +21,7 @@ list-mods:
 	@printf '%s\n' $(MOD_NAMES)
 
 build:
-	@if [ -n "$(MOD)" ]; then if [ -z "$(MOD_DIR)" ]; then echo "Unknown MOD='$(MOD)'. Available mods: $(MOD_NAMES)" >&2; exit 2; fi; $(MAKE) -C "mods/$(MOD_DIR)" build; else for mod in $(MODS); do $(MAKE) -C "mods/$$mod" build || exit $$?; done; fi
+	@if [ -n "$(MOD)" ]; then if [ -z "$(MOD_DIR)" ]; then echo "Unknown MOD='$(MOD)'. Available mods: $(MOD_NAMES)" >&2; exit 2; fi; $(MAKE) -C "mods/$(MOD_DIR)" build; else for mod in $(INSTALL_MODS); do $(MAKE) -C "mods/$$mod" build || exit $$?; done; fi
 
 install:
 	@if [ -n "$(MOD)" ]; then if [ -z "$(MOD_DIR)" ]; then echo "Unknown MOD='$(MOD)'. Available mods: $(MOD_NAMES)" >&2; exit 2; fi; $(MAKE) -C "mods/$(MOD_DIR)" install; else for mod in $(INSTALL_MODS); do $(MAKE) -C "mods/$$mod" install || exit $$?; done; fi
@@ -34,7 +36,7 @@ steamdl:
 
 dev:
 	@if [ -z "$(MOD)" ]; then echo "Usage: make dev MOD=<mod>" >&2; exit 2; fi
-	@node scripts/dev/mod-dev.mjs --mod "$(MOD)" $(if $(TAKEOVER),--takeover,) $(if $(DEBUG),--debug,)
+	@node scripts/dev/mod-dev.mjs --mod "$(MOD)" $(if $(filter-out 0 false,$(TAKEOVER)),--takeover,) $(if $(filter-out 0 false,$(DEBUG)),--debug,)
 
 check:
 	@if [ -n "$(MOD)" ]; then if [ -z "$(MOD_DIR)" ]; then echo "Unknown MOD='$(MOD)'. Available mods: $(MOD_NAMES)" >&2; exit 2; fi; $(MAKE) -C "mods/$(MOD_DIR)" check; else npm run check && for mod in $(MODS); do $(MAKE) -C "mods/$$mod" check || exit $$?; done; fi

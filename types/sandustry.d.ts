@@ -557,6 +557,9 @@ interface SandustryApi {
   };
   terrains: {
     getTypeFromId(id: string): number | null;
+    getTypeById?(id: string): number | null;
+    getIdByType(type: number): string | null;
+    getDefinitionByType(type: number): any;
     getTypeAtCell(x: number, y: number): number | null;
     isCellIdTerrain(cellId: number): boolean;
     isTypeAtCell(x: number, y: number, type: string): boolean;

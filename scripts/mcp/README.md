@@ -16,9 +16,9 @@ and the other standard Chrome DevTools tools against `127.0.0.1:9222`.
 }
 ```
 
-Start Sandustry with F5 or `make dev ... DEBUG=1` first. The game must be
-running with debug ports enabled, for example:
+Start Sandustry with F5 or `make dev ...` first (debug ports and takeover are
+enabled by default). The game must be running with debug ports enabled, for example:
 
 ```sh
-make dev MOD=test-blocks TAKEOVER=1 DEBUG=1
+make dev MOD=test-blocks
 ```

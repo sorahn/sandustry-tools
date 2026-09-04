@@ -1,6 +1,6 @@
 {
   "name": "@daryl.roberts/sandustry-blueprint-core",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": false,
   "description": "Shared Sandustry blueprint encoding and rendering core",
   "homepage": "https://github.com/sorahn/sandustry-blueprint-core",

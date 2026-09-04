@@ -1,6 +1,12 @@
-export type TerrainSelection = { id: string; type: number };
+export type TerrainSelection = {
+  ids: string[];
+  types: number[];
+  entries: TerrainEntry[];
+};
 
-export type TerrainEntry = TerrainSelection & {
+export type TerrainEntry = {
+  id: string;
+  type: number;
   name: string;
   color: string;
 };

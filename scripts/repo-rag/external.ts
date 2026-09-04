@@ -22,6 +22,19 @@ export type ExternalCache = {
 const cacheDir = (root: string) => path.join(root, ".repo-rag", "cache");
 const htmlPath = (root: string) => path.join(cacheDir(root), "official-sandkit.html");
 const metadataPath = (root: string) => path.join(cacheDir(root), "official-sandkit.json");
+const snapshotDir = (root: string) => path.join(cacheDir(root), "official-sandkit-snapshots");
+
+export function snapshotStem(fetchedAt: string) {
+  return fetchedAt.replace(/[:.]/g, "-");
+}
+
+function snapshotHtmlPath(root: string, fetchedAt: string) {
+  return path.join(snapshotDir(root), `official-sandkit-${snapshotStem(fetchedAt)}.html`);
+}
+
+function snapshotMetadataPath(root: string, fetchedAt: string) {
+  return path.join(snapshotDir(root), `official-sandkit-${snapshotStem(fetchedAt)}.json`);
+}
 
 function decodeHtml(value: string) {
   return value
@@ -111,6 +124,35 @@ export async function refreshExternal(root: string, url: string) {
     etag: response.headers.get("etag") ?? undefined,
     lastModified: response.headers.get("last-modified") ?? undefined,
   };
+  if (previous.contentHash && previous.contentHash !== metadata.contentHash && previous.fetchedAt) {
+    try {
+      const previousHtml = await readFile(htmlPath(root), "utf8");
+      const previousSnapshot = {
+        ...previous,
+        htmlPath: snapshotHtmlPath(root, previous.fetchedAt),
+        metadataPath: snapshotMetadataPath(root, previous.fetchedAt),
+      };
+      await mkdir(snapshotDir(root), { recursive: true });
+      await writeFile(previousSnapshot.htmlPath, previousHtml);
+      await writeFile(
+        previousSnapshot.metadataPath,
+        `${JSON.stringify(previousSnapshot, null, 2)}\n`,
+      );
+    } catch {
+      // Preserve the refresh even if an older cache cannot be snapshotted.
+    }
+  }
+
+  if (!previous.contentHash || previous.contentHash !== metadata.contentHash) {
+    await mkdir(snapshotDir(root), { recursive: true });
+    const currentSnapshot = {
+      ...metadata,
+      htmlPath: snapshotHtmlPath(root, metadata.fetchedAt),
+      metadataPath: snapshotMetadataPath(root, metadata.fetchedAt),
+    };
+    await writeFile(currentSnapshot.htmlPath, html);
+    await writeFile(currentSnapshot.metadataPath, `${JSON.stringify(currentSnapshot, null, 2)}\n`);
+  }
   await writeFile(htmlPath(root), html);
   await writeFile(metadataPath(root), `${JSON.stringify(metadata, null, 2)}\n`);
   return metadata;

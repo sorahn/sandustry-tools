@@ -104,7 +104,7 @@ async function openLabelmaker(): Promise<void> {
 
 function clearLabelmakerCursor(restoreLabelmaker = false): void {
   const customData = (
-    sandkit.engine.state?.store?.player?.action as
+    sandkit.engine.state?.session?.action as
       | { customData?: { __labelmakerCursor?: boolean } | null }
       | undefined
   )?.customData;

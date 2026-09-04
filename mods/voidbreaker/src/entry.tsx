@@ -96,7 +96,18 @@ function registerVoidRiftPlacementBypass(): void {
     if (context?.structureId !== VOID_RIFT_TYPE) return;
 
     if (internalVoidRiftBuild) {
-      if (control) control.cancel = () => {};
+      if (control) {
+        // The runtime reuses hook-control objects but only resets `cancelled`.
+        // Suppress the native Void Rift guard for this synchronous re-entry,
+        // then restore its cancellation method before that object is reused by
+        // unrelated hooks such as the Aura Extractor action interceptor.
+        const cancel = control.cancel;
+        const suppressedCancel = () => {};
+        control.cancel = suppressedCancel;
+        queueMicrotask(() => {
+          if (control.cancel === suppressedCancel) control.cancel = cancel;
+        });
+      }
       internalVoidRiftBuild = false;
       return;
     }
