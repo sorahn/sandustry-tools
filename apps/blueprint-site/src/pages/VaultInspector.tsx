@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { BlueprintInspectorPage } from "./Inspector";
 import { PageHeader } from "../components/PageHeader";
+import { StatusIndicator, Toast } from "@sandustry/ui";
 import { useParams } from "@tanstack/react-router";
 
 type VaultBlueprint = {
@@ -68,12 +69,7 @@ export function VaultBlueprintInspectorPage() {
         <PageHeader title={`Vault blueprint #${vaultId}`}>
           We could not load this blueprint from Sandustry Vault.
         </PageHeader>
-        <div
-          role="alert"
-          className="border border-red-400/40 bg-red-950/30 p-4 text-sm text-red-200"
-        >
-          {error}
-        </div>
+        <Toast variant="danger" message={error} />
       </section>
     );
   }
@@ -84,11 +80,8 @@ export function VaultBlueprintInspectorPage() {
         <PageHeader title={`Vault blueprint #${vaultId}`}>
           Loading the blueprint from Sandustry Vault…
         </PageHeader>
-        <div
-          role="status"
-          className="border border-slate-800 bg-black/30 p-4 font-mono text-sm text-slate-400"
-        >
-          Fetching blueprint data…
+        <div className="rounded border border-slate-800 bg-black/40 p-4">
+          <StatusIndicator tone="warning" label="Fetching blueprint data from Sandustry Vault…" />
         </div>
       </section>
     );

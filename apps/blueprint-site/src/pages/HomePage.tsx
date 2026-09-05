@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { buttonStyles, Panel } from "@sandustry/ui";
-import cx from "clsx";
+import { Button, Divider, Panel } from "@sandustry/ui";
 
 export function HomePage() {
   return (
@@ -15,17 +14,18 @@ export function HomePage() {
           string. Render blueprints as images, too. Everything runs locally in your browser.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link to="/explorer" className={cx(buttonStyles.button, buttonStyles.accent)}>
+          <Button as={Link} to="/explorer" variant="accent">
             Open the save explorer
-          </Link>
-          <Link to="/inspect" className={cx(buttonStyles.button, buttonStyles.accent)}>
+          </Button>
+          <Button as={Link} to="/inspect" variant="solid">
             Open the blueprint inspector
-          </Link>
-          <Link to="/codec" className={cx(buttonStyles.button, buttonStyles.accent)}>
+          </Button>
+          <Button as={Link} to="/codec" variant="accent">
             Open the codec
-          </Link>
+          </Button>
         </div>
-        <div className="mt-8 grid gap-3 border-t border-slate-800 pt-5 text-xs text-slate-500 sm:grid-cols-3">
+        <Divider className="my-8" />
+        <div className="grid gap-3 text-xs text-slate-500 sm:grid-cols-3">
           <span>
             <strong className="text-slate-300">In the browser.</strong>
             <br />

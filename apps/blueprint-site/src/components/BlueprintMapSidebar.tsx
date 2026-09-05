@@ -22,6 +22,7 @@ import {
 } from "@daryl.roberts/sandustry-blueprint-core";
 import { structureFootprint, structureTopY } from "../utils/blueprint-map";
 import { BlueprintMapSidebarSection } from "./BlueprintMapSidebarSection";
+import { Badge, TextAction } from "@sandustry/ui";
 
 type BlueprintStructure = Blueprint["data"][number];
 
@@ -521,13 +522,13 @@ export function BlueprintMapSidebar({
         title="Selected record"
         headerAction={
           selected && onClearSelection ? (
-            <button
+            <TextAction
               type="button"
               onClick={onClearSelection}
-              className="text-[11px] font-sans text-slate-500 hover:text-slate-300 transition-colors"
+              className="font-sans text-[11px] text-slate-500 hover:text-slate-300"
             >
               Clear
-            </button>
+            </TextAction>
           ) : null
         }
       >
@@ -552,9 +553,9 @@ export function BlueprintMapSidebar({
                     {name}
                   </h4>
                   {category ? (
-                    <span className="shrink-0 rounded bg-slate-800/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-300 uppercase tracking-wide">
+                    <Badge tone="default" className="shrink-0 text-[10px] uppercase tracking-wide">
                       {category}
-                    </span>
+                    </Badge>
                   ) : null}
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-slate-400">

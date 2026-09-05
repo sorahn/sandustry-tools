@@ -1,9 +1,4 @@
-import type {
-  AnchorHTMLAttributes,
-  ButtonHTMLAttributes,
-  PropsWithChildren,
-  ReactNode,
-} from "react";
+import type { ComponentPropsWithoutRef, ElementType, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
 
 type SharedTextActionProps = {
@@ -11,41 +6,31 @@ type SharedTextActionProps = {
   className?: string;
 };
 
-export type TextActionProps = PropsWithChildren<SharedTextActionProps> &
-  (
-    | ({ as?: "button" } & ButtonHTMLAttributes<HTMLButtonElement>)
-    | ({ as: "a" } & AnchorHTMLAttributes<HTMLAnchorElement>)
-  );
+export type TextActionProps<T extends ElementType = "button"> =
+  PropsWithChildren<SharedTextActionProps> & {
+    as?: T;
+  } & Omit<ComponentPropsWithoutRef<T>, keyof SharedTextActionProps | "as">;
 
-export function TextAction({
-  as = "button",
+export function TextAction<T extends ElementType = "button">({
+  as,
   icon,
   className = "",
   children,
   ...props
-}: TextActionProps) {
+}: TextActionProps<T>) {
+  const Component = (as ?? "button") as ElementType;
+  const isNativeButton = Component === "button";
+  const buttonType = isNativeButton ? ((props as { type?: string }).type ?? "button") : undefined;
+
   const classes = cx(
     "inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-white/85 transition-colors hover:text-[#ffe700] focus-visible:outline-2 focus-visible:outline-[#ffe700] focus-visible:outline-offset-2",
     className,
   );
 
-  if (as === "a") {
-    return (
-      <a {...(props as AnchorHTMLAttributes<HTMLAnchorElement>)} className={classes}>
-        {icon}
-        {children}
-      </a>
-    );
-  }
-
   return (
-    <button
-      {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
-      type={(props as ButtonHTMLAttributes<HTMLButtonElement>).type ?? "button"}
-      className={classes}
-    >
+    <Component {...(isNativeButton ? { type: buttonType } : {})} {...props} className={classes}>
       {icon}
       {children}
-    </button>
+    </Component>
   );
 }
