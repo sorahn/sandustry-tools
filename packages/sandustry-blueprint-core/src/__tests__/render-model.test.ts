@@ -93,4 +93,50 @@ describe("render-model helpers", () => {
       "late",
     ]);
   });
+
+  test("accepts pre-computed preparedBlueprint without re-running preparation", () => {
+    const blueprint = {
+      name: "Precomputed",
+      data: [{ type: "test", x: 10, y: 20 }],
+      signalLinks: null,
+    };
+    const customPrepared = {
+      preparedStructures: [
+        {
+          structure: blueprint.data[0],
+          index: 0,
+          bounds: { minX: 10, maxX: 13, minY: 20, maxY: 23 },
+          footprint: { width: 4, height: 4 },
+          topY: 20,
+          visualTopY: 20,
+          z: 0.5,
+        } as any,
+      ],
+      preparedSignalLinks: [],
+      bounds: { minX: 10, maxX: 13, minY: 20, maxY: 23 },
+    };
+    const model = createBlueprintRenderModel(blueprint, {
+      preparedBlueprint: customPrepared as any,
+    });
+    expect(model.preparedBlueprint).toBe(customPrepared as any);
+  });
+
+  test("handles massive blueprints with > 65,536 coordinates without call stack overflow", () => {
+    const count = 70000;
+    const data = Array.from({ length: count }, (_, i) => ({
+      type: "machine",
+      x: i,
+      y: i,
+    }));
+    const blueprint = { name: "Massive", data, signalLinks: null };
+    const model = createBlueprintRenderModel(blueprint, {
+      padding: 0,
+      cell: 1,
+      catalog: { get: () => ({ footprint: { width: 1, height: 1 } }) },
+    });
+    expect(model.minX).toBe(0);
+    expect(model.maxX).toBe(count - 1);
+    expect(model.minY).toBe(0);
+    expect(model.maxY).toBe(count - 1);
+  });
 });

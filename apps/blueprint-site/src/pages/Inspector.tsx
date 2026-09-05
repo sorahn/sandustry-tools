@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { structureLabel } from "@daryl.roberts/sandustry-blueprint-core";
-import { decodeBlueprint, encodeBlueprint, type Blueprint } from "../utils/blueprint";
+import {
+  decodeBlueprint,
+  encodeBlueprint,
+  type Blueprint,
+  type BlueprintType,
+} from "../utils/blueprint";
 import { debugComponent } from "../components/DebugComponentWrapper";
 import { BlueprintMapPanel } from "../components/BlueprintMapPanel";
 import { PersistentCheckbox } from "../components/PersistentCheckbox";
@@ -27,21 +32,48 @@ import {
 } from "../utils/storage-keys";
 
 function summarizeBlueprint(input: string, blueprint: Blueprint): BlueprintSummary {
-  const xs = blueprint.data.length ? blueprint.data.map(({ x }) => x) : [0];
-  const ys = blueprint.data.length ? blueprint.data.map(({ y }) => y) : [0];
-  const types = new Set(blueprint.data.map(({ type }) => type));
-  const numericTypes = [...types].filter((type) => typeof type === "number").length;
+  let minX = 0;
+  let maxX = 0;
+  let minY = 0;
+  let maxY = 0;
+  let filterCount = 0;
+  let dataCount = 0;
+  const types = new Set<BlueprintType>();
+  let numericTypes = 0;
+
+  if (blueprint.data.length) {
+    const first = blueprint.data[0];
+    minX = first.x;
+    maxX = first.x;
+    minY = first.y;
+    maxY = first.y;
+
+    for (let i = 0; i < blueprint.data.length; i++) {
+      const item = blueprint.data[i];
+      if (item.x < minX) minX = item.x;
+      if (item.x > maxX) maxX = item.x;
+      if (item.y < minY) minY = item.y;
+      if (item.y > maxY) maxY = item.y;
+      if (item.filter !== undefined) filterCount++;
+      if (item.data !== undefined) dataCount++;
+      if (!types.has(item.type)) {
+        types.add(item.type);
+        if (typeof item.type === "number") numericTypes++;
+      }
+    }
+  }
+
   return {
     format: input.trim().startsWith("SAND:BP:v2t:") ? "v2 text" : "v2 binary",
-    minX: Math.min(...xs),
-    maxX: Math.max(...xs),
-    minY: Math.min(...ys),
-    maxY: Math.max(...ys),
+    minX,
+    maxX,
+    minY,
+    maxY,
     types: types.size,
     numericTypes,
     stringTypes: types.size - numericTypes,
-    filters: blueprint.data.filter(({ filter }) => filter !== undefined).length,
-    dataRecords: blueprint.data.filter(({ data }) => data !== undefined).length,
+    filters: filterCount,
+    dataRecords: dataCount,
     links: blueprint.signalLinks?.length ?? 0,
   };
 }

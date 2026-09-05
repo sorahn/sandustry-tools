@@ -18,6 +18,7 @@ export type BlueprintRenderOptions = {
   minWidth?: number;
   cell?: number;
   unknownFootprint?: { width: number; height: number };
+  preparedBlueprint?: PreparedBlueprint;
 };
 
 export type BlueprintRenderStructure = {
@@ -105,27 +106,30 @@ export function createBlueprintRenderModel(
 ): BlueprintRenderModel {
   const padding = options.padding ?? DEFAULT_RENDER_PADDING;
   const cell = options.cell ?? DEFAULT_RENDER_CELL;
-  const preparedBlueprint = prepareBlueprint(blueprint, options);
-  const xs = blueprint.data.length
-    ? blueprint.data.flatMap((structure, index) => {
-        const prepared = preparedBlueprint.preparedStructures[index];
-        const assetOffsetX = renderAssetOffsetX(prepared);
-        return [
-          structure.x + assetOffsetX,
-          structure.x + prepared.footprint.width - 1 + assetOffsetX,
-        ];
-      })
-    : [0];
-  const ys = blueprint.data.length
-    ? blueprint.data.flatMap((structure, index) => {
-        const prepared = preparedBlueprint.preparedStructures[index];
-        return [prepared.visualTopY, prepared.topY + prepared.footprint.height - 1];
-      })
-    : [0];
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
+  const preparedBlueprint = options.preparedBlueprint ?? prepareBlueprint(blueprint, options);
+  let minX = 0;
+  let maxX = 0;
+  let minY = 0;
+  let maxY = 0;
+  if (blueprint.data.length) {
+    minX = Infinity;
+    maxX = -Infinity;
+    minY = Infinity;
+    maxY = -Infinity;
+    for (let index = 0; index < blueprint.data.length; index++) {
+      const structure = blueprint.data[index];
+      const prepared = preparedBlueprint.preparedStructures[index];
+      const assetOffsetX = renderAssetOffsetX(prepared);
+      const x1 = structure.x + assetOffsetX;
+      const x2 = structure.x + prepared.footprint.width - 1 + assetOffsetX;
+      if (x1 < minX) minX = x1;
+      if (x2 > maxX) maxX = x2;
+      const y1 = prepared.visualTopY;
+      const y2 = prepared.topY + prepared.footprint.height - 1;
+      if (y1 < minY) minY = y1;
+      if (y2 > maxY) maxY = y2;
+    }
+  }
   const naturalWidth = (maxX - minX + padding * 2 + 1) * cell;
   const width = Math.max(naturalWidth, options.minWidth ?? 0);
   const paddingX = padding + (width - naturalWidth) / (2 * cell);

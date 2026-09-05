@@ -327,31 +327,40 @@ export function isBeltType(type: BlueprintType) {
 }
 
 export function underlyingCellCoordinates(structures: PreparedStructure[]): UnderlyingCell[] {
-  return structures.flatMap((prepared) => {
-    if (!contributesUnderlyingCells(prepared)) return [];
+  const result: UnderlyingCell[] = [];
+  for (const prepared of structures) {
+    if (!contributesUnderlyingCells(prepared)) continue;
     // Kinetic Press uses a bottom-origin placement anchor, but its raw shape
     // is authored at the top of the 4-cell footprint. The game writes the
     // solid row at the structure's anchored position, three cells lower than
     // `topY`.
     const rawShapeOffsetY = prepared.structure.type === 20 ? 3 : 0;
-    const shape =
-      prepared.shape ??
-      Array.from({ length: prepared.footprint.height }, () =>
-        Array.from({ length: prepared.footprint.width }, () => 1),
-      );
-    return shape.flatMap((row, rowIndex) =>
-      row.flatMap((value, columnIndex) =>
-        value === 0
-          ? []
-          : [
-              {
-                x: prepared.structure.x + columnIndex,
-                y: prepared.topY + rawShapeOffsetY + rowIndex,
-              },
-            ],
-      ),
-    );
-  });
+    const shape = prepared.shape;
+    if (shape) {
+      for (let rowIndex = 0; rowIndex < shape.length; rowIndex++) {
+        const row = shape[rowIndex];
+        for (let columnIndex = 0; columnIndex < row.length; columnIndex++) {
+          if (row[columnIndex] !== 0) {
+            result.push({
+              x: prepared.structure.x + columnIndex,
+              y: prepared.topY + rawShapeOffsetY + rowIndex,
+            });
+          }
+        }
+      }
+    } else {
+      const { width, height } = prepared.footprint;
+      for (let rowIndex = 0; rowIndex < height; rowIndex++) {
+        for (let columnIndex = 0; columnIndex < width; columnIndex++) {
+          result.push({
+            x: prepared.structure.x + columnIndex,
+            y: prepared.topY + rawShapeOffsetY + rowIndex,
+          });
+        }
+      }
+    }
+  }
+  return result;
 }
 
 export function foundationOutlinePath(
@@ -378,8 +387,13 @@ export function foundationOutlinePath(
   }
   const outgoing = new Map<string, number[]>();
   edges.forEach((currentEdge, index) => {
-    const key = currentEdge.from.join(",");
-    outgoing.set(key, [...(outgoing.get(key) ?? []), index]);
+    const key = `${currentEdge.from[0]},${currentEdge.from[1]}`;
+    let list = outgoing.get(key);
+    if (!list) {
+      list = [];
+      outgoing.set(key, list);
+    }
+    list.push(index);
   });
   const nextBoundaryEdge = (currentIndex: number, candidates: number[]) => {
     if (candidates.length < 2) return candidates[0];
@@ -424,7 +438,9 @@ export function foundationOutlinePath(
       if (currentEdge.to[0] === start[0] && currentEdge.to[1] === start[1]) break;
       const next = nextBoundaryEdge(
         currentIndex,
-        outgoing.get(currentEdge.to.join(","))?.filter((index) => !visited.has(index)) ?? [],
+        outgoing
+          .get(`${currentEdge.to[0]},${currentEdge.to[1]}`)
+          ?.filter((index) => !visited.has(index)) ?? [],
       );
       if (next === undefined) break;
       currentIndex = next;
@@ -499,9 +515,10 @@ function prepareSprites(structures: PreparedStructure[]) {
     if (visited.has(start.index)) continue;
     const component: PreparedStructure[] = [];
     const queue = [start];
+    let head = 0;
     visited.add(start.index);
-    while (queue.length) {
-      const prepared = queue.shift()!;
+    while (head < queue.length) {
+      const prepared = queue[head++];
       component.push(prepared);
       for (const [dx, dy] of [
         [4, 0],
@@ -518,15 +535,17 @@ function prepareSprites(structures: PreparedStructure[]) {
         }
       }
     }
-    const bounds = component.reduce(
-      (value, prepared) => ({
-        minX: Math.min(value.minX, prepared.structure.x),
-        maxX: Math.max(value.maxX, prepared.structure.x),
-        minY: Math.min(value.minY, prepared.structure.y),
-        maxY: Math.max(value.maxY, prepared.structure.y),
-      }),
-      { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity },
-    );
+    let compMinX = Infinity;
+    let compMaxX = -Infinity;
+    let compMinY = Infinity;
+    let compMaxY = -Infinity;
+    for (const prepared of component) {
+      if (prepared.structure.x < compMinX) compMinX = prepared.structure.x;
+      if (prepared.structure.x > compMaxX) compMaxX = prepared.structure.x;
+      if (prepared.structure.y < compMinY) compMinY = prepared.structure.y;
+      if (prepared.structure.y > compMaxY) compMaxY = prepared.structure.y;
+    }
+    const bounds = { minX: compMinX, maxX: compMaxX, minY: compMinY, maxY: compMaxY };
     for (const prepared of component) {
       const animation = prepared.sprite!.asset.animation!;
       const atLeft = prepared.structure.x === bounds.minX;
@@ -548,38 +567,48 @@ function prepareSprites(structures: PreparedStructure[]) {
   }
 }
 
-function coordinateOffset(blueprint: Blueprint): BlueprintCoordinate {
-  const endpoints = (blueprint.signalLinks ?? []).flatMap((link) => [link.from, link.to]);
-  if (!endpoints.length || !blueprint.data.length) return { x: 0, y: 0 };
-  const candidates = new Map<string, { offset: BlueprintCoordinate; matches: number }>();
-  for (const endpoint of endpoints) {
-    for (const structure of blueprint.data) {
-      const offset = { x: endpoint.x - structure.x, y: endpoint.y - structure.y };
-      const key = `${offset.x},${offset.y}`;
-      const candidate = candidates.get(key) ?? { offset, matches: 0 };
-      candidate.matches += 1;
-      candidates.set(key, candidate);
+function coordinateOffset(
+  blueprint: Blueprint,
+  structureMap: Map<string, number>,
+): BlueprintCoordinate {
+  const signalLinks = blueprint.signalLinks ?? [];
+  if (!signalLinks.length || !blueprint.data.length) return { x: 0, y: 0 };
+  const first = signalLinks[0].from;
+  const testedOffsets = new Set<string>();
+  for (const structure of blueprint.data) {
+    const ox = first.x - structure.x;
+    const oy = first.y - structure.y;
+    const key = `${ox},${oy}`;
+    if (testedOffsets.has(key)) continue;
+    testedOffsets.add(key);
+
+    let allMatch = true;
+    for (const link of signalLinks) {
+      if (
+        !structureMap.has(`${link.from.x - ox},${link.from.y - oy}`) ||
+        !structureMap.has(`${link.to.x - ox},${link.to.y - oy}`)
+      ) {
+        allMatch = false;
+        break;
+      }
+    }
+    if (allMatch) {
+      return { x: ox, y: oy };
     }
   }
-  const best = [...candidates.values()].sort((left, right) => right.matches - left.matches)[0];
-  return best?.matches === endpoints.length ? best.offset : { x: 0, y: 0 };
-}
-
-function structureIndexAt(structures: BlueprintStructure[], coordinate: BlueprintCoordinate) {
-  return structures.findIndex(
-    (structure) => structure.x === coordinate.x && structure.y === coordinate.y,
-  );
+  return { x: 0, y: 0 };
 }
 
 function resolveEndpoint(
   structures: BlueprintStructure[],
+  structureMap: Map<string, number>,
   raw: BlueprintCoordinate,
   offset: BlueprintCoordinate,
   side: "from" | "to",
   resolveSignalPoints: SignalPointResolver,
 ) {
   const origin = { x: raw.x - offset.x, y: raw.y - offset.y };
-  const structureIndex = structureIndexAt(structures, origin);
+  const structureIndex = structureMap.get(`${origin.x},${origin.y}`) ?? -1;
   const structure = structureIndex < 0 ? undefined : structures[structureIndex];
   const points = structure ? resolveSignalPoints(structure.type) : undefined;
   const local = points?.shared ?? points?.[side === "from" ? "output" : "input"];
@@ -612,6 +641,14 @@ export function prepareBlueprint(
     options.resolveSignalPoints ??
     ((type: BlueprintType) =>
       options.catalog?.get(type)?.signalPoints ?? defaultSignalPoints(type));
+  const structureMap = new Map<string, number>();
+  for (let i = 0; i < blueprint.data.length; i++) {
+    const s = blueprint.data[i];
+    const key = `${s.x},${s.y}`;
+    if (!structureMap.has(key)) {
+      structureMap.set(key, i);
+    }
+  }
   const preparedStructures = blueprint.data.map((structure, index) => {
     const catalogEntry = options.catalog?.get(structure.type);
     const customShape = customShapeFromStructure(structure);
@@ -650,21 +687,26 @@ export function prepareBlueprint(
     };
   });
   prepareSprites(preparedStructures);
-  const bounds = preparedStructures.length
-    ? preparedStructures.slice(1).reduce(
-        (value, prepared) => ({
-          minX: Math.min(value.minX, prepared.bounds.minX),
-          minY: Math.min(value.minY, prepared.bounds.minY),
-          maxX: Math.max(value.maxX, prepared.bounds.maxX),
-          maxY: Math.max(value.maxY, prepared.bounds.maxY),
-        }),
-        { ...preparedStructures[0].bounds },
-      )
-    : { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-  const signalCoordinateOffset = coordinateOffset(blueprint);
+  let bounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  if (preparedStructures.length) {
+    let minX = preparedStructures[0].bounds.minX;
+    let minY = preparedStructures[0].bounds.minY;
+    let maxX = preparedStructures[0].bounds.maxX;
+    let maxY = preparedStructures[0].bounds.maxY;
+    for (let i = 1; i < preparedStructures.length; i++) {
+      const b = preparedStructures[i].bounds;
+      if (b.minX < minX) minX = b.minX;
+      if (b.minY < minY) minY = b.minY;
+      if (b.maxX > maxX) maxX = b.maxX;
+      if (b.maxY > maxY) maxY = b.maxY;
+    }
+    bounds = { minX, minY, maxX, maxY };
+  }
+  const signalCoordinateOffset = coordinateOffset(blueprint, structureMap);
   const preparedSignalLinks = (blueprint.signalLinks ?? []).map((link) => {
     const from = resolveEndpoint(
       blueprint.data,
+      structureMap,
       link.from,
       signalCoordinateOffset,
       "from",
@@ -672,6 +714,7 @@ export function prepareBlueprint(
     );
     const to = resolveEndpoint(
       blueprint.data,
+      structureMap,
       link.to,
       signalCoordinateOffset,
       "to",

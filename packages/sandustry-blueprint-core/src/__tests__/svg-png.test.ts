@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { prepareSvgForPng, renderSvgToPng } from "../png";
 import { renderBlueprintToSvg } from "../svg-renderer";
+import { createBlueprintRenderModel } from "../render-model";
 
 describe("SVG and PNG adapters", () => {
   test("renders unknown structures as labeled sprite-free placeholders", () => {
@@ -295,5 +296,16 @@ describe("SVG and PNG adapters", () => {
     expect([...result]).toEqual([3, 5]);
     expect(calls[0]).toContain('viewBox="0 0 2 3"');
     expect(calls[1]).toBe("image:3x5:3x5");
+  });
+
+  test("reuses pre-computed render model when provided", () => {
+    const blueprint = {
+      name: "Reuse fixture",
+      data: [{ type: "machine", x: 0, y: 0 }],
+      signalLinks: null,
+    };
+    const model = createBlueprintRenderModel(blueprint);
+    const result = renderBlueprintToSvg(blueprint, { model });
+    expect(result.model).toBe(model);
   });
 });

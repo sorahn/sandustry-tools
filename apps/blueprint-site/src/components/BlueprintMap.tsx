@@ -3,6 +3,7 @@ import {
   prepareSvgForPng,
   renderPixelScale,
   renderBlueprintToSvg,
+  renderFilterOverlaySvg,
   tileColor,
   NATIVE_PIXELS_PER_CELL,
   UNKNOWN_STRUCTURE_FOOTPRINT,
@@ -12,7 +13,6 @@ import { blueprintCatalog } from "../utils/catalog";
 import { debugComponent } from "./DebugComponentWrapper";
 import { MapDebugOptions } from "./MapDebugOptions";
 import { BlueprintMapSidebar } from "./BlueprintMapSidebar";
-import { BlueprintMapStructure } from "./BlueprintMapStructure";
 import { BlueprintMapViewportControls } from "./BlueprintMapViewportControls";
 import {
   BlueprintMapEdgeFadeLayer,
@@ -212,10 +212,10 @@ export function BlueprintMap({
     [blueprint, cell, padding],
   );
   const { preparedBlueprint, minX, minY, width, height } = mapModel;
-  const filterOverlayLabelScale = showFilters ? 1 / zoom : 1;
-  const coreRender = useMemo(
+  const baseRender = useMemo(
     () =>
       renderBlueprintToSvg(blueprint, {
+        model: mapModel,
         catalog: blueprintCatalog(),
         assetBaseUrl: import.meta.env.BASE_URL,
         padding,
@@ -228,23 +228,78 @@ export function BlueprintMap({
         showNames,
         showFoundationOutlines: foundationOutlinesVisible,
         showSignalLinks: signalLinksVisible,
-        showFilterOverlay: showFilters,
-        filterOverlayLabelScale,
+        showFilterOverlay: false,
       }),
     [
       blueprint,
+      mapModel,
       cell,
-      filterOverlayLabelScale,
       foundationOutlinesVisible,
       padding,
       showCustomShapes,
-      showFilters,
       showNames,
       showSprites,
       signalLinksVisible,
       spritesVisible,
     ],
   );
+  const filterOverlayLabelScale = showFilters ? 1 / zoom : 1;
+  const filterOverlayMarkup = useMemo(() => {
+    if (!showFilters) return "";
+    return renderFilterOverlaySvg(mapModel.preparedBlueprint, {
+      minX: mapModel.minX,
+      minY: mapModel.minY,
+      padding: mapModel.padding,
+      paddingX: mapModel.paddingX,
+      cell: mapModel.cell,
+      labelScale: filterOverlayLabelScale,
+    });
+  }, [showFilters, mapModel, filterOverlayLabelScale]);
+
+  const structureSpatialMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of mapModel.renderStructures) {
+      const { index, structure } = item;
+      const prepared = preparedBlueprint.preparedStructures[index];
+      const footprintWidth = prepared.footprint.width;
+      const footprintHeight = prepared.footprint.height;
+      const topY = prepared.topY;
+      for (let dx = 0; dx < footprintWidth; dx++) {
+        for (let dy = 0; dy < footprintHeight; dy++) {
+          map.set(`${structure.x + dx},${topY + dy}`, index);
+        }
+      }
+    }
+    return map;
+  }, [mapModel.renderStructures, preparedBlueprint]);
+
+  const handleMapClick = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    const target = event.target as Element | null;
+    const structureEl = target?.closest?.("[data-structure-index]");
+    if (structureEl) {
+      const idx = structureEl.getAttribute("data-structure-index");
+      if (idx !== null) {
+        setSelectedIndex(Number(idx));
+        return;
+      }
+    }
+    const svg = svgRef.current;
+    if (!svg) return;
+    const transform = svg.getScreenCTM();
+    if (!transform) return;
+    const pointer = svg.createSVGPoint();
+    pointer.x = event.clientX;
+    pointer.y = event.clientY;
+    const local = pointer.matrixTransform(transform.inverse());
+    const cellX = Math.floor(local.x / cell + minX - padding);
+    const cellY = Math.floor(local.y / cell + minY - padding);
+    const hit = structureSpatialMap.get(`${cellX},${cellY}`);
+    setSelectedIndex(hit ?? null);
+  };
   const { viewportRef, viewportSize, hoverMarkerRef, updateHoverBlock, clearHoverBlock } =
     useBlueprintMapViewport({ cell, minX, minY, padding });
   const viewportWidth = viewportRef.current?.clientWidth || viewportSize.width || width;
@@ -328,7 +383,6 @@ export function BlueprintMap({
   const gridOriginX = (padding - minX) * cell;
   const gridOriginY = (padding - minY) * cell;
   const selected = selectedIndex === null ? null : blueprint.data[selectedIndex];
-  const { renderStructures } = mapModel;
   const debugOptions = debugComponent(MapDebugOptions, {
     showDebugCells,
     onShowDebugCellsChange: setShowDebugCells,
@@ -488,6 +542,7 @@ export function BlueprintMap({
   };
   const exportPng = async () => {
     const rendered = renderBlueprintToSvg(blueprint, {
+      model: mapModel,
       catalog: blueprintCatalog(),
       unknownFootprint: UNKNOWN_STRUCTURE_FOOTPRINT,
       padding,
@@ -622,35 +677,39 @@ export function BlueprintMap({
               };
               event.currentTarget.style.cursor = "grabbing";
             }}
+            onClick={handleMapClick}
             onPointerMove={(event) => {
-              updateHoverBlock(event);
               const drag = dragRef.current;
-              if (!drag || drag.pointerId !== event.pointerId) return;
-              const dx = event.clientX - drag.lastX;
-              const dy = event.clientY - drag.lastY;
-              if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-                drag.moved = true;
-                fitModeRef.current = false;
-                if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-                  event.currentTarget.setPointerCapture(event.pointerId);
+              if (drag && drag.pointerId === event.pointerId) {
+                const dx = event.clientX - drag.lastX;
+                const dy = event.clientY - drag.lastY;
+                if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                  drag.moved = true;
+                  suppressClickRef.current = true;
+                  fitModeRef.current = false;
+                  if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                  }
                 }
+                const rect = event.currentTarget.getBoundingClientRect();
+                const nextPan = {
+                  x: Math.max(
+                    -maxPanX,
+                    Math.min(maxPanX, livePanRef.current.x - (dx / rect.width) * width),
+                  ),
+                  y: Math.max(
+                    -maxPanY,
+                    Math.min(maxPanY, livePanRef.current.y - (dy / rect.height) * height),
+                  ),
+                };
+                livePanRef.current = nextPan;
+                applyLivePan(nextPan);
+                schedulePanCommit();
+                drag.lastX = event.clientX;
+                drag.lastY = event.clientY;
+              } else {
+                updateHoverBlock(event);
               }
-              const rect = event.currentTarget.getBoundingClientRect();
-              const nextPan = {
-                x: Math.max(
-                  -maxPanX,
-                  Math.min(maxPanX, livePanRef.current.x - (dx / rect.width) * width),
-                ),
-                y: Math.max(
-                  -maxPanY,
-                  Math.min(maxPanY, livePanRef.current.y - (dy / rect.height) * height),
-                ),
-              };
-              livePanRef.current = nextPan;
-              applyLivePan(nextPan);
-              schedulePanCommit();
-              drag.lastX = event.clientX;
-              drag.lastY = event.clientY;
             }}
             onPointerUp={(event) => {
               const drag = dragRef.current;
@@ -713,22 +772,10 @@ export function BlueprintMap({
                 })}
               </g>
             ) : null}
-            <g dangerouslySetInnerHTML={{ __html: coreRender.markup }} pointerEvents="none" />
-            <g style={mapLayerStyle("selectedHighlight")}>
-              {renderStructures.map((item) => (
-                <BlueprintMapStructure
-                  key={`structure-${item.index}`}
-                  item={item}
-                  preparedBlueprint={preparedBlueprint}
-                  minX={minX}
-                  minY={minY}
-                  padding={padding}
-                  cell={cell}
-                  suppressClickRef={suppressClickRef}
-                  onSelect={setSelectedIndex}
-                />
-              ))}
-            </g>
+            <g dangerouslySetInnerHTML={{ __html: baseRender.markup }} pointerEvents="auto" />
+            {filterOverlayMarkup ? (
+              <g dangerouslySetInnerHTML={{ __html: filterOverlayMarkup }} pointerEvents="none" />
+            ) : null}
             <BlueprintMapRawStructuresLayer
               preparedBlueprint={preparedBlueprint}
               visible={showRawStructures}

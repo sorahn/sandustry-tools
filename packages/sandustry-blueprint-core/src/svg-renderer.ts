@@ -34,6 +34,7 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   showFilterOverlay?: boolean;
   filterOverlayLabelScale?: number;
   elementCatalog?: ElementCatalog;
+  model?: BlueprintRenderModel;
 };
 
 export type BlueprintSvgRenderResult = {
@@ -266,7 +267,7 @@ export function renderBlueprintToSvg(
   blueprint: import("./index.js").Blueprint,
   options: BlueprintSvgRenderOptions = {},
 ): BlueprintSvgRenderResult {
-  const model = createBlueprintRenderModel(blueprint, options);
+  const model = options.model ?? createBlueprintRenderModel(blueprint, options);
   const includeBackground = options.includeBackground ?? true;
   const showGrid = options.showGrid ?? true;
   const showFoundationOutlines = options.showFoundationOutlines ?? true;
