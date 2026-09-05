@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
-import { Button, Panel, TextArea } from "@sandustry/ui";
+import { Button, Keycap, MetadataRow, Panel, TextArea, Toast } from "@sandustry/ui";
 import { type Blueprint } from "../utils/blueprint";
+import { primaryModifierKey } from "../utils/platform";
 
 export type BlueprintSummary = {
   format: string;
@@ -37,6 +38,8 @@ export function BlueprintSubmissionPanel({
   summary,
   blueprint,
 }: BlueprintSubmissionPanelProps) {
+  const modKey = primaryModifierKey();
+
   return (
     <Panel title="Blueprint string" header={rememberHeader}>
       <div className="space-y-4 p-4">
@@ -53,47 +56,43 @@ export function BlueprintSubmissionPanel({
           spellCheck={false}
           className="min-h-48 placeholder:text-slate-600"
         />
-        <div className="flex items-center justify-between gap-3">
-          <Button onClick={onInspect}>Inspect blueprint</Button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <Button variant="solid" onClick={onInspect}>
+              Inspect blueprint
+            </Button>
+            <span className="hidden items-center gap-1 font-mono text-[11px] text-slate-500 sm:inline-flex">
+              <Keycap>{modKey}</Keycap>+<Keycap>Enter</Keycap>
+            </span>
+          </div>
           <Button variant="danger" onClick={onClear}>
             Clear input
           </Button>
         </div>
-        <p
-          role="status"
-          className="border-l-2 border-yellow-300/60 bg-black/40 px-3 py-2 font-mono text-xs text-slate-400"
-        >
-          {message}
-        </p>
+        {message ? <Toast variant="hint" message={message} /> : null}
         {blueprint && summary ? (
           <div className="space-y-3 border-t border-slate-800 pt-4 text-xs text-slate-300">
-            <p className="font-mono text-yellow-200">
+            <p className="font-mono font-medium text-yellow-200">
               {blueprint.name} · {summary.format}
             </p>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <span>
-                Structures <strong className="text-white">{blueprint.data.length}</strong>
-              </span>
-              <span>
-                Types <strong className="text-white">{summary.types}</strong> (
-                {summary.numericTypes} native / {summary.stringTypes} string)
-              </span>
-              <span>
-                Bounds{" "}
-                <strong className="text-white">
-                  {summary.minX},{summary.minY}
-                </strong>{" "}
-                →{" "}
-                <strong className="text-white">
-                  {summary.maxX},{summary.maxY}
-                </strong>
-              </span>
-              <span>
-                Links <strong className="text-white">{summary.links}</strong> · Filters{" "}
-                <strong className="text-white">{summary.filters}</strong> · Data{" "}
-                <strong className="text-white">{summary.dataRecords}</strong>
-              </span>
-            </div>
+            <MetadataRow
+              items={[
+                { label: "Structures", value: blueprint.data.length, tone: "accent" },
+                {
+                  label: "Types",
+                  value: `${summary.types} (${summary.numericTypes} native / ${summary.stringTypes} string)`,
+                },
+                {
+                  label: "Bounds",
+                  value: `${summary.minX},${summary.minY} → ${summary.maxX},${summary.maxY}`,
+                },
+                {
+                  label: "Details",
+                  value: `${summary.links} links · ${summary.filters} filters · ${summary.dataRecords} data`,
+                  tone: "muted",
+                },
+              ]}
+            />
           </div>
         ) : null}
       </div>

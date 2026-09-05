@@ -1,4 +1,4 @@
-import { Button, buttonStyles } from "@sandustry/ui";
+import { Button, buttonStyles, Select } from "@sandustry/ui";
 import cx from "clsx";
 
 export function BlueprintMapViewportControls({
@@ -43,16 +43,16 @@ export function BlueprintMapViewportControls({
       <label className="sr-only" htmlFor="blueprint-export-scale">
         Export resolution
       </label>
-      <select
+      <Select
         id="blueprint-export-scale"
-        className="rounded border border-slate-700 bg-slate-950 px-1.5 py-1 text-xs text-slate-300"
+        className="!min-h-0 !py-1 !px-2 text-xs"
         value={exportScale}
         onChange={(event) => onExportScaleChange(Number(event.target.value))}
       >
         <option value="1">1×</option>
         <option value="2">2×</option>
         <option value="4">4×</option>
-      </select>
+      </Select>
       <span className="mr-1">{Number((zoom * 100).toFixed(1))}%</span>
       <Button
         type="button"

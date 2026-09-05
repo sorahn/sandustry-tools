@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Panel, Select, TextArea } from "@sandustry/ui";
+import { Button, Panel, Select, TextArea, Toast } from "@sandustry/ui";
 import {
   decodeBlueprint,
   emptyBlueprint,
@@ -53,7 +53,7 @@ export function BlueprintCodecPage() {
               className="placeholder:text-slate-600"
             />
             <div className="flex flex-wrap gap-3">
-              <Button accent onClick={decode}>
+              <Button variant="solid" onClick={decode}>
                 Decode to JSON
               </Button>
               <Button onClick={() => void copyToClipboard(encoded)}>Copy string</Button>
@@ -82,7 +82,7 @@ export function BlueprintCodecPage() {
                   <option value="legacy">legacy v1 (conversion only)</option>
                 </Select>
               </label>
-              <Button accent onClick={encode}>
+              <Button variant="solid" onClick={encode}>
                 Encode string
               </Button>
               <Button onClick={() => void copyToClipboard(json)}>Copy JSON</Button>
@@ -90,12 +90,7 @@ export function BlueprintCodecPage() {
           </div>
         </Panel>
       </div>
-      <p
-        role="status"
-        className="border-l-2 border-yellow-300/60 bg-black/40 px-3 py-2 font-mono text-xs text-slate-400"
-      >
-        {message}
-      </p>
+      {message ? <Toast variant="hint" message={message} /> : null}
     </section>
   );
 }

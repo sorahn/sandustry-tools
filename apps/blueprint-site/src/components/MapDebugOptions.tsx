@@ -18,7 +18,7 @@ import {
   FIT_POLICY_PRESETS,
   type FitPolicyPreset,
 } from "../utils/blueprint-fit";
-import { Divider, IconButton } from "@sandustry/ui";
+import { Button, Divider, IconButton, Select } from "@sandustry/ui";
 import { BLUEPRINT_VISUAL_FIXTURES } from "../visual-fixtures/catalog";
 
 type MapDebugOptionsProps = {
@@ -222,8 +222,8 @@ export function MapDebugOptions({
       >
         <label className="flex items-center justify-between gap-3 text-xs text-slate-400">
           <span>Initial fit policy</span>
-          <select
-            className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-300"
+          <Select
+            className="!min-h-0 !py-1 !px-2 text-xs"
             value={policySelection}
             onChange={(event) =>
               onPolicySelectionChange?.(event.target.value as "legacy" | FitPolicyPreset)
@@ -235,7 +235,7 @@ export function MapDebugOptions({
                 {preset} preset
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <pre className="mt-3 overflow-auto text-[11px] leading-5 text-slate-500">
           {policySelection !== "legacy"
@@ -258,16 +258,16 @@ export function MapDebugOptions({
         collapsible
         storageKey={COLLAPSE_TEST_BLUEPRINTS_KEY}
       >
-        <div className="grid gap-2">
+        <div className="grid gap-1.5">
           {BLUEPRINT_VISUAL_FIXTURES.map((fixture) => (
-            <button
+            <Button
               key={fixture.id}
-              type="button"
-              className="rounded border border-slate-700 bg-slate-950/50 px-2 py-1.5 text-left text-xs text-slate-300 transition hover:border-slate-500 hover:text-white"
+              variant="quiet"
+              className="w-full justify-start text-left text-xs !py-1.5 !px-2"
               onClick={() => onLoadBlueprint(fixture.blueprint)}
             >
               {fixture.label}
-            </button>
+            </Button>
           ))}
         </div>
       </BlueprintMapSidebarSection>
