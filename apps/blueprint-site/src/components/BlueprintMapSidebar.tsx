@@ -50,20 +50,42 @@ function StructureThumbnail({
   const rawId = useId();
   const gridId = `thumb-grid-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const gridBackground = (
+  const containerClasses =
+    "relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-700/80 shadow-md";
+
+  const renderGridBackground = (
+    originX: number,
+    originY: number,
+    cellSize: number,
+    blockSize: number,
+  ) => (
     <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 64 64">
       <defs>
-        <pattern id={`${gridId}-cell`} width="8" height="8" patternUnits="userSpaceOnUse">
+        <pattern
+          id={`${gridId}-cell`}
+          x={originX}
+          y={originY}
+          width={cellSize}
+          height={cellSize}
+          patternUnits="userSpaceOnUse"
+        >
           <path
-            d="M 8 0 L 0 0 0 8 M 8 0 L 8 8 M 0 8 L 8 8"
+            d={`M ${cellSize} 0 L 0 0 0 ${cellSize} M ${cellSize} 0 L ${cellSize} ${cellSize} M 0 ${cellSize} L ${cellSize} ${cellSize}`}
             fill="none"
             stroke="#718096"
             strokeWidth="1"
           />
         </pattern>
-        <pattern id={`${gridId}-block`} width="32" height="32" patternUnits="userSpaceOnUse">
+        <pattern
+          id={`${gridId}-block`}
+          x={originX}
+          y={originY}
+          width={blockSize}
+          height={blockSize}
+          patternUnits="userSpaceOnUse"
+        >
           <path
-            d="M 32 0 L 0 0 0 32 M 32 0 L 32 32 M 0 32 L 32 32"
+            d={`M ${blockSize} 0 L 0 0 0 ${blockSize} M ${blockSize} 0 L ${blockSize} ${blockSize} M 0 ${blockSize} L ${blockSize} ${blockSize}`}
             fill="none"
             stroke="#17202c"
             strokeWidth="1.25"
@@ -78,13 +100,14 @@ function StructureThumbnail({
     </svg>
   );
 
-  const containerClasses =
-    "relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-700/80 shadow-md";
-
   if (!asset?.path) {
+    const renderedWidth = footprint.width * 8;
+    const renderedHeight = footprint.height * 8;
+    const originX = Math.round((64 - Math.min(renderedWidth, 48)) / 2);
+    const originY = Math.round((64 - Math.min(renderedHeight, 48)) / 2);
     return (
       <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
-        {gridBackground}
+        {renderGridBackground(originX, originY, 8, 32)}
         <span className="relative z-10 rounded bg-slate-950/60 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-100 shadow-sm">
           {footprint.width}×{footprint.height}
         </span>
@@ -109,16 +132,22 @@ function StructureThumbnail({
   const transform = rotation ? `rotate(${rotation} ${cropWidth / 2} ${cropHeight / 2})` : undefined;
   const maxDim = Math.max(cropWidth, cropHeight);
   const scale = maxDim <= 20 ? 2 : Math.min(48 / cropWidth, 48 / cropHeight);
+  const renderedWidth = cropWidth * scale;
+  const renderedHeight = cropHeight * scale;
+  const originX = Math.round((64 - renderedWidth) / 2);
+  const originY = Math.round((64 - renderedHeight) / 2);
+  const cellSize = 4 * scale;
+  const blockSize = cellSize * 4;
 
   return (
     <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
-      {gridBackground}
+      {renderGridBackground(originX, originY, cellSize, blockSize)}
       <svg
         viewBox={`0 0 ${cropWidth} ${cropHeight}`}
         className="relative z-10 shrink-0 overflow-hidden"
         style={{
-          width: `${cropWidth * scale}px`,
-          height: `${cropHeight * scale}px`,
+          width: `${renderedWidth}px`,
+          height: `${renderedHeight}px`,
           imageRendering: "pixelated",
         }}
         aria-label={name}

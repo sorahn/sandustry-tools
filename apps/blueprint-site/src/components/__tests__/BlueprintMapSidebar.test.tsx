@@ -209,6 +209,8 @@ describe("BlueprintMapSidebar", () => {
     expect(html).toContain('stroke="#718096"');
     expect(html).toContain('stroke="#17202c"');
     expect(html).toContain('opacity="0.25"');
+    // 4x4 thick lines and cell grid match the placed asset origin (x=16, y=16)
+    expect(html).toContain('x="16" y="16"');
     // No thick border around the sprite
     expect(html).not.toContain("outline:2px solid black");
   });
