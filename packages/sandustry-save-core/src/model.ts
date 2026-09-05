@@ -20,6 +20,7 @@ export type SaveExplorerDiagnostic = {
 
 export type SaveExplorerMetadata = {
   saveId: string;
+  saveName?: string;
   worldId?: string;
   worldName?: string;
   seed?: string;
@@ -30,7 +31,9 @@ export type SaveExplorerMetadata = {
   tick?: number;
   time?: number;
   factoryLevel?: number;
+  productionPoints?: number;
   structureCount?: number;
+  resources?: Record<string, number>;
 };
 
 export type SaveExplorerWorld = {
@@ -480,6 +483,7 @@ export function normalizeSaveDocument(
       : undefined;
   const metadata = {
     saveId: save.metadata.id,
+    saveName: typeof save.metadata.name === "string" ? save.metadata.name : undefined,
     worldId: typeof meta.worldId === "string" ? meta.worldId : save.metadata.worldId,
     worldName:
       typeof meta.worldName === "string" ? meta.worldName : (save.metadata.worldName ?? undefined),
@@ -495,7 +499,15 @@ export function normalizeSaveDocument(
     tick: finiteNumber(meta.tick) ? meta.tick : undefined,
     time: finiteNumber(meta.time) ? meta.time : undefined,
     factoryLevel: finiteNumber(save.metadata.factoryLevel) ? save.metadata.factoryLevel : undefined,
+    productionPoints: finiteNumber(save.metadata.productionPoints)
+      ? save.metadata.productionPoints
+      : finiteNumber(store.productionPoints)
+        ? store.productionPoints
+        : undefined,
     structureCount: structures.length,
+    resources: isRecord(save.metadata.resources)
+      ? (save.metadata.resources as Record<string, number>)
+      : undefined,
   } satisfies SaveExplorerMetadata;
 
   return {

@@ -62,3 +62,17 @@ test("shows inspect and copy actions for an extracted blueprint summary", async 
   expect(html).toContain("Inspect");
   expect(html).toContain("Copy string");
 });
+
+test("renders world telemetry including level, playtime, and currencies", async () => {
+  const save = await decodeBrowserSave(await fixture("main-save.save").bytes());
+  const document = normalizeSaveDocument(save);
+  const extracted = extractSavedBlueprints(save.payload);
+  const html = renderSidebar(toSaveExplorerClientDocument(document, extracted.summaries));
+
+  expect(html).toContain("Lv.7");
+  expect(html).toContain("16h 53m");
+  expect(html).toContain("19,858");
+  expect(html).toMatch(/296\.0[kK]/); // productionPoints
+  expect(html).toContain("102,370"); // gold / credits
+  expect(html).toContain("1,177"); // fluxite
+});

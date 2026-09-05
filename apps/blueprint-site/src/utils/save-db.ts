@@ -11,16 +11,59 @@ export const ACTIVE_SAVE_ID_KEY = "sandustry-save-explorer-active-save";
 export type StoredSaveSummary = {
   id: string;
   fileName: string;
+  saveName?: string;
   worldName?: string;
   playTime?: number;
   saveTimestamp?: string;
   storedAt: string;
   gameVersion?: string;
+  factoryLevel?: number;
+  productionPoints?: number;
+  resources?: Record<string, number>;
   structureCount: number;
   blueprintCount: number;
   byteLength: number;
   blueprints: SaveBlueprintSummary[];
 };
+
+export function formatProductionPoints(points?: number): string | undefined {
+  if (points === undefined || !Number.isFinite(points) || points <= 0) return undefined;
+  if (points >= 1000) {
+    return new Intl.NumberFormat("en-US", {
+      notation: "compact",
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(points);
+  }
+  return points.toLocaleString();
+}
+
+export function formatPlaytime(ms?: number): string | undefined {
+  if (ms === undefined || !Number.isFinite(ms) || ms <= 0) return undefined;
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m`;
+  return "< 1m";
+}
+
+export function extractCurrencies(resources?: Record<string, number>):
+  | {
+      credits?: number;
+      fluxite?: number;
+      artifact?: number;
+    }
+  | undefined {
+  if (!resources) return undefined;
+  const credits = resources.gold ?? resources.credits;
+  const fluxite = resources.fluxite;
+  const artifact = resources.artifacts ?? resources.artifact;
+  if (credits === undefined && fluxite === undefined && artifact === undefined) {
+    return undefined;
+  }
+  return { credits, fluxite, artifact };
+}
 
 export type SaveStorageErrorCode =
   | "unavailable"
@@ -170,6 +213,13 @@ export async function listSavedGames(): Promise<StorageResult<StoredSaveSummary[
     const result = await requestValue<StoredSaveSummary[]>(
       database.transaction(SUMMARY_STORE, "readonly").objectStore(SUMMARY_STORE).getAll(),
     );
+    if (result.ok) {
+      result.value.sort((a, b) => {
+        const timeB = new Date(b.storedAt || b.saveTimestamp || 0).getTime();
+        const timeA = new Date(a.storedAt || a.saveTimestamp || 0).getTime();
+        return timeB - timeA;
+      });
+    }
     return result;
   } finally {
     database.close();

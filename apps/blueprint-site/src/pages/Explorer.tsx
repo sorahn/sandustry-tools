@@ -31,11 +31,15 @@ function storedSummary(document: SaveExplorerClientDocument, fileName: string): 
   return {
     id: document.metadata.saveId,
     fileName,
+    saveName: document.metadata.saveName,
     worldName: document.metadata.worldName,
     playTime: document.metadata.playTime,
     saveTimestamp: document.metadata.timestamp,
     storedAt: new Date().toISOString(),
     gameVersion: document.metadata.gameVersion,
+    factoryLevel: document.metadata.factoryLevel,
+    productionPoints: document.metadata.productionPoints,
+    resources: document.metadata.resources,
     structureCount: document.structureCount,
     blueprintCount: document.blueprints.length,
     byteLength: 0,
@@ -94,9 +98,15 @@ export function SaveExplorerPage() {
     drawAuthorization: layers.authorization,
   };
 
+  const isFittedRef = useRef(true);
+  const lastSizeRef = useRef({ width: 0, height: 0 });
+  const awaitingSettleRef = useRef(false);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const fitMap = useCallback(() => {
     const frame = mapFrameRef.current;
-    if (!frame || !raster) return;
+    if (!frame || !raster || frame.clientWidth <= 32 || frame.clientHeight <= 32) return;
+    isFittedRef.current = true;
     const scale = Math.max(
       0.25,
       Math.min(
@@ -107,12 +117,31 @@ export function SaveExplorerPage() {
         ),
       ),
     );
-    setView({
-      scale,
-      offsetX: (frame.clientWidth - raster.width * scale) / 2,
-      offsetY: (frame.clientHeight - raster.height * scale) / 2,
+    const nextOffsetX = (frame.clientWidth - raster.width * scale) / 2;
+    const nextOffsetY = (frame.clientHeight - raster.height * scale) / 2;
+    setView((current) => {
+      if (
+        Math.abs(current.scale - scale) < 0.0001 &&
+        Math.abs(current.offsetX - nextOffsetX) < 0.1 &&
+        Math.abs(current.offsetY - nextOffsetY) < 0.1
+      ) {
+        return current;
+      }
+      return {
+        scale,
+        offsetX: nextOffsetX,
+        offsetY: nextOffsetY,
+      };
     });
   }, [raster]);
+
+  const handleViewChange = useCallback(
+    (nextView: ExplorerView | ((current: ExplorerView) => ExplorerView)) => {
+      isFittedRef.current = false;
+      setView(nextView);
+    },
+    [],
+  );
 
   useEffect(() => {
     fitMapRef.current = fitMap;
@@ -169,11 +198,25 @@ export function SaveExplorerPage() {
       if (respId < activeDecodeIdRef.current || respId < latestRenderIdRef.current) {
         return;
       }
-      setBusy(false);
+      if (response.type === "rendered") {
+        setBusy(false);
+      }
       if (response.type === "decoded") {
         setDocument(response.document);
         activeSaveIdRef.current = response.document.metadata.saveId;
         currentSaveIdRef.current = response.document.metadata.saveId;
+        awaitingSettleRef.current = true;
+        if (settleTimerRef.current !== null) {
+          clearTimeout(settleTimerRef.current);
+        }
+        settleTimerRef.current = setTimeout(() => {
+          settleTimerRef.current = null;
+          awaitingSettleRef.current = false;
+          fitMapRef.current();
+          requestAnimationFrame(() => {
+            setBusy(false);
+          });
+        }, 200);
       }
       setRaster({
         width: response.raster.width,
@@ -229,12 +272,25 @@ export function SaveExplorerPage() {
       currentSaveRef.current = { bytes: saved.bytes.slice(), name: saved.name };
       setBusy(true);
       setMessage(`Restoring ${saved.name}…`);
+      awaitingSettleRef.current = true;
+      if (settleTimerRef.current !== null) {
+        clearTimeout(settleTimerRef.current);
+        settleTimerRef.current = null;
+      }
+      fitNextRasterRef.current = true;
       const reqId = nextRequestIdRef.current++;
       activeDecodeIdRef.current = reqId;
       const bytes = saved.bytes.buffer;
       worker.postMessage({ id: reqId, type: "decode", bytes, render: minimapOptions }, [bytes]);
     })();
     const clearExplorerState = () => {
+      if (settleTimerRef.current !== null) {
+        clearTimeout(settleTimerRef.current);
+        settleTimerRef.current = null;
+      }
+      awaitingSettleRef.current = false;
+      setBusy(false);
+      fitNextRasterRef.current = false;
       activeSaveIdRef.current = null;
       currentSaveIdRef.current = null;
       currentSaveRef.current = null;
@@ -266,6 +322,11 @@ export function SaveExplorerPage() {
         currentSaveRef.current = { bytes: bytes.value.slice(), name: fileName };
         setBusy(true);
         setMessage(`Restoring ${fileName}…`);
+        awaitingSettleRef.current = true;
+        if (settleTimerRef.current !== null) {
+          clearTimeout(settleTimerRef.current);
+          settleTimerRef.current = null;
+        }
         fitNextRasterRef.current = true;
         const reqId = nextRequestIdRef.current++;
         activeDecodeIdRef.current = reqId;
@@ -316,11 +377,7 @@ export function SaveExplorerPage() {
       imageData.data.set(raster.pixels);
     }
     context.putImageData(imageData, 0, 0);
-  }, [raster]);
-
-  useEffect(() => {
-    if (raster && fitNextRasterRef.current) {
-      fitNextRasterRef.current = false;
+    if (isFittedRef.current) {
       fitMap();
     }
   }, [fitMap, raster]);
@@ -328,9 +385,39 @@ export function SaveExplorerPage() {
   useEffect(() => {
     const frame = mapFrameRef.current;
     if (!frame) return;
-    const observer = new ResizeObserver(() => fitMapRef.current());
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      if (width === lastSizeRef.current.width && height === lastSizeRef.current.height) {
+        return;
+      }
+      lastSizeRef.current = { width, height };
+      if (isFittedRef.current) {
+        fitMapRef.current();
+      }
+      if (awaitingSettleRef.current) {
+        if (settleTimerRef.current !== null) {
+          clearTimeout(settleTimerRef.current);
+        }
+        settleTimerRef.current = setTimeout(() => {
+          settleTimerRef.current = null;
+          awaitingSettleRef.current = false;
+          fitMapRef.current();
+          requestAnimationFrame(() => {
+            setBusy(false);
+          });
+        }, 200);
+      }
+    });
     observer.observe(frame);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (settleTimerRef.current !== null) {
+        clearTimeout(settleTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -351,6 +438,11 @@ export function SaveExplorerPage() {
     activeDecodeIdRef.current = reqId;
     setBusy(true);
     setMessage(`Reading ${file.name}…`);
+    awaitingSettleRef.current = true;
+    if (settleTimerRef.current !== null) {
+      clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
     fitNextRasterRef.current = true;
     const bytes = new Uint8Array(await file.arrayBuffer());
     // If a newer decode request was started while reading bytes, discard this one
@@ -458,7 +550,7 @@ export function SaveExplorerPage() {
           message={message}
           onChooseFile={() => inputRef.current?.click()}
           onFile={decodeFile}
-          onViewChange={setView}
+          onViewChange={handleViewChange}
           onHover={(cell) => {
             setHoverCell(cell);
             setInspection(null);

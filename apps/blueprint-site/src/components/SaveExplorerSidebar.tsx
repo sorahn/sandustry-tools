@@ -1,6 +1,7 @@
 import cx from "clsx";
 import { Button, Checkbox, MetadataRow, SaveSlotCard, StatusIndicator } from "@sandustry/ui";
 import type { SaveBlueprintSummary, SaveExplorerClientDocument } from "@sandustry/save-core";
+import { extractCurrencies, formatPlaytime } from "../utils/save-db";
 
 export type SaveExplorerLayers = {
   terrain: boolean;
@@ -26,21 +27,24 @@ type SaveExplorerSidebarProps = {
   className?: string;
 };
 
-function formatPlayTime(seconds?: number) {
-  if (seconds === undefined) return "—";
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours.toLocaleString()}h ${minutes}m`;
-}
-
 function Metadata({ document }: { document: SaveExplorerClientDocument }) {
+  const currencies = extractCurrencies(document.metadata.resources);
   return (
     <div className="space-y-3">
       <SaveSlotCard
         title={document.metadata.worldName || "unnamed"}
-        tag={document.metadata.gameVersion ? `v${document.metadata.gameVersion}` : undefined}
-        playtime={formatPlayTime(document.metadata.playTime)}
+        tag={
+          document.metadata.saveName ||
+          (document.metadata.gameVersion ? `v${document.metadata.gameVersion}` : undefined)
+        }
+        timestamp={
+          document.metadata.timestamp ? document.metadata.timestamp.slice(0, 10) : undefined
+        }
+        level={document.metadata.factoryLevel}
+        playtime={formatPlaytime(document.metadata.playTime) || "—"}
         structures={document.structureCount}
+        productionPoints={document.metadata.productionPoints}
+        currencies={currencies}
       />
       <MetadataRow
         items={[

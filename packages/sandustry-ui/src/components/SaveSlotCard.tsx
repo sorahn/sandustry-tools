@@ -10,6 +10,7 @@ export type SaveSlotCardProps = Omit<HTMLAttributes<HTMLDivElement>, "title" | "
   playtime?: string;
   structures?: number | string;
   rate?: string;
+  productionPoints?: number | string;
   currencies?: {
     credits?: number | string;
     fluxite?: number | string;
@@ -28,6 +29,7 @@ export function SaveSlotCard({
   playtime,
   structures,
   rate,
+  productionPoints,
   currencies,
   selected = false,
   actions,
@@ -136,23 +138,38 @@ export function SaveSlotCard({
           </span>
         ) : null}
 
-        {rate ? (
-          <span className="inline-flex items-center gap-1 text-emerald-400/80">
-            <svg
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="h-3 w-3 shrink-0"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="font-mono text-slate-300">{rate}</span>
-          </span>
-        ) : null}
+        {(() => {
+          const productionDisplay =
+            productionPoints !== undefined
+              ? typeof productionPoints === "number"
+                ? productionPoints >= 1000
+                  ? new Intl.NumberFormat("en-US", {
+                      notation: "compact",
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    }).format(productionPoints)
+                  : productionPoints.toLocaleString()
+                : productionPoints
+              : rate;
+          if (!productionDisplay) return null;
+          return (
+            <span className="inline-flex items-center gap-1 text-emerald-400/80">
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-3 w-3 shrink-0"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M15.22 6.268a.75.75 0 0 1 .968-.431l5.942 2.28a.75.75 0 0 1 .431.97l-2.28 5.94a.75.75 0 1 1-1.4-.537l1.63-4.251-1.086.484a11.2 11.2 0 0 0-5.45 5.173.75.75 0 0 1-1.199.19L9 12.312l-6.22 6.22a.75.75 0 0 1-1.06-1.061l6.75-6.75a.75.75 0 0 1 1.06 0l3.606 3.606a12.695 12.695 0 0 1 5.68-4.974l1.086-.483-4.251-1.632a.75.75 0 0 1-.432-.97Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="font-mono text-slate-300">{productionDisplay}</span>
+            </span>
+          );
+        })()}
       </div>
 
       {/* Currencies & Actions Footer */}

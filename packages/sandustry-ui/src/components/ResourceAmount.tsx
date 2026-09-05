@@ -11,51 +11,45 @@ export type ResourceAmountProps = HTMLAttributes<HTMLSpanElement> & {
   size?: "sm" | "md";
 };
 
-// SVG currency symbols representing native game currencies without importing game files
+export const CREDITS_SPRITE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAATVJREFUWIXtl69Ow1AUh7+zLHuBmhH+LFuC4QkIcg+AQ+HmULipZYJMzaFwOBSOB0ASngBDAuHPgqF4Zu7EcjtK27tx03OL2E80ze3N+b60OTc9QjYmZ00t8hs+NPvB4GdynxJI4PHDVA0a7TUSOCBWoBK4vVQGB6jZmyrgKYEq4OoCy+AA9VWL+MYFdwrEn19zAZq2iG8K4RkBC/Up5JtFF7jhapE/nP0qb6AOYOIuTG/zdzS6SFTwrISonwNrgbXAsvyPNny8c2/aPdBA/xCQbz1AmQK+f8vOTyeAebrxLL1COoduCQHM87WeAED7qFhCAPNypSsA0DrOlxDAvF7qCwDs9LISApi3izACANsnaYlkMHk/Dyexdbpgp0azyTicxGZ/LpEZTj9G4SQ2BvmtEXQ8nwEdjFH1S9fw7gAAAABJRU5ErkJggg==";
+
+export const FLUXITE_SPRITE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAPxJREFUWIXtl08LgjAYxp9JUHROOkh4K/D7f5auCl0SQ4jAU1CXJs757o9zWwef05hzv2fPtldkkPWZ6PMmNoZ3RRj+/soAgA0N9PBH3XiBHo6pAMcggShw3ogGB4CEN2LAAWBDvdi+WwDAObs4m6DgggEOVEzgInICMgGbSVyUGIzxKimB7XMndmR9a06F0qZmtAW21VF16EgD0sp/am5m1zM9qa8bpUXOwFw4TLage3XK53mRz4ZDl0CNu1c4phIYQzmEkgtcMKBaraYSOhWotRKuBkgDFUpUKOMZCCXpFoRY9VD/k0DolXNFT2A1wEx+SF2/eFoDFmMX1xep6EpGPT0GxQAAAABJRU5ErkJggg==";
+
+export const ARTIFACT_SPRITE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAOhJREFUOI1jZGBg+M9AAWBhYGBgWJb5GUPi29fvBDWnLBKDGHD94gOSbN078yeEsQjqAhj4/Q/TVlYmTgYGBgaG5mO6cDGL74fhbCZCtqEZyoguz4IuwMDAwNBxwgzOrrA4hWwIRoDDDcDifEZkDRanDqPL43YBMnj7+RnDsdZfDAzPoAKv32AagC3wYGD21QAGhgDcFjDBbMEBGAlhJpgtOAz5j4TR+f8ZGBj+MzFgiRokxciBB+fDMAMDjkBED3FcMYBhAHKI80pJ4tSEDGDOx0gg2htWoQqgRR8DAwPD1dQs/P4nBgAAHYZYhgkbqboAAAAASUVORK5CYII=";
+
 export function CreditsIcon({ className = "h-3 w-3" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      className={cx("shrink-0 text-[#ffe700]", className)}
+    <img
+      src={CREDITS_SPRITE}
+      alt="Credits"
+      className={cx("shrink-0 object-contain [image-rendering:pixelated]", className)}
       aria-hidden="true"
-    >
-      <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M8 5v6M6.5 6.5h3M6.5 9.5h3"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-    </svg>
+    />
   );
 }
 
 export function FluxiteIcon({ className = "h-3 w-3" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      className={cx("shrink-0 text-[#00ffff]", className)}
+    <img
+      src={FLUXITE_SPRITE}
+      alt="Fluxite"
+      className={cx("shrink-0 object-contain [image-rendering:pixelated]", className)}
       aria-hidden="true"
-    >
-      <path d="M8 2l4 4-4 8-4-8 4-4z" fill="currentColor" fillOpacity="0.8" />
-      <path d="M8 2l4 4-4 8" stroke="#ffffff" strokeWidth="0.8" strokeOpacity="0.6" fill="none" />
-    </svg>
+    />
   );
 }
 
 export function ArtifactIcon({ className = "h-3 w-3" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      className={cx("shrink-0 text-[#d946ef]", className)}
+    <img
+      src={ARTIFACT_SPRITE}
+      alt="Artifact"
+      className={cx("shrink-0 object-contain [image-rendering:pixelated]", className)}
       aria-hidden="true"
-    >
-      <polygon points="8,1 15,8 8,15 1,8" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <polygon points="8,4 12,8 8,12 4,8" fill="currentColor" fillOpacity="0.6" />
-    </svg>
+    />
   );
 }
 

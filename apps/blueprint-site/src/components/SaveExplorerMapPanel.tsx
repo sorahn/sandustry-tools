@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, TooltipSurface } from "@sandustry/ui";
 import type { SaveExplorerCellInspection } from "@sandustry/save-core";
 
@@ -73,6 +73,50 @@ export function createDragDepthTracker(getOnDraggingChange: () => (dragging: boo
       return depth;
     },
   };
+}
+
+function LoadingOverlay({ busy, message }: { busy: boolean; message: string }) {
+  const [mounted, setMounted] = useState(busy);
+  const [visible, setVisible] = useState(busy);
+  const [displayMessage, setDisplayMessage] = useState(message);
+
+  useEffect(() => {
+    if (busy) {
+      setDisplayMessage(message);
+      setMounted(true);
+      const frame = requestAnimationFrame(() => {
+        setVisible(true);
+      });
+      return () => cancelAnimationFrame(frame);
+    } else {
+      setVisible(false);
+      const timer = setTimeout(() => {
+        setMounted(false);
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [busy, message]);
+
+  if (!mounted) return null;
+
+  return (
+    <div
+      data-testid="explorer-loading-overlay"
+      className={`absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-[250ms] ease-out ${
+        visible ? "opacity-100" : "pointer-events-none opacity-0"
+      }`}
+      aria-live="polite"
+      aria-busy={busy}
+    >
+      <div className="flex items-center gap-2.5 rounded-lg border border-slate-700/80 bg-slate-900/90 px-4 py-2.5 shadow-2xl backdrop-blur-md">
+        <span
+          className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent"
+          aria-hidden="true"
+        />
+        <span className="font-mono text-xs font-medium text-slate-200">{displayMessage}</span>
+      </div>
+    </div>
+  );
 }
 
 export function SaveExplorerMapPanel({
@@ -358,12 +402,11 @@ export function SaveExplorerMapPanel({
             )}
           </TooltipSurface>
         ) : null}
+        <LoadingOverlay busy={busy} message={message} />
       </div>
-      {raster ? (
-        <div className="border-t border-slate-800 px-4 py-3 font-mono text-xs text-slate-500">
-          {message} · {raster.width}×{raster.height} minimap pixels
-        </div>
-      ) : null}
+      <div className="border-t border-slate-800 px-4 py-3 font-mono text-xs text-slate-500">
+        {raster ? `${message} · ${raster.width}×${raster.height} minimap pixels` : message}
+      </div>
     </div>
   );
 }

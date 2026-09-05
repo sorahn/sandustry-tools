@@ -3,6 +3,9 @@ import "fake-indexeddb/auto";
 import {
   deleteSavedGame,
   estimateStoredBytes,
+  extractCurrencies,
+  formatPlaytime,
+  formatProductionPoints,
   getSavedGameBytes,
   listSavedGames,
   readActiveSaveId,
@@ -76,6 +79,33 @@ describe("save IndexedDB storage", () => {
     expect(await listSavedGames()).toMatchObject({ ok: true, value: [] });
   });
 
+  test("lists saves ordered by upload date (newest on top)", async () => {
+    await deleteDatabase();
+    const older = {
+      ...summary("save-older", 10),
+      storedAt: "2026-01-01T10:00:00.000Z",
+    };
+    const newer = {
+      ...summary("save-newer", 20),
+      storedAt: "2026-01-02T10:00:00.000Z",
+    };
+    const newest = {
+      ...summary("save-newest", 30),
+      storedAt: "2026-01-03T10:00:00.000Z",
+    };
+
+    // Store in mixed order
+    await storeSave(new Uint8Array([1]), older);
+    await storeSave(new Uint8Array([3]), newest);
+    await storeSave(new Uint8Array([2]), newer);
+
+    const listed = await listSavedGames();
+    expect(listed.ok).toBe(true);
+    if (listed.ok) {
+      expect(listed.value.map((s) => s.id)).toEqual(["save-newest", "save-newer", "save-older"]);
+    }
+  });
+
   test("returns an explicit unavailable result when IndexedDB is missing", async () => {
     await deleteDatabase();
     delete (globalThis as { indexedDB?: unknown }).indexedDB;
@@ -138,5 +168,52 @@ describe("save IndexedDB storage", () => {
       type: "save-deleted",
       saveId: "save-notify",
     });
+  });
+
+  test("formatPlaytime formats milliseconds correctly", () => {
+    expect(formatPlaytime(undefined)).toBeUndefined();
+    expect(formatPlaytime(0)).toBeUndefined();
+    expect(formatPlaytime(-5)).toBeUndefined();
+    expect(formatPlaytime(5416)).toBe("< 1m");
+    expect(formatPlaytime(120_000)).toBe("2m");
+    expect(formatPlaytime(60_806_258)).toBe("16h 53m");
+    expect(formatPlaytime(3_600_000)).toBe("1h 0m");
+  });
+
+  test("extractCurrencies normalizes game resources to UI currencies", () => {
+    expect(extractCurrencies(undefined)).toBeUndefined();
+    expect(extractCurrencies({})).toBeUndefined();
+    expect(
+      extractCurrencies({
+        gold: 102370,
+        fluxite: 1177,
+        artifacts: 7,
+        lumlings: 0,
+      }),
+    ).toEqual({
+      credits: 102370,
+      fluxite: 1177,
+      artifact: 7,
+    });
+    expect(
+      extractCurrencies({
+        credits: 500,
+        artifact: 1,
+      }),
+    ).toEqual({
+      credits: 500,
+      fluxite: undefined,
+      artifact: 1,
+    });
+  });
+
+  test("formatProductionPoints formats compact numbers correctly", () => {
+    expect(formatProductionPoints(undefined)).toBeUndefined();
+    expect(formatProductionPoints(0)).toBeUndefined();
+    expect(formatProductionPoints(-10)).toBeUndefined();
+    expect(formatProductionPoints(42)).toBe("42");
+    expect(formatProductionPoints(999)).toBe("999");
+    expect(formatProductionPoints(1000)).toMatch(/1(\.0)?[kK]/);
+    expect(formatProductionPoints(296032)).toMatch(/296(\.0)?[kK]/);
   });
 });

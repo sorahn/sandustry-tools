@@ -4,6 +4,8 @@ import { Badge, Button, IconButton, Popover, SaveSlotCard, StatusIndicator } fro
 import {
   deleteSavedGame,
   estimateStoredBytes,
+  extractCurrencies,
+  formatPlaytime,
   listSavedGames,
   readActiveSaveId,
   setActiveSaveId,
@@ -17,14 +19,14 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatPlaytime(seconds?: number): string | undefined {
-  if (!seconds || seconds <= 0) return undefined;
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
-
-function getSaveTag(fileName: string): string {
+function getSaveTag(fileName: string, saveName?: string): string {
+  if (saveName) {
+    const lower = saveName.toLowerCase();
+    if (lower.includes("auto")) return "Autosave";
+    if (lower.includes("exit")) return "Exit save";
+    if (lower.includes("quick")) return "Quicksave";
+    return saveName;
+  }
   const lower = fileName.toLowerCase();
   if (lower.includes("auto")) return "Autosave";
   if (lower.includes("exit")) return "Exit save";
@@ -48,7 +50,13 @@ function SaveManager() {
       setError(listed.error.message);
       return;
     }
-    setSaves(listed.value.sort((a, b) => b.storedAt.localeCompare(a.storedAt)));
+    setSaves(
+      listed.value.sort((a, b) => {
+        const timeB = new Date(b.storedAt || b.saveTimestamp || 0).getTime();
+        const timeA = new Date(a.storedAt || a.saveTimestamp || 0).getTime();
+        return timeB - timeA;
+      }),
+    );
     const estimated = await estimateStoredBytes();
     if (estimated.ok) setUsage(estimated.value);
   };
@@ -127,14 +135,18 @@ function SaveManager() {
             <div className="max-h-80 space-y-2 overflow-y-auto p-2.5">
               {saves.map((save) => {
                 const isActive = save.id === activeSave?.id;
+                const currencies = extractCurrencies(save.resources);
                 return (
                   <SaveSlotCard
                     key={save.id}
                     title={save.worldName || save.fileName}
-                    tag={getSaveTag(save.fileName)}
+                    tag={getSaveTag(save.fileName, save.saveName)}
                     timestamp={save.saveTimestamp ? save.saveTimestamp.slice(0, 10) : undefined}
+                    level={save.factoryLevel}
                     structures={save.structureCount}
+                    productionPoints={save.productionPoints}
                     playtime={formatPlaytime(save.playTime)}
+                    currencies={currencies}
                     selected={isActive}
                     onClick={() => handleSelectSave(save.id)}
                     className="cursor-pointer"
@@ -147,7 +159,7 @@ function SaveManager() {
                           as={Link}
                           to="/explorer"
                           variant={isActive ? "accent" : "quiet"}
-                          className="compact text-[11px]"
+                          compact
                           onClick={() => {
                             setActiveSaveId(save.id);
                             setOpen(false);
@@ -159,16 +171,12 @@ function SaveManager() {
                           <div className="flex items-center gap-1">
                             <Button
                               variant="danger"
-                              className="compact text-[11px]"
+                              compact
                               onClick={() => void confirmDelete(save)}
                             >
                               Confirm
                             </Button>
-                            <Button
-                              variant="quiet"
-                              className="compact text-[11px]"
-                              onClick={() => setPendingDelete(null)}
-                            >
+                            <Button variant="quiet" compact onClick={() => setPendingDelete(null)}>
                               Cancel
                             </Button>
                           </div>
@@ -176,10 +184,10 @@ function SaveManager() {
                           <IconButton
                             size="small"
                             label="Delete save"
-                            className="text-slate-500 hover:text-red-400"
+                            className="h-5 w-5 p-0.5 text-slate-500 hover:text-red-400"
                             onClick={() => setPendingDelete(save.id)}
                           >
-                            <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+                            <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
                               <path
                                 fillRule="evenodd"
                                 d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A1.25 1.25 0 0 0 9.75 2h-3.5A1.25 1.25 0 0 0 5 3.25Zm1.5.75h3v-.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25V4Zm-.5 3a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v-5a.5.5 0 0 1 .5-.5Zm3.5.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 1 0v-5Z"
@@ -202,7 +210,8 @@ function SaveManager() {
               as={Link}
               to="/explorer"
               variant="quiet"
-              className="compact w-full justify-center text-xs text-slate-400 hover:text-yellow-300"
+              compact
+              className="w-full justify-center text-xs text-slate-400 hover:text-yellow-300"
               onClick={() => setOpen(false)}
             >
               Open in Save Explorer →
