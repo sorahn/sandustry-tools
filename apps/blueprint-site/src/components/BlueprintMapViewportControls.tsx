@@ -1,4 +1,4 @@
-import { Button, buttonStyles, Select } from "@sandustry/ui";
+import { Button, buttonStyles } from "@sandustry/ui";
 import cx from "clsx";
 
 export function BlueprintMapViewportControls({
@@ -9,8 +9,6 @@ export function BlueprintMapViewportControls({
   fitMode,
   pan,
   onExport,
-  exportScale,
-  onExportScaleChange,
   onZoomOut,
   onFit,
   onZoomIn,
@@ -22,8 +20,6 @@ export function BlueprintMapViewportControls({
   fitMode: boolean;
   pan: { x: number; y: number };
   onExport: () => void;
-  exportScale: number;
-  onExportScaleChange: (scale: number) => void;
   onZoomOut: () => void;
   onFit: () => void;
   onZoomIn: () => void;
@@ -40,43 +36,46 @@ export function BlueprintMapViewportControls({
       >
         Export PNG
       </Button>
-      <label className="sr-only" htmlFor="blueprint-export-scale">
-        Export resolution
-      </label>
-      <Select
-        id="blueprint-export-scale"
-        className="!min-h-0 !py-1 !px-2 text-xs"
-        value={exportScale}
-        onChange={(event) => onExportScaleChange(Number(event.target.value))}
-      >
-        <option value="1">1×</option>
-        <option value="2">2×</option>
-        <option value="4">4×</option>
-      </Select>
       <span className="mr-1">{Number((zoom * 100).toFixed(1))}%</span>
       <Button
         type="button"
-        className={cx(buttonStyles.compact, buttonStyles.noShift)}
+        className={cx(
+          buttonStyles.compact,
+          buttonStyles.noShift,
+          "focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
+        )}
         onClick={onZoomOut}
         disabled={zoom <= minZoom}
-        aria-label="Zoom out"
+        aria-label="Zoom out (-)"
+        title="Zoom out (-)"
       >
         −
       </Button>
       <Button
         type="button"
-        className={cx(buttonStyles.compact, buttonStyles.noShift)}
+        className={cx(
+          buttonStyles.compact,
+          buttonStyles.noShift,
+          "focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
+        )}
         onClick={onFit}
         disabled={fitMode && zoom === measuredFitZoom && pan.x === 0 && pan.y === 0}
+        aria-label="Fit to viewport (0 or F)"
+        title="Fit to viewport (0 or F)"
       >
         Fit
       </Button>
       <Button
         type="button"
-        className={cx(buttonStyles.compact, buttonStyles.noShift)}
+        className={cx(
+          buttonStyles.compact,
+          buttonStyles.noShift,
+          "focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
+        )}
         onClick={onZoomIn}
         disabled={zoom >= maxZoom}
-        aria-label="Zoom in"
+        aria-label="Zoom in (+)"
+        title="Zoom in (+)"
       >
         +
       </Button>

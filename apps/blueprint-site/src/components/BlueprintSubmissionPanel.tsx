@@ -43,7 +43,13 @@ export function BlueprintSubmissionPanel({
   return (
     <Panel title="Blueprint string" header={rememberHeader}>
       <div className="space-y-4 p-4">
+        <label htmlFor="blueprint-submission-input" className="sr-only">
+          Blueprint string
+        </label>
         <TextArea
+          id="blueprint-submission-input"
+          aria-label="Blueprint string"
+          aria-describedby={message ? "blueprint-submission-message" : undefined}
           value={encoded}
           onChange={(event) => onEncodedChange(event.target.value)}
           onKeyDown={(event) => {
@@ -54,7 +60,7 @@ export function BlueprintSubmissionPanel({
           }}
           placeholder="SAND:BP:v2:..."
           spellCheck={false}
-          className="min-h-48 placeholder:text-slate-600"
+          className="min-h-48 placeholder:text-slate-600 focus-visible:ring-2 focus-visible:ring-yellow-400/80"
         />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
@@ -69,7 +75,9 @@ export function BlueprintSubmissionPanel({
             Clear input
           </Button>
         </div>
-        {message ? <Toast variant="hint" message={message} /> : null}
+        {message ? (
+          <Toast id="blueprint-submission-message" variant="hint" message={message} />
+        ) : null}
         {blueprint && summary ? (
           <div className="space-y-3 border-t border-slate-800 pt-4 text-xs text-slate-300">
             <p className="font-mono font-medium text-yellow-200">

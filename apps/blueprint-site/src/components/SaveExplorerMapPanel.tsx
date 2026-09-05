@@ -150,7 +150,29 @@ export function SaveExplorerMapPanel({
       </div>
       <div
         ref={mapFrameRef}
-        className="relative flex flex-1 min-h-[min(65vh,42rem)] items-center justify-center overflow-hidden bg-black p-4 [touch-action:none] [overscroll-behavior:contain]"
+        tabIndex={0}
+        role="region"
+        aria-label="Save minimap viewport"
+        className="relative flex flex-1 min-h-[min(65vh,42rem)] items-center justify-center overflow-hidden bg-black p-4 [touch-action:none] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
+        onKeyDown={(event) => {
+          if (!raster) return;
+          if (event.key === "+" || event.key === "=") {
+            event.preventDefault();
+            onViewChange((current) => ({
+              ...current,
+              scale: Math.min(8, current.scale * 1.25),
+            }));
+          } else if (event.key === "-" || event.key === "_") {
+            event.preventDefault();
+            onViewChange((current) => ({
+              ...current,
+              scale: Math.max(0.25, current.scale * 0.8),
+            }));
+          } else if (event.key === "0" || event.key.toLowerCase() === "f") {
+            event.preventDefault();
+            fitMap();
+          }
+        }}
         onWheel={(event) => {
           if (!raster) return;
           const rect = event.currentTarget.getBoundingClientRect();
@@ -233,30 +255,40 @@ export function SaveExplorerMapPanel({
           <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded border border-slate-600/85 bg-slate-950/80 p-2 font-mono text-[11px] text-slate-300 backdrop-blur-sm">
             <Button
               type="button"
+              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
               onClick={() =>
                 onViewChange((current) => ({
                   ...current,
                   scale: Math.min(8, current.scale * 1.25),
                 }))
               }
-              aria-label="Zoom in"
+              aria-label="Zoom in (+)"
+              title="Zoom in (+)"
             >
               +
             </Button>
             <span>{Math.round(view.scale * 100)}%</span>
             <Button
               type="button"
+              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
               onClick={() =>
                 onViewChange((current) => ({
                   ...current,
                   scale: Math.max(0.25, current.scale * 0.8),
                 }))
               }
-              aria-label="Zoom out"
+              aria-label="Zoom out (-)"
+              title="Zoom out (-)"
             >
               −
             </Button>
-            <Button type="button" onClick={fitMap}>
+            <Button
+              type="button"
+              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
+              onClick={fitMap}
+              aria-label="Fit to viewport (0 or F)"
+              title="Fit to viewport (0 or F)"
+            >
               Fit
             </Button>
           </div>

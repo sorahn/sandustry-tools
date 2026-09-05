@@ -8,6 +8,7 @@ import {
   clusterFilterStructures,
   type FilterOverlayCluster,
   tileColor,
+  structureLabel,
   NATIVE_PIXELS_PER_CELL,
   UNKNOWN_STRUCTURE_FOOTPRINT,
 } from "@daryl.roberts/sandustry-blueprint-core";
@@ -104,7 +105,7 @@ export function BlueprintMap({
   const [showFoundationOutlines, setShowFoundationOutlines] = useState(true);
   const [showSignalLinks, setShowSignalLinks] = useState(true);
   const [showRawStructures, setShowRawStructures] = useState(false);
-  const [exportScale, setExportScale] = useState(1);
+  const exportScale = 1;
   const [siteHeaderHeight, setSiteHeaderHeight] = useState(() => {
     if (typeof document === "undefined") return 0;
     return (
@@ -700,8 +701,6 @@ export function BlueprintMap({
             fitMode={fitModeRef.current}
             pan={pan}
             onExport={exportPng}
-            exportScale={exportScale}
-            onExportScaleChange={setExportScale}
             onZoomOut={() => {
               const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
               setMapZoom(zoomLevels[Math.max(0, index - 1)]);
@@ -715,8 +714,51 @@ export function BlueprintMap({
         </div>
         <div
           ref={viewportRef}
-          className="blueprint-map__viewport relative min-h-[32rem] overflow-hidden rounded border border-slate-800 bg-[#33a8ff]"
+          tabIndex={0}
+          role="region"
+          aria-label={`${blueprint.name} map viewport${
+            selected
+              ? `: selected ${structureLabel(selected.type)} at ${selected.x}, ${selected.y} (${(selectedIndex ?? 0) + 1} of ${blueprint.data.length})`
+              : ""
+          }`}
+          className="blueprint-map__viewport relative min-h-[32rem] overflow-hidden rounded border border-slate-800 bg-[#33a8ff] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
           translate="no"
+          onKeyDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (event.key === "+" || event.key === "=") {
+              event.preventDefault();
+              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
+              setMapZoom(zoomLevels[Math.min(zoomLevels.length - 1, index + 1)]);
+            } else if (event.key === "-" || event.key === "_") {
+              event.preventDefault();
+              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
+              setMapZoom(zoomLevels[Math.max(0, index - 1)]);
+            } else if (event.key === "0" || event.key.toLowerCase() === "f") {
+              event.preventDefault();
+              fitToViewport();
+            } else if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+              if (blueprint.data.length > 0) {
+                event.preventDefault();
+                setSelectedIndex((prev) =>
+                  prev === null ? 0 : (prev + 1) % blueprint.data.length,
+                );
+              }
+            } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+              if (blueprint.data.length > 0) {
+                event.preventDefault();
+                setSelectedIndex((prev) =>
+                  prev === null
+                    ? blueprint.data.length - 1
+                    : (prev - 1 + blueprint.data.length) % blueprint.data.length,
+                );
+              }
+            } else if (event.key === "Escape") {
+              if (selectedIndex !== null) {
+                event.preventDefault();
+                setSelectedIndex(null);
+              }
+            }
+          }}
           style={
             captureOnly
               ? { width: `${Math.ceil(width)}px`, height: `${Math.ceil(height)}px` }

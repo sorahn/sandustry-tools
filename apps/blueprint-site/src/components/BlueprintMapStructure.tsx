@@ -10,6 +10,7 @@ type BlueprintMapStructureProps = {
   cell: number;
   suppressClickRef: { current: boolean };
   onSelect: (index: number) => void;
+  isSelected?: boolean;
 };
 
 /**
@@ -26,6 +27,7 @@ export const BlueprintMapStructure = memo(function BlueprintMapStructure({
   cell,
   suppressClickRef,
   onSelect,
+  isSelected = false,
 }: BlueprintMapStructureProps) {
   const { structure, index } = item;
   const prepared = preparedBlueprint.preparedStructures[index];
@@ -38,7 +40,8 @@ export const BlueprintMapStructure = memo(function BlueprintMapStructure({
     <g
       key={`${index}-${structure.x}-${structure.y}`}
       role="button"
-      tabIndex={0}
+      tabIndex={isSelected ? 0 : -1}
+      aria-selected={isSelected}
       aria-label={`Select ${structureLabel(structure.type)} at ${structure.x}, ${structure.y}`}
       onClick={() => {
         if (suppressClickRef.current) {
@@ -48,9 +51,12 @@ export const BlueprintMapStructure = memo(function BlueprintMapStructure({
         onSelect(index);
       }}
       onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") onSelect(index);
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(index);
+        }
       }}
-      className="blueprint-map__structure cursor-pointer"
+      className="blueprint-map__structure cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
     >
       <rect x={left} y={top} width={width} height={height} fill="transparent" stroke="none" />
     </g>
@@ -69,6 +75,7 @@ function areBlueprintMapStructurePropsEqual(
     previous.padding === next.padding &&
     previous.cell === next.cell &&
     previous.suppressClickRef === next.suppressClickRef &&
-    previous.onSelect === next.onSelect
+    previous.onSelect === next.onSelect &&
+    previous.isSelected === next.isSelected
   );
 }
