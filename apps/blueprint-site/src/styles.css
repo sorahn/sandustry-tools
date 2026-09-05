@@ -144,20 +144,6 @@ p a {
   color: rgb(203 213 225);
   backdrop-filter: blur(6px);
 }
-.save-explorer-map-tooltip {
-  position: absolute;
-  z-index: 3;
-  pointer-events: none;
-  max-width: 16rem;
-  border: 1px solid rgb(71 85 105 / 0.85);
-  background: rgb(2 6 23 / 0.9);
-  padding: 0.45rem 0.6rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.68rem;
-  line-height: 1.45;
-  color: rgb(226 232 240);
-  white-space: nowrap;
-}
 .save-explorer-map-cursor {
   position: absolute;
   z-index: 2;

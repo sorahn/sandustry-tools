@@ -17,10 +17,12 @@ export function SplitPane({
   children,
   ...props
 }: SplitPaneProps) {
+  const hasWidth = /(^|\s)w-/.test(sidebarClassName);
   const sidebarNode = (
     <aside
       className={cx(
-        "flex min-h-0 w-52 shrink-0 flex-col border-slate-700/40 bg-slate-900/20",
+        "flex min-h-0 shrink-0 flex-col border-slate-700/40 bg-slate-900/20",
+        !hasWidth && "w-52",
         sidebarPosition === "start" ? "border-r" : "border-l",
         sidebarClassName,
       )}

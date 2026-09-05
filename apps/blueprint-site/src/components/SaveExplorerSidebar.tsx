@@ -1,4 +1,5 @@
-import { Button, Checkbox, Panel } from "@sandustry/ui";
+import cx from "clsx";
+import { Button, Checkbox, MetadataRow, SaveSlotCard, StatusIndicator } from "@sandustry/ui";
 import type { SaveExplorerDocument } from "@sandustry/save-core";
 
 export type SaveExplorerLayers = {
@@ -23,6 +24,7 @@ type SaveExplorerSidebarProps = {
   onRemember: () => void;
   onLayerChange: (layer: keyof SaveExplorerLayers, checked: boolean) => void;
   onCustomCursorChange: (checked: boolean) => void;
+  className?: string;
 };
 
 function formatPlayTime(seconds?: number) {
@@ -33,27 +35,25 @@ function formatPlayTime(seconds?: number) {
 }
 
 function Metadata({ document }: { document: SaveExplorerDocument }) {
-  const values = [
-    ["world", document.metadata.worldName || "unnamed"],
-    ["version", document.metadata.gameVersion || "unknown"],
-    ["seed", document.metadata.seed || "unknown"],
-    ["dimensions", `${document.world.width} × ${document.world.height} cells`],
-    ["structures", document.structures.length.toLocaleString()],
-    ["play time", formatPlayTime(document.metadata.playTime)],
-  ];
   return (
-    <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-      {values.map(([label, value]) => (
-        <div key={label}>
-          <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
-            {label}
-          </dt>
-          <dd className="mt-1 truncate text-sm text-slate-200" title={value}>
-            {value}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <div className="space-y-3">
+      <SaveSlotCard
+        title={document.metadata.worldName || "unnamed"}
+        tag={document.metadata.gameVersion ? `v${document.metadata.gameVersion}` : undefined}
+        playtime={formatPlayTime(document.metadata.playTime)}
+        structures={document.structures.length}
+      />
+      <MetadataRow
+        items={[
+          { label: "Seed", value: document.metadata.seed || "unknown", tone: "muted" },
+          {
+            label: "Dimensions",
+            value: `${document.world.width} × ${document.world.height}`,
+            tone: "muted",
+          },
+        ]}
+      />
+    </div>
   );
 }
 
@@ -68,19 +68,19 @@ export function SaveExplorerSidebar({
   onRemember,
   onLayerChange,
   onCustomCursorChange,
+  className = "",
 }: SaveExplorerSidebarProps) {
   return (
-    <div className="space-y-6">
-      <Panel title="Save status" contentClassName="space-y-4 p-4">
+    <div className={cx("flex flex-col divide-y divide-slate-800/80 text-slate-300", className)}>
+      <section className="space-y-3 p-4">
+        <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
+          Save status
+        </h3>
         <div className="flex items-center justify-between gap-3 text-sm">
-          <div className="flex items-center gap-2">
-            <span
-              className={`h-2 w-2 rounded-full ${document ? "bg-emerald-400" : busy ? "bg-yellow-300" : "bg-slate-600"}`}
-            />
-            <span className="text-slate-300">
-              {busy ? "processing" : document ? "decoded" : "waiting"}
-            </span>
-          </div>
+          <StatusIndicator
+            tone={document ? "online" : busy ? "warning" : "neutral"}
+            label={busy ? "processing" : document ? "decoded" : "waiting"}
+          />
           <Button
             type="button"
             onClick={onRemember}
@@ -91,53 +91,66 @@ export function SaveExplorerSidebar({
           </Button>
         </div>
         <p className="text-xs leading-5 text-slate-500">{message}</p>
-      </Panel>
+      </section>
+
       {document ? (
-        <Panel title="World metadata" contentClassName="p-4">
+        <section className="space-y-3 p-4">
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
+            World metadata
+          </h3>
           <Metadata document={document} />
-        </Panel>
+        </section>
       ) : null}
-      <Panel title="Minimap layers" contentClassName="space-y-2 p-4 text-xs">
-        {(Object.keys(layers) as Array<keyof SaveExplorerLayers>)
-          .filter((layer) => (layer !== "fog" && layer !== "authorization") || import.meta.env.DEV)
-          .map((layer) => (
+
+      <section className="space-y-2.5 p-4 text-xs">
+        <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
+          Minimap layers
+        </h3>
+        <div className="space-y-2">
+          {(Object.keys(layers) as Array<keyof SaveExplorerLayers>)
+            .filter(
+              (layer) => (layer !== "fog" && layer !== "authorization") || import.meta.env.DEV,
+            )
+            .map((layer) => (
+              <Checkbox
+                key={layer}
+                boxed
+                size="small"
+                label={
+                  layer === "settledElements"
+                    ? "settled elements"
+                    : layer === "particles"
+                      ? "particles"
+                      : layer === "authorization"
+                        ? "authorization zones"
+                        : layer
+                }
+                checked={layers[layer]}
+                onChange={(event) => onLayerChange(layer, event.target.checked)}
+              />
+            ))}
+          {import.meta.env.DEV ? (
             <Checkbox
-              key={layer}
               boxed
               size="small"
-              label={
-                layer === "settledElements"
-                  ? "settled elements"
-                  : layer === "particles"
-                    ? "particles"
-                    : layer === "authorization"
-                      ? "authorization zones"
-                      : layer
-              }
-              checked={layers[layer]}
-              onChange={(event) => onLayerChange(layer, event.target.checked)}
+              label="custom cursor"
+              checked={customCursor}
+              onChange={(event) => onCustomCursorChange(event.target.checked)}
             />
-          ))}
-        {import.meta.env.DEV ? (
-          <Checkbox
-            boxed
-            size="small"
-            label="custom cursor"
-            checked={customCursor}
-            onChange={(event) => onCustomCursorChange(event.target.checked)}
-          />
-        ) : null}
-      </Panel>
-      <Panel
-        title="Current scope"
-        contentClassName="space-y-2 p-4 text-xs leading-5 text-slate-500"
-      >
+          ) : null}
+        </div>
+      </section>
+
+      <section className="space-y-2 p-4 text-xs leading-5 text-slate-500">
+        <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
+          Current scope
+        </h3>
         <p>✓ browser save decoding</p>
         <p>✓ 4×4 cell minimap aggregation</p>
         <p>✓ fog masking</p>
         <p>✓ minimap zoom, pan, and layer toggles</p>
         <p>○ cell inspection</p>
-      </Panel>
+      </section>
     </div>
   );
 }

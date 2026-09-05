@@ -1,4 +1,4 @@
-import { Button, Panel } from "@sandustry/ui";
+import { Button, TooltipSurface } from "@sandustry/ui";
 import type { SaveExplorerCellInspection } from "@sandustry/save-core";
 
 export type ExplorerRaster = {
@@ -68,7 +68,7 @@ export function SaveExplorerMapPanel({
   onInspect,
 }: SaveExplorerMapPanelProps) {
   return (
-    <Panel className="overflow-hidden" contentClassName="p-0">
+    <div className="flex flex-1 flex-col overflow-hidden">
       <div
         className={`save-explorer-dropzone ${dragging ? "save-explorer-dropzone--active" : ""}`}
         onDragEnter={(event) => {
@@ -93,14 +93,14 @@ export function SaveExplorerMapPanel({
           className="hidden"
           onChange={(event) => void onFile(event.target.files?.[0])}
         />
-        <Button type="button" variant="accent" onClick={onChooseFile} disabled={busy}>
+        <Button type="button" variant="solid" onClick={onChooseFile} disabled={busy}>
           {busy ? "Decoding…" : documentLoaded ? "Open another save" : "Choose save file"}
         </Button>
         <span className="text-xs text-slate-500">or drop a `.save` file</span>
       </div>
       <div
         ref={mapFrameRef}
-        className="save-explorer-map-frame"
+        className="save-explorer-map-frame flex-1"
         onWheel={(event) => {
           if (!raster) return;
           const rect = event.currentTarget.getBoundingClientRect();
@@ -222,8 +222,8 @@ export function SaveExplorerMapPanel({
           />
         ) : null}
         {hoverCell ? (
-          <div
-            className="save-explorer-map-tooltip"
+          <TooltipSurface
+            className="pointer-events-none absolute z-10 whitespace-nowrap font-mono text-[11px] leading-snug"
             style={{
               left: view.offsetX + (hoverCell.mapX + 1) * view.scale + 12,
               top: view.offsetY + hoverCell.mapY * view.scale + 12,
@@ -272,7 +272,7 @@ export function SaveExplorerMapPanel({
             ) : (
               <div>inspecting…</div>
             )}
-          </div>
+          </TooltipSurface>
         ) : null}
       </div>
       {raster ? (
@@ -280,6 +280,6 @@ export function SaveExplorerMapPanel({
           {message} · {raster.width}×{raster.height} minimap pixels
         </div>
       ) : null}
-    </Panel>
+    </div>
   );
 }

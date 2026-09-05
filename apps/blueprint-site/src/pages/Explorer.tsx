@@ -5,6 +5,7 @@ import type {
   SaveExplorerDocument,
 } from "@sandustry/save-core";
 import { PageHeader } from "../components/PageHeader";
+import { SplitPane } from "@sandustry/ui";
 import {
   SaveExplorerMapPanel,
   type ExplorerDrag,
@@ -239,7 +240,26 @@ export function SaveExplorerPage() {
         early read-only explorer, so some game layers, colors, and bundled content are still being
         resolved. Files stay in this browser session and are processed locally.
       </PageHeader>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
+      <SplitPane
+        sidebarPosition="end"
+        className="flex-col overflow-hidden rounded border border-slate-700 bg-black/75 shadow-xl xl:flex-row"
+        contentClassName="min-h-0 min-w-0 flex-1 flex flex-col"
+        sidebarClassName="w-full shrink-0 border-t border-l-0 border-slate-800/80 bg-slate-950/40 overflow-y-auto xl:w-80 xl:border-t-0 xl:border-l"
+        sidebar={
+          <SaveExplorerSidebar
+            document={document}
+            busy={busy}
+            message={message}
+            remember={remember}
+            hasCurrentSave={Boolean(currentSaveRef.current)}
+            layers={layers}
+            customCursor={customCursor}
+            onRemember={toggleRemember}
+            onLayerChange={updateLayer}
+            onCustomCursorChange={setCustomCursor}
+          />
+        }
+      >
         <SaveExplorerMapPanel
           inputRef={inputRef}
           canvasRef={canvasRef}
@@ -272,19 +292,7 @@ export function SaveExplorerPage() {
             workerRef.current?.postMessage({ type: "inspect", mapX, mapY })
           }
         />
-        <SaveExplorerSidebar
-          document={document}
-          busy={busy}
-          message={message}
-          remember={remember}
-          hasCurrentSave={Boolean(currentSaveRef.current)}
-          layers={layers}
-          customCursor={customCursor}
-          onRemember={toggleRemember}
-          onLayerChange={updateLayer}
-          onCustomCursorChange={setCustomCursor}
-        />
-      </div>
+      </SplitPane>
     </section>
   );
 }
