@@ -613,6 +613,15 @@ function renderChipContent(cluster: FilterOverlayCluster, width: number): string
   return innerSvg;
 }
 
+export type FilterOverlayViewport = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  /** Optional overscan margin in SVG units to prevent popping during pan (e.g. 64). */
+  overscan?: number;
+};
+
 export type RenderFilterOverlaySvgOptions = {
   minX: number;
   minY: number;
@@ -621,6 +630,8 @@ export type RenderFilterOverlaySvgOptions = {
   cell: number;
   labelScale?: number;
   elementCatalog?: ElementCatalog;
+  /** When provided, granularly culls boundaries, stems, and chips outside this visible box. */
+  viewport?: FilterOverlayViewport;
 };
 
 export function renderFilterOverlaySvg(
@@ -645,6 +656,14 @@ export function renderFilterOverlaySvg(
     labelScale: scale,
   });
 
+  const viewport = options.viewport;
+  const overscan = viewport?.overscan ?? 0;
+  const vMinX = viewport ? viewport.minX - overscan : -Infinity;
+  const vMaxX = viewport ? viewport.maxX + overscan : Infinity;
+  const vMinY = viewport ? viewport.minY - overscan : -Infinity;
+  const vMaxY = viewport ? viewport.maxY + overscan : Infinity;
+  const hasViewport = viewport !== undefined;
+
   // 1. Dashed boundaries around clusters
   let boundariesSvg = '<g class="blueprint-filter-boundaries">';
   for (const c of clusters) {
@@ -652,6 +671,13 @@ export function renderFilterOverlaySvg(
     const boxY = (c.minCellY - minY + padding) * cell;
     const boxWidth = c.cellWidth * cell;
     const boxHeight = c.cellHeight * cell;
+
+    if (
+      hasViewport &&
+      (boxX + boxWidth < vMinX || boxX > vMaxX || boxY + boxHeight < vMinY || boxY > vMaxY)
+    ) {
+      continue;
+    }
 
     const boxColor = !c.hasFilter
       ? DASHED_COLOR_NONE
@@ -670,6 +696,17 @@ export function renderFilterOverlaySvg(
       const stemX = label.anchorX;
       const stemTop = label.top + label.height;
       const stemBottom = label.anchorY;
+
+      if (
+        hasViewport &&
+        (stemX < vMinX ||
+          stemX > vMaxX ||
+          Math.max(stemTop, stemBottom) < vMinY ||
+          Math.min(stemTop, stemBottom) > vMaxY)
+      ) {
+        continue;
+      }
+
       stemsSvg += `<line x1="${numberFormat(stemX)}" y1="${numberFormat(stemTop)}" x2="${numberFormat(stemX)}" y2="${numberFormat(stemBottom)}" stroke="#000000" stroke-width="${numberFormat(Math.max(1, scale))}"/>`;
     }
   }
@@ -678,6 +715,16 @@ export function renderFilterOverlaySvg(
   // 3. Labels / Chips
   let labelsSvg = '<g class="blueprint-filter-labels">';
   for (const label of labels) {
+    if (
+      hasViewport &&
+      (label.left + label.width < vMinX ||
+        label.left > vMaxX ||
+        label.top + label.height < vMinY ||
+        label.top > vMaxY)
+    ) {
+      continue;
+    }
+
     const chipSvg = renderChipContent(label.cluster, label.chipWidth);
     if (scale === 1) {
       labelsSvg += `<g transform="translate(${numberFormat(label.left)} ${numberFormat(label.top)})">${chipSvg}</g>`;

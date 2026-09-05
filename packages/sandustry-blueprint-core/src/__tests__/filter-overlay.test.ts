@@ -303,6 +303,55 @@ describe("filter-overlay", () => {
       assert.ok(svg.includes("blueprint-filter-overlay"));
       assert.ok(svg.includes("Sand"));
     });
+
+    test("granularly culls offscreen boundaries, stems, and chips based on viewport", () => {
+      const blueprint: Blueprint = {
+        name: "test",
+        signalLinks: null,
+        data: [
+          // Filter 1 at 0, 0
+          { type: 18, x: 0, y: 0, filter: { mode: "allow", elementType: 1 } },
+          // Filter 2 far away at 100, 100
+          { type: 18, x: 100, y: 100, filter: { mode: "block", elementType: 7 } },
+        ],
+      };
+      const prepared = prepareBlueprint(blueprint);
+
+      // 1. Viewport covering only the first filter
+      const onlyFirst = renderFilterOverlaySvg(prepared, {
+        minX: 0,
+        minY: 0,
+        padding: 4,
+        paddingX: 4,
+        cell: 8,
+        viewport: { minX: 0, minY: 0, maxX: 100, maxY: 100 },
+      });
+      assert.ok(onlyFirst.includes("Sand"), "First filter chip should be visible");
+      assert.ok(!onlyFirst.includes("Coal"), "Second filter chip should be culled");
+
+      // 2. Viewport covering only the second filter
+      const onlySecond = renderFilterOverlaySvg(prepared, {
+        minX: 0,
+        minY: 0,
+        padding: 4,
+        paddingX: 4,
+        cell: 8,
+        viewport: { minX: 700, minY: 700, maxX: 1000, maxY: 1000 },
+      });
+      assert.ok(!onlySecond.includes("Sand"), "First filter chip should be culled");
+      assert.ok(onlySecond.includes("Gold"), "Second filter chip should be visible");
+
+      // 3. Overscan brings near-edge elements into view
+      const withOverscan = renderFilterOverlaySvg(prepared, {
+        minX: 0,
+        minY: 0,
+        padding: 4,
+        paddingX: 4,
+        cell: 8,
+        viewport: { minX: 200, minY: 200, maxX: 300, maxY: 300, overscan: 250 },
+      });
+      assert.ok(withOverscan.includes("Sand"), "Overscan should include first filter");
+    });
   });
 
   describe("dense fixture (filter-hell)", () => {

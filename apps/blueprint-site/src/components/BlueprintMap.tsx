@@ -243,18 +243,6 @@ export function BlueprintMap({
       spritesVisible,
     ],
   );
-  const filterOverlayLabelScale = showFilters ? 1 / zoom : 1;
-  const filterOverlayMarkup = useMemo(() => {
-    if (!showFilters) return "";
-    return renderFilterOverlaySvg(mapModel.preparedBlueprint, {
-      minX: mapModel.minX,
-      minY: mapModel.minY,
-      padding: mapModel.padding,
-      paddingX: mapModel.paddingX,
-      cell: mapModel.cell,
-      labelScale: filterOverlayLabelScale,
-    });
-  }, [showFilters, mapModel, filterOverlayLabelScale]);
 
   const structureSpatialMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -364,6 +352,48 @@ export function BlueprintMap({
         fitPolicy,
       ).viewportHeight
     : legacyAspectRatioViewportHeight;
+
+  const filterOverlayLabelScale = showFilters ? 1 / zoom : 1;
+  const filterOverlayViewport = useMemo(() => {
+    if (!showFilters) return undefined;
+    const viewW = viewportRef.current?.clientWidth || viewportSize.width || width;
+    const viewH =
+      viewportRef.current?.clientHeight || viewportSize.height || aspectRatioViewportHeight;
+    const halfVisibleWidth = viewW / (2 * zoom);
+    const halfVisibleHeight = viewH / (2 * zoom);
+    return {
+      minX: width / 2 + pan.x - halfVisibleWidth,
+      maxX: width / 2 + pan.x + halfVisibleWidth,
+      minY: height / 2 + pan.y - halfVisibleHeight,
+      maxY: height / 2 + pan.y + halfVisibleHeight,
+      overscan: 64,
+    };
+  }, [
+    showFilters,
+    viewportRef,
+    viewportSize.width,
+    viewportSize.height,
+    width,
+    height,
+    zoom,
+    pan.x,
+    pan.y,
+    aspectRatioViewportHeight,
+  ]);
+
+  const filterOverlayMarkup = useMemo(() => {
+    if (!showFilters) return "";
+    return renderFilterOverlaySvg(mapModel.preparedBlueprint, {
+      minX: mapModel.minX,
+      minY: mapModel.minY,
+      padding: mapModel.padding,
+      paddingX: mapModel.paddingX,
+      cell: mapModel.cell,
+      labelScale: filterOverlayLabelScale,
+      viewport: filterOverlayViewport,
+    });
+  }, [showFilters, mapModel, filterOverlayLabelScale, filterOverlayViewport]);
+
   const maxPanX = Math.max(0, (width * zoom - (viewportSize.width || width)) / (2 * zoom));
   const maxPanY = Math.max(0, (height * zoom - (viewportSize.height || height)) / (2 * zoom));
   const applyLivePan = (nextPan: { x: number; y: number }) => {

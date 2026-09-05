@@ -104,6 +104,7 @@ export {
   type FilterOverlayCluster,
   type FilterClusterItem,
   type PlacedFilterLabel,
+  type FilterOverlayViewport,
   type ClusterFilterStructuresOptions,
   type LayoutFilterLabelsOptions,
   type RenderFilterOverlaySvgOptions,
