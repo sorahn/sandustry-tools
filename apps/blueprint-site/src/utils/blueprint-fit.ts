@@ -53,6 +53,7 @@ export type FitResult = {
 
 export const DEFAULT_FIT_POLICY: FitPolicy = {
   geometry: { padding: 6, margin: 6 },
+  grid: { extendToViewport: true },
   viewport: {
     orientation: "landscape",
     aspect: {
@@ -88,8 +89,6 @@ export const FIT_POLICY_PRESETS: Record<FitPolicyPreset, FitPolicy> = {
   },
   test: {
     ...DEFAULT_FIT_POLICY,
-    geometry: { padding: 8, margin: 0 },
-    grid: { extendToViewport: true },
   },
 };
 

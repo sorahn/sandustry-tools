@@ -67,6 +67,7 @@ describe("blueprint initial-fit policies", () => {
 
   test("exposes the legacy-equivalent policy as the default preset", () => {
     expect(FIT_POLICY_PRESETS.default).toBe(DEFAULT_FIT_POLICY);
+    expect(DEFAULT_FIT_POLICY.grid?.extendToViewport).toBe(true);
   });
 
   test("defines the Vault preset overrides", () => {
@@ -74,6 +75,11 @@ describe("blueprint initial-fit policies", () => {
     expect(FIT_POLICY_PRESETS.vault.grid?.extendToViewport).toBe(true);
     expect(FIT_POLICY_PRESETS.vault.zoom.levels[0]).toBe(0.125);
     expect(FIT_POLICY_PRESETS.vault.viewport.allowHeightGrowth).toBe(false);
+  });
+
+  test("keeps the test policy aligned with the default policy", () => {
+    expect(FIT_POLICY_PRESETS.test).not.toBe(DEFAULT_FIT_POLICY);
+    expect(FIT_POLICY_PRESETS.test).toEqual(DEFAULT_FIT_POLICY);
   });
 
   test("fits the Vault policy to the fixed viewport height", () => {
