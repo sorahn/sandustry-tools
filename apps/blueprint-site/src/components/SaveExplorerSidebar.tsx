@@ -17,11 +17,8 @@ type SaveExplorerSidebarProps = {
   document: SaveExplorerClientDocument | null;
   busy: boolean;
   message: string;
-  remember: boolean;
-  hasCurrentSave: boolean;
   layers: SaveExplorerLayers;
   customCursor: boolean;
-  onRemember: () => void;
   onLayerChange: (layer: keyof SaveExplorerLayers, checked: boolean) => void;
   onCustomCursorChange: (checked: boolean) => void;
   onInspectBlueprint: (blueprintId: string) => void;
@@ -63,11 +60,8 @@ export function SaveExplorerSidebar({
   document,
   busy,
   message,
-  remember,
-  hasCurrentSave,
   layers,
   customCursor,
-  onRemember,
   onLayerChange,
   onCustomCursorChange,
   onInspectBlueprint,
@@ -80,19 +74,11 @@ export function SaveExplorerSidebar({
         <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
           Save status
         </h3>
-        <div className="flex items-center justify-between gap-3 text-sm">
+        <div className="flex items-center gap-3 text-sm">
           <StatusIndicator
             tone={document ? "online" : busy ? "warning" : "neutral"}
             label={busy ? "processing" : document ? "decoded" : "waiting"}
           />
-          <Button
-            type="button"
-            onClick={onRemember}
-            disabled={!remember && !hasCurrentSave}
-            aria-pressed={remember}
-          >
-            {remember ? "Forget save" : "Remember save"}
-          </Button>
         </div>
         <p className="text-xs leading-5 text-slate-500">{message}</p>
       </section>

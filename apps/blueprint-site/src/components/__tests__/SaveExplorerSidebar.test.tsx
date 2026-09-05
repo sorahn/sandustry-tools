@@ -22,8 +22,6 @@ function renderSidebar(document: ReturnType<typeof toSaveExplorerClientDocument>
       document={document}
       busy={false}
       message="Save decoded"
-      remember={false}
-      hasCurrentSave
       layers={{
         terrain: true,
         settledElements: true,
@@ -35,7 +33,6 @@ function renderSidebar(document: ReturnType<typeof toSaveExplorerClientDocument>
         authorization: false,
       }}
       customCursor={false}
-      onRemember={() => {}}
       onLayerChange={() => {}}
       onCustomCursorChange={() => {}}
       onInspectBlueprint={() => {}}

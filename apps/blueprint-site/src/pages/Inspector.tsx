@@ -38,7 +38,12 @@ import {
   type SaveBlueprintRecord,
 } from "@sandustry/save-core";
 import { encodeSavedBlueprint } from "../utils/save-blueprint";
-import { getSavedGameBytes, listSavedGames, type StoredSaveSummary } from "../utils/save-db";
+import {
+  getSavedGameBytes,
+  listSavedGames,
+  subscribeToSaveDatabase,
+  type StoredSaveSummary,
+} from "../utils/save-db";
 
 export function SavedBlueprintInspectorPage() {
   const { saveId, blueprintId } = useParams({ from: "/save/$saveId/blueprint/$blueprintId" });
@@ -441,14 +446,18 @@ function FromSavedGame() {
   const [saved, setSaved] = useState<StoredSaveSummary[] | null>(null);
   const [message, setMessage] = useState("Loading saved blueprints…");
   useEffect(() => {
-    void listSavedGames().then((result) => {
-      if (!result.ok) {
-        setMessage(result.error.message);
-        return;
-      }
-      setSaved(result.value);
-      setMessage(result.value.length ? "Choose a saved blueprint" : "No remembered saves yet.");
-    });
+    const refresh = () => {
+      void listSavedGames().then((result) => {
+        if (!result.ok) {
+          setMessage(result.error.message);
+          return;
+        }
+        setSaved(result.value);
+        setMessage(result.value.length ? "Choose a saved blueprint" : "No remembered saves yet.");
+      });
+    };
+    refresh();
+    return subscribeToSaveDatabase(refresh);
   }, []);
   const options = (saved ?? []).flatMap((save) =>
     save.blueprints.map((blueprint) => ({ save, blueprint })),

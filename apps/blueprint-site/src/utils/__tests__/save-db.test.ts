@@ -5,11 +5,30 @@ import {
   estimateStoredBytes,
   getSavedGameBytes,
   listSavedGames,
+  readActiveSaveId,
   SAVE_DATABASE_NAME,
+  setActiveSaveId,
   storeSave,
+  subscribeToSaveDatabase,
+  type SaveDatabaseEvent,
 } from "../save-db";
 
 const originalIndexedDb = (globalThis as typeof globalThis & { indexedDB?: unknown }).indexedDB;
+const originalWindow = (globalThis as typeof globalThis & { window?: unknown }).window;
+
+function installStorage(values: Record<string, string> = {}) {
+  const stored = new Map(Object.entries(values));
+  const localStorage = {
+    getItem: (key: string) => stored.get(key) ?? null,
+    setItem: (key: string, value: string) => stored.set(key, value),
+    removeItem: (key: string) => stored.delete(key),
+  };
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { localStorage },
+  });
+  return stored;
+}
 
 afterEach(() => {
   if (originalIndexedDb === undefined) delete (globalThis as { indexedDB?: unknown }).indexedDB;
@@ -18,6 +37,8 @@ afterEach(() => {
       configurable: true,
       value: originalIndexedDb,
     });
+  if (originalWindow === undefined) delete (globalThis as { window?: unknown }).window;
+  else Object.defineProperty(globalThis, "window", { configurable: true, value: originalWindow });
 });
 
 const summary = (id: string, byteLength: number) => ({
@@ -76,5 +97,46 @@ describe("save IndexedDB storage", () => {
     expect(bytes).toMatchObject({ ok: false, error: { code: "unavailable" } });
     expect(estimated).toMatchObject({ ok: false, error: { code: "unavailable" } });
     expect(stored).toMatchObject({ ok: false, error: { code: "unavailable" } });
+  });
+
+  test("notifies subscribers when saves are stored, deleted, or active save changes", async () => {
+    installStorage();
+    await deleteDatabase();
+    const events: SaveDatabaseEvent[] = [];
+    const unsubscribe = subscribeToSaveDatabase((event) => {
+      events.push(event);
+    });
+
+    const bytes = new Uint8Array([1, 2]);
+    const saveSummary = summary("save-notify", 2);
+    await storeSave(bytes, saveSummary);
+
+    expect(readActiveSaveId()).toBe("save-notify");
+    expect(events).toEqual([
+      { type: "active-save-changed", saveId: "save-notify" },
+      { type: "save-stored", summary: saveSummary },
+    ]);
+
+    setActiveSaveId("save-other");
+    expect(readActiveSaveId()).toBe("save-other");
+    expect(events[events.length - 1]).toEqual({
+      type: "active-save-changed",
+      saveId: "save-other",
+    });
+
+    setActiveSaveId("save-notify");
+    await deleteSavedGame("save-notify");
+    expect(readActiveSaveId()).toBeNull();
+    expect(events.slice(-2)).toEqual([
+      { type: "active-save-changed", saveId: null },
+      { type: "save-deleted", saveId: "save-notify" },
+    ]);
+
+    unsubscribe();
+    setActiveSaveId("save-after-unsubscribe");
+    expect(events[events.length - 1]).toEqual({
+      type: "save-deleted",
+      saveId: "save-notify",
+    });
   });
 });

@@ -13,18 +13,16 @@ import {
   type ExplorerView,
 } from "../components/SaveExplorerMapPanel";
 import { SaveExplorerSidebar, type SaveExplorerLayers } from "../components/SaveExplorerSidebar";
-import { readStorageValue, writeStoredBoolean } from "../utils/storage";
-import { forgetRememberedSave, readRememberedSave } from "../utils/save-storage";
+import { readRememberedSave } from "../utils/save-storage";
 import {
-  deleteSavedGame,
   getSavedGameBytes,
   listSavedGames,
   migrateLegacyRememberedSave,
   readActiveSaveId,
   storeSave,
+  subscribeToSaveDatabase,
   type StoredSaveSummary,
 } from "../utils/save-db";
-import { REMEMBER_SAVE_EXPLORER_KEY } from "../utils/storage-keys";
 import { copyToClipboard } from "../utils/clipboard";
 
 import type { SaveWorkerResponse } from "../save-worker";
@@ -67,11 +65,6 @@ export function SaveExplorerPage() {
   const [message, setMessage] = useState("Drop a .save file here to begin.");
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [remember, setRemember] = useState(
-    () => readStorageValue(REMEMBER_SAVE_EXPLORER_KEY) === "true",
-  );
-  const rememberRef = useRef(remember);
-  rememberRef.current = remember;
   const [layers, setLayers] = useState<SaveExplorerLayers>({
     terrain: true,
     settledElements: true,
@@ -84,6 +77,10 @@ export function SaveExplorerPage() {
   });
   const [customCursor, setCustomCursor] = useState(false);
   const currentSaveRef = useRef<{ bytes: Uint8Array; name: string } | null>(null);
+  const activeSaveIdRef = useRef<string | null>(null);
+  const currentSaveIdRef = useRef<string | null>(null);
+  const layersRef = useRef(layers);
+  layersRef.current = layers;
   const [view, setView] = useState<ExplorerView>({ scale: 1, offsetX: 0, offsetY: 0 });
 
   const minimapOptions: MinimapRenderOptions = {
@@ -173,7 +170,11 @@ export function SaveExplorerPage() {
         return;
       }
       setBusy(false);
-      if (response.type === "decoded") setDocument(response.document);
+      if (response.type === "decoded") {
+        setDocument(response.document);
+        activeSaveIdRef.current = response.document.metadata.saveId;
+        currentSaveIdRef.current = response.document.metadata.saveId;
+      }
       setRaster({
         width: response.raster.width,
         height: response.raster.height,
@@ -184,7 +185,7 @@ export function SaveExplorerPage() {
           ? "Save decoded. This first view is a native-style minimap raster."
           : "Minimap layer updated.",
       );
-      if (response.type === "decoded" && rememberRef.current && currentSaveRef.current) {
+      if (response.type === "decoded" && currentSaveRef.current) {
         const current = currentSaveRef.current;
         const summary = storedSummary(response.document, current.name);
         summary.byteLength = current.bytes.byteLength;
@@ -199,9 +200,7 @@ export function SaveExplorerPage() {
               setMessage(`Save decoded, but migration failed: ${migrated.error.message}`);
             return;
           }
-          setRemember(false);
-          writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, false);
-          setMessage(`Save decoded, but it was not remembered: ${result.error.message}`);
+          setMessage(`Save decoded, but saving failed: ${result.error.message}`);
         });
       }
     };
@@ -210,33 +209,91 @@ export function SaveExplorerPage() {
       setMessage("The save worker stopped unexpectedly.");
     };
     let disposed = false;
-    if (remember) {
-      void (async () => {
+    void (async () => {
+      const listed = await listSavedGames();
+      let saved: { bytes: Uint8Array; name: string } | null = null;
+      if (listed.ok && listed.value.length > 0) {
+        const sorted = listed.value.slice().sort((a, b) => b.storedAt.localeCompare(a.storedAt));
+        const activeId = readActiveSaveId();
+        const summary = sorted.find((candidate) => candidate.id === activeId) ?? sorted[0];
+        activeSaveIdRef.current = summary.id;
+        currentSaveIdRef.current = summary.id;
+        const bytes = await getSavedGameBytes(summary.id);
+        if (bytes.ok) saved = { bytes: bytes.value, name: summary.fileName };
+        else if (!disposed) setMessage(bytes.error.message);
+      } else if (listed.ok || listed.error.code === "unavailable") {
+        const legacy = readRememberedSave();
+        if (legacy) saved = { bytes: legacy.bytes.slice(), name: legacy.name };
+      } else if (!disposed) setMessage(listed.error.message);
+      if (disposed || !saved) return;
+      currentSaveRef.current = { bytes: saved.bytes.slice(), name: saved.name };
+      setBusy(true);
+      setMessage(`Restoring ${saved.name}…`);
+      const reqId = nextRequestIdRef.current++;
+      activeDecodeIdRef.current = reqId;
+      const bytes = saved.bytes.buffer;
+      worker.postMessage({ id: reqId, type: "decode", bytes, render: minimapOptions }, [bytes]);
+    })();
+    const clearExplorerState = () => {
+      activeSaveIdRef.current = null;
+      currentSaveIdRef.current = null;
+      currentSaveRef.current = null;
+      setDocument(null);
+      setRaster(null);
+      setInspection(null);
+      setHoverCell(null);
+      setMessage("Choose a Sandustry .save file.");
+    };
+    const unsubscribe = subscribeToSaveDatabase(async (event) => {
+      if (disposed) return;
+      if (event.type === "active-save-changed") {
+        if (!event.saveId) {
+          clearExplorerState();
+          return;
+        }
+        if (event.saveId === activeSaveIdRef.current) return;
+        activeSaveIdRef.current = event.saveId;
+        currentSaveIdRef.current = event.saveId;
+        const bytes = await getSavedGameBytes(event.saveId);
+        if (disposed) return;
+        if (!bytes.ok) {
+          setMessage(bytes.error.message);
+          return;
+        }
         const listed = await listSavedGames();
-        let saved: { bytes: Uint8Array; name: string } | null = null;
-        if (listed.ok && listed.value.length > 0) {
-          const sorted = listed.value.slice().sort((a, b) => b.storedAt.localeCompare(a.storedAt));
-          const activeId = readActiveSaveId();
-          const summary = sorted.find((candidate) => candidate.id === activeId) ?? sorted[0];
-          const bytes = await getSavedGameBytes(summary.id);
-          if (bytes.ok) saved = { bytes: bytes.value, name: summary.fileName };
-          else if (!disposed) setMessage(bytes.error.message);
-        } else if (listed.ok || listed.error.code === "unavailable") {
-          const legacy = readRememberedSave();
-          if (legacy) saved = { bytes: legacy.bytes.slice(), name: legacy.name };
-        } else if (!disposed) setMessage(listed.error.message);
-        if (disposed || !saved) return;
-        currentSaveRef.current = { bytes: saved.bytes.slice(), name: saved.name };
+        const summary = listed.ok ? listed.value.find((s) => s.id === event.saveId) : undefined;
+        const fileName = summary?.fileName ?? "save.save";
+        currentSaveRef.current = { bytes: bytes.value.slice(), name: fileName };
         setBusy(true);
-        setMessage(`Restoring ${saved.name}…`);
+        setMessage(`Restoring ${fileName}…`);
+        fitNextRasterRef.current = true;
         const reqId = nextRequestIdRef.current++;
         activeDecodeIdRef.current = reqId;
-        const bytes = saved.bytes.buffer;
-        worker.postMessage({ id: reqId, type: "decode", bytes, render: minimapOptions }, [bytes]);
-      })();
-    }
+        const buffer = bytes.value.buffer;
+        const currentLayers = layersRef.current;
+        const renderOpts: MinimapRenderOptions = {
+          drawTerrain: currentLayers.terrain,
+          drawSettledElements: currentLayers.settledElements,
+          drawElements: currentLayers.elements,
+          drawParticles: currentLayers.particles,
+          drawWalls: currentLayers.walls,
+          drawStructures: currentLayers.structures,
+          drawFog: currentLayers.fog,
+          drawAuthorization: currentLayers.authorization,
+        };
+        workerRef.current?.postMessage(
+          { id: reqId, type: "decode", bytes: buffer, render: renderOpts },
+          [buffer],
+        );
+      } else if (event.type === "save-deleted") {
+        if (event.saveId === activeSaveIdRef.current || event.saveId === currentSaveIdRef.current) {
+          clearExplorerState();
+        }
+      }
+    });
     return () => {
       disposed = true;
+      unsubscribe();
       if (inspectFrameRef.current !== null) cancelAnimationFrame(inspectFrameRef.current);
       worker.terminate();
       workerRef.current = null;
@@ -350,35 +407,6 @@ export function SaveExplorerPage() {
     }
   };
 
-  const toggleRemember = async () => {
-    if (remember) {
-      if (document) {
-        const result = await deleteSavedGame(document.metadata.saveId);
-        if (!result.ok && result.error.code !== "unavailable") {
-          setMessage(`Unable to forget save: ${result.error.message}`);
-          return;
-        }
-      }
-      setRemember(false);
-      writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, false);
-      forgetRememberedSave();
-      setMessage("Remembered save cleared.");
-      return;
-    }
-    const current = currentSaveRef.current;
-    if (!current || !document) return;
-    const summary = storedSummary(document, current.name);
-    summary.byteLength = current.bytes.byteLength;
-    const result = await storeSave(current.bytes, summary);
-    if (!result.ok) {
-      setMessage(`Save was not remembered: ${result.error.message}`);
-      return;
-    }
-    setRemember(true);
-    writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, true);
-    setMessage(`${current.name} will be restored on the next visit.`);
-  };
-
   return (
     <section className="space-y-6">
       <PageHeader title="Save Explorer">
@@ -396,11 +424,8 @@ export function SaveExplorerPage() {
             document={document}
             busy={busy}
             message={message}
-            remember={remember}
-            hasCurrentSave={Boolean(currentSaveRef.current)}
             layers={layers}
             customCursor={customCursor}
-            onRemember={toggleRemember}
             onLayerChange={updateLayer}
             onCustomCursorChange={setCustomCursor}
             onInspectBlueprint={(blueprintId) => {

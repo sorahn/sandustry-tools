@@ -1,5 +1,6 @@
 import type { SaveBlueprintSummary } from "@sandustry/save-core";
 import { forgetRememberedSave, readRememberedSave } from "./save-storage";
+import { readStorageValue, removeStorageValue, writeStorageValue } from "./storage";
 
 export const SAVE_DATABASE_NAME = "sandustry-save-explorer-db";
 export const SAVE_DATABASE_VERSION = 1;
@@ -35,22 +36,40 @@ export type SaveStorageError = {
 
 export type StorageResult<T> = { ok: true; value: T } | { ok: false; error: SaveStorageError };
 
-export function readActiveSaveId(): string | null {
-  try {
-    return typeof localStorage === "undefined" ? null : localStorage.getItem(ACTIVE_SAVE_ID_KEY);
-  } catch {
-    return null;
+export type SaveDatabaseEvent =
+  | { type: "save-stored"; summary: StoredSaveSummary }
+  | { type: "save-deleted"; saveId: string }
+  | { type: "active-save-changed"; saveId: string | null };
+
+type SaveDatabaseListener = (event: SaveDatabaseEvent) => void;
+
+const databaseListeners = new Set<SaveDatabaseListener>();
+
+export function subscribeToSaveDatabase(listener: SaveDatabaseListener): () => void {
+  databaseListeners.add(listener);
+  return () => {
+    databaseListeners.delete(listener);
+  };
+}
+
+export function notifySaveDatabase(event: SaveDatabaseEvent): void {
+  for (const listener of Array.from(databaseListeners)) {
+    try {
+      listener(event);
+    } catch {
+      // Listeners must not make save persistence fail.
+    }
   }
 }
 
+export function readActiveSaveId(): string | null {
+  return readStorageValue(ACTIVE_SAVE_ID_KEY);
+}
+
 export function setActiveSaveId(saveId: string | null): void {
-  try {
-    if (typeof localStorage === "undefined") return;
-    if (saveId) localStorage.setItem(ACTIVE_SAVE_ID_KEY, saveId);
-    else localStorage.removeItem(ACTIVE_SAVE_ID_KEY);
-  } catch {
-    // Active selection is a convenience and must not make save persistence fail.
-  }
+  if (saveId) writeStorageValue(ACTIVE_SAVE_ID_KEY, saveId);
+  else removeStorageValue(ACTIVE_SAVE_ID_KEY);
+  notifySaveDatabase({ type: "active-save-changed", saveId });
 }
 
 function failure(
@@ -131,7 +150,10 @@ export async function storeSave(
           error: storageError(transaction.error, "Save storage transaction aborted"),
         });
     });
-    if (result.ok) setActiveSaveId(summary.id);
+    if (result.ok) {
+      setActiveSaveId(summary.id);
+      notifySaveDatabase({ type: "save-stored", summary });
+    }
     return result;
   } catch (error) {
     return failure("transaction-aborted", "Unable to store save", error);
@@ -192,7 +214,10 @@ export async function deleteSavedGame(saveId: string): Promise<StorageResult<voi
           error: storageError(transaction.error, "Save deletion transaction aborted"),
         });
     });
-    if (result.ok && readActiveSaveId() === saveId) setActiveSaveId(null);
+    if (result.ok) {
+      if (readActiveSaveId() === saveId) setActiveSaveId(null);
+      notifySaveDatabase({ type: "save-deleted", saveId });
+    }
     return result;
   } catch (error) {
     return failure("transaction-aborted", "Unable to delete save", error);
