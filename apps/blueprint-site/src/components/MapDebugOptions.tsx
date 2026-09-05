@@ -248,6 +248,7 @@ export function MapDebugOptions({
           </p>
         ) : null}
       </BlueprintMapSidebarSection>
+      <Divider className="my-4" />
     </>
   );
 }

@@ -16,7 +16,7 @@ import {
 import { structureFootprint, structureTopY } from "../utils/blueprint-map";
 import { BlueprintMapSidebarSection } from "./BlueprintMapSidebarSection";
 import { StructureThumbnail } from "./StructureThumbnail";
-import { Badge, TextAction } from "@sandustry/ui";
+import { Badge, Checkbox, TextAction } from "@sandustry/ui";
 
 type BlueprintStructure = Blueprint["data"][number];
 
@@ -27,6 +27,9 @@ export type BlueprintMapSidebarProps = {
   totalStructures?: number;
   blueprint?: Blueprint;
   activeFilterCluster?: FilterOverlayCluster | null;
+  matchingFiltersCount?: number;
+  highlightMatchingFilters?: boolean;
+  onHighlightMatchingFiltersChange?: (value: boolean) => void;
   onClearSelection?: () => void;
   debugOptions: ReactNode;
   embedMode?: boolean;
@@ -65,6 +68,9 @@ export function BlueprintMapSidebar({
   totalStructures,
   blueprint,
   activeFilterCluster,
+  matchingFiltersCount,
+  highlightMatchingFilters,
+  onHighlightMatchingFiltersChange,
   onClearSelection,
   debugOptions,
   embedMode = false,
@@ -398,6 +404,23 @@ export function BlueprintMapSidebar({
                       {activeFilterCluster.isVertical ? "vertical" : "horizontal"} filter{" "}
                       {activeFilterCluster.members.length === 1 ? "unit" : "units"}
                     </span>
+                  </div>
+                ) : null}
+
+                {/* Highlight matching filters */}
+                {activeFilterCluster && matchingFiltersCount !== undefined ? (
+                  <div className="pt-1.5 border-t border-slate-800/60">
+                    <Checkbox
+                      size="small"
+                      label={
+                        <span className="text-[11px] text-slate-300">
+                          Highlight matching filters{" "}
+                          <strong className="text-slate-200">({matchingFiltersCount})</strong>
+                        </span>
+                      }
+                      checked={highlightMatchingFilters ?? false}
+                      onChange={(e) => onHighlightMatchingFiltersChange?.(e.target.checked)}
+                    />
                   </div>
                 ) : null}
               </div>

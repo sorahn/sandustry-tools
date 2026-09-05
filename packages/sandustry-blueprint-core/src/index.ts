@@ -113,6 +113,7 @@ export {
   VERTICAL_FILTER_TYPES,
   LEFT_FILTER_TYPES,
   MK2_FILTER_TYPES,
+  canonicalizeFilterConfig,
   canonicalizeFilterSignature,
   clusterFilterStructures,
   isFilterStructure,

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  HIGHLIGHT_MATCHING_FILTERS_KEY,
   REMEMBER_BLUEPRINT_KEY,
   SAVED_BLUEPRINT_KEY,
   SAVED_MAP_VIEW_KEY,
@@ -25,6 +26,7 @@ describe("site storage keys", () => {
       SHOW_GRID_KEY,
       SHOW_PNG_BACKGROUND_KEY,
       SHOW_FILTERS_KEY,
+      HIGHLIGHT_MATCHING_FILTERS_KEY,
       SHOW_DEBUG_CELLS_KEY,
       SHOW_NAMES_KEY,
       SHOW_SPRITES_KEY,
