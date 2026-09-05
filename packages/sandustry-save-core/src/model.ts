@@ -12,13 +12,15 @@ export type SaveExplorerDiagnostic = {
     | "truncated-section"
     | "unknown-id"
     | "dimension-mismatch"
-    | "invalid-structure";
+    | "invalid-structure"
+    | "invalid-blueprint";
   message: string;
   path?: string;
 };
 
 export type SaveExplorerMetadata = {
   saveId: string;
+  saveName?: string;
   worldId?: string;
   worldName?: string;
   seed?: string;
@@ -29,7 +31,9 @@ export type SaveExplorerMetadata = {
   tick?: number;
   time?: number;
   factoryLevel?: number;
+  productionPoints?: number;
   structureCount?: number;
+  resources?: Record<string, number>;
 };
 
 export type SaveExplorerWorld = {
@@ -109,6 +113,44 @@ export type SaveExplorerDocument = {
     payload: Record<string, unknown>;
   };
 };
+
+export type SaveBlueprintSummary = {
+  id: string;
+  name: string;
+  structureCount: number;
+  createdAt?: number;
+};
+
+/** The intentionally small document shape safe to send from a save worker to the UI. */
+export type SaveExplorerClientDocument = {
+  documentVersion: typeof SAVE_EXPLORER_DOCUMENT_VERSION;
+  metadata: SaveExplorerMetadata;
+  world: SaveExplorerWorld;
+  layerAvailability: Partial<Record<SaveExplorerLayerName, boolean>>;
+  structureCount: number;
+  elementCount: number;
+  diagnostics: SaveExplorerDiagnostic[];
+  blueprints: SaveBlueprintSummary[];
+};
+
+export function toSaveExplorerClientDocument(
+  document: SaveExplorerDocument,
+  blueprints: SaveBlueprintSummary[] = [],
+): SaveExplorerClientDocument {
+  const layerAvailability: Partial<Record<SaveExplorerLayerName, boolean>> = {};
+  for (const name of ["matrix", "wall", "shadow", "authorization"] as const)
+    layerAvailability[name] = document.layers[name] !== undefined;
+  return {
+    documentVersion: document.documentVersion,
+    metadata: document.metadata,
+    world: document.world,
+    layerAvailability,
+    structureCount: document.structures.length,
+    elementCount: document.elements.length,
+    diagnostics: document.diagnostics,
+    blueprints,
+  };
+}
 
 export type NormalizeSaveOptions = {
   supportedGameVersions?: readonly string[];
@@ -441,6 +483,7 @@ export function normalizeSaveDocument(
       : undefined;
   const metadata = {
     saveId: save.metadata.id,
+    saveName: typeof save.metadata.name === "string" ? save.metadata.name : undefined,
     worldId: typeof meta.worldId === "string" ? meta.worldId : save.metadata.worldId,
     worldName:
       typeof meta.worldName === "string" ? meta.worldName : (save.metadata.worldName ?? undefined),
@@ -456,7 +499,15 @@ export function normalizeSaveDocument(
     tick: finiteNumber(meta.tick) ? meta.tick : undefined,
     time: finiteNumber(meta.time) ? meta.time : undefined,
     factoryLevel: finiteNumber(save.metadata.factoryLevel) ? save.metadata.factoryLevel : undefined,
+    productionPoints: finiteNumber(save.metadata.productionPoints)
+      ? save.metadata.productionPoints
+      : finiteNumber(store.productionPoints)
+        ? store.productionPoints
+        : undefined,
     structureCount: structures.length,
+    resources: isRecord(save.metadata.resources)
+      ? (save.metadata.resources as Record<string, number>)
+      : undefined,
   } satisfies SaveExplorerMetadata;
 
   return {

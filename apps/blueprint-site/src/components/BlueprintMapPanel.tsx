@@ -26,7 +26,6 @@ type BlueprintMapPanelProps = {
   onShowPngBackgroundChange: (value: boolean) => void;
   showFilters?: boolean;
   onShowFiltersChange?: (value: boolean) => void;
-  onLoadBlueprint: (blueprint: Blueprint) => void;
 };
 
 type PolicyTesterSelection = "legacy" | FitPolicyPreset;
@@ -52,7 +51,6 @@ export function BlueprintMapPanel({
   onShowPngBackgroundChange,
   showFilters = false,
   onShowFiltersChange,
-  onLoadBlueprint,
 }: BlueprintMapPanelProps) {
   const [useLegacyFit, setUseLegacyFit] = useState(false);
   const [policySelection, setPolicySelection] =
@@ -118,7 +116,6 @@ export function BlueprintMapPanel({
           showGrid={showGrid}
           showPngBackground={showPngBackground}
           showFilters={showFilters}
-          onLoadBlueprint={onLoadBlueprint}
           fitPolicy={
             !useLegacyFit
               ? policySelection === "legacy"

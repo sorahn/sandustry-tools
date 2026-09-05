@@ -36,8 +36,9 @@ import {
   snapMapZoom,
   createBlueprintMapModel,
 } from "../utils/blueprint-map";
-import { writeStorageValue, writeStoredBoolean } from "../utils/storage";
+import { readStoredBoolean, writeStorageValue, writeStoredBoolean } from "../utils/storage";
 import {
+  HIGHLIGHT_MATCHING_FILTERS_KEY,
   SAVED_MAP_VIEW_KEY,
   SHOW_CUSTOM_SHAPES_KEY,
   SHOW_DEBUG_CELLS_KEY,
@@ -68,7 +69,6 @@ export function BlueprintMap({
   showGrid,
   showPngBackground,
   showFilters = false,
-  onLoadBlueprint,
   captureOnly,
   showDebugOptions = true,
   fitPolicy,
@@ -86,7 +86,6 @@ export function BlueprintMap({
   showGrid: boolean;
   showPngBackground: boolean;
   showFilters?: boolean;
-  onLoadBlueprint: (blueprint: Blueprint) => void;
   captureOnly?: boolean;
   showDebugOptions?: boolean;
   fitPolicy?: FitPolicy;
@@ -372,10 +371,29 @@ export function BlueprintMap({
     return { filterClusters: clusters, filterClusterByStructureIndex: byIndex };
   }, [preparedBlueprint]);
 
+  const [highlightMatchingFilters, setHighlightMatchingFilters] = useState(() =>
+    readStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, false),
+  );
+  const handleHighlightMatchingFiltersChange = (value: boolean) => {
+    setHighlightMatchingFilters(value);
+    writeStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, value);
+  };
+
   const activeFilterCluster = useMemo(() => {
     if (selectedIndex === null) return null;
     return filterClusterByStructureIndex.get(selectedIndex) ?? null;
   }, [filterClusterByStructureIndex, selectedIndex]);
+
+  const matchingFilterClusters = useMemo(() => {
+    if (!activeFilterCluster) return [];
+    return filterClusters.filter(
+      (cluster) => cluster.filterConfigKey === activeFilterCluster.filterConfigKey,
+    );
+  }, [filterClusters, activeFilterCluster]);
+
+  const matchingFiltersCount = useMemo(() => {
+    return matchingFilterClusters.reduce((sum, cluster) => sum + cluster.members.length, 0);
+  }, [matchingFilterClusters]);
 
   const shouldRenderFilterOverlay = showFilters || activeFilterCluster !== null;
   const filterOverlayLabelScale = shouldRenderFilterOverlay ? 1 / zoom : 1;
@@ -408,6 +426,20 @@ export function BlueprintMap({
 
   const filterOverlayMarkup = useMemo(() => {
     if (!shouldRenderFilterOverlay) return "";
+
+    const clustersToRender = showFilters
+      ? filterClusters
+      : highlightMatchingFilters
+        ? matchingFilterClusters
+        : activeFilterCluster
+          ? [activeFilterCluster]
+          : undefined;
+
+    const labelClusterKeys =
+      !showFilters && highlightMatchingFilters && activeFilterCluster
+        ? new Set([activeFilterCluster.key])
+        : undefined;
+
     return renderFilterOverlaySvg(mapModel.preparedBlueprint, {
       minX: mapModel.minX,
       minY: mapModel.minY,
@@ -416,19 +448,18 @@ export function BlueprintMap({
       cell: mapModel.cell,
       labelScale: filterOverlayLabelScale,
       viewport: filterOverlayViewport,
-      clusters: showFilters
-        ? filterClusters
-        : activeFilterCluster
-          ? [activeFilterCluster]
-          : undefined,
-      activeClusterKey: showFilters ? activeFilterCluster?.key : undefined,
+      clusters: clustersToRender,
+      labelClusterKeys,
+      activeClusterKey: activeFilterCluster?.key,
     });
   }, [
     shouldRenderFilterOverlay,
+    showFilters,
+    highlightMatchingFilters,
+    matchingFilterClusters,
     mapModel,
     filterOverlayLabelScale,
     filterOverlayViewport,
-    showFilters,
     filterClusters,
     activeFilterCluster,
   ]);
@@ -469,7 +500,6 @@ export function BlueprintMap({
     onShowRawStructuresChange: setShowRawStructures,
     resetVersion: debugResetVersion,
     onReset: resetDebugOptions,
-    onLoadBlueprint,
     policySelection,
     onPolicySelectionChange,
   });
@@ -958,6 +988,9 @@ export function BlueprintMap({
           totalStructures={blueprint.data.length}
           blueprint={blueprint}
           activeFilterCluster={activeFilterCluster}
+          matchingFiltersCount={activeFilterCluster ? matchingFiltersCount : undefined}
+          highlightMatchingFilters={highlightMatchingFilters}
+          onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
           onClearSelection={() => setSelectedIndex(null)}
           debugOptions={showDebugOptions ? debugOptions : null}
           embedMode={embedMode}

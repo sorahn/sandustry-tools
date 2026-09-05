@@ -13,13 +13,14 @@ export const buttonStyles = {
   solid: cx(styles.solid, "border-[#ffe700] bg-[#ffe700] text-black font-bold"),
   quiet: cx(styles.quiet, "border-transparent bg-transparent text-slate-400"),
   danger: "border-red-400 bg-black text-white",
-  compact: "min-h-0 px-1.5 py-0.75 text-[10px]",
+  compact: "min-h-0 px-2 py-0.5 text-[10px] leading-tight",
   noShift: styles.noShift,
 };
 
 type SharedButtonProps = {
   accent?: boolean;
   variant?: "default" | "accent" | "solid" | "quiet" | "danger";
+  compact?: boolean;
   className?: string;
 };
 
@@ -31,6 +32,7 @@ export function Button<T extends ElementType = "button">({
   as,
   accent = false,
   variant,
+  compact = false,
   className = "",
   children,
   ...props
@@ -54,7 +56,13 @@ export function Button<T extends ElementType = "button">({
   return (
     <Component
       {...(isNativeButton ? { type: buttonType } : {})}
-      className={cx(buttonStyles.button, styles.effects, variantClassName, className)}
+      className={cx(
+        styles.effects,
+        "relative left-0 inline-flex items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border font-medium transition-[border-color,left] duration-1000 ease-in-out",
+        compact ? buttonStyles.compact : "min-h-9 px-3.5 py-2 text-xs",
+        variantClassName,
+        className,
+      )}
       {...props}
     >
       {children}

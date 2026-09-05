@@ -49,20 +49,57 @@ describe("worker protocol and concurrency", () => {
     expect(response.id).toBe("job-101");
   });
 
-  test("save explorer response filtering discards superseded decodes and stale errors", () => {
+  test("rendered and inspection responses do not carry the client document", () => {
+    const rendered: SaveWorkerResponse = {
+      id: 7,
+      type: "rendered",
+      raster: { width: 1, height: 1, pixels: new ArrayBuffer(4) },
+    };
+    const inspection: SaveWorkerResponse = {
+      id: 8,
+      type: "inspection",
+      inspection: undefined,
+    };
+
+    expect("document" in rendered).toBe(false);
+    expect("document" in inspection).toBe(false);
+    expect("payload" in rendered).toBe(false);
+    expect("payload" in inspection).toBe(false);
+  });
+
+  test("encoded responses carry only the requested blueprint string", () => {
+    const response: SaveWorkerResponse = {
+      id: 9,
+      type: "encoded",
+      blueprintId: "bp-1",
+      encoded: "SAND:BP:v2:test",
+    };
+    expect(response).toEqual({
+      id: 9,
+      type: "encoded",
+      blueprintId: "bp-1",
+      encoded: "SAND:BP:v2:test",
+    });
+    expect("document" in response).toBe(false);
+  });
+
+  test("save explorer accepts the active decode while a later render is pending", () => {
     let activeDecodeId = 5;
     let latestRenderId = 5;
     let currentDocument: string | null = "valid-document";
 
     const handleResponse = (response: {
       id: number;
-      type: "result" | "error";
+      type: "decoded" | "rendered" | "error";
       message?: string;
     }) => {
-      // Discard older results or errors
-      if (response.id < activeDecodeId || response.id < latestRenderId) {
-        return; // discarded!
+      if (response.type === "decoded") {
+        if (response.id !== activeDecodeId) return;
+        currentDocument = "new-document";
+        return;
       }
+
+      if (response.id !== latestRenderId || response.id < activeDecodeId) return;
       if (response.type === "error") {
         currentDocument = null;
       } else {
@@ -74,16 +111,20 @@ describe("worker protocol and concurrency", () => {
     handleResponse({ id: 4, type: "error", message: "Failed decode" });
     expect(currentDocument).toBe("valid-document"); // Preserved!
 
-    // Successful completion of current request (id 5)
-    handleResponse({ id: 5, type: "result" });
+    // A new decode starts, followed by a layer render before decoding completes.
+    activeDecodeId = 6;
+    latestRenderId = 7;
+
+    // The active decode must still install its document despite the newer render ID.
+    handleResponse({ id: 6, type: "decoded" });
     expect(currentDocument).toBe("new-document");
 
-    // Start request 6
-    activeDecodeId = 6;
-    latestRenderId = 6;
+    // Delayed responses from the preceding document remain ignored.
+    handleResponse({ id: 5, type: "rendered" });
+    expect(currentDocument).toBe("new-document");
 
-    // Delayed arrival of request 5 result does not overwrite request 6
-    handleResponse({ id: 5, type: "result" });
+    // The render associated with the current document is accepted.
+    handleResponse({ id: 7, type: "rendered" });
     expect(currentDocument).toBe("new-document");
   });
 

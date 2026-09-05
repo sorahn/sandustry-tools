@@ -1,6 +1,7 @@
 import cx from "clsx";
 import { Button, Checkbox, MetadataRow, SaveSlotCard, StatusIndicator } from "@sandustry/ui";
-import type { SaveExplorerDocument } from "@sandustry/save-core";
+import type { SaveBlueprintSummary, SaveExplorerClientDocument } from "@sandustry/save-core";
+import { extractCurrencies, formatPlaytime } from "../utils/save-db";
 
 export type SaveExplorerLayers = {
   terrain: boolean;
@@ -14,34 +15,38 @@ export type SaveExplorerLayers = {
 };
 
 type SaveExplorerSidebarProps = {
-  document: SaveExplorerDocument | null;
+  document: SaveExplorerClientDocument | null;
   busy: boolean;
   message: string;
   remember: boolean;
-  hasCurrentSave: boolean;
   layers: SaveExplorerLayers;
   customCursor: boolean;
-  onRemember: () => void;
   onLayerChange: (layer: keyof SaveExplorerLayers, checked: boolean) => void;
+  onRemember: () => void;
   onCustomCursorChange: (checked: boolean) => void;
+  onInspectBlueprint: (blueprintId: string) => void;
+  onCopyBlueprint: (blueprintId: string) => void;
   className?: string;
 };
 
-function formatPlayTime(seconds?: number) {
-  if (seconds === undefined) return "—";
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours.toLocaleString()}h ${minutes}m`;
-}
-
-function Metadata({ document }: { document: SaveExplorerDocument }) {
+function Metadata({ document }: { document: SaveExplorerClientDocument }) {
+  const currencies = extractCurrencies(document.metadata.resources);
   return (
     <div className="space-y-3">
       <SaveSlotCard
         title={document.metadata.worldName || "unnamed"}
-        tag={document.metadata.gameVersion ? `v${document.metadata.gameVersion}` : undefined}
-        playtime={formatPlayTime(document.metadata.playTime)}
-        structures={document.structures.length}
+        tag={
+          document.metadata.saveName ||
+          (document.metadata.gameVersion ? `v${document.metadata.gameVersion}` : undefined)
+        }
+        timestamp={
+          document.metadata.timestamp ? document.metadata.timestamp.slice(0, 10) : undefined
+        }
+        level={document.metadata.factoryLevel}
+        playtime={formatPlaytime(document.metadata.playTime) || "—"}
+        structures={document.structureCount}
+        productionPoints={document.metadata.productionPoints}
+        currencies={currencies}
       />
       <MetadataRow
         items={[
@@ -62,12 +67,13 @@ export function SaveExplorerSidebar({
   busy,
   message,
   remember,
-  hasCurrentSave,
   layers,
   customCursor,
-  onRemember,
   onLayerChange,
+  onRemember,
   onCustomCursorChange,
+  onInspectBlueprint,
+  onCopyBlueprint,
   className = "",
 }: SaveExplorerSidebarProps) {
   return (
@@ -81,13 +87,8 @@ export function SaveExplorerSidebar({
             tone={document ? "online" : busy ? "warning" : "neutral"}
             label={busy ? "processing" : document ? "decoded" : "waiting"}
           />
-          <Button
-            type="button"
-            onClick={onRemember}
-            disabled={!remember && !hasCurrentSave}
-            aria-pressed={remember}
-          >
-            {remember ? "Forget save" : "Remember save"}
+          <Button type="button" aria-pressed={remember} onClick={onRemember} disabled={busy}>
+            {remember ? "Remembering saves" : "Remember saves"}
           </Button>
         </div>
         <p className="text-xs leading-5 text-slate-500">{message}</p>
@@ -100,6 +101,10 @@ export function SaveExplorerSidebar({
           </h3>
           <Metadata document={document} />
         </section>
+      ) : null}
+
+      {document ? (
+        <Blueprints document={document} onInspect={onInspectBlueprint} onCopy={onCopyBlueprint} />
       ) : null}
 
       <section className="space-y-2.5 p-4 text-xs">
@@ -126,6 +131,7 @@ export function SaveExplorerSidebar({
                         : layer
                 }
                 checked={layers[layer]}
+                disabled={busy}
                 onChange={(event) => onLayerChange(layer, event.target.checked)}
               />
             ))}
@@ -135,6 +141,7 @@ export function SaveExplorerSidebar({
               size="small"
               label="custom cursor"
               checked={customCursor}
+              disabled={busy}
               onChange={(event) => onCustomCursorChange(event.target.checked)}
             />
           ) : null}
@@ -152,5 +159,79 @@ export function SaveExplorerSidebar({
         <p>○ cell inspection</p>
       </section>
     </div>
+  );
+}
+
+function Blueprints({
+  document,
+  onInspect,
+  onCopy,
+}: {
+  document: SaveExplorerClientDocument;
+  onInspect: (blueprintId: string) => void;
+  onCopy: (blueprintId: string) => void;
+}) {
+  return (
+    <section className="space-y-3 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
+          Blueprints
+        </h3>
+        <span className="font-mono text-[10px] text-slate-500">{document.blueprints.length}</span>
+      </div>
+      {document.blueprints.length ? (
+        <div className="space-y-3">
+          {document.blueprints.map((blueprint) => (
+            <BlueprintEntry
+              key={blueprint.id}
+              blueprint={blueprint}
+              onInspect={onInspect}
+              onCopy={onCopy}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs leading-5 text-slate-500">No valid saved blueprints were found.</p>
+      )}
+    </section>
+  );
+}
+
+function BlueprintEntry({
+  blueprint,
+  onInspect,
+  onCopy,
+}: {
+  blueprint: SaveBlueprintSummary;
+  onInspect: (blueprintId: string) => void;
+  onCopy: (blueprintId: string) => void;
+}) {
+  return (
+    <article className="space-y-2 rounded border border-slate-800 bg-slate-950/40 p-2.5">
+      <div className="min-w-0">
+        <p className="truncate text-xs text-slate-200" title={blueprint.name}>
+          {blueprint.name}
+        </p>
+        <p className="text-[11px] text-slate-500">
+          {blueprint.structureCount} structure{blueprint.structureCount === 1 ? "" : "s"}
+          {blueprint.createdAt !== undefined
+            ? ` · ${new Date(blueprint.createdAt).toLocaleDateString()}`
+            : ""}
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" className="text-[11px]" onClick={() => onInspect(blueprint.id)}>
+          Inspect
+        </Button>
+        <Button
+          type="button"
+          className="text-[11px]"
+          variant="quiet"
+          onClick={() => onCopy(blueprint.id)}
+        >
+          Copy string
+        </Button>
+      </div>
+    </article>
   );
 }

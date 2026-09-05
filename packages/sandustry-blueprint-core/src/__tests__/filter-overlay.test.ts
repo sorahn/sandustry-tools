@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, test } from "bun:test";
 import {
+  canonicalizeFilterConfig,
   canonicalizeFilterSignature,
   clusterFilterStructures,
   layoutFilterLabels,
@@ -110,6 +111,52 @@ describe("filter-overlay", () => {
         data: { filterPassThrough: true },
       });
       assert.equal(sig, "filterRightMk2_block_1_3,4_5_1_1_11_1");
+    });
+  });
+
+  describe("config canonicalization", () => {
+    test("matches identical configurations across different filter types and orientations", () => {
+      const leftFilter = {
+        type: 17, // filterLeft
+        x: 0,
+        y: 0,
+        filter: { mode: "allow" as const, elementType: [1, 2] },
+      };
+      const rightFilter = {
+        type: 18, // filterRight
+        x: 10,
+        y: 0,
+        filter: { mode: "allow" as const, elementType: [2, 1] },
+      };
+      const wallFilter = {
+        type: "filterWallMk2",
+        x: 20,
+        y: 20,
+        filter: { mode: "allow" as const, elementType: [1, 2] },
+      };
+
+      const keyLeft = canonicalizeFilterConfig(leftFilter);
+      const keyRight = canonicalizeFilterConfig(rightFilter);
+      const keyWall = canonicalizeFilterConfig(wallFilter);
+
+      assert.equal(keyLeft, keyRight);
+      assert.equal(keyLeft, keyWall);
+    });
+
+    test("distinguishes different modes or element lists", () => {
+      const allowConfig = canonicalizeFilterConfig({
+        type: 17,
+        x: 0,
+        y: 0,
+        filter: { mode: "allow", elementType: 1 },
+      });
+      const blockConfig = canonicalizeFilterConfig({
+        type: 17,
+        x: 0,
+        y: 0,
+        filter: { mode: "block", elementType: 1 },
+      });
+      assert.notEqual(allowConfig, blockConfig);
     });
   });
 
@@ -393,6 +440,40 @@ describe("filter-overlay", () => {
       assert.ok(activeSvg.includes("blueprint-filter-chip is-active"));
       // Only the active cluster has is-active (1 for boundary, 1 for chip)
       assert.equal(activeSvg.split("is-active").length - 1, 2);
+    });
+
+    test("selectively renders labels only for clusters in labelClusterKeys while drawing all boundaries", () => {
+      const blueprint: Blueprint = {
+        name: "test",
+        signalLinks: null,
+        data: [
+          { type: 18, x: 0, y: 0, filter: { mode: "allow", elementType: 1 } },
+          { type: 18, x: 100, y: 100, filter: { mode: "allow", elementType: 1 } },
+        ],
+      };
+      const prepared = prepareBlueprint(blueprint);
+      const clusters = clusterFilterStructures(prepared.preparedStructures);
+      assert.equal(clusters.length, 2);
+
+      const selectiveSvg = renderFilterOverlaySvg(prepared, {
+        minX: 0,
+        minY: 0,
+        padding: 4,
+        paddingX: 4,
+        cell: 8,
+        clusters,
+        labelClusterKeys: new Set([clusters[0].key]),
+        activeClusterKey: clusters[0].key,
+      });
+
+      // Both clusters have boundary rectangles
+      assert.equal((selectiveSvg.match(/stroke-dasharray="4 3"/g) || []).length, 2);
+      // Both clusters have the translucent fill tint
+      assert.ok(selectiveSvg.includes('fill="rgba(0, 255, 71, 0.18)"'));
+      // Only 1 label chip is rendered
+      assert.equal((selectiveSvg.match(/blueprint-filter-chip/g) || []).length, 1);
+      // Active cluster highlight is present
+      assert.ok(selectiveSvg.includes("blueprint-filter-boundary is-active"));
     });
   });
 

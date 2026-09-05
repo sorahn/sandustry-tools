@@ -51,12 +51,15 @@ export type DamagedTerrainValue = {
 
 export {
   normalizeSaveDocument,
+  toSaveExplorerClientDocument,
   createSaveExplorerTileIndex,
   classifySaveExplorerMatrixValue,
   SAVE_EXPLORER_DOCUMENT_VERSION,
   type NormalizeSaveOptions,
   type SaveExplorerDiagnostic,
   type SaveExplorerDocument,
+  type SaveExplorerClientDocument,
+  type SaveBlueprintSummary,
   type SaveExplorerElement,
   type SaveExplorerCellKind,
   type SaveExplorerLayer,
@@ -67,6 +70,15 @@ export {
   type SaveExplorerTileIndex,
   type SaveExplorerWorld,
 } from "./model";
+
+export {
+  extractSavedBlueprints,
+  type ExtractedSaveBlueprints,
+  type SaveBlueprintRecord,
+  type SaveBlueprintSignalLink,
+  type SaveBlueprintStructure,
+  type SaveBlueprintType,
+} from "./blueprints";
 
 export {
   createSaveExplorerViewport,
@@ -90,7 +102,11 @@ export {
   type SaveExplorerRenderLayer,
 } from "./layers";
 
-export { inspectSaveExplorerCell, type SaveExplorerCellInspection } from "./inspection";
+export {
+  inspectSaveExplorerCell,
+  inspectPreparedSaveExplorerCell,
+  type SaveExplorerCellInspection,
+} from "./inspection";
 
 export {
   saveExplorerCellName,
@@ -206,7 +222,11 @@ export {
   MINIMAP_CELL_SIZE,
   SKY_COLOR,
   renderMinimapRgba,
+  prepareSaveExplorerRenderState,
+  composeSaveExplorerMinimap,
   type MinimapRaster,
   type MinimapRenderOptions,
   type RgbaColor,
+  type PreparedSaveExplorerRenderState,
+  type PreparedMinimapStructure,
 } from "./minimap";

@@ -95,6 +95,34 @@ export function canonicalizeFilterSignature(
   ].join("_");
 }
 
+export function canonicalizeFilterConfig(structure: BlueprintStructure): string {
+  const filter = structure.filter;
+  if (!filter) return "none";
+
+  const elementTypes = normalizeElementList(filter.elementType);
+  const hasElementType = elementTypes.length > 0;
+  const speedExempt = normalizeElementList(
+    filter.speedExemptElementType ?? filter.speedExemptElementTypes,
+  );
+  const density =
+    filter.density !== undefined && filter.density !== null ? String(filter.density) : "";
+  const affectsLiquid = filter.affectsLiquid ? 1 : 0;
+  const affectsGas = filter.affectsGas ? 1 : 0;
+  const data = structure.data as Record<string, unknown> | undefined;
+  const passThrough = data?.filterPassThrough ? 1 : 0;
+
+  return [
+    filter.mode === "block" ? "block" : "allow",
+    hasElementType ? 1 : 0,
+    elementTypes.join(","),
+    density,
+    affectsLiquid,
+    affectsGas,
+    speedExempt.join(","),
+    passThrough,
+  ].join("_");
+}
+
 export type FilterClusterItem = {
   id?: number | string;
   name: string;
@@ -106,6 +134,7 @@ export type FilterOverlayCluster = {
   key: string;
   structureType: BlueprintType;
   filterSignature: string;
+  filterConfigKey: string;
   minCellX: number;
   minCellY: number;
   maxCellX: number;
@@ -201,6 +230,7 @@ export function clusterFilterStructures(
         key: `v_${cellX}_${minCellY}_${structure.type}`,
         structureType: structure.type,
         filterSignature: canonicalizeFilterSignature(structure),
+        filterConfigKey: canonicalizeFilterConfig(structure),
         minCellX: cellX,
         minCellY,
         maxCellX: cellX,
@@ -227,6 +257,7 @@ export function clusterFilterStructures(
         key: `h_${minCellX}_${cellY}_${structure.type}`,
         structureType: structure.type,
         filterSignature: canonicalizeFilterSignature(structure),
+        filterConfigKey: canonicalizeFilterConfig(structure),
         minCellX,
         minCellY: cellY,
         maxCellX,
@@ -470,6 +501,10 @@ const DASHED_COLOR_ALLOW = "rgba(0, 255, 71, 0.8)";
 const DASHED_COLOR_BLOCK = "rgba(239, 68, 68, 0.8)";
 const DASHED_COLOR_NONE = "rgba(102, 102, 102, 0.8)";
 
+const FILL_COLOR_ALLOW = "rgba(0, 255, 71, 0.18)";
+const FILL_COLOR_BLOCK = "rgba(239, 68, 68, 0.18)";
+const FILL_COLOR_NONE = "rgba(102, 102, 102, 0.15)";
+
 function renderArrowDown(x: number, y: number, color: string): string {
   return `<svg x="${numberFormat(x)}" y="${numberFormat(y)}" width="16" height="16" viewBox="0 0 20 20" fill="${color}"><path fill-rule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v10.638l3.96-4.158a.75.75 0 1 1 1.08 1.04l-5.25 5.5a.75.75 0 0 1-1.08 0l-5.25-5.5a.75.75 0 1 1 1.08-1.04l3.96 4.158V3.75A.75.75 0 0 1 10 3Z" clip-rule="evenodd"/></svg>`;
 }
@@ -640,6 +675,8 @@ export type RenderFilterOverlaySvgOptions = {
   clusters?: FilterOverlayCluster[];
   /** Optional active cluster key to highlight and render on top. */
   activeClusterKey?: string;
+  /** Optional subset of cluster keys to render labels for. If omitted, labels are rendered for all clusters. */
+  labelClusterKeys?: Set<string> | string[];
 };
 
 export function renderFilterOverlaySvg(
@@ -658,7 +695,17 @@ export function renderFilterOverlaySvg(
 
   if (clusters.length === 0) return "";
 
-  const labels = layoutFilterLabels(clusters, {
+  const labelClusterKeys = options.labelClusterKeys
+    ? options.labelClusterKeys instanceof Set
+      ? options.labelClusterKeys
+      : new Set(options.labelClusterKeys)
+    : undefined;
+
+  const labelClusters = labelClusterKeys
+    ? clusters.filter((cluster) => labelClusterKeys.has(cluster.key))
+    : clusters;
+
+  const labels = layoutFilterLabels(labelClusters, {
     minX,
     minY,
     padding,
@@ -697,11 +744,17 @@ export function renderFilterOverlaySvg(
         ? DASHED_COLOR_BLOCK
         : DASHED_COLOR_ALLOW;
 
+    const fillColor = !c.hasFilter
+      ? FILL_COLOR_NONE
+      : c.mode === "block"
+        ? FILL_COLOR_BLOCK
+        : FILL_COLOR_ALLOW;
+
     const isActive = activeKey !== undefined && c.key === activeKey;
     if (isActive) {
-      activeBoundarySvg += `<rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.8"/><rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="none" stroke="${boxColor}" stroke-width="2.5" stroke-dasharray="4 3" class="blueprint-filter-boundary is-active"/>`;
+      activeBoundarySvg += `<rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="${fillColor}" stroke="#ffffff" stroke-width="4" stroke-opacity="0.8"/><rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="none" stroke="${boxColor}" stroke-width="2.5" stroke-dasharray="4 3" class="blueprint-filter-boundary is-active"/>`;
     } else {
-      boundariesSvg += `<rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="none" stroke="${boxColor}" stroke-width="2" stroke-dasharray="4 3"/>`;
+      boundariesSvg += `<rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="${fillColor}" stroke="${boxColor}" stroke-width="2" stroke-dasharray="4 3"/>`;
     }
   }
   boundariesSvg += activeBoundarySvg + "</g>";

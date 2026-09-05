@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BlueprintMapSidebar } from "../BlueprintMapSidebar";
 import type { Blueprint } from "../../utils/blueprint";
+import { prepareBlueprint, clusterFilterStructures } from "@daryl.roberts/sandustry-blueprint-core";
 
 describe("BlueprintMapSidebar", () => {
   test("renders prompt when no structure is selected", () => {
@@ -72,6 +73,46 @@ describe("BlueprintMapSidebar", () => {
 
     // Collapsible raw record
     expect(html).toContain("Raw Record (JSON)");
+  });
+
+  test("renders cluster info and highlight matching filters checkbox", () => {
+    const blueprint: Blueprint = {
+      name: "Test blueprint",
+      data: [
+        {
+          type: "filterWall",
+          x: 10,
+          y: 20,
+          filter: {
+            mode: "allow",
+            elementType: 1,
+          },
+        },
+      ],
+      signalLinks: [],
+    };
+
+    const prepared = prepareBlueprint(blueprint);
+    const clusters = clusterFilterStructures(prepared.preparedStructures);
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        totalStructures={1}
+        blueprint={blueprint}
+        activeFilterCluster={clusters[0]}
+        matchingFiltersCount={6}
+        highlightMatchingFilters={true}
+        debugOptions={null}
+      />,
+    );
+
+    expect(html).toContain("Cluster:");
+    expect(html).toContain("1");
+    expect(html).toContain("vertical filter unit");
+    expect(html).toContain("Highlight matching filters");
+    expect(html).toContain("(6)");
   });
 
   test("renders Infinite Source output element from data", () => {

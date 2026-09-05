@@ -963,7 +963,7 @@ export function ComponentsPage() {
                   level={12}
                   playtime="18h 42m"
                   structures={1420}
-                  rate="482/s"
+                  productionPoints={296032}
                   currencies={{ credits: 152000, fluxite: 8400 }}
                   selected={selectedSave === "exit"}
                   onClick={() => setSelectedSave("exit")}

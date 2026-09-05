@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   MinimapRenderOptions,
   SaveExplorerCellInspection,
-  SaveExplorerDocument,
+  SaveExplorerClientDocument,
 } from "@sandustry/save-core";
 import { PageHeader } from "../components/PageHeader";
 import { SplitPane } from "@sandustry/ui";
@@ -13,11 +13,41 @@ import {
   type ExplorerView,
 } from "../components/SaveExplorerMapPanel";
 import { SaveExplorerSidebar, type SaveExplorerLayers } from "../components/SaveExplorerSidebar";
+import { readRememberedSave } from "../utils/save-storage";
 import { readStorageValue, writeStoredBoolean } from "../utils/storage";
-import { forgetRememberedSave, readRememberedSave, rememberSave } from "../utils/save-storage";
 import { REMEMBER_SAVE_EXPLORER_KEY } from "../utils/storage-keys";
+import {
+  getSavedGameBytes,
+  listSavedGames,
+  migrateLegacyRememberedSave,
+  readActiveSaveId,
+  storeSave,
+  subscribeToSaveDatabase,
+  type StoredSaveSummary,
+} from "../utils/save-db";
+import { copyToClipboard } from "../utils/clipboard";
 
 import type { SaveWorkerResponse } from "../save-worker";
+
+function storedSummary(document: SaveExplorerClientDocument, fileName: string): StoredSaveSummary {
+  return {
+    id: document.metadata.saveId,
+    fileName,
+    saveName: document.metadata.saveName,
+    worldName: document.metadata.worldName,
+    playTime: document.metadata.playTime,
+    saveTimestamp: document.metadata.timestamp,
+    storedAt: new Date().toISOString(),
+    gameVersion: document.metadata.gameVersion,
+    factoryLevel: document.metadata.factoryLevel,
+    productionPoints: document.metadata.productionPoints,
+    resources: document.metadata.resources,
+    structureCount: document.structureCount,
+    blueprintCount: document.blueprints.length,
+    byteLength: 0,
+    blueprints: document.blueprints,
+  };
+}
 
 export function SaveExplorerPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,17 +61,21 @@ export function SaveExplorerPage() {
   const activeDecodeIdRef = useRef(0);
   const latestInspectIdRef = useRef(0);
   const latestRenderIdRef = useRef(0);
-  const [document, setDocument] = useState<SaveExplorerDocument | null>(null);
+  const latestEncodeIdRef = useRef(0);
+  const loadIntentRef = useRef(0);
+  const pendingInspectRef = useRef<{ mapX: number; mapY: number } | null>(null);
+  const inspectFrameRef = useRef<number | null>(null);
+  const [document, setDocument] = useState<SaveExplorerClientDocument | null>(null);
   const [raster, setRaster] = useState<ExplorerRaster | null>(null);
   const [inspection, setInspection] = useState<SaveExplorerCellInspection | null>(null);
   const [hoverCell, setHoverCell] = useState<{ mapX: number; mapY: number } | null>(null);
   const hoverCellRef = useRef<{ mapX: number; mapY: number } | null>(null);
   const [message, setMessage] = useState("Drop a .save file here to begin.");
   const [busy, setBusy] = useState(false);
-  const [dragging, setDragging] = useState(false);
   const [remember, setRemember] = useState(
     () => readStorageValue(REMEMBER_SAVE_EXPLORER_KEY) === "true",
   );
+  const [dragging, setDragging] = useState(false);
   const [layers, setLayers] = useState<SaveExplorerLayers>({
     terrain: true,
     settledElements: true,
@@ -53,7 +87,16 @@ export function SaveExplorerPage() {
     authorization: false,
   });
   const [customCursor, setCustomCursor] = useState(false);
-  const currentSaveRef = useRef<{ bytes: Uint8Array; name: string } | null>(null);
+  const currentSaveRef = useRef<{
+    bytes: Uint8Array;
+    name: string;
+    source: "upload" | "stored" | "legacy";
+    persistOnDecode: boolean;
+  } | null>(null);
+  const activeSaveIdRef = useRef<string | null>(null);
+  const currentSaveIdRef = useRef<string | null>(null);
+  const layersRef = useRef(layers);
+  layersRef.current = layers;
   const [view, setView] = useState<ExplorerView>({ scale: 1, offsetX: 0, offsetY: 0 });
 
   const minimapOptions: MinimapRenderOptions = {
@@ -67,9 +110,15 @@ export function SaveExplorerPage() {
     drawAuthorization: layers.authorization,
   };
 
+  const isFittedRef = useRef(true);
+  const lastSizeRef = useRef({ width: 0, height: 0 });
+  const awaitingSettleRef = useRef(false);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const fitMap = useCallback(() => {
     const frame = mapFrameRef.current;
-    if (!frame || !raster) return;
+    if (!frame || !raster || frame.clientWidth <= 32 || frame.clientHeight <= 32) return;
+    isFittedRef.current = true;
     const scale = Math.max(
       0.25,
       Math.min(
@@ -80,12 +129,31 @@ export function SaveExplorerPage() {
         ),
       ),
     );
-    setView({
-      scale,
-      offsetX: (frame.clientWidth - raster.width * scale) / 2,
-      offsetY: (frame.clientHeight - raster.height * scale) / 2,
+    const nextOffsetX = (frame.clientWidth - raster.width * scale) / 2;
+    const nextOffsetY = (frame.clientHeight - raster.height * scale) / 2;
+    setView((current) => {
+      if (
+        Math.abs(current.scale - scale) < 0.0001 &&
+        Math.abs(current.offsetX - nextOffsetX) < 0.1 &&
+        Math.abs(current.offsetY - nextOffsetY) < 0.1
+      ) {
+        return current;
+      }
+      return {
+        scale,
+        offsetX: nextOffsetX,
+        offsetY: nextOffsetY,
+      };
     });
   }, [raster]);
+
+  const handleViewChange = useCallback(
+    (nextView: ExplorerView | ((current: ExplorerView) => ExplorerView)) => {
+      isFittedRef.current = false;
+      setView(nextView);
+    },
+    [],
+  );
 
   useEffect(() => {
     fitMapRef.current = fitMap;
@@ -99,7 +167,7 @@ export function SaveExplorerPage() {
       const respId = response.id ?? 0;
 
       if (response.type === "inspection") {
-        if (respId < latestInspectIdRef.current) return;
+        if (respId !== latestInspectIdRef.current || respId < activeDecodeIdRef.current) return;
         const current = hoverCellRef.current;
         if (
           response.inspection &&
@@ -110,46 +178,255 @@ export function SaveExplorerPage() {
         return;
       }
 
+      if (response.type === "encoded") {
+        if (respId !== latestEncodeIdRef.current || respId < activeDecodeIdRef.current) return;
+        void copyToClipboard(response.encoded).then((copied) => {
+          if (respId !== latestEncodeIdRef.current || respId < activeDecodeIdRef.current) return;
+          setMessage(
+            copied
+              ? "Blueprint string copied to the clipboard."
+              : "Unable to copy blueprint string.",
+          );
+        });
+        return;
+      }
+
       if (response.type === "error") {
-        if (respId < activeDecodeIdRef.current || respId < latestRenderIdRef.current) {
+        if (response.operation === "inspect") {
+          if (respId === latestInspectIdRef.current && respId >= activeDecodeIdRef.current) {
+            setInspection(null);
+            setMessage(`Unable to inspect cell: ${response.message}`);
+          }
           return;
         }
+        if (response.operation === "encode") {
+          if (respId === latestEncodeIdRef.current && respId >= activeDecodeIdRef.current)
+            setMessage(`Unable to encode blueprint: ${response.message}`);
+          return;
+        }
+        if (response.operation === "decode" && respId !== activeDecodeIdRef.current) return;
+        if (response.operation === "render" && respId !== latestRenderIdRef.current) return;
         setBusy(false);
-        setDocument(null);
-        setRaster(null);
+        if (response.operation === "decode") {
+          setDocument(null);
+          setRaster(null);
+        }
         setMessage(response.message);
         return;
       }
 
-      if (respId < activeDecodeIdRef.current || respId < latestRenderIdRef.current) {
-        return;
+      if (response.type === "rendered") {
+        if (respId !== latestRenderIdRef.current || respId < activeDecodeIdRef.current) return;
+        setBusy(false);
       }
-      setBusy(false);
-      setDocument(response.document);
+      if (response.type === "decoded") {
+        if (respId !== activeDecodeIdRef.current) return;
+        setDocument(response.document);
+        activeSaveIdRef.current = response.document.metadata.saveId;
+        currentSaveIdRef.current = response.document.metadata.saveId;
+        awaitingSettleRef.current = true;
+        if (settleTimerRef.current !== null) {
+          clearTimeout(settleTimerRef.current);
+        }
+        settleTimerRef.current = setTimeout(() => {
+          settleTimerRef.current = null;
+          awaitingSettleRef.current = false;
+          fitMapRef.current();
+          requestAnimationFrame(() => {
+            setBusy(false);
+          });
+        }, 200);
+      }
       setRaster({
         width: response.raster.width,
         height: response.raster.height,
         pixels: new Uint8ClampedArray(response.raster.pixels),
       });
-      setMessage("Save decoded. This first view is a native-style minimap raster.");
+      setMessage(
+        response.type === "decoded"
+          ? "Save decoded. This first view is a native-style minimap raster."
+          : "Minimap layer updated.",
+      );
+      if (response.type === "decoded" && currentSaveRef.current) {
+        const current = currentSaveRef.current;
+        const summary = storedSummary(response.document, current.name);
+        summary.byteLength = current.bytes.byteLength;
+        if (current.source === "legacy") {
+          void migrateLegacyRememberedSave(current.bytes, summary).then((result) => {
+            if (activeDecodeIdRef.current !== respId) return;
+            if (!result.ok)
+              setMessage(`Save decoded, but migration failed: ${result.error.message}`);
+            else current.persistOnDecode = false;
+          });
+        } else if (current.persistOnDecode) {
+          void storeSave(current.bytes, summary).then((result) => {
+            if (activeDecodeIdRef.current !== respId) return;
+            if (!result.ok) setMessage(`Save decoded, but saving failed: ${result.error.message}`);
+            else current.persistOnDecode = false;
+          });
+        }
+      }
     };
     worker.onerror = () => {
       setBusy(false);
       setMessage("The save worker stopped unexpectedly.");
     };
-    if (remember) {
-      const saved = readRememberedSave();
-      if (saved) {
-        currentSaveRef.current = { bytes: saved.bytes.slice(), name: saved.name };
+    let disposed = false;
+    void (async () => {
+      const intent = ++loadIntentRef.current;
+      let saved:
+        | {
+            bytes: Uint8Array;
+            name: string;
+            saveId?: string;
+            source: "stored" | "legacy";
+          }
+        | undefined;
+      const legacy = readRememberedSave();
+      if (legacy) {
+        saved = { bytes: legacy.bytes.slice(), name: legacy.name, source: "legacy" };
+      } else {
+        const listed = await listSavedGames();
+        if (disposed || intent !== loadIntentRef.current) return;
+        if (listed.ok && listed.value.length > 0) {
+          const sorted = listed.value.slice().sort((a, b) => b.storedAt.localeCompare(a.storedAt));
+          const activeId = readActiveSaveId();
+          const summary = sorted.find((candidate) => candidate.id === activeId) ?? sorted[0];
+          const bytes = await getSavedGameBytes(summary.id);
+          if (disposed || intent !== loadIntentRef.current) return;
+          if (bytes.ok)
+            saved = {
+              bytes: bytes.value,
+              name: summary.fileName,
+              saveId: summary.id,
+              source: "stored",
+            };
+          else setMessage(bytes.error.message);
+        } else if (!listed.ok) {
+          setMessage(listed.error.message);
+        }
+      }
+      if (disposed || intent !== loadIntentRef.current || !saved) return;
+      activeSaveIdRef.current = saved.saveId ?? null;
+      currentSaveIdRef.current = saved.saveId ?? null;
+      currentSaveRef.current = {
+        bytes: saved.bytes.slice(),
+        name: saved.name,
+        source: saved.source,
+        persistOnDecode: saved.source === "legacy",
+      };
+      setBusy(true);
+      setMessage(`Restoring ${saved.name}…`);
+      awaitingSettleRef.current = true;
+      if (settleTimerRef.current !== null) {
+        clearTimeout(settleTimerRef.current);
+        settleTimerRef.current = null;
+      }
+      fitNextRasterRef.current = true;
+      const reqId = nextRequestIdRef.current++;
+      activeDecodeIdRef.current = reqId;
+      latestRenderIdRef.current = reqId;
+      const bytes = saved.bytes.buffer;
+      worker.postMessage({ id: reqId, type: "decode", bytes, render: minimapOptions }, [bytes]);
+    })();
+    const clearExplorerState = () => {
+      loadIntentRef.current += 1;
+      if (settleTimerRef.current !== null) {
+        clearTimeout(settleTimerRef.current);
+        settleTimerRef.current = null;
+      }
+      awaitingSettleRef.current = false;
+      setBusy(false);
+      fitNextRasterRef.current = false;
+      activeSaveIdRef.current = null;
+      currentSaveIdRef.current = null;
+      currentSaveRef.current = null;
+      setDocument(null);
+      setRaster(null);
+      setInspection(null);
+      setHoverCell(null);
+      cancelQueuedInspect();
+      setMessage("Choose a Sandustry .save file.");
+    };
+    const unsubscribe = subscribeToSaveDatabase(async (event) => {
+      if (disposed) return;
+      if (event.type === "active-save-changed") {
+        if (!event.saveId) {
+          clearExplorerState();
+          return;
+        }
+        if (event.saveId === activeSaveIdRef.current) return;
+        const intent = ++loadIntentRef.current;
+        activeSaveIdRef.current = event.saveId;
+        currentSaveIdRef.current = event.saveId;
         setBusy(true);
-        setMessage(`Restoring ${saved.name}…`);
+        setDocument(null);
+        setInspection(null);
+        setHoverCell(null);
+        cancelQueuedInspect();
+        const bytes = await getSavedGameBytes(event.saveId);
+        if (
+          disposed ||
+          intent !== loadIntentRef.current ||
+          event.saveId !== activeSaveIdRef.current
+        )
+          return;
+        if (!bytes.ok) {
+          setBusy(false);
+          setMessage(bytes.error.message);
+          return;
+        }
+        const listed = await listSavedGames();
+        if (
+          disposed ||
+          intent !== loadIntentRef.current ||
+          event.saveId !== activeSaveIdRef.current
+        )
+          return;
+        const summary = listed.ok ? listed.value.find((s) => s.id === event.saveId) : undefined;
+        const fileName = summary?.fileName ?? "save.save";
+        currentSaveRef.current = {
+          bytes: bytes.value.slice(),
+          name: fileName,
+          source: "stored",
+          persistOnDecode: false,
+        };
+        setMessage(`Restoring ${fileName}…`);
+        awaitingSettleRef.current = true;
+        if (settleTimerRef.current !== null) {
+          clearTimeout(settleTimerRef.current);
+          settleTimerRef.current = null;
+        }
+        fitNextRasterRef.current = true;
         const reqId = nextRequestIdRef.current++;
         activeDecodeIdRef.current = reqId;
-        const bytes = saved.bytes.buffer;
-        worker.postMessage({ id: reqId, type: "decode", bytes, render: minimapOptions }, [bytes]);
+        latestRenderIdRef.current = reqId;
+        const buffer = bytes.value.buffer;
+        const currentLayers = layersRef.current;
+        const renderOpts: MinimapRenderOptions = {
+          drawTerrain: currentLayers.terrain,
+          drawSettledElements: currentLayers.settledElements,
+          drawElements: currentLayers.elements,
+          drawParticles: currentLayers.particles,
+          drawWalls: currentLayers.walls,
+          drawStructures: currentLayers.structures,
+          drawFog: currentLayers.fog,
+          drawAuthorization: currentLayers.authorization,
+        };
+        workerRef.current?.postMessage(
+          { id: reqId, type: "decode", bytes: buffer, render: renderOpts },
+          [buffer],
+        );
+      } else if (event.type === "save-deleted") {
+        if (event.saveId === activeSaveIdRef.current || event.saveId === currentSaveIdRef.current) {
+          clearExplorerState();
+        }
       }
-    }
+    });
     return () => {
+      disposed = true;
+      unsubscribe();
+      if (inspectFrameRef.current !== null) cancelAnimationFrame(inspectFrameRef.current);
       worker.terminate();
       workerRef.current = null;
     };
@@ -163,14 +440,19 @@ export function SaveExplorerPage() {
     const context = canvas.getContext("2d");
     if (!context) return;
     context.imageSmoothingEnabled = false;
-    const imageData = context.createImageData(raster.width, raster.height);
-    imageData.data.set(raster.pixels);
+    let imageData: ImageData;
+    try {
+      imageData = new ImageData(
+        raster.pixels as Uint8ClampedArray<ArrayBuffer>,
+        raster.width,
+        raster.height,
+      );
+    } catch {
+      imageData = context.createImageData(raster.width, raster.height);
+      imageData.data.set(raster.pixels);
+    }
     context.putImageData(imageData, 0, 0);
-  }, [raster]);
-
-  useEffect(() => {
-    if (raster && fitNextRasterRef.current) {
-      fitNextRasterRef.current = false;
+    if (isFittedRef.current) {
       fitMap();
     }
   }, [fitMap, raster]);
@@ -178,9 +460,39 @@ export function SaveExplorerPage() {
   useEffect(() => {
     const frame = mapFrameRef.current;
     if (!frame) return;
-    const observer = new ResizeObserver(() => fitMapRef.current());
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      if (width === lastSizeRef.current.width && height === lastSizeRef.current.height) {
+        return;
+      }
+      lastSizeRef.current = { width, height };
+      if (isFittedRef.current) {
+        fitMapRef.current();
+      }
+      if (awaitingSettleRef.current) {
+        if (settleTimerRef.current !== null) {
+          clearTimeout(settleTimerRef.current);
+        }
+        settleTimerRef.current = setTimeout(() => {
+          settleTimerRef.current = null;
+          awaitingSettleRef.current = false;
+          fitMapRef.current();
+          requestAnimationFrame(() => {
+            setBusy(false);
+          });
+        }, 200);
+      }
+    });
     observer.observe(frame);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (settleTimerRef.current !== null) {
+        clearTimeout(settleTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -197,16 +509,39 @@ export function SaveExplorerPage() {
       setMessage("Choose a Sandustry .save file.");
       return;
     }
+    const intent = ++loadIntentRef.current;
+    setBusy(true);
+    setDocument(null);
+    setInspection(null);
+    setHoverCell(null);
+    cancelQueuedInspect();
+    setMessage(`Reading ${file.name}…`);
+    awaitingSettleRef.current = true;
+    if (settleTimerRef.current !== null) {
+      clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+    fitNextRasterRef.current = true;
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(await file.arrayBuffer());
+    } catch (error) {
+      if (intent !== loadIntentRef.current) return;
+      setBusy(false);
+      awaitingSettleRef.current = false;
+      setMessage(error instanceof Error ? error.message : `Unable to read ${file.name}.`);
+      return;
+    }
+    if (intent !== loadIntentRef.current) return;
     const reqId = nextRequestIdRef.current++;
     activeDecodeIdRef.current = reqId;
-    setBusy(true);
-    setMessage(`Reading ${file.name}…`);
-    fitNextRasterRef.current = true;
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    // If a newer decode request was started while reading bytes, discard this one
-    if (reqId < activeDecodeIdRef.current) return;
-    currentSaveRef.current = { bytes: bytes.slice(), name: file.name };
-    if (remember) rememberSave(bytes, file.name);
+    latestRenderIdRef.current = reqId;
+    currentSaveRef.current = {
+      bytes: bytes.slice(),
+      name: file.name,
+      source: "upload",
+      persistOnDecode: remember,
+    };
     workerRef.current?.postMessage(
       { id: reqId, type: "decode", bytes: bytes.buffer, render: minimapOptions },
       [bytes.buffer],
@@ -236,20 +571,52 @@ export function SaveExplorerPage() {
     }
   };
 
-  const toggleRemember = () => {
+  const queueInspect = (mapX: number, mapY: number) => {
+    pendingInspectRef.current = { mapX, mapY };
+    if (inspectFrameRef.current !== null) return;
+    inspectFrameRef.current = requestAnimationFrame(() => {
+      inspectFrameRef.current = null;
+      const cell = pendingInspectRef.current;
+      pendingInspectRef.current = null;
+      if (!cell) return;
+      const reqId = nextRequestIdRef.current++;
+      latestInspectIdRef.current = reqId;
+      workerRef.current?.postMessage({ id: reqId, type: "inspect", ...cell });
+    });
+  };
+
+  const cancelQueuedInspect = () => {
+    pendingInspectRef.current = null;
+    if (inspectFrameRef.current !== null) {
+      cancelAnimationFrame(inspectFrameRef.current);
+      inspectFrameRef.current = null;
+    }
+  };
+
+  const toggleRemember = async () => {
     if (remember) {
       setRemember(false);
       writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, false);
-      forgetRememberedSave();
-      setMessage("Remembered save cleared.");
+      setMessage("New saves will stay in memory unless you remember them explicitly.");
       return;
     }
     const current = currentSaveRef.current;
-    if (!current) return;
-    rememberSave(current.bytes, current.name);
+    if (current && document) {
+      const summary = storedSummary(document, current.name);
+      summary.byteLength = current.bytes.byteLength;
+      setMessage(`Remembering ${current.name}…`);
+      const result = await storeSave(current.bytes, summary);
+      if (!result.ok) {
+        setMessage(`Unable to remember save: ${result.error.message}`);
+        return;
+      }
+      current.persistOnDecode = false;
+    }
     setRemember(true);
     writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, true);
-    setMessage(`${current.name} will be restored on the next visit.`);
+    setMessage(
+      current ? `${current.name} is remembered.` : "Newly opened saves will be remembered.",
+    );
   };
 
   return (
@@ -257,7 +624,7 @@ export function SaveExplorerPage() {
       <PageHeader title="Save Explorer">
         Work in progress: preview the save parser and native-style minimap renderer. This is an
         early read-only explorer, so some game layers, colors, and bundled content are still being
-        resolved. Files stay in this browser session and are processed locally.
+        resolved. Files are processed locally and are stored only when you choose to remember them.
       </PageHeader>
       <SplitPane
         sidebarPosition="end"
@@ -270,12 +637,22 @@ export function SaveExplorerPage() {
             busy={busy}
             message={message}
             remember={remember}
-            hasCurrentSave={Boolean(currentSaveRef.current)}
             layers={layers}
             customCursor={customCursor}
-            onRemember={toggleRemember}
             onLayerChange={updateLayer}
+            onRemember={() => void toggleRemember()}
             onCustomCursorChange={setCustomCursor}
+            onInspectBlueprint={(blueprintId) => {
+              const saveId = encodeURIComponent(document?.metadata.saveId || "");
+              const bpId = encodeURIComponent(blueprintId);
+              window.location.assign(`${import.meta.env.BASE_URL}save/${saveId}/blueprint/${bpId}`);
+            }}
+            onCopyBlueprint={(blueprintId) => {
+              const reqId = nextRequestIdRef.current++;
+              latestEncodeIdRef.current = reqId;
+              workerRef.current?.postMessage({ id: reqId, type: "encode", blueprintId });
+              setMessage("Encoding blueprint string…");
+            }}
           />
         }
       >
@@ -296,22 +673,19 @@ export function SaveExplorerPage() {
           message={message}
           onChooseFile={() => inputRef.current?.click()}
           onFile={decodeFile}
-          onViewChange={setView}
+          onViewChange={handleViewChange}
           onHover={(cell) => {
             setHoverCell(cell);
             setInspection(null);
           }}
           onClearHover={() => {
+            cancelQueuedInspect();
             setHoverCell(null);
             setInspection(null);
           }}
           onDraggingChange={setDragging}
           fitMap={fitMap}
-          onInspect={(mapX, mapY) => {
-            const reqId = nextRequestIdRef.current++;
-            latestInspectIdRef.current = reqId;
-            workerRef.current?.postMessage({ id: reqId, type: "inspect", mapX, mapY });
-          }}
+          onInspect={queueInspect}
         />
       </SplitPane>
     </section>

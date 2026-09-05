@@ -175,7 +175,6 @@ function BlueprintInspectorEmbed() {
           showGrid={showGrid}
           showPngBackground={showPngBackground}
           showFilters={showFilters}
-          onLoadBlueprint={setBlueprint}
           showDebugOptions={false}
           fitPolicy={fitPolicy}
           stickyTop="0px"

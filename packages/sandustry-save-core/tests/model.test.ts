@@ -3,9 +3,12 @@ import {
   decodeBrowserSave,
   classifySaveExplorerMatrixValue,
   inspectSaveExplorerCell,
+  inspectPreparedSaveExplorerCell,
+  prepareSaveExplorerRenderState,
   normalizeSaveDocument,
   createSaveExplorerTileIndex,
   renderMinimapRgba,
+  toSaveExplorerClientDocument,
   saveExplorerElementName,
   saveExplorerStructureName,
   saveExplorerTerrainName,
@@ -78,6 +81,12 @@ test("inspects revealed minimap cells without exposing fogged contents", () => {
     fogValue: 0,
     revealed: false,
   });
+  expect(inspectPreparedSaveExplorerCell(prepareSaveExplorerRenderState(save), 0, 0)).toEqual(
+    inspectSaveExplorerCell(save, 0, 0),
+  );
+  expect(inspectPreparedSaveExplorerCell(prepareSaveExplorerRenderState(save), 1, 0)).toEqual(
+    inspectSaveExplorerCell(save, 1, 0),
+  );
 });
 
 const fixture = (name: string) => Bun.file(new URL(`./visual/saves/${name}`, import.meta.url));
@@ -99,6 +108,25 @@ test("normalizes save metadata, layers, structures, and elements", async () => {
   expect(document.structures).toHaveLength(19858);
   expect(document.elements).toContainEqual({ type: 1 });
   expect(document.diagnostics).toEqual([]);
+});
+
+test("projects a client document without raw save or structure data", async () => {
+  const save = await decodeBrowserSave(await fixture("new-world.save").bytes());
+  const document = normalizeSaveDocument(save);
+  const clientDocument = toSaveExplorerClientDocument(document);
+
+  expect(clientDocument).toMatchObject({
+    documentVersion: 1,
+    structureCount: document.structures.length,
+    elementCount: document.elements.length,
+    layerAvailability: { matrix: true },
+    blueprints: [],
+  });
+  expect("layers" in clientDocument).toBe(false);
+  expect("structures" in clientDocument).toBe(false);
+  expect("elements" in clientDocument).toBe(false);
+  expect("unknown" in clientDocument).toBe(false);
+  expect(JSON.stringify(clientDocument)).not.toContain("payload");
 });
 
 test("reports malformed matrix data and invalid structures", () => {

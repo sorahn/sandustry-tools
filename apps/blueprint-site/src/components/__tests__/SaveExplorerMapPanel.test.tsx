@@ -43,6 +43,22 @@ describe("SaveExplorerMapPanel", () => {
     expect(html).toContain("pointer-events-none");
   });
 
+  test("renders loading overlay when busy is true", () => {
+    const html = renderToStaticMarkup(
+      <SaveExplorerMapPanel {...baseProps} busy={true} message="Rendering full save map…" />,
+    );
+    expect(html).toContain('data-testid="explorer-loading-overlay"');
+    expect(html).toContain("Rendering full save map…");
+    expect(html).toContain("opacity-100");
+  });
+
+  test("does not render loading overlay when busy is false", () => {
+    const html = renderToStaticMarkup(
+      <SaveExplorerMapPanel {...baseProps} busy={false} message="Idle" />,
+    );
+    expect(html).not.toContain('data-testid="explorer-loading-overlay"');
+  });
+
   test("createDragDepthTracker tracks nested drag enters/leaves without prematurely clearing drag state", () => {
     const onDraggingChange = mock(() => {});
     const tracker = createDragDepthTracker(() => onDraggingChange);
