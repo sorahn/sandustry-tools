@@ -177,6 +177,11 @@ The same commands are available from inside a mod directory, without the
 `MOD=` argument. The install destination can be overridden with
 `SANDUSTRY_MODS_DIR=/path/to/sandustry/mods`.
 
+To update the pinned Sandustry mod template from its configured upstream,
+run `npm run template:update`. The command requires a clean template checkout,
+fast-forwards its `main` branch, and stages the parent submodule pointer without
+creating a commit.
+
 Generated `build/` directories and the root `artifacts/` archive directory are
 ignored. Local reference captures under `artifacts/reference/` are not active
 mods and are not packaged.

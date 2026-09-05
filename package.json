@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "catalog:extract": "node scripts/extract-native-catalog.mjs",
+    "template:update": "node scripts/update-sandustry-mod-template.mjs",
     "repo-rag:index": "bun scripts/repo-rag/index.ts index --all",
     "repo-rag:changed": "bun scripts/repo-rag/index.ts index --changed",
     "repo-rag:refresh-docs": "bun scripts/repo-rag/index.ts external refresh",
