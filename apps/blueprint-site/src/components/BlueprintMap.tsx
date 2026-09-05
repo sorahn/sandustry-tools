@@ -415,7 +415,7 @@ export function BlueprintMap({
         : activeFilterCluster
           ? [activeFilterCluster]
           : undefined,
-      activeClusterKey: activeFilterCluster?.key,
+      activeClusterKey: showFilters ? activeFilterCluster?.key : undefined,
     });
   }, [
     shouldRenderFilterOverlay,
