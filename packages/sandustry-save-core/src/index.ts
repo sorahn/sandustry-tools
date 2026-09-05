@@ -51,12 +51,15 @@ export type DamagedTerrainValue = {
 
 export {
   normalizeSaveDocument,
+  toSaveExplorerClientDocument,
   createSaveExplorerTileIndex,
   classifySaveExplorerMatrixValue,
   SAVE_EXPLORER_DOCUMENT_VERSION,
   type NormalizeSaveOptions,
   type SaveExplorerDiagnostic,
   type SaveExplorerDocument,
+  type SaveExplorerClientDocument,
+  type SaveBlueprintSummary,
   type SaveExplorerElement,
   type SaveExplorerCellKind,
   type SaveExplorerLayer,

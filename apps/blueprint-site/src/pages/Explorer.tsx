@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   MinimapRenderOptions,
   SaveExplorerCellInspection,
-  SaveExplorerDocument,
+  SaveExplorerClientDocument,
 } from "@sandustry/save-core";
 import { PageHeader } from "../components/PageHeader";
 import { SplitPane } from "@sandustry/ui";
@@ -31,7 +31,7 @@ export function SaveExplorerPage() {
   const activeDecodeIdRef = useRef(0);
   const latestInspectIdRef = useRef(0);
   const latestRenderIdRef = useRef(0);
-  const [document, setDocument] = useState<SaveExplorerDocument | null>(null);
+  const [document, setDocument] = useState<SaveExplorerClientDocument | null>(null);
   const [raster, setRaster] = useState<ExplorerRaster | null>(null);
   const [inspection, setInspection] = useState<SaveExplorerCellInspection | null>(null);
   const [hoverCell, setHoverCell] = useState<{ mapX: number; mapY: number } | null>(null);
@@ -111,12 +111,18 @@ export function SaveExplorerPage() {
       }
 
       if (response.type === "error") {
-        if (respId < activeDecodeIdRef.current || respId < latestRenderIdRef.current) {
+        if (
+          response.operation === "inspect" ||
+          respId < activeDecodeIdRef.current ||
+          respId < latestRenderIdRef.current
+        ) {
           return;
         }
         setBusy(false);
-        setDocument(null);
-        setRaster(null);
+        if (response.operation === "decode") {
+          setDocument(null);
+          setRaster(null);
+        }
         setMessage(response.message);
         return;
       }
@@ -125,13 +131,17 @@ export function SaveExplorerPage() {
         return;
       }
       setBusy(false);
-      setDocument(response.document);
+      if (response.type === "decoded") setDocument(response.document);
       setRaster({
         width: response.raster.width,
         height: response.raster.height,
         pixels: new Uint8ClampedArray(response.raster.pixels),
       });
-      setMessage("Save decoded. This first view is a native-style minimap raster.");
+      setMessage(
+        response.type === "decoded"
+          ? "Save decoded. This first view is a native-style minimap raster."
+          : "Minimap layer updated.",
+      );
     };
     worker.onerror = () => {
       setBusy(false);

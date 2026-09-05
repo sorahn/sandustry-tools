@@ -110,6 +110,43 @@ export type SaveExplorerDocument = {
   };
 };
 
+export type SaveBlueprintSummary = {
+  id: string;
+  name: string;
+  structureCount: number;
+  createdAt?: number;
+};
+
+/** The intentionally small document shape safe to send from a save worker to the UI. */
+export type SaveExplorerClientDocument = {
+  documentVersion: typeof SAVE_EXPLORER_DOCUMENT_VERSION;
+  metadata: SaveExplorerMetadata;
+  world: SaveExplorerWorld;
+  layerAvailability: Partial<Record<SaveExplorerLayerName, boolean>>;
+  structureCount: number;
+  elementCount: number;
+  diagnostics: SaveExplorerDiagnostic[];
+  blueprints: SaveBlueprintSummary[];
+};
+
+export function toSaveExplorerClientDocument(
+  document: SaveExplorerDocument,
+): SaveExplorerClientDocument {
+  const layerAvailability: Partial<Record<SaveExplorerLayerName, boolean>> = {};
+  for (const name of ["matrix", "wall", "shadow", "authorization"] as const)
+    layerAvailability[name] = document.layers[name] !== undefined;
+  return {
+    documentVersion: document.documentVersion,
+    metadata: document.metadata,
+    world: document.world,
+    layerAvailability,
+    structureCount: document.structures.length,
+    elementCount: document.elements.length,
+    diagnostics: document.diagnostics,
+    blueprints: [],
+  };
+}
+
 export type NormalizeSaveOptions = {
   supportedGameVersions?: readonly string[];
 };

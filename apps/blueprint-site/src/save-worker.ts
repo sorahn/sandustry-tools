@@ -5,10 +5,12 @@ import {
   decodeBrowserSaveDocument,
   inspectSaveExplorerCell,
   renderMinimapRgba,
+  toSaveExplorerClientDocument,
   type MinimapRenderOptions,
   type NormalizeSaveOptions,
   type SaveExplorerCellInspection,
   type SaveExplorerDocument,
+  type SaveExplorerClientDocument,
 } from "@sandustry/save-core";
 
 export type SaveWorkerRequest =
@@ -25,12 +27,22 @@ export type SaveWorkerRequest =
 export type SaveWorkerResponse =
   | {
       id?: number;
-      type: "result";
-      document: SaveExplorerDocument;
+      type: "decoded";
+      document: SaveExplorerClientDocument;
+      raster: { width: number; height: number; pixels: ArrayBuffer };
+    }
+  | {
+      id?: number;
+      type: "rendered";
       raster: { width: number; height: number; pixels: ArrayBuffer };
     }
   | { id?: number; type: "inspection"; inspection?: SaveExplorerCellInspection }
-  | { id?: number; type: "error"; message: string };
+  | {
+      id?: number;
+      type: "error";
+      operation: "decode" | "render" | "inspect";
+      message: string;
+    };
 
 const workerScope = globalThis as unknown as {
   onmessage: ((event: MessageEvent<SaveWorkerRequest>) => void) | null;
@@ -54,6 +66,21 @@ workerScope.onmessage = async ({ data }) => {
       }
       decodedSave = save;
       decodedDocument = doc;
+      const raster = renderMinimapRgba(decodedSave, data.render);
+      workerScope.postMessage(
+        {
+          id: data.id,
+          type: "decoded",
+          document: toSaveExplorerClientDocument(decodedDocument),
+          raster: {
+            width: raster.width,
+            height: raster.height,
+            pixels: raster.pixels.buffer as ArrayBuffer,
+          },
+        },
+        [raster.pixels.buffer],
+      );
+      return;
     }
     if (!decodedSave || !decodedDocument) throw new Error("No save is loaded");
     if (data.type === "inspect") {
@@ -68,8 +95,7 @@ workerScope.onmessage = async ({ data }) => {
     workerScope.postMessage(
       {
         id: data.id,
-        type: "result",
-        document: decodedDocument,
+        type: "rendered",
         raster: {
           width: raster.width,
           height: raster.height,
@@ -82,6 +108,7 @@ workerScope.onmessage = async ({ data }) => {
     workerScope.postMessage({
       id: data.id,
       type: "error",
+      operation: data.type,
       message: error instanceof Error ? error.message : "Unable to decode save",
     });
   }

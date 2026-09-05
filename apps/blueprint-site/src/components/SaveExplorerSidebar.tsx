@@ -1,6 +1,6 @@
 import cx from "clsx";
 import { Button, Checkbox, MetadataRow, SaveSlotCard, StatusIndicator } from "@sandustry/ui";
-import type { SaveExplorerDocument } from "@sandustry/save-core";
+import type { SaveExplorerClientDocument } from "@sandustry/save-core";
 
 export type SaveExplorerLayers = {
   terrain: boolean;
@@ -14,7 +14,7 @@ export type SaveExplorerLayers = {
 };
 
 type SaveExplorerSidebarProps = {
-  document: SaveExplorerDocument | null;
+  document: SaveExplorerClientDocument | null;
   busy: boolean;
   message: string;
   remember: boolean;
@@ -34,14 +34,14 @@ function formatPlayTime(seconds?: number) {
   return `${hours.toLocaleString()}h ${minutes}m`;
 }
 
-function Metadata({ document }: { document: SaveExplorerDocument }) {
+function Metadata({ document }: { document: SaveExplorerClientDocument }) {
   return (
     <div className="space-y-3">
       <SaveSlotCard
         title={document.metadata.worldName || "unnamed"}
         tag={document.metadata.gameVersion ? `v${document.metadata.gameVersion}` : undefined}
         playtime={formatPlayTime(document.metadata.playTime)}
-        structures={document.structures.length}
+        structures={document.structureCount}
       />
       <MetadataRow
         items={[

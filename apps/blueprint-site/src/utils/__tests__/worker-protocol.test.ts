@@ -49,6 +49,24 @@ describe("worker protocol and concurrency", () => {
     expect(response.id).toBe("job-101");
   });
 
+  test("rendered and inspection responses do not carry the client document", () => {
+    const rendered: SaveWorkerResponse = {
+      id: 7,
+      type: "rendered",
+      raster: { width: 1, height: 1, pixels: new ArrayBuffer(4) },
+    };
+    const inspection: SaveWorkerResponse = {
+      id: 8,
+      type: "inspection",
+      inspection: undefined,
+    };
+
+    expect("document" in rendered).toBe(false);
+    expect("document" in inspection).toBe(false);
+    expect("payload" in rendered).toBe(false);
+    expect("payload" in inspection).toBe(false);
+  });
+
   test("save explorer response filtering discards superseded decodes and stale errors", () => {
     let activeDecodeId = 5;
     let latestRenderId = 5;
@@ -56,7 +74,7 @@ describe("worker protocol and concurrency", () => {
 
     const handleResponse = (response: {
       id: number;
-      type: "result" | "error";
+      type: "decoded" | "rendered" | "error";
       message?: string;
     }) => {
       // Discard older results or errors
@@ -75,7 +93,7 @@ describe("worker protocol and concurrency", () => {
     expect(currentDocument).toBe("valid-document"); // Preserved!
 
     // Successful completion of current request (id 5)
-    handleResponse({ id: 5, type: "result" });
+    handleResponse({ id: 5, type: "decoded" });
     expect(currentDocument).toBe("new-document");
 
     // Start request 6
@@ -83,7 +101,7 @@ describe("worker protocol and concurrency", () => {
     latestRenderId = 6;
 
     // Delayed arrival of request 5 result does not overwrite request 6
-    handleResponse({ id: 5, type: "result" });
+    handleResponse({ id: 5, type: "rendered" });
     expect(currentDocument).toBe("new-document");
   });
 
