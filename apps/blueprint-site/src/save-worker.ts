@@ -2,9 +2,10 @@
 
 import {
   decodeBrowserSave,
-  decodeBrowserSaveDocument,
+  normalizeSaveDocument,
+  prepareSaveExplorerRenderState,
+  composeSaveExplorerMinimap,
   inspectSaveExplorerCell,
-  renderMinimapRgba,
   toSaveExplorerClientDocument,
   type MinimapRenderOptions,
   type NormalizeSaveOptions,
@@ -52,6 +53,7 @@ const workerScope = globalThis as unknown as {
 let latestDecodeId = 0;
 let decodedSave: Awaited<ReturnType<typeof decodeBrowserSave>> | null = null;
 let decodedDocument: SaveExplorerDocument | null = null;
+let preparedRenderState: ReturnType<typeof prepareSaveExplorerRenderState> | null = null;
 
 workerScope.onmessage = async ({ data }) => {
   try {
@@ -59,14 +61,15 @@ workerScope.onmessage = async ({ data }) => {
       const requestId = data.id ?? 0;
       latestDecodeId = Math.max(latestDecodeId, requestId);
       const save = await decodeBrowserSave(data.bytes);
-      const doc = await decodeBrowserSaveDocument(data.bytes, data.options);
+      const doc = normalizeSaveDocument(save, data.options);
       // Discard stale decode if a newer decode was received while awaiting
       if (requestId < latestDecodeId) {
         return;
       }
       decodedSave = save;
       decodedDocument = doc;
-      const raster = renderMinimapRgba(decodedSave, data.render);
+      preparedRenderState = prepareSaveExplorerRenderState(decodedSave, data.render);
+      const raster = composeSaveExplorerMinimap(preparedRenderState, data.render);
       workerScope.postMessage(
         {
           id: data.id,
@@ -82,7 +85,8 @@ workerScope.onmessage = async ({ data }) => {
       );
       return;
     }
-    if (!decodedSave || !decodedDocument) throw new Error("No save is loaded");
+    if (!decodedSave || !decodedDocument || !preparedRenderState)
+      throw new Error("No save is loaded");
     if (data.type === "inspect") {
       workerScope.postMessage({
         id: data.id,
@@ -91,7 +95,7 @@ workerScope.onmessage = async ({ data }) => {
       });
       return;
     }
-    const raster = renderMinimapRgba(decodedSave, data.render);
+    const raster = composeSaveExplorerMinimap(preparedRenderState, data.render);
     workerScope.postMessage(
       {
         id: data.id,

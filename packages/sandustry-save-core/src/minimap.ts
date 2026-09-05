@@ -37,6 +37,28 @@ export type MinimapRenderOptions = {
   authorizationColor?: RgbaColor;
 };
 
+export type PreparedMinimapStructure = {
+  x: number;
+  y: number;
+  type: string | number;
+  color?: string;
+};
+
+export type PreparedSaveExplorerRenderState = {
+  width: number;
+  height: number;
+  cellSize: number;
+  terrainValues: Int32Array;
+  settledElementValues: Int32Array;
+  elementValues: Int32Array;
+  particleValues: Int32Array;
+  fog: Uint8Array;
+  walls: Uint8Array;
+  authorization: Uint8Array;
+  wallPalette: unknown[];
+  structures: PreparedMinimapStructure[];
+};
+
 const DEFAULT_STRUCTURE_PALETTE: Readonly<Record<string, RgbaColor>> = {
   // Representative colors for common catalog structures; unknown types use
   // the configured fallback marker color.
@@ -184,13 +206,7 @@ function fogBufferFor(payload: SaveGamePayload, width: number, height: number) {
   return Uint8Array.from(encoded, (value) => (typeof value === "number" ? value : 0));
 }
 
-function wallPaletteColor(payload: SaveGamePayload, paletteIndex: number, fallback: RgbaColor) {
-  const wall = payload.wall as Record<string, unknown> | undefined;
-  const palette =
-    wall && typeof wall.palette === "object" && wall.palette !== null
-      ? (wall.palette as Record<string, unknown>)
-      : undefined;
-  const data = palette?.data;
+function wallPaletteColor(data: unknown[], paletteIndex: number, fallback: RgbaColor) {
   if (!Array.isArray(data)) return fallback;
   const offset = paletteIndex * 4;
   if (offset < 0 || offset + 3 >= data.length) return fallback;
@@ -260,11 +276,11 @@ function authorizationBufferFor(
   return sectionedLayerBuffer(payload.authorization, width, height, cellSize);
 }
 
-/** Build the native-style one-pixel-per-4×4-cell minimap raster. */
-export function renderMinimapRgba(
+/** Prepare expensive world-derived minimap layers once per decoded save. */
+export function prepareSaveExplorerRenderState(
   document: SaveGameDocument,
-  options: MinimapRenderOptions = {},
-): MinimapRaster {
+  options: Pick<MinimapRenderOptions, "cellSize"> = {},
+): PreparedSaveExplorerRenderState {
   const { width: worldWidth, height: worldHeight } = worldDimensions(document.payload);
   const cellSize = options.cellSize ?? MINIMAP_CELL_SIZE;
   if (!Number.isSafeInteger(cellSize) || cellSize <= 0)
@@ -332,14 +348,55 @@ export function renderMinimapRgba(
     throw new Error(`Matrix expanded to ${position}; expected ${worldWidth * worldHeight}`);
 
   const fog = fogBufferFor(document.payload, width, height);
-  const walls =
-    options.drawWalls === false
-      ? new Uint8Array(width * height)
-      : wallBufferFor(document.payload, width, height, cellSize);
-  const authorization =
-    options.drawAuthorization !== true
-      ? new Uint8Array(width * height)
-      : authorizationBufferFor(document.payload, width, height, cellSize);
+  const walls = wallBufferFor(document.payload, width, height, cellSize);
+  const authorization = authorizationBufferFor(document.payload, width, height, cellSize);
+  const wall = document.payload.wall as Record<string, unknown> | undefined;
+  const wallPalette =
+    wall && typeof wall.palette === "object" && wall.palette !== null
+      ? (wall.palette as Record<string, unknown>).data
+      : [];
+  const structures = Array.isArray(document.payload.store.structures)
+    ? document.payload.store.structures.flatMap((value) => {
+        if (typeof value !== "object" || value === null) return [];
+        const record = value as Record<string, unknown>;
+        return typeof record.x === "number" &&
+          typeof record.y === "number" &&
+          (typeof record.type === "string" || typeof record.type === "number")
+          ? [
+              {
+                x: record.x,
+                y: record.y,
+                type: record.type,
+                color: parseStructureColor(record.color) ? String(record.color) : undefined,
+              },
+            ]
+          : [];
+      })
+    : [];
+  return {
+    width,
+    height,
+    cellSize,
+    terrainValues,
+    settledElementValues,
+    elementValues,
+    particleValues,
+    fog,
+    walls,
+    authorization,
+    wallPalette: Array.isArray(wallPalette) ? wallPalette : [],
+    structures,
+  };
+}
+
+/** Compose a raster from prepared layers without traversing the world matrix. */
+export function composeSaveExplorerMinimap(
+  prepared: PreparedSaveExplorerRenderState,
+  options: MinimapRenderOptions = {},
+): MinimapRaster {
+  const { width, height, terrainValues, settledElementValues, elementValues, particleValues } =
+    prepared;
+  const { fog, walls, authorization } = prepared;
   const palette = options.palette || DEFAULT_PALETTE;
   const wallFallback = options.wallColor || [166, 166, 166, 255];
   const authorizationColor = options.authorizationColor || [255, 64, 192, 160];
@@ -386,28 +443,22 @@ export function renderMinimapRgba(
           copyColor(
             pixels,
             index * 4,
-            wallPaletteColor(document.payload, walls[index], wallFallback),
+            wallPaletteColor(prepared.wallPalette, walls[index], wallFallback),
           );
       }
     },
     structures: () => {
       if (options.drawStructures === false) return;
-      const structures = storeValue(document.payload, ["structures"]);
-      if (Array.isArray(structures)) {
-        for (const structure of structures) {
-          if (typeof structure !== "object" || structure === null) continue;
-          const record = structure as Record<string, unknown>;
-          if (typeof record.x !== "number" || typeof record.y !== "number") continue;
-          const x = Math.floor(record.x / cellSize);
-          const y = Math.floor(record.y / cellSize);
-          if (x < 0 || x >= width || y < 0 || y >= height) continue;
-          copyColor(
-            pixels,
-            (y * width + x) * 4,
-            parseStructureColor(record.color) ||
-              structureColorFor(record.type, structureColor, structurePalette),
-          );
-        }
+      for (const structure of prepared.structures) {
+        const x = Math.floor(structure.x / prepared.cellSize);
+        const y = Math.floor(structure.y / prepared.cellSize);
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+        copyColor(
+          pixels,
+          (y * width + x) * 4,
+          parseStructureColor(structure.color) ||
+            structureColorFor(structure.type, structureColor, structurePalette),
+        );
       }
     },
     authorization: () => {
@@ -425,4 +476,12 @@ export function renderMinimapRgba(
   };
   for (const layer of SAVE_EXPLORER_LAYER_ORDER) renderLayers[layer]?.();
   return { width, height, pixels };
+}
+
+/** Build the native-style one-pixel-per-cell minimap raster. */
+export function renderMinimapRgba(
+  document: SaveGameDocument,
+  options: MinimapRenderOptions = {},
+): MinimapRaster {
+  return composeSaveExplorerMinimap(prepareSaveExplorerRenderState(document, options), options);
 }

@@ -4,6 +4,8 @@ import {
   expandRunLengthPairs,
   FOG_COLOR,
   renderMinimapRgba,
+  prepareSaveExplorerRenderState,
+  composeSaveExplorerMinimap,
   SKY_COLOR,
   type SaveGameDocument,
 } from "../src/index";
@@ -50,6 +52,25 @@ test("applies fog and structure visibility independently", () => {
   expect([...withoutStructures.pixels.slice(0, 4)]).toEqual([105, 76, 43, 255]);
   expect([...withoutStructures.pixels.slice(4, 8)]).toEqual([...FOG_COLOR]);
   expect(SKY_COLOR).toEqual([72, 200, 255, 255]);
+});
+
+test("composes layer toggles from prepared state without changing the raster", () => {
+  const save = {
+    metadata: { id: "fixture" },
+    payload: {
+      store: { world: { size: { width: 8, height: 4 } }, structures: [] },
+      matrix: [2, 32],
+    },
+    compressedPayloadBytes: 1,
+    decompressedPayloadBytes: 1,
+  } as SaveGameDocument;
+  const prepared = prepareSaveExplorerRenderState(save);
+  const expected = renderMinimapRgba(save, { drawTerrain: false });
+  const actual = composeSaveExplorerMinimap(prepared, { drawTerrain: false });
+
+  expect(actual.width).toBe(expected.width);
+  expect(actual.height).toBe(expected.height);
+  expect(actual.pixels).toEqual(expected.pixels);
 });
 
 test("composites the sectioned wall layer from the native save palette", async () => {

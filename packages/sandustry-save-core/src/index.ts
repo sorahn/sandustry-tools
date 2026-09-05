@@ -209,7 +209,11 @@ export {
   MINIMAP_CELL_SIZE,
   SKY_COLOR,
   renderMinimapRgba,
+  prepareSaveExplorerRenderState,
+  composeSaveExplorerMinimap,
   type MinimapRaster,
   type MinimapRenderOptions,
   type RgbaColor,
+  type PreparedSaveExplorerRenderState,
+  type PreparedMinimapStructure,
 } from "./minimap";
