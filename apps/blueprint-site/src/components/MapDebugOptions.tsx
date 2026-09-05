@@ -10,7 +10,6 @@ import {
   SHOW_SIGNAL_LINKS_KEY,
   SHOW_SPRITES_KEY,
   COLLAPSE_DEBUG_OPTIONS_KEY,
-  COLLAPSE_TEST_BLUEPRINTS_KEY,
   COLLAPSE_POLICY_TESTER_KEY,
 } from "../utils/storage-keys";
 import {
@@ -18,8 +17,7 @@ import {
   FIT_POLICY_PRESETS,
   type FitPolicyPreset,
 } from "../utils/blueprint-fit";
-import { Button, Divider, IconButton, Select } from "@sandustry/ui";
-import { BLUEPRINT_VISUAL_FIXTURES } from "../visual-fixtures/catalog";
+import { Divider, IconButton, Select } from "@sandustry/ui";
 
 type MapDebugOptionsProps = {
   showDebugCells: boolean;
@@ -38,7 +36,6 @@ type MapDebugOptionsProps = {
   onShowRawStructuresChange: (value: boolean) => void;
   resetVersion?: number;
   onReset: () => void;
-  onLoadBlueprint: (blueprint: (typeof BLUEPRINT_VISUAL_FIXTURES)[number]["blueprint"]) => void;
   policySelection?: "legacy" | FitPolicyPreset;
   onPolicySelectionChange?: (value: "legacy" | FitPolicyPreset) => void;
 };
@@ -119,7 +116,6 @@ export function MapDebugOptions({
   onShowRawStructuresChange,
   resetVersion,
   onReset,
-  onLoadBlueprint,
   policySelection = "default",
   onPolicySelectionChange,
 }: MapDebugOptionsProps) {
@@ -252,26 +248,6 @@ export function MapDebugOptions({
           </p>
         ) : null}
       </BlueprintMapSidebarSection>
-      <Divider className="my-4" />
-      <BlueprintMapSidebarSection
-        title="Test blueprints"
-        collapsible
-        storageKey={COLLAPSE_TEST_BLUEPRINTS_KEY}
-      >
-        <div className="grid gap-1.5">
-          {BLUEPRINT_VISUAL_FIXTURES.map((fixture) => (
-            <Button
-              key={fixture.id}
-              variant="quiet"
-              className="w-full justify-start text-left text-xs !py-1.5 !px-2"
-              onClick={() => onLoadBlueprint(fixture.blueprint)}
-            >
-              {fixture.label}
-            </Button>
-          ))}
-        </div>
-      </BlueprintMapSidebarSection>
-      <Divider className="my-4" />
     </>
   );
 }

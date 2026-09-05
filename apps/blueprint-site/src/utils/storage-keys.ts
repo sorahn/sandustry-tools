@@ -16,7 +16,6 @@ export const SHOW_FOUNDATION_OUTLINES_KEY = "sandustry.blueprintInspector.showFo
 export const SHOW_SIGNAL_LINKS_KEY = "sandustry.blueprintInspector.showSignalLinks";
 export const SHOW_RAW_STRUCTURES_KEY = "sandustry.blueprintInspector.showRawStructures";
 export const COLLAPSE_DEBUG_OPTIONS_KEY = "sandustry.blueprintInspector.collapseDebugOptions";
-export const COLLAPSE_TEST_BLUEPRINTS_KEY = "sandustry.blueprintInspector.collapseTestBlueprints";
 export const COLLAPSE_SELECTED_RECORD_KEY = "sandustry.blueprintInspector.collapseSelectedRecord";
 export const COLLAPSE_POLICY_TESTER_KEY = "sandustry.blueprintInspector.collapsePolicyTester";
 export const POLICY_TESTER_SELECTION_KEY = "sandustry.blueprintInspector.policyTesterSelection";

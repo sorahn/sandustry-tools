@@ -6,6 +6,7 @@ import {
   estimateStoredBytes,
   extractCurrencies,
   formatPlaytime,
+  getSaveTag,
   listSavedGames,
   readActiveSaveId,
   setActiveSaveId,
@@ -17,21 +18,6 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function getSaveTag(fileName: string, saveName?: string): string {
-  if (saveName) {
-    const lower = saveName.toLowerCase();
-    if (lower.includes("auto")) return "Autosave";
-    if (lower.includes("exit")) return "Exit save";
-    if (lower.includes("quick")) return "Quicksave";
-    return saveName;
-  }
-  const lower = fileName.toLowerCase();
-  if (lower.includes("auto")) return "Autosave";
-  if (lower.includes("exit")) return "Exit save";
-  if (lower.includes("quick")) return "Quicksave";
-  return "Save";
 }
 
 function SaveManager() {

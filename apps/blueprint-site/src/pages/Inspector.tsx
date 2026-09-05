@@ -36,11 +36,13 @@ import { type SaveBlueprintRecord } from "@sandustry/save-core";
 import { encodeSavedBlueprint } from "../utils/save-blueprint";
 import { extractSaveBlueprintsInWorker } from "../utils/save-blueprint-worker";
 import {
+  formatSaveOptgroupLabel,
   getSavedGameBytes,
   listSavedGames,
   subscribeToSaveDatabase,
   type StoredSaveSummary,
 } from "../utils/save-db";
+import { BLUEPRINT_VISUAL_FIXTURES } from "../visual-fixtures/catalog";
 
 export function SavedBlueprintInspectorPage() {
   const { saveId, blueprintId } = useParams({ from: "/save/$saveId/blueprint/$blueprintId" });
@@ -257,6 +259,7 @@ export function BlueprintInspectorPage({
   const inspect = () => inspectValue(encoded);
   const loadTestBlueprint = (nextBlueprint: Blueprint) => {
     const nextEncoded = encodeBlueprint(nextBlueprint);
+    setDroppedSave(null);
     setEncoded(nextEncoded);
     setInspectedBlueprintKey(nextEncoded);
     setBlueprint(nextBlueprint);
@@ -345,7 +348,7 @@ export function BlueprintInspectorPage({
   return (
     <section className="space-y-6">
       <PageHeader title={title}>{description}</PageHeader>
-      {initialEncoded === undefined ? <FromSavedGame /> : null}
+      {initialEncoded === undefined ? <FromSavedGame onSelectFixture={loadTestBlueprint} /> : null}
       <SaveFileDropzone
         onFile={handleSaveFile}
         selection={droppedSave}
@@ -382,7 +385,6 @@ export function BlueprintInspectorPage({
               onShowPngBackgroundChange={setShowPngBackground}
               showFilters={showFilters}
               onShowFiltersChange={setShowFilters}
-              onLoadBlueprint={loadTestBlueprint}
             />
           </div>
           <BlueprintStructuresPanel blueprint={blueprint} structureLabel={structureLabel} />
@@ -453,7 +455,11 @@ function SaveFileDropzone({
   );
 }
 
-function FromSavedGame() {
+export function FromSavedGame({
+  onSelectFixture,
+}: {
+  onSelectFixture?: (blueprint: Blueprint) => void;
+}) {
   const [saved, setSaved] = useState<StoredSaveSummary[] | null>(null);
   const [message, setMessage] = useState("Loading saved blueprints…");
   useEffect(() => {
@@ -470,19 +476,31 @@ function FromSavedGame() {
     refresh();
     return subscribeToSaveDatabase(refresh);
   }, []);
-  const options = (saved ?? []).flatMap((save) =>
-    save.blueprints.map((blueprint) => ({ save, blueprint })),
-  );
+  const savesWithBlueprints = (saved ?? []).filter((save) => save.blueprints.length > 0);
+  const hasSavedBlueprints = savesWithBlueprints.length > 0;
+  const hasTestFixtures = Boolean(import.meta.env.DEV && BLUEPRINT_VISUAL_FIXTURES.length);
+  const hasOptions = hasSavedBlueprints || hasTestFixtures;
+
   return (
     <Panel title="From saved game">
       <div className="p-4">
-        {options.length ? (
+        {hasOptions ? (
           <label className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
             <span>Saved blueprint</span>
             <Select
               value=""
               onChange={(event) => {
-                const [saveId, blueprintId] = event.target.value.split("/");
+                const value = event.target.value;
+                if (!value) return;
+                if (value.startsWith("fixture:")) {
+                  const fixtureId = value.slice("fixture:".length);
+                  const fixture = BLUEPRINT_VISUAL_FIXTURES.find(
+                    (candidate) => candidate.id === fixtureId,
+                  );
+                  if (fixture) onSelectFixture?.(fixture.blueprint);
+                  return;
+                }
+                const [saveId, blueprintId] = value.split("/");
                 if (!saveId || !blueprintId) return;
                 window.location.assign(
                   `${import.meta.env.BASE_URL}save/${encodeURIComponent(saveId)}/blueprint/${encodeURIComponent(blueprintId)}`,
@@ -490,11 +508,26 @@ function FromSavedGame() {
               }}
               aria-label="Saved blueprint"
             >
-              <option value="">{message}</option>
-              {options.map(({ save, blueprint }) => (
-                <option key={`${save.id}/${blueprint.id}`} value={`${save.id}/${blueprint.id}`}>
-                  {save.fileName}: {blueprint.name}
-                </option>
+              <option value="">
+                {hasSavedBlueprints ? "Choose a blueprint…" : "Choose a test fixture…"}
+              </option>
+              {hasTestFixtures ? (
+                <optgroup label="Test Fixtures">
+                  {BLUEPRINT_VISUAL_FIXTURES.map((fixture) => (
+                    <option key={fixture.id} value={`fixture:${fixture.id}`}>
+                      {fixture.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
+              {savesWithBlueprints.map((save) => (
+                <optgroup key={save.id} label={formatSaveOptgroupLabel(save)}>
+                  {save.blueprints.map((blueprint) => (
+                    <option key={`${save.id}/${blueprint.id}`} value={`${save.id}/${blueprint.id}`}>
+                      {blueprint.name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </Select>
           </label>

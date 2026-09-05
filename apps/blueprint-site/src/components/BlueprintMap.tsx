@@ -68,7 +68,6 @@ export function BlueprintMap({
   showGrid,
   showPngBackground,
   showFilters = false,
-  onLoadBlueprint,
   captureOnly,
   showDebugOptions = true,
   fitPolicy,
@@ -86,7 +85,6 @@ export function BlueprintMap({
   showGrid: boolean;
   showPngBackground: boolean;
   showFilters?: boolean;
-  onLoadBlueprint: (blueprint: Blueprint) => void;
   captureOnly?: boolean;
   showDebugOptions?: boolean;
   fitPolicy?: FitPolicy;
@@ -469,7 +467,6 @@ export function BlueprintMap({
     onShowRawStructuresChange: setShowRawStructures,
     resetVersion: debugResetVersion,
     onReset: resetDebugOptions,
-    onLoadBlueprint,
     policySelection,
     onPolicySelectionChange,
   });

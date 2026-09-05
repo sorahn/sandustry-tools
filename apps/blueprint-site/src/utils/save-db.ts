@@ -65,6 +65,29 @@ export function extractCurrencies(resources?: Record<string, number>):
   return { credits, fluxite, artifact };
 }
 
+export function getSaveTag(fileName: string, saveName?: string): string {
+  if (saveName) {
+    const lower = saveName.toLowerCase();
+    if (lower.includes("auto")) return "Autosave";
+    if (lower.includes("exit")) return "Exit save";
+    if (lower.includes("quick")) return "Quicksave";
+    return saveName;
+  }
+  const lower = fileName.toLowerCase();
+  if (lower.includes("auto")) return "Autosave";
+  if (lower.includes("exit")) return "Exit save";
+  if (lower.includes("quick")) return "Quicksave";
+  return "Save";
+}
+
+export function formatSaveOptgroupLabel(
+  save: Pick<StoredSaveSummary, "fileName" | "saveName" | "worldName">,
+): string {
+  const world = save.worldName?.trim() || save.fileName;
+  const tag = save.saveName?.trim() || getSaveTag(save.fileName, save.saveName);
+  return `${world} [${tag}]`;
+}
+
 export type SaveStorageErrorCode =
   | "unavailable"
   | "quota"
