@@ -13,6 +13,13 @@ import {
 } from "./render-model.js";
 import { foundationOutlinePath, isFoundationStructure } from "./prepare.js";
 
+import {
+  renderFilterOverlaySvg,
+  type FilterOverlayCluster,
+  type FilterOverlayViewport,
+} from "./filter-overlay.js";
+import type { ElementCatalog } from "./element-catalog.js";
+
 export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   assetBaseUrl?: string;
   assetUrl?: (path: string) => string;
@@ -28,6 +35,13 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   showSignalLinks?: boolean;
   /** Add a six-cell edge fade to exports with a visible background. */
   showEdgeFade?: boolean;
+  showFilterOverlay?: boolean;
+  filterOverlayLabelScale?: number;
+  elementCatalog?: ElementCatalog;
+  filterOverlayViewport?: FilterOverlayViewport;
+  filterClusters?: FilterOverlayCluster[];
+  filterActiveClusterKey?: string;
+  model?: BlueprintRenderModel;
 };
 
 export type BlueprintSvgRenderResult = {
@@ -260,7 +274,7 @@ export function renderBlueprintToSvg(
   blueprint: import("./index.js").Blueprint,
   options: BlueprintSvgRenderOptions = {},
 ): BlueprintSvgRenderResult {
-  const model = createBlueprintRenderModel(blueprint, options);
+  const model = options.model ?? createBlueprintRenderModel(blueprint, options);
   const includeBackground = options.includeBackground ?? true;
   const showGrid = options.showGrid ?? true;
   const showFoundationOutlines = options.showFoundationOutlines ?? true;
@@ -301,8 +315,23 @@ export function renderBlueprintToSvg(
     ? `<path d="${escapeXml(foundationPath)}" fill="none" stroke="#000000" stroke-width="${number(renderPixelScale(model.cell))}" stroke-linecap="butt" stroke-linejoin="miter"/>`
     : "";
   const signals = showSignalLinks ? renderSignalLinks(model) : "";
+  const showFilterOverlay = options.showFilterOverlay ?? false;
+  const filterOverlay = showFilterOverlay
+    ? renderFilterOverlaySvg(model.preparedBlueprint, {
+        minX: model.minX,
+        minY: model.minY,
+        padding: model.padding,
+        paddingX: model.paddingX,
+        cell: model.cell,
+        labelScale: options.filterOverlayLabelScale ?? 1.0,
+        elementCatalog: options.elementCatalog,
+        viewport: options.filterOverlayViewport,
+        clusters: options.filterClusters,
+        activeClusterKey: options.filterActiveClusterKey,
+      })
+    : "";
   const edgeFade = showEdgeFade && includeBackground ? renderEdgeFade(model) : "";
-  const markup = `${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}${edgeFade}`;
+  const markup = `${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}${filterOverlay}${edgeFade}`;
   return {
     model,
     markup,

@@ -55,6 +55,7 @@ describe("blueprint renderer embed protocol", () => {
         showGrid: false,
         showPngBackground: true,
         showSidebar: false,
+        showFilters: true,
       }),
     ).toBe(true);
     expect(
@@ -62,6 +63,13 @@ describe("blueprint renderer embed protocol", () => {
         namespace: BLUEPRINT_RENDERER_NAMESPACE,
         type: "set-inspector-options",
         showGrid: "false",
+      }),
+    ).toBe(false);
+    expect(
+      isRendererInspectorOptionsRequest({
+        namespace: BLUEPRINT_RENDERER_NAMESPACE,
+        type: "set-inspector-options",
+        showFilters: "true",
       }),
     ).toBe(false);
   });

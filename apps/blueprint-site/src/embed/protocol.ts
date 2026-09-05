@@ -17,6 +17,7 @@ export type RendererInspectorOptionsRequest = {
   showGrid?: boolean;
   showPngBackground?: boolean;
   showSidebar?: boolean;
+  showFilters?: boolean;
 };
 
 export type RendererReadyEvent = {
@@ -65,7 +66,7 @@ export function isRendererInspectorOptionsRequest(
   return (
     request.namespace === BLUEPRINT_RENDERER_NAMESPACE &&
     request.type === "set-inspector-options" &&
-    [request.showGrid, request.showPngBackground, request.showSidebar].every(
+    [request.showGrid, request.showPngBackground, request.showSidebar, request.showFilters].every(
       (option) => option === undefined || typeof option === "boolean",
     )
   );

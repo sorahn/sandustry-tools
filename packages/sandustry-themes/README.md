@@ -5,7 +5,9 @@ A collection of editor and terminal color schemes directly sampled and verified 
 ## Included Themes
 
 ### 1. Sandustry - Unified (Recommended)
+
 Combines subterranean rock foundations with the glowing chromatic syntax of active factory elements.
+
 - **VS Code Theme**: `Sandustry - Unified`
 - **iTerm2 Preset**: `iterm/Sandustry-Unified.itermcolors`
 - **Editor Canvas**: `#181c20` (Blackrock)
@@ -15,7 +17,9 @@ Combines subterranean rock foundations with the glowing chromatic syntax of acti
 - **Signature Accent**: `#ffe700` (Game Focus Yellow)
 
 ### 2. Sandustry - Elements
+
 A high-energy, vibrant theme built entirely from the game's active liquids, volatile gases, and wisps.
+
 - **VS Code Theme**: `Sandustry - Elements`
 - **iTerm2 Preset**: `iterm/Sandustry-Elements.itermcolors`
 - **Editor Canvas**: `#1a1410` (Oil)
@@ -23,7 +27,9 @@ A high-energy, vibrant theme built entirely from the game's active liquids, vola
 - **Cursor & Accent**: `#ffd700` (Gold)
 
 ### 3. Sandustry - Terrain (Light Theme)
+
 A subterranean mineral theme designed for light mode editors and terminals.
+
 - **VS Code Theme**: `Sandustry - Terrain Light`
 - **iTerm2 Preset**: `iterm/Sandustry-Terrain-Light.itermcolors`
 - **Canvas**: `#fffab3` (Crackstone / Sandstone)
@@ -36,21 +42,21 @@ A subterranean mineral theme designed for light mode editors and terminals.
 
 ## Color Mapping Reference
 
-| Syntax Construct | Color | Source Element / Terrain |
-| :--- | :--- | :--- |
-| **Functions & Calls** | `#1e90ff` | Water (Liquid) |
-| **Types & Classes** | `#8b82e0` | Aurixite (Mineral wisp) |
-| **Keywords & Control Flow**| `#cc5cdb` | Petalium / Amethelis (Wisp) |
-| **Strings & Characters** | `#66cc66` | Wet Seed (Slushy) |
-| **Numbers & Constants** | `#ffd700` | Gold (Solid) |
-| **Properties & Params** | `#f4a460` | Sand (Solid) |
-| **Operators & Punctuation**| `#00ced1` | Void Petal (Wisp) |
-| **HTML / JSX Components** | `#ff66cc` | Prismite (Slushy) |
-| **Regex & String Escapes** | `#5dcfd6` | Jetpack Fog (Terrain) |
-| **Comments & Docstrings** | `#808080` | Stone (Terrain) |
-| **Errors & Deletions** | `#ff3300` | Lava (Liquid) |
-| **Warnings & Modifications**| `#ffa500` | Flame (Gas) |
-| **Insertions & Git Added** | `#7fff00` | Seed (Solid) |
+| Syntax Construct             | Color     | Source Element / Terrain    |
+| :--------------------------- | :-------- | :-------------------------- |
+| **Functions & Calls**        | `#1e90ff` | Water (Liquid)              |
+| **Types & Classes**          | `#8b82e0` | Aurixite (Mineral wisp)     |
+| **Keywords & Control Flow**  | `#cc5cdb` | Petalium / Amethelis (Wisp) |
+| **Strings & Characters**     | `#66cc66` | Wet Seed (Slushy)           |
+| **Numbers & Constants**      | `#ffd700` | Gold (Solid)                |
+| **Properties & Params**      | `#f4a460` | Sand (Solid)                |
+| **Operators & Punctuation**  | `#00ced1` | Void Petal (Wisp)           |
+| **HTML / JSX Components**    | `#ff66cc` | Prismite (Slushy)           |
+| **Regex & String Escapes**   | `#5dcfd6` | Jetpack Fog (Terrain)       |
+| **Comments & Docstrings**    | `#808080` | Stone (Terrain)             |
+| **Errors & Deletions**       | `#ff3300` | Lava (Liquid)               |
+| **Warnings & Modifications** | `#ffa500` | Flame (Gas)                 |
+| **Insertions & Git Added**   | `#7fff00` | Seed (Solid)                |
 
 ---
 
@@ -67,6 +73,7 @@ Install the packaged `.vsix` file using either method:
    - Choose `sandustry-themes-0.1.0.vsix`.
 
 2. **Via Terminal**:
+
    ```sh
    code --install-extension sandustry-themes-0.1.0.vsix
    ```
@@ -77,10 +84,12 @@ Install the packaged `.vsix` file using either method:
 ### iTerm2 (.itermcolors presets)
 
 Double-click or run:
+
 ```sh
 open iterm/Sandustry-Unified.itermcolors
 open iterm/Sandustry-Elements.itermcolors
 ```
+
 Or in **iTerm2** -> **Settings (⌘,)** -> **Profiles** -> **Colors** -> **Color Presets...** -> **Import...**.
 
 ---

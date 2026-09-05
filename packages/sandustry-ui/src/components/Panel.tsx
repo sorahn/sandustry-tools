@@ -7,6 +7,8 @@ export type PanelProps = PropsWithChildren<HTMLAttributes<HTMLElement>> & {
   title?: ReactNode;
   collapsible?: boolean;
   defaultCollapsed?: boolean;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
   variant?: "default" | "hero";
   contentClassName?: string;
 };
@@ -16,13 +18,26 @@ export function Panel({
   title,
   collapsible = false,
   defaultCollapsed = false,
+  collapsed: controlledCollapsed,
+  onCollapsedChange,
   variant = "default",
   contentClassName = "",
   className = "",
   children,
   ...props
 }: PanelProps) {
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(defaultCollapsed);
+  const isControlled = controlledCollapsed !== undefined;
+  const collapsed = isControlled ? controlledCollapsed : uncontrolledCollapsed;
+
+  const toggleCollapsed = () => {
+    if (isControlled) {
+      onCollapsedChange?.(!collapsed);
+    } else {
+      setUncontrolledCollapsed((value) => !value);
+    }
+  };
+
   const panelHeader =
     header || (collapsible && title) ? (
       <div className="box-border flex min-h-[var(--sd-control-height)] items-center justify-between border-b border-slate-800 px-4 py-2">
@@ -30,7 +45,7 @@ export function Panel({
           <button
             type="button"
             className="inline-flex items-center gap-2 border-0 bg-transparent p-0 font-inherit text-slate-400 focus-visible:outline-2 focus-visible:outline-yellow-300 focus-visible:outline-offset-3"
-            onClick={() => setCollapsed((value) => !value)}
+            onClick={toggleCollapsed}
             aria-expanded={!collapsed}
           >
             <svg

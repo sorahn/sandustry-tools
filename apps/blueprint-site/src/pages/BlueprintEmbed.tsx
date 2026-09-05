@@ -33,6 +33,7 @@ function BlueprintInspectorEmbed() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [showPngBackground, setShowPngBackground] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [fitPolicy, setFitPolicy] = useState<FitPolicy | undefined>();
 
   useEffect(() => {
@@ -69,7 +70,7 @@ function BlueprintInspectorEmbed() {
     observer.observe(element);
     sendSize();
     return () => observer.disconnect();
-  }, [blueprint, showGrid, showPngBackground, showSidebar]);
+  }, [blueprint, showGrid, showPngBackground, showSidebar, showFilters]);
 
   useEffect(() => {
     let rememberedLoaded = false;
@@ -101,6 +102,7 @@ function BlueprintInspectorEmbed() {
           setShowPngBackground(event.data.showPngBackground);
         }
         if (event.data.showSidebar !== undefined) setShowSidebar(event.data.showSidebar);
+        if (event.data.showFilters !== undefined) setShowFilters(event.data.showFilters);
         return;
       }
       if (!isRendererRequest(event.data)) return;
@@ -166,6 +168,7 @@ function BlueprintInspectorEmbed() {
           showSidebar={showSidebar}
           showGrid={showGrid}
           showPngBackground={showPngBackground}
+          showFilters={showFilters}
           onLoadBlueprint={setBlueprint}
           showDebugOptions={false}
           fitPolicy={fitPolicy}
