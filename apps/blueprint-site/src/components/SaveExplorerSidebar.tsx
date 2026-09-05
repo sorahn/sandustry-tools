@@ -1,6 +1,6 @@
 import cx from "clsx";
 import { Button, Checkbox, MetadataRow, SaveSlotCard, StatusIndicator } from "@sandustry/ui";
-import type { SaveExplorerClientDocument } from "@sandustry/save-core";
+import type { SaveBlueprintSummary, SaveExplorerClientDocument } from "@sandustry/save-core";
 
 export type SaveExplorerLayers = {
   terrain: boolean;
@@ -24,6 +24,8 @@ type SaveExplorerSidebarProps = {
   onRemember: () => void;
   onLayerChange: (layer: keyof SaveExplorerLayers, checked: boolean) => void;
   onCustomCursorChange: (checked: boolean) => void;
+  onInspectBlueprint: (blueprintId: string) => void;
+  onCopyBlueprint: (blueprintId: string) => void;
   className?: string;
 };
 
@@ -68,6 +70,8 @@ export function SaveExplorerSidebar({
   onRemember,
   onLayerChange,
   onCustomCursorChange,
+  onInspectBlueprint,
+  onCopyBlueprint,
   className = "",
 }: SaveExplorerSidebarProps) {
   return (
@@ -100,6 +104,10 @@ export function SaveExplorerSidebar({
           </h3>
           <Metadata document={document} />
         </section>
+      ) : null}
+
+      {document ? (
+        <Blueprints document={document} onInspect={onInspectBlueprint} onCopy={onCopyBlueprint} />
       ) : null}
 
       <section className="space-y-2.5 p-4 text-xs">
@@ -152,5 +160,79 @@ export function SaveExplorerSidebar({
         <p>○ cell inspection</p>
       </section>
     </div>
+  );
+}
+
+function Blueprints({
+  document,
+  onInspect,
+  onCopy,
+}: {
+  document: SaveExplorerClientDocument;
+  onInspect: (blueprintId: string) => void;
+  onCopy: (blueprintId: string) => void;
+}) {
+  return (
+    <section className="space-y-3 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
+          Blueprints
+        </h3>
+        <span className="font-mono text-[10px] text-slate-500">{document.blueprints.length}</span>
+      </div>
+      {document.blueprints.length ? (
+        <div className="space-y-3">
+          {document.blueprints.map((blueprint) => (
+            <BlueprintEntry
+              key={blueprint.id}
+              blueprint={blueprint}
+              onInspect={onInspect}
+              onCopy={onCopy}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs leading-5 text-slate-500">No valid saved blueprints were found.</p>
+      )}
+    </section>
+  );
+}
+
+function BlueprintEntry({
+  blueprint,
+  onInspect,
+  onCopy,
+}: {
+  blueprint: SaveBlueprintSummary;
+  onInspect: (blueprintId: string) => void;
+  onCopy: (blueprintId: string) => void;
+}) {
+  return (
+    <article className="space-y-2 rounded border border-slate-800 bg-slate-950/40 p-2.5">
+      <div className="min-w-0">
+        <p className="truncate text-xs text-slate-200" title={blueprint.name}>
+          {blueprint.name}
+        </p>
+        <p className="text-[11px] text-slate-500">
+          {blueprint.structureCount} structure{blueprint.structureCount === 1 ? "" : "s"}
+          {blueprint.createdAt !== undefined
+            ? ` · ${new Date(blueprint.createdAt).toLocaleDateString()}`
+            : ""}
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" className="text-[11px]" onClick={() => onInspect(blueprint.id)}>
+          Inspect
+        </Button>
+        <Button
+          type="button"
+          className="text-[11px]"
+          variant="quiet"
+          onClick={() => onCopy(blueprint.id)}
+        >
+          Copy string
+        </Button>
+      </div>
+    </article>
   );
 }

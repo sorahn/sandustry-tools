@@ -14,6 +14,7 @@ import {
   type SaveExplorerDocument,
   type SaveExplorerClientDocument,
 } from "@sandustry/save-core";
+import { encodeSavedBlueprint } from "./utils/save-blueprint";
 
 export type SaveWorkerRequest =
   | {
@@ -24,7 +25,8 @@ export type SaveWorkerRequest =
       render?: MinimapRenderOptions;
     }
   | { id?: number; type: "render"; render?: MinimapRenderOptions }
-  | { id?: number; type: "inspect"; mapX: number; mapY: number };
+  | { id?: number; type: "inspect"; mapX: number; mapY: number }
+  | { id?: number; type: "encode"; blueprintId: string };
 
 export type SaveWorkerResponse =
   | {
@@ -39,10 +41,11 @@ export type SaveWorkerResponse =
       raster: { width: number; height: number; pixels: ArrayBuffer };
     }
   | { id?: number; type: "inspection"; inspection?: SaveExplorerCellInspection }
+  | { id?: number; type: "encoded"; blueprintId: string; encoded: string }
   | {
       id?: number;
       type: "error";
-      operation: "decode" | "render" | "inspect";
+      operation: "decode" | "render" | "inspect" | "encode";
       message: string;
     };
 
@@ -97,6 +100,17 @@ workerScope.onmessage = async ({ data }) => {
         id: data.id,
         type: "inspection",
         inspection: inspectPreparedSaveExplorerCell(preparedRenderState, data.mapX, data.mapY),
+      });
+      return;
+    }
+    if (data.type === "encode") {
+      const blueprint = _decodedBlueprints.find((candidate) => candidate.id === data.blueprintId);
+      if (!blueprint) throw new Error("Saved blueprint was not found");
+      workerScope.postMessage({
+        id: data.id,
+        type: "encoded",
+        blueprintId: data.blueprintId,
+        encoded: encodeSavedBlueprint(blueprint),
       });
       return;
     }

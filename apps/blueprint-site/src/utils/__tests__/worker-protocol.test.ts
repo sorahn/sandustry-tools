@@ -67,6 +67,22 @@ describe("worker protocol and concurrency", () => {
     expect("payload" in inspection).toBe(false);
   });
 
+  test("encoded responses carry only the requested blueprint string", () => {
+    const response: SaveWorkerResponse = {
+      id: 9,
+      type: "encoded",
+      blueprintId: "bp-1",
+      encoded: "SAND:BP:v2:test",
+    };
+    expect(response).toEqual({
+      id: 9,
+      type: "encoded",
+      blueprintId: "bp-1",
+      encoded: "SAND:BP:v2:test",
+    });
+    expect("document" in response).toBe(false);
+  });
+
   test("save explorer response filtering discards superseded decodes and stale errors", () => {
     let activeDecodeId = 5;
     let latestRenderId = 5;

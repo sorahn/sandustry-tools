@@ -21,6 +21,11 @@ const inspectorRoute = createRoute({
   path: "/inspect",
   component: BlueprintInspectorPage,
 });
+const saveBlueprintRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/save/$saveId/blueprint/$blueprintId",
+  component: BlueprintInspectorPage,
+});
 const vaultInspectorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/inspect/vault/$vaultId",
@@ -51,6 +56,7 @@ export const routeTree = rootRoute.addChildren([
   indexRoute,
   codecRoute,
   inspectorRoute,
+  saveBlueprintRoute,
   vaultInspectorRoute,
   visualFixtureRoute,
   blueprintEmbedRoute,

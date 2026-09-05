@@ -24,6 +24,7 @@ import {
   type StoredSaveSummary,
 } from "../utils/save-db";
 import { REMEMBER_SAVE_EXPLORER_KEY } from "../utils/storage-keys";
+import { copyToClipboard } from "../utils/clipboard";
 
 import type { SaveWorkerResponse } from "../save-worker";
 
@@ -138,9 +139,21 @@ export function SaveExplorerPage() {
         return;
       }
 
+      if (response.type === "encoded") {
+        void copyToClipboard(response.encoded).then((copied) => {
+          setMessage(
+            copied
+              ? "Blueprint string copied to the clipboard."
+              : "Unable to copy blueprint string.",
+          );
+        });
+        return;
+      }
+
       if (response.type === "error") {
         if (
           response.operation === "inspect" ||
+          response.operation === "encode" ||
           respId < activeDecodeIdRef.current ||
           respId < latestRenderIdRef.current
         ) {
@@ -389,6 +402,16 @@ export function SaveExplorerPage() {
             onRemember={toggleRemember}
             onLayerChange={updateLayer}
             onCustomCursorChange={setCustomCursor}
+            onInspectBlueprint={(blueprintId) => {
+              const saveId = encodeURIComponent(document?.metadata.saveId || "");
+              const bpId = encodeURIComponent(blueprintId);
+              window.location.assign(`${import.meta.env.BASE_URL}save/${saveId}/blueprint/${bpId}`);
+            }}
+            onCopyBlueprint={(blueprintId) => {
+              const reqId = nextRequestIdRef.current++;
+              workerRef.current?.postMessage({ id: reqId, type: "encode", blueprintId });
+              setMessage("Encoding blueprint string…");
+            }}
           />
         }
       >
