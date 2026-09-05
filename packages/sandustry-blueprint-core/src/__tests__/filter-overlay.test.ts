@@ -352,6 +352,48 @@ describe("filter-overlay", () => {
       });
       assert.ok(withOverscan.includes("Sand"), "Overscan should include first filter");
     });
+
+    test("supports pre-computed clusters and highlights activeClusterKey", () => {
+      const blueprint: Blueprint = {
+        name: "test",
+        signalLinks: null,
+        data: [
+          { type: 18, x: 0, y: 0, filter: { mode: "allow", elementType: 1 } },
+          { type: 18, x: 100, y: 100, filter: { mode: "block", elementType: 7 } },
+        ],
+      };
+      const prepared = prepareBlueprint(blueprint);
+      const clusters = clusterFilterStructures(prepared.preparedStructures);
+      assert.equal(clusters.length, 2);
+
+      // 1. Pass only 1 pre-computed cluster
+      const singleClusterSvg = renderFilterOverlaySvg(prepared, {
+        minX: 0,
+        minY: 0,
+        padding: 4,
+        paddingX: 4,
+        cell: 8,
+        clusters: [clusters[0]],
+      });
+      assert.ok(singleClusterSvg.includes("Sand"));
+      assert.ok(!singleClusterSvg.includes("Coal"));
+      assert.ok(!singleClusterSvg.includes("is-active"));
+
+      // 2. Active cluster highlight
+      const activeSvg = renderFilterOverlaySvg(prepared, {
+        minX: 0,
+        minY: 0,
+        padding: 4,
+        paddingX: 4,
+        cell: 8,
+        clusters,
+        activeClusterKey: clusters[0].key,
+      });
+      assert.ok(activeSvg.includes("blueprint-filter-boundary is-active"));
+      assert.ok(activeSvg.includes("blueprint-filter-chip is-active"));
+      // Only the active cluster has is-active (1 for boundary, 1 for chip)
+      assert.equal(activeSvg.split("is-active").length - 1, 2);
+    });
   });
 
   describe("dense fixture (filter-hell)", () => {

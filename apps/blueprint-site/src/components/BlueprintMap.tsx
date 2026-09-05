@@ -4,6 +4,8 @@ import {
   renderPixelScale,
   renderBlueprintToSvg,
   renderFilterOverlaySvg,
+  clusterFilterStructures,
+  type FilterOverlayCluster,
   tileColor,
   NATIVE_PIXELS_PER_CELL,
   UNKNOWN_STRUCTURE_FOOTPRINT,
@@ -353,9 +355,26 @@ export function BlueprintMap({
       ).viewportHeight
     : legacyAspectRatioViewportHeight;
 
-  const filterOverlayLabelScale = showFilters ? 1 / zoom : 1;
+  const { filterClusters, filterClusterByStructureIndex } = useMemo(() => {
+    const clusters = clusterFilterStructures(preparedBlueprint.preparedStructures);
+    const byIndex = new Map<number, FilterOverlayCluster>();
+    for (const cluster of clusters) {
+      for (const member of cluster.members) {
+        byIndex.set(member.index, cluster);
+      }
+    }
+    return { filterClusters: clusters, filterClusterByStructureIndex: byIndex };
+  }, [preparedBlueprint]);
+
+  const activeFilterCluster = useMemo(() => {
+    if (selectedIndex === null) return null;
+    return filterClusterByStructureIndex.get(selectedIndex) ?? null;
+  }, [filterClusterByStructureIndex, selectedIndex]);
+
+  const shouldRenderFilterOverlay = showFilters || activeFilterCluster !== null;
+  const filterOverlayLabelScale = shouldRenderFilterOverlay ? 1 / zoom : 1;
   const filterOverlayViewport = useMemo(() => {
-    if (!showFilters) return undefined;
+    if (!shouldRenderFilterOverlay) return undefined;
     const viewW = viewportRef.current?.clientWidth || viewportSize.width || width;
     const viewH =
       viewportRef.current?.clientHeight || viewportSize.height || aspectRatioViewportHeight;
@@ -369,7 +388,7 @@ export function BlueprintMap({
       overscan: 64,
     };
   }, [
-    showFilters,
+    shouldRenderFilterOverlay,
     viewportRef,
     viewportSize.width,
     viewportSize.height,
@@ -382,7 +401,7 @@ export function BlueprintMap({
   ]);
 
   const filterOverlayMarkup = useMemo(() => {
-    if (!showFilters) return "";
+    if (!shouldRenderFilterOverlay) return "";
     return renderFilterOverlaySvg(mapModel.preparedBlueprint, {
       minX: mapModel.minX,
       minY: mapModel.minY,
@@ -391,8 +410,22 @@ export function BlueprintMap({
       cell: mapModel.cell,
       labelScale: filterOverlayLabelScale,
       viewport: filterOverlayViewport,
+      clusters: showFilters
+        ? filterClusters
+        : activeFilterCluster
+          ? [activeFilterCluster]
+          : undefined,
+      activeClusterKey: activeFilterCluster?.key,
     });
-  }, [showFilters, mapModel, filterOverlayLabelScale, filterOverlayViewport]);
+  }, [
+    shouldRenderFilterOverlay,
+    mapModel,
+    filterOverlayLabelScale,
+    filterOverlayViewport,
+    showFilters,
+    filterClusters,
+    activeFilterCluster,
+  ]);
 
   const maxPanX = Math.max(0, (width * zoom - (viewportSize.width || width)) / (2 * zoom));
   const maxPanY = Math.max(0, (height * zoom - (viewportSize.height || height)) / (2 * zoom));

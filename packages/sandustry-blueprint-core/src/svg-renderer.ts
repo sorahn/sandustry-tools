@@ -13,7 +13,11 @@ import {
 } from "./render-model.js";
 import { foundationOutlinePath, isFoundationStructure } from "./prepare.js";
 
-import { renderFilterOverlaySvg, type FilterOverlayViewport } from "./filter-overlay.js";
+import {
+  renderFilterOverlaySvg,
+  type FilterOverlayCluster,
+  type FilterOverlayViewport,
+} from "./filter-overlay.js";
 import type { ElementCatalog } from "./element-catalog.js";
 
 export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
@@ -35,6 +39,8 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   filterOverlayLabelScale?: number;
   elementCatalog?: ElementCatalog;
   filterOverlayViewport?: FilterOverlayViewport;
+  filterClusters?: FilterOverlayCluster[];
+  filterActiveClusterKey?: string;
   model?: BlueprintRenderModel;
 };
 
@@ -320,6 +326,8 @@ export function renderBlueprintToSvg(
         labelScale: options.filterOverlayLabelScale ?? 1.0,
         elementCatalog: options.elementCatalog,
         viewport: options.filterOverlayViewport,
+        clusters: options.filterClusters,
+        activeClusterKey: options.filterActiveClusterKey,
       })
     : "";
   const edgeFade = showEdgeFade && includeBackground ? renderEdgeFade(model) : "";

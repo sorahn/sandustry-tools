@@ -490,14 +490,18 @@ function renderNoEntryCircle(x: number, y: number, color: string): string {
   return `<svg x="${numberFormat(x)}" y="${numberFormat(y)}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/></svg>`;
 }
 
-function renderChipContent(cluster: FilterOverlayCluster, width: number): string {
+function renderChipContent(cluster: FilterOverlayCluster, width: number, isActive = false): string {
   const borderColor = !cluster.hasFilter
     ? COLOR_NONE
     : cluster.mode === "block"
       ? COLOR_BLOCK
       : COLOR_ALLOW;
 
-  let innerSvg = `<rect width="${numberFormat(width)}" height="22" fill="rgba(0,0,0,0.85)" stroke="${borderColor}" stroke-width="1"/>`;
+  let innerSvg = "";
+  if (isActive) {
+    innerSvg += `<rect width="${numberFormat(width)}" height="22" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.8"/>`;
+  }
+  innerSvg += `<rect width="${numberFormat(width)}" height="22" fill="rgba(0,0,0,0.85)" stroke="${borderColor}" stroke-width="${isActive ? 1.5 : 1}"/>`;
 
   if (!cluster.hasFilter) {
     let curX = CHIP_PADDING_X;
@@ -632,6 +636,10 @@ export type RenderFilterOverlaySvgOptions = {
   elementCatalog?: ElementCatalog;
   /** When provided, granularly culls boundaries, stems, and chips outside this visible box. */
   viewport?: FilterOverlayViewport;
+  /** Optional pre-computed clusters to avoid re-clustering. */
+  clusters?: FilterOverlayCluster[];
+  /** Optional active cluster key to highlight and render on top. */
+  activeClusterKey?: string;
 };
 
 export function renderFilterOverlaySvg(
@@ -640,10 +648,13 @@ export function renderFilterOverlaySvg(
 ): string {
   const { minX, minY, padding, paddingX, cell } = options;
   const scale = options.labelScale ?? 1.0;
+  const activeKey = options.activeClusterKey;
 
-  const clusters = clusterFilterStructures(preparedBlueprint.preparedStructures, {
-    elementCatalog: options.elementCatalog,
-  });
+  const clusters =
+    options.clusters ??
+    clusterFilterStructures(preparedBlueprint.preparedStructures, {
+      elementCatalog: options.elementCatalog,
+    });
 
   if (clusters.length === 0) return "";
 
@@ -666,6 +677,7 @@ export function renderFilterOverlaySvg(
 
   // 1. Dashed boundaries around clusters
   let boundariesSvg = '<g class="blueprint-filter-boundaries">';
+  let activeBoundarySvg = "";
   for (const c of clusters) {
     const boxX = (c.minCellX - minX + paddingX) * cell;
     const boxY = (c.minCellY - minY + padding) * cell;
@@ -685,12 +697,18 @@ export function renderFilterOverlaySvg(
         ? DASHED_COLOR_BLOCK
         : DASHED_COLOR_ALLOW;
 
-    boundariesSvg += `<rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="none" stroke="${boxColor}" stroke-width="2" stroke-dasharray="4 3"/>`;
+    const isActive = activeKey !== undefined && c.key === activeKey;
+    if (isActive) {
+      activeBoundarySvg += `<rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.8"/><rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="none" stroke="${boxColor}" stroke-width="2.5" stroke-dasharray="4 3" class="blueprint-filter-boundary is-active"/>`;
+    } else {
+      boundariesSvg += `<rect x="${numberFormat(boxX)}" y="${numberFormat(boxY)}" width="${numberFormat(boxWidth)}" height="${numberFormat(boxHeight)}" fill="none" stroke="${boxColor}" stroke-width="2" stroke-dasharray="4 3"/>`;
+    }
   }
-  boundariesSvg += "</g>";
+  boundariesSvg += activeBoundarySvg + "</g>";
 
   // 2. Connector stems (for labels stacked upward)
   let stemsSvg = '<g class="blueprint-filter-stems">';
+  let activeStemsSvg = "";
   for (const label of labels) {
     if (label.stemLength > 1) {
       const stemX = label.anchorX;
@@ -707,13 +725,19 @@ export function renderFilterOverlaySvg(
         continue;
       }
 
-      stemsSvg += `<line x1="${numberFormat(stemX)}" y1="${numberFormat(stemTop)}" x2="${numberFormat(stemX)}" y2="${numberFormat(stemBottom)}" stroke="#000000" stroke-width="${numberFormat(Math.max(1, scale))}"/>`;
+      const isActive = activeKey !== undefined && label.cluster.key === activeKey;
+      if (isActive) {
+        activeStemsSvg += `<line x1="${numberFormat(stemX)}" y1="${numberFormat(stemTop)}" x2="${numberFormat(stemX)}" y2="${numberFormat(stemBottom)}" stroke="#ffffff" stroke-width="${numberFormat(Math.max(2.5, scale * 2.5))}" stroke-opacity="0.8"/><line x1="${numberFormat(stemX)}" y1="${numberFormat(stemTop)}" x2="${numberFormat(stemX)}" y2="${numberFormat(stemBottom)}" stroke="#000000" stroke-width="${numberFormat(Math.max(1.5, scale * 1.5))}"/>`;
+      } else {
+        stemsSvg += `<line x1="${numberFormat(stemX)}" y1="${numberFormat(stemTop)}" x2="${numberFormat(stemX)}" y2="${numberFormat(stemBottom)}" stroke="#000000" stroke-width="${numberFormat(Math.max(1, scale))}"/>`;
+      }
     }
   }
-  stemsSvg += "</g>";
+  stemsSvg += activeStemsSvg + "</g>";
 
   // 3. Labels / Chips
   let labelsSvg = '<g class="blueprint-filter-labels">';
+  let activeLabelsSvg = "";
   for (const label of labels) {
     if (
       hasViewport &&
@@ -725,14 +749,20 @@ export function renderFilterOverlaySvg(
       continue;
     }
 
-    const chipSvg = renderChipContent(label.cluster, label.chipWidth);
-    if (scale === 1) {
-      labelsSvg += `<g transform="translate(${numberFormat(label.left)} ${numberFormat(label.top)})">${chipSvg}</g>`;
+    const isActive = activeKey !== undefined && label.cluster.key === activeKey;
+    const chipSvg = renderChipContent(label.cluster, label.chipWidth, isActive);
+    const transformAttr =
+      scale === 1
+        ? `transform="translate(${numberFormat(label.left)} ${numberFormat(label.top)})"`
+        : `transform="translate(${numberFormat(label.left)} ${numberFormat(label.top)}) scale(${numberFormat(scale)})"`;
+
+    if (isActive) {
+      activeLabelsSvg += `<g ${transformAttr} class="blueprint-filter-chip is-active">${chipSvg}</g>`;
     } else {
-      labelsSvg += `<g transform="translate(${numberFormat(label.left)} ${numberFormat(label.top)}) scale(${numberFormat(scale)})">${chipSvg}</g>`;
+      labelsSvg += `<g ${transformAttr}>${chipSvg}</g>`;
     }
   }
-  labelsSvg += "</g>";
+  labelsSvg += activeLabelsSvg + "</g>";
 
   return `<g class="blueprint-filter-overlay" pointer-events="none">${boundariesSvg}${stemsSvg}${labelsSvg}</g>`;
 }

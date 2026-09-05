@@ -11,6 +11,10 @@ import {
   structureTopY,
   viewportHeightForWidth,
 } from "../blueprint-map";
+import {
+  clusterFilterStructures,
+  type FilterOverlayCluster,
+} from "@daryl.roberts/sandustry-blueprint-core";
 
 const originalWindow = (globalThis as typeof globalThis & { window?: unknown }).window;
 
@@ -128,5 +132,37 @@ describe("blueprint map utilities", () => {
 
     installStorage(JSON.stringify({ blueprint: "fixture", zoom: 1, pan: { x: Infinity, y: 0 } }));
     expect(readStoredMapView("fixture")).toBeNull();
+  });
+
+  test("maps filter structure indices to clusters for interactive selection", () => {
+    const blueprint: Blueprint = {
+      name: "Filter fixture",
+      data: [
+        { type: 2, x: 0, y: 0 },
+        { type: 18, x: 10, y: 0, filter: { mode: "allow", elementType: 1 } },
+        { type: 18, x: 14, y: 0, filter: { mode: "allow", elementType: 1 } },
+        { type: "filterWall", x: 30, y: 0, filter: { mode: "block", elementType: 7 } },
+      ],
+      signalLinks: [],
+    };
+    const model = createBlueprintMapModel(blueprint, 1, 8);
+    const clusters = clusterFilterStructures(model.preparedBlueprint.preparedStructures);
+    const byIndex = new Map<number, FilterOverlayCluster>();
+    for (const cluster of clusters) {
+      for (const member of cluster.members) {
+        byIndex.set(member.index, cluster);
+      }
+    }
+
+    expect(byIndex.get(0)).toBeUndefined();
+    const cluster1 = byIndex.get(1);
+    const cluster2 = byIndex.get(2);
+    expect(cluster1).toBeDefined();
+    expect(cluster1).toBe(cluster2);
+    expect(cluster1?.members).toHaveLength(2);
+
+    const wallCluster = byIndex.get(3);
+    expect(wallCluster).toBeDefined();
+    expect(wallCluster).not.toBe(cluster1);
   });
 });
