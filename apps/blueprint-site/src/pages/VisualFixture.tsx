@@ -54,11 +54,17 @@ function CorePngFixture({
     const worker = capture
       ? null
       : new Worker(new URL("../blueprint-worker.ts", import.meta.url), { type: "module" });
+    const requestId = Date.now();
     if (worker) {
       worker.onmessage = (
-        event: MessageEvent<{ type: string; png?: ArrayBuffer; message?: string }>,
+        event: MessageEvent<{
+          id?: number | string;
+          type: string;
+          png?: ArrayBuffer;
+          message?: string;
+        }>,
       ) => {
-        if (cancelled) return;
+        if (cancelled || (event.data.id && event.data.id !== requestId)) return;
         if (event.data.type === "error") {
           setError(event.data.message ?? "Unable to encode blueprint PNG");
           return;
@@ -95,6 +101,7 @@ function CorePngFixture({
         const bitmap = await createImageBitmap(image);
         worker.postMessage(
           {
+            id: requestId,
             type: "encode",
             image: bitmap,
             width: Math.max(1, Math.round(rendered.model.width * scale)),

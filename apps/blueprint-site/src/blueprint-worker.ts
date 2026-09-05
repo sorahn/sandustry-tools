@@ -7,8 +7,9 @@ import {
 import { blueprintCatalog } from "./utils/catalog";
 import { createImageResolver, createWorkerPngPlatform } from "./utils/png-platform";
 
-type WorkerRequest =
+export type BlueprintWorkerRequest =
   | {
+      id?: number | string;
       type: "render";
       blueprint: string;
       assetBaseUrl: string;
@@ -19,17 +20,20 @@ type WorkerRequest =
       showSignalLinks?: boolean;
     }
   | {
+      id?: number | string;
       type: "encode";
       image: ImageBitmap;
       width: number;
       height: number;
     };
 
-type WorkerResponse = { type: "result"; png: ArrayBuffer } | { type: "error"; message: string };
+export type BlueprintWorkerResponse =
+  | { id?: number | string; type: "result"; png: ArrayBuffer }
+  | { id?: number | string; type: "error"; message: string };
 
 const workerScope = globalThis as unknown as {
-  onmessage: ((event: MessageEvent<WorkerRequest>) => void) | null;
-  postMessage: (message: WorkerResponse, transfer?: Transferable[]) => void;
+  onmessage: ((event: MessageEvent<BlueprintWorkerRequest>) => void) | null;
+  postMessage: (message: BlueprintWorkerResponse, transfer?: Transferable[]) => void;
 };
 
 const platform = createWorkerPngPlatform();
@@ -42,10 +46,11 @@ workerScope.onmessage = async ({ data }) => {
       const png = await platform.encodePng(canvas);
       const buffer = png.buffer as ArrayBuffer;
       data.image.close();
-      workerScope.postMessage({ type: "result", png: buffer }, [buffer]);
+      workerScope.postMessage({ id: data.id, type: "result", png: buffer }, [buffer]);
     } catch (error) {
       data.image.close();
       workerScope.postMessage({
+        id: data.id,
         type: "error",
         message: error instanceof Error ? error.message : "Unable to encode blueprint PNG",
       });
@@ -67,9 +72,10 @@ workerScope.onmessage = async ({ data }) => {
       resolveImage: createImageResolver(data.assetBaseUrl),
     });
     const buffer = png.buffer as ArrayBuffer;
-    workerScope.postMessage({ type: "result", png: buffer }, [buffer]);
+    workerScope.postMessage({ id: data.id, type: "result", png: buffer }, [buffer]);
   } catch (error) {
     workerScope.postMessage({
+      id: data.id,
       type: "error",
       message: error instanceof Error ? error.message : "Unable to render blueprint PNG",
     });

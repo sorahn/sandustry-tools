@@ -46,12 +46,15 @@ export function createBrowserPngPlatform(): BlueprintPngPlatform<
           type: "image/svg+xml;charset=utf-8",
         }),
       );
-      await new Promise<void>((resolve, reject) => {
-        image.onload = () => resolve();
-        image.onerror = () => reject(new Error("Unable to render blueprint SVG"));
-        image.src = url;
-      });
-      URL.revokeObjectURL(url);
+      try {
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject(new Error("Unable to render blueprint SVG"));
+          image.src = url;
+        });
+      } finally {
+        URL.revokeObjectURL(url);
+      }
       return image;
     },
     createCanvas: (width, height) => {

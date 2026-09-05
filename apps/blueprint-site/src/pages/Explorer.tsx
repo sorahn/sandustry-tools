@@ -17,14 +17,7 @@ import { readStorageValue, writeStoredBoolean } from "../utils/storage";
 import { forgetRememberedSave, readRememberedSave, rememberSave } from "../utils/save-storage";
 import { REMEMBER_SAVE_EXPLORER_KEY } from "../utils/storage-keys";
 
-type ExplorerWorkerResponse =
-  | {
-      type: "result";
-      document: SaveExplorerDocument;
-      raster: { width: number; height: number; pixels: ArrayBuffer };
-    }
-  | { type: "inspection"; inspection?: SaveExplorerCellInspection }
-  | { type: "error"; message: string };
+import type { SaveWorkerResponse } from "../save-worker";
 
 export function SaveExplorerPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +27,10 @@ export function SaveExplorerPage() {
   const dragRef = useRef<ExplorerDrag | null>(null);
   const fitNextRasterRef = useRef(true);
   const fitMapRef = useRef<() => void>(() => {});
+  const nextRequestIdRef = useRef(1);
+  const activeDecodeIdRef = useRef(0);
+  const latestInspectIdRef = useRef(0);
+  const latestRenderIdRef = useRef(0);
   const [document, setDocument] = useState<SaveExplorerDocument | null>(null);
   const [raster, setRaster] = useState<ExplorerRaster | null>(null);
   const [inspection, setInspection] = useState<SaveExplorerCellInspection | null>(null);
@@ -97,9 +94,12 @@ export function SaveExplorerPage() {
   useEffect(() => {
     const worker = new Worker(new URL("../save-worker.ts", import.meta.url), { type: "module" });
     workerRef.current = worker;
-    worker.onmessage = (event: MessageEvent<ExplorerWorkerResponse>) => {
+    worker.onmessage = (event: MessageEvent<SaveWorkerResponse>) => {
       const response = event.data;
+      const respId = response.id ?? 0;
+
       if (response.type === "inspection") {
+        if (respId < latestInspectIdRef.current) return;
         const current = hoverCellRef.current;
         if (
           response.inspection &&
@@ -109,13 +109,22 @@ export function SaveExplorerPage() {
           setInspection(response.inspection);
         return;
       }
-      setBusy(false);
+
       if (response.type === "error") {
+        if (respId < activeDecodeIdRef.current || respId < latestRenderIdRef.current) {
+          return;
+        }
+        setBusy(false);
         setDocument(null);
         setRaster(null);
         setMessage(response.message);
         return;
       }
+
+      if (respId < activeDecodeIdRef.current || respId < latestRenderIdRef.current) {
+        return;
+      }
+      setBusy(false);
       setDocument(response.document);
       setRaster({
         width: response.raster.width,
@@ -134,8 +143,10 @@ export function SaveExplorerPage() {
         currentSaveRef.current = { bytes: saved.bytes.slice(), name: saved.name };
         setBusy(true);
         setMessage(`Restoring ${saved.name}…`);
+        const reqId = nextRequestIdRef.current++;
+        activeDecodeIdRef.current = reqId;
         const bytes = saved.bytes.buffer;
-        worker.postMessage({ type: "decode", bytes, render: minimapOptions }, [bytes]);
+        worker.postMessage({ id: reqId, type: "decode", bytes, render: minimapOptions }, [bytes]);
       }
     }
     return () => {
@@ -186,14 +197,18 @@ export function SaveExplorerPage() {
       setMessage("Choose a Sandustry .save file.");
       return;
     }
+    const reqId = nextRequestIdRef.current++;
+    activeDecodeIdRef.current = reqId;
     setBusy(true);
     setMessage(`Reading ${file.name}…`);
     fitNextRasterRef.current = true;
     const bytes = new Uint8Array(await file.arrayBuffer());
+    // If a newer decode request was started while reading bytes, discard this one
+    if (reqId < activeDecodeIdRef.current) return;
     currentSaveRef.current = { bytes: bytes.slice(), name: file.name };
     if (remember) rememberSave(bytes, file.name);
     workerRef.current?.postMessage(
-      { type: "decode", bytes: bytes.buffer, render: minimapOptions },
+      { id: reqId, type: "decode", bytes: bytes.buffer, render: minimapOptions },
       [bytes.buffer],
     );
   };
@@ -201,8 +216,11 @@ export function SaveExplorerPage() {
   const updateLayer = (layer: keyof SaveExplorerLayers, checked: boolean) => {
     const next = { ...layers, [layer]: checked };
     setLayers(next);
-    if (document)
+    if (document) {
+      const reqId = nextRequestIdRef.current++;
+      latestRenderIdRef.current = reqId;
       workerRef.current?.postMessage({
+        id: reqId,
         type: "render",
         render: {
           drawTerrain: next.terrain,
@@ -215,6 +233,7 @@ export function SaveExplorerPage() {
           drawAuthorization: next.authorization,
         },
       });
+    }
   };
 
   const toggleRemember = () => {
@@ -288,9 +307,11 @@ export function SaveExplorerPage() {
           }}
           onDraggingChange={setDragging}
           fitMap={fitMap}
-          onInspect={(mapX, mapY) =>
-            workerRef.current?.postMessage({ type: "inspect", mapX, mapY })
-          }
+          onInspect={(mapX, mapY) => {
+            const reqId = nextRequestIdRef.current++;
+            latestInspectIdRef.current = reqId;
+            workerRef.current?.postMessage({ id: reqId, type: "inspect", mapX, mapY });
+          }}
         />
       </SplitPane>
     </section>

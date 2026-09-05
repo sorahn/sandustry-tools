@@ -638,16 +638,24 @@ export function BlueprintMap({
     const worker = new Worker(new URL("../blueprint-worker.ts", import.meta.url), {
       type: "module",
     });
+    const exportId = `export-${Date.now()}`;
     const png = await new Promise<ArrayBuffer>((resolve, reject) => {
       worker.onmessage = (
-        event: MessageEvent<{ type: string; png?: ArrayBuffer; message?: string }>,
+        event: MessageEvent<{
+          id?: number | string;
+          type: string;
+          png?: ArrayBuffer;
+          message?: string;
+        }>,
       ) => {
+        if (event.data.id && event.data.id !== exportId) return;
         if (event.data.type === "result" && event.data.png) resolve(event.data.png);
         else if (event.data.type === "error") reject(new Error(event.data.message));
       };
       worker.onerror = () => reject(new Error("Blueprint PNG worker stopped unexpectedly"));
       worker.postMessage(
         {
+          id: exportId,
           type: "encode",
           image: bitmap,
           width: outputWidth,
@@ -663,13 +671,16 @@ export function BlueprintMap({
     }
     const blob = new Blob([png], { type: "image/png" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    try {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } finally {
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
   };
   return (
     <div
