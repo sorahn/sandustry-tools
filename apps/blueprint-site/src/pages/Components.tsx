@@ -2,8 +2,12 @@ import { useState } from "react";
 import {
   ActionBar,
   Badge,
+  BuildingTile,
   Button,
+  CategoryButton,
+  CategoryList,
   Checkbox,
+  ColorPicker,
   Dialog,
   Divider,
   ElementPicker,
@@ -14,6 +18,7 @@ import {
   IconButton,
   InputGroup,
   ItemCard,
+  Keycap,
   List,
   ListItem,
   LockedState,
@@ -178,6 +183,7 @@ const navSections = [
   { id: "actions", label: "Actions & Status" },
   { id: "tabs", label: "Tabs" },
   { id: "forms", label: "Form Controls" },
+  { id: "tools", label: "Game Tools" },
   { id: "panels", label: "Panels & States" },
   { id: "data", label: "Lists & Metadata" },
   { id: "overlays", label: "Overlays" },
@@ -279,6 +285,9 @@ export function ComponentsPage() {
   const [sliderFov, setSliderFov] = useState(90);
   const [query, setQuery] = useState("");
   const [matter, setMatter] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("logistics");
+  const [selectedBuilding, setSelectedBuilding] = useState("conveyor");
+  const [pickedColor, setPickedColor] = useState<string | null>("#ff8000");
 
   if (!import.meta.env.DEV) {
     return (
@@ -613,6 +622,195 @@ export function ComponentsPage() {
             />
           </FormField>
         </Panel>
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        id="tools"
+        title="Game tools and building menu"
+        description="Structure slots, category navigation with hover nudge, the floating color picker, and 3D hotkey badges."
+      >
+        <div className="space-y-6">
+          {/* Building Menu / Category split */}
+          <Panel className="p-6">
+            <ShowcaseSubgroup
+              title="Building Menu Layout (Category List & Structure Slots)"
+              description="Native building menu sidebar featuring hover-nudge animation paired with 64x64 structure slots."
+            >
+              <div className="flex flex-col gap-6 pt-2 md:flex-row">
+                <div className="w-full shrink-0 md:w-36">
+                  <CategoryList>
+                    <CategoryButton
+                      label="All"
+                      badge="32"
+                      selected={activeCategory === "all"}
+                      onClick={() => setActiveCategory("all")}
+                    />
+                    <CategoryButton
+                      label="Logistics"
+                      badge="6"
+                      selected={activeCategory === "logistics"}
+                      onClick={() => setActiveCategory("logistics")}
+                    />
+                    <CategoryButton
+                      label="Production"
+                      badge="12"
+                      selected={activeCategory === "production"}
+                      onClick={() => setActiveCategory("production")}
+                    />
+                    <CategoryButton
+                      label="Blocks"
+                      badge="8"
+                      selected={activeCategory === "blocks"}
+                      onClick={() => setActiveCategory("blocks")}
+                    />
+                    <CategoryButton
+                      label="Economy"
+                      badge="4"
+                      selected={activeCategory === "economy"}
+                      onClick={() => setActiveCategory("economy")}
+                    />
+                    <CategoryButton
+                      label="Fluids"
+                      badge="5"
+                      selected={activeCategory === "fluids"}
+                      onClick={() => setActiveCategory("fluids")}
+                    />
+                  </CategoryList>
+                </div>
+
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="border-b border-slate-800 pb-1 font-mono text-xs text-slate-400">
+                    Category: <span className="capitalize text-yellow-300">{activeCategory}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <BuildingTile
+                      label="Conveyor Belt"
+                      hotkey="1"
+                      selected={selectedBuilding === "conveyor"}
+                      onClick={() => setSelectedBuilding("conveyor")}
+                      icon={<span className="text-sm font-bold text-yellow-300">→</span>}
+                    />
+                    <BuildingTile
+                      label="Conveyor Mk.2"
+                      hotkey="2"
+                      badge="mk2"
+                      selected={selectedBuilding === "conveyor-mk2"}
+                      onClick={() => setSelectedBuilding("conveyor-mk2")}
+                      icon={<span className="text-sm font-bold text-yellow-300">⇉</span>}
+                    />
+                    <BuildingTile
+                      label="Launcher"
+                      hotkey="3"
+                      selected={selectedBuilding === "launcher"}
+                      onClick={() => setSelectedBuilding("launcher")}
+                      icon={<span className="text-sm font-bold text-yellow-300">▲</span>}
+                    />
+                    <BuildingTile
+                      label="Sorter"
+                      hotkey="4"
+                      selected={selectedBuilding === "sorter"}
+                      onClick={() => setSelectedBuilding("sorter")}
+                      icon={<span className="text-sm font-bold text-yellow-300">⇄</span>}
+                    />
+                    <BuildingTile
+                      label="Storage Bin"
+                      hotkey="5"
+                      selected={selectedBuilding === "storage"}
+                      onClick={() => setSelectedBuilding("storage")}
+                      icon={<span className="text-sm font-bold text-yellow-300">▤</span>}
+                    />
+                    <BuildingTile
+                      label="Kinetic Press"
+                      disabled
+                      badge="lock"
+                      icon={<span className="text-sm font-bold text-slate-500">⚙</span>}
+                    />
+                  </div>
+                </div>
+              </div>
+            </ShowcaseSubgroup>
+          </Panel>
+
+          {/* Color Picker & Keycaps grid */}
+          <div className="grid gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <Panel className="h-full space-y-4 p-6">
+                <ShowcaseSubgroup
+                  title="Color Picker (Native 242px)"
+                  description="8-column preset palette swatches with default checkerboard and custom color picker."
+                >
+                  <div className="flex flex-col items-center pt-2 sm:items-start">
+                    <ColorPicker value={pickedColor} onChange={setPickedColor} />
+                    <div className="mt-3 flex items-center gap-2 font-mono text-xs text-slate-400">
+                      <span>Selected color:</span>
+                      <span
+                        className="inline-block h-3.5 w-3.5 rounded-sm border border-white/20"
+                        style={{ backgroundColor: pickedColor ?? "transparent" }}
+                      />
+                      <span className="text-yellow-300">{pickedColor ?? "Default"}</span>
+                    </div>
+                  </div>
+                </ShowcaseSubgroup>
+              </Panel>
+            </div>
+
+            <div className="lg:col-span-7">
+              <Panel className="h-full space-y-6 p-6">
+                <ShowcaseSubgroup
+                  title="3D Embossed Hotkey Badges"
+                  description="HUD hotkey caps with linear gradient, inset highlight, bottom shadow, and glowing accent glyph."
+                >
+                  <div className="space-y-3 pt-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Keycap size="sm">Q</Keycap>
+                      <Keycap size="sm">Tab</Keycap>
+                      <Keycap size="md">Q</Keycap>
+                      <Keycap size="md">Tab</Keycap>
+                      <Keycap size="md">Shift</Keycap>
+                      <Keycap size="md">Space</Keycap>
+                      <Keycap size="lg">E</Keycap>
+                      <Keycap size="lg">Enter</Keycap>
+                    </div>
+                  </div>
+                </ShowcaseSubgroup>
+
+                <Divider className="py-2" />
+
+                <ShowcaseSubgroup
+                  title="Menu Inline Shortcut Chips"
+                  description="Bracketed and outline shortcut indicators matching menu buttons and shortcut bars."
+                >
+                  <div className="space-y-3 pt-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Keycap variant="bracket" size="sm">
+                        Q
+                      </Keycap>
+                      <Keycap variant="bracket" size="md">
+                        Tab
+                      </Keycap>
+                      <Keycap variant="bracket" size="md">
+                        1
+                      </Keycap>
+                      <Keycap variant="bracket" size="lg">
+                        Space
+                      </Keycap>
+                      <span className="text-slate-600">|</span>
+                      <Keycap variant="outline" size="sm">
+                        1
+                      </Keycap>
+                      <Keycap variant="outline" size="md">
+                        Ctrl
+                      </Keycap>
+                      <Keycap variant="outline" size="md">
+                        Z
+                      </Keycap>
+                    </div>
+                  </div>
+                </ShowcaseSubgroup>
+              </Panel>
+            </div>
+          </div>
+        </div>
       </ShowcaseSection>
 
       <ShowcaseSection

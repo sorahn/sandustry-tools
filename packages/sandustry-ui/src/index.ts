@@ -64,3 +64,16 @@ export { Fieldset, type FieldsetProps } from "./components/Fieldset";
 export { LockedState, type LockedStateProps } from "./components/LockedState";
 export { Tabs, Tab, type TabsProps, type TabProps, type TabItem } from "./components/Tabs";
 export { Slider, type SliderProps } from "./components/Slider";
+export { BuildingTile, type BuildingTileProps } from "./components/BuildingTile";
+export {
+  CategoryList,
+  CategoryButton,
+  type CategoryListProps,
+  type CategoryButtonProps,
+} from "./components/CategoryList";
+export {
+  ColorPicker,
+  DEFAULT_PRESET_COLORS,
+  type ColorPickerProps,
+} from "./components/ColorPicker";
+export { Keycap, type KeycapProps } from "./components/Keycap";
