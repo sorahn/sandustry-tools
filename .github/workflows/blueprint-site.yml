@@ -28,7 +28,59 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.filter.outputs.deploy }}
+    steps:
+      - name: Checkout history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check changed paths
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+            changed=$(git diff-tree --root --no-commit-id --name-only -r "$CURRENT_SHA")
+          else
+            changed=$(git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA")
+          fi
+
+          deploy=false
+          while IFS= read -r file; do
+            case "$file" in
+              apps/blueprint-site/*)
+                [[ "$file" == *.md || "$file" == */__tests__/* ]] || deploy=true
+                ;;
+              packages/sandustry-ui/*)
+                [[ "$file" == *.md ]] || deploy=true
+                ;;
+              packages/sandustry-blueprint-core/*)
+                [[ "$file" == *.md || "$file" == */tests/* ]] || deploy=true
+                ;;
+              packages/sandustry-save-core/*)
+                [[ "$file" == *.md || "$file" == */tests/* ]] || deploy=true
+                ;;
+              .github/workflows/blueprint-site.yml)
+                deploy=true
+                ;;
+            esac
+          done <<< "$changed"
+
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+
   deploy:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
