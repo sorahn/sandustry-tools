@@ -12,6 +12,9 @@ import {
   normalizeElementList,
   MATTER_TYPE,
   isFilterStructure,
+  customShapeFromStructure,
+  isFoundationStructure,
+  type BlueprintType,
   type FilterOverlayCluster,
   type PreparedStructure,
   type RenderAsset,
@@ -32,6 +35,32 @@ export type BlueprintMapSidebarProps = {
   debugOptions: ReactNode;
 };
 
+function shapeOutlinePath(shape: number[][], originX: number, originY: number, cellSize: number) {
+  let path = "";
+  const rows = shape.length;
+  const cols = shape[0]?.length ?? 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if ((shape[r]?.[c] ?? 0) <= 0) continue;
+      const x = originX + c * cellSize;
+      const y = originY + r * cellSize;
+      if (r === 0 || (shape[r - 1]?.[c] ?? 0) <= 0) {
+        path += `M ${x} ${y} L ${x + cellSize} ${y} `;
+      }
+      if (r === rows - 1 || (shape[r + 1]?.[c] ?? 0) <= 0) {
+        path += `M ${x} ${y + cellSize} L ${x + cellSize} ${y + cellSize} `;
+      }
+      if (c === 0 || (shape[r]?.[c - 1] ?? 0) <= 0) {
+        path += `M ${x} ${y} L ${x} ${y + cellSize} `;
+      }
+      if (c === cols - 1 || (shape[r]?.[c + 1] ?? 0) <= 0) {
+        path += `M ${x + cellSize} ${y} L ${x + cellSize} ${y + cellSize} `;
+      }
+    }
+  }
+  return path;
+}
+
 function StructureThumbnail({
   asset,
   frameIndex = 0,
@@ -39,6 +68,9 @@ function StructureThumbnail({
   lightColor,
   footprint,
   name,
+  structureType,
+  customShape,
+  outlineShape,
 }: {
   asset?: RenderAsset | CatalogRenderAsset;
   frameIndex?: number;
@@ -46,6 +78,9 @@ function StructureThumbnail({
   lightColor?: string | null;
   footprint: { width: number; height: number };
   name: string;
+  structureType?: BlueprintType;
+  customShape?: number[][];
+  outlineShape?: number[][];
 }) {
   const rawId = useId();
   const gridId = `thumb-grid-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -100,6 +135,100 @@ function StructureThumbnail({
     </svg>
   );
 
+  const isCustomShape = Boolean(
+    customShape && customShape.some((row) => row.some((val) => val > 0)),
+  );
+
+  if (isCustomShape && customShape) {
+    const shapeRows = customShape.length;
+    const shapeCols = customShape[0]?.length ?? 4;
+    const cellSize = 8;
+    const renderedWidth = shapeCols * cellSize;
+    const renderedHeight = shapeRows * cellSize;
+    const originX = Math.round((64 - renderedWidth) / 2);
+    const originY = Math.round((64 - renderedHeight) / 2);
+    const blockSize = 32;
+
+    const outlinePath = shapeOutlinePath(customShape, originX, originY, cellSize);
+
+    const transform = rotation ? `rotate(${rotation} 32 32)` : undefined;
+
+    return (
+      <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
+        {renderGridBackground(originX, originY, cellSize, blockSize)}
+        <svg
+          className="relative z-10 shrink-0 overflow-hidden"
+          viewBox="0 0 64 64"
+          style={{ width: "64px", height: "64px", imageRendering: "pixelated" }}
+          aria-label={name}
+        >
+          <defs>
+            <mask
+              id={`${gridId}-prefab-mask`}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="0"
+              width="64"
+              height="64"
+            >
+              <rect width="64" height="64" fill="black" />
+              {customShape.map((row, r) =>
+                row.map((val, c) =>
+                  val > 0 ? (
+                    <rect
+                      key={`mask-${r}-${c}`}
+                      x={originX + c * cellSize}
+                      y={originY + r * cellSize}
+                      width={cellSize}
+                      height={cellSize}
+                      fill="white"
+                    />
+                  ) : null,
+                ),
+              )}
+            </mask>
+          </defs>
+          <g transform={transform}>
+            {customShape.map((row, r) =>
+              row.map((val, c) =>
+                val > 0 ? (
+                  <rect
+                    key={`bg-${r}-${c}`}
+                    x={originX + c * cellSize}
+                    y={originY + r * cellSize}
+                    width={cellSize}
+                    height={cellSize}
+                    fill="#434c5e"
+                  />
+                ) : null,
+              ),
+            )}
+            <image
+              href={`${import.meta.env.BASE_URL}catalog/img__block.png`}
+              x={originX}
+              y={originY}
+              width={renderedWidth}
+              height={renderedHeight}
+              preserveAspectRatio="none"
+              mask={`url(#${gridId}-prefab-mask)`}
+              style={{ imageRendering: "pixelated" }}
+            />
+            {outlinePath ? (
+              <path
+                d={outlinePath}
+                stroke="#17202c"
+                strokeWidth="2"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
+                fill="none"
+              />
+            ) : null}
+          </g>
+        </svg>
+      </div>
+    );
+  }
+
   if (!asset?.path) {
     const renderedWidth = footprint.width * 8;
     const renderedHeight = footprint.height * 8;
@@ -115,27 +244,63 @@ function StructureThumbnail({
     );
   }
 
+  // Kinetic Press (type 20) uses a massive 18x417 pressing tower in the world,
+  // but the game's build menu clips it square to the 18x18 press head.
+  const isKineticPress = structureType === 20 || (asset.sourceCrop?.height ?? 0) > 48;
+
   const sourceWidth = asset.sourceSize?.width ?? asset.frame?.width ?? 16;
   const sourceHeight = asset.sourceSize?.height ?? asset.frame?.height ?? 16;
-  const frameWidth = asset.frame?.width ?? asset.renderSize?.width ?? sourceWidth;
-  const frameHeight = asset.frame?.height ?? asset.renderSize?.height ?? sourceHeight;
+  const frameWidth = isKineticPress
+    ? 18
+    : (asset.frame?.width ?? asset.renderSize?.width ?? sourceWidth);
+  const frameHeight = isKineticPress
+    ? 18
+    : (asset.frame?.height ?? asset.renderSize?.height ?? sourceHeight);
 
-  const cropX = asset.sourceCrop?.x ?? 0;
-  const cropY = asset.sourceCrop?.y ?? 0;
-  const cropWidth = asset.sourceCrop?.width ?? frameWidth;
-  const cropHeight = asset.sourceCrop?.height ?? frameHeight;
+  const cropX = isKineticPress ? 0 : (asset.sourceCrop?.x ?? 0);
+  const cropY = isKineticPress ? 0 : (asset.sourceCrop?.y ?? 0);
+  const cropWidth = isKineticPress ? 18 : (asset.sourceCrop?.width ?? frameWidth);
+  const cropHeight = isKineticPress ? 18 : (asset.sourceCrop?.height ?? frameHeight);
 
-  const imageX = -frameIndex * frameWidth - cropX;
-  const imageY = -cropY;
+  // Compute rotated bounding box so non-square sprites (e.g. 23x16 pyros, 18x26 launchers)
+  // are not clipped when rotated by 90° or 270°.
+  const normRot = ((rotation % 360) + 360) % 360;
+  const isRightAngle = normRot === 90 || normRot === 270;
+  const bboxWidth = isRightAngle
+    ? cropHeight
+    : normRot === 0 || normRot === 180
+      ? cropWidth
+      : Math.round(
+          Math.abs(cropWidth * Math.cos((normRot * Math.PI) / 180)) +
+            Math.abs(cropHeight * Math.sin((normRot * Math.PI) / 180)),
+        );
+  const bboxHeight = isRightAngle
+    ? cropWidth
+    : normRot === 0 || normRot === 180
+      ? cropHeight
+      : Math.round(
+          Math.abs(cropWidth * Math.sin((normRot * Math.PI) / 180)) +
+            Math.abs(cropHeight * Math.cos((normRot * Math.PI) / 180)),
+        );
+
+  const boxOffsetX = (bboxWidth - cropWidth) / 2;
+  const boxOffsetY = (bboxHeight - cropHeight) / 2;
+
+  const imageX = boxOffsetX - frameIndex * frameWidth - cropX;
+  const imageY = boxOffsetY - cropY;
 
   const href = `${import.meta.env.BASE_URL}${asset.path}`;
-  const transform = rotation ? `rotate(${rotation} ${cropWidth / 2} ${cropHeight / 2})` : undefined;
-  const maxDim = Math.max(cropWidth, cropHeight);
-  const scale = maxDim <= 20 ? 2 : Math.min(48 / cropWidth, 48 / cropHeight);
-  const renderedWidth = cropWidth * scale;
-  const renderedHeight = cropHeight * scale;
-  const originX = Math.round((64 - renderedWidth) / 2);
-  const originY = Math.round((64 - renderedHeight) / 2);
+  const cx = bboxWidth / 2;
+  const cy = bboxHeight / 2;
+  const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
+  const maxDim = Math.max(bboxWidth, bboxHeight);
+  const scale = maxDim <= 28 ? 2 : Math.min(56 / bboxWidth, 56 / bboxHeight);
+  const renderedWidth = bboxWidth * scale;
+  const renderedHeight = bboxHeight * scale;
+  const fpPxWidth = (footprint?.width || 4) * 4;
+  const fpPxHeight = (footprint?.height || 4) * 4;
+  const originX = Math.round((64 - fpPxWidth * scale) / 2);
+  const originY = Math.round((64 - fpPxHeight * scale) / 2);
   const cellSize = 4 * scale;
   const blockSize = cellSize * 4;
 
@@ -143,7 +308,7 @@ function StructureThumbnail({
     <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
       {renderGridBackground(originX, originY, cellSize, blockSize)}
       <svg
-        viewBox={`0 0 ${cropWidth} ${cropHeight}`}
+        viewBox={`0 0 ${bboxWidth} ${bboxHeight}`}
         className="relative z-10 shrink-0 overflow-hidden"
         style={{
           width: `${renderedWidth}px`,
@@ -167,8 +332,8 @@ function StructureThumbnail({
             {[4, 7, 10].map((bar) => (
               <rect
                 key={bar}
-                x={cropWidth * (bar / 16)}
-                y={cropHeight * 0.25}
+                x={boxOffsetX + cropWidth * (bar / 16)}
+                y={boxOffsetY + cropHeight * 0.25}
                 width={cropWidth * (2 / 16)}
                 height={cropHeight * 0.5}
                 fill={lightColor}
@@ -177,6 +342,22 @@ function StructureThumbnail({
           </g>
         ) : null}
       </svg>
+      {outlineShape ? (
+        <svg
+          className="pointer-events-none absolute inset-0 z-20 h-full w-full"
+          viewBox="0 0 64 64"
+          aria-hidden="true"
+        >
+          <path
+            d={shapeOutlinePath(outlineShape, originX, originY, cellSize)}
+            stroke="#17202c"
+            strokeWidth="2"
+            strokeLinecap="square"
+            strokeLinejoin="miter"
+            fill="none"
+          />
+        </svg>
+      ) : null}
     </div>
   );
 }
@@ -218,11 +399,51 @@ export function BlueprintMapSidebar({
   debugOptions,
 }: BlueprintMapSidebarProps) {
   const entry = selected ? catalogEntry(selected.type) : undefined;
-  const name = selected ? (entry?.name ?? structureLabel(selected.type)) : "";
   const footprint = selected ? structureFootprint(selected) : { width: 4, height: 4 };
   const topY = selected ? structureTopY(selected) : 0;
   const render = entry ? catalogRender(entry) : undefined;
   const renderSize = render ? catalogRenderSize(render) : undefined;
+
+  const customShape = useMemo(() => {
+    return (
+      preparedStructure?.customShape ?? (selected ? customShapeFromStructure(selected) : undefined)
+    );
+  }, [selected, preparedStructure]);
+
+  const isPrefab = Boolean(
+    (typeof selected?.type === "string" && selected.type.startsWith("prefabTerrain")) ||
+    customShape,
+  );
+
+  const name = useMemo(() => {
+    if (!selected) return "";
+    if (entry?.name) return entry.name;
+    const typeStr = String(selected.type);
+    const prefabMatch = typeStr.match(/^prefabTerrain(?:_(\d+))?$/);
+    if (prefabMatch) {
+      return prefabMatch[1] ? `Terrain Prefab #${prefabMatch[1]}` : "Terrain Prefab";
+    }
+    if (customShape) return "Custom Prefab";
+    return structureLabel(selected.type);
+  }, [selected, entry?.name, customShape]);
+
+  const category = entry?.category ?? (isPrefab ? "blocks" : undefined);
+
+  const solidCellCount = useMemo(() => {
+    if (!customShape) return 0;
+    return customShape.reduce(
+      (acc, row) => acc + row.reduce((rAcc, cell) => rAcc + (cell > 0 ? 1 : 0), 0),
+      0,
+    );
+  }, [customShape]);
+
+  const outlineShape =
+    preparedStructure && isFoundationStructure(preparedStructure)
+      ? (preparedStructure.shape ??
+        Array.from({ length: preparedStructure.footprint.height }, () =>
+          Array.from({ length: preparedStructure.footprint.width }, () => 1),
+        ))
+      : undefined;
 
   const sprite = preparedStructure?.sprite;
   const asset = sprite?.asset ?? entry?.renderAsset;
@@ -313,15 +534,18 @@ export function BlueprintMapSidebar({
                 lightColor={lightColor}
                 footprint={footprint}
                 name={name}
+                structureType={selected?.type}
+                customShape={customShape}
+                outlineShape={outlineShape}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
                   <h4 className="font-semibold text-slate-100 text-sm leading-snug truncate">
                     {name}
                   </h4>
-                  {entry?.category ? (
+                  {category ? (
                     <span className="shrink-0 rounded bg-slate-800/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-300 uppercase tracking-wide">
-                      {entry.category}
+                      {category}
                     </span>
                   ) : null}
                 </div>
@@ -340,8 +564,8 @@ export function BlueprintMapSidebar({
               </div>
             </div>
 
-            {/* Unknown structure alert if no catalog entry */}
-            {!entry ? (
+            {/* Unknown structure alert if no catalog entry and not a prefab */}
+            {!entry && !isPrefab ? (
               <p className="rounded border border-amber-700/60 bg-amber-950/30 p-2 text-amber-200 text-xs">
                 Unknown structure — no catalog entry or sprite is available. Showing a placeholder
                 using the raw blueprint record.
@@ -536,6 +760,25 @@ export function BlueprintMapSidebar({
               </div>
             ) : null}
 
+            {/* Prefab Terrain Details */}
+            {isPrefab && customShape ? (
+              <div className="rounded-lg border border-slate-800 bg-black/30 p-2.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                    Prefab Terrain Definition
+                  </span>
+                  <span className="rounded border border-sky-800/60 bg-sky-950/40 px-1.5 py-0.5 text-[10px] font-medium text-sky-300">
+                    Procedural
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Procedural foundation block generated from {solidCellCount} solid{" "}
+                  {solidCellCount === 1 ? "cell" : "cells"}.
+                </p>
+                {/* TODO: Render composition after adding terrain-ID resolution for prefab cellIds. */}
+              </div>
+            ) : null}
+
             {/* Signal connections */}
             {connectedSignalLinks.length > 0 ? (
               <div className="rounded-lg border border-slate-800 bg-black/30 p-2.5 space-y-1.5">
@@ -609,6 +852,19 @@ export function BlueprintMapSidebar({
                     </span>
                     <span className="text-slate-600 text-[10px]">
                       {renderSize.width}×{renderSize.height}px
+                    </span>
+                  </div>
+                ) : isPrefab ? (
+                  <div className="rounded border border-slate-800/60 bg-slate-950/50 p-2">
+                    <span className="text-slate-500 block text-[10px]">Foundation Texture</span>
+                    <span
+                      className="font-mono text-slate-400 text-[11px] truncate block"
+                      title="img__block.png"
+                    >
+                      img__block.png
+                    </span>
+                    <span className="text-slate-600 text-[10px]">
+                      {solidCellCount} / {footprint.width * footprint.height} solid cells
                     </span>
                   </div>
                 ) : null}
