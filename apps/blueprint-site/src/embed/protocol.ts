@@ -33,7 +33,18 @@ export type RendererResizeEvent = {
   height: number;
 };
 
-export type RendererEvent = RendererReadyEvent | RendererPreviewErrorEvent | RendererResizeEvent;
+export type RendererExportPngEvent = {
+  namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
+  type: "export-png";
+  filename: string;
+  png: ArrayBuffer;
+};
+
+export type RendererEvent =
+  | RendererReadyEvent
+  | RendererPreviewErrorEvent
+  | RendererResizeEvent
+  | RendererExportPngEvent;
 
 export type RendererPreviewErrorEvent = {
   namespace: typeof BLUEPRINT_RENDERER_NAMESPACE;
@@ -135,5 +146,14 @@ export function rendererResizeEvent(width: number, height: number): RendererResi
     type: "resize",
     width,
     height,
+  };
+}
+
+export function rendererExportPngEvent(filename: string, png: ArrayBuffer): RendererExportPngEvent {
+  return {
+    namespace: BLUEPRINT_RENDERER_NAMESPACE,
+    type: "export-png",
+    filename,
+    png,
   };
 }

@@ -4,6 +4,7 @@ import {
   isAllowedParentOrigin,
   isRendererInspectorOptionsRequest,
   isRendererRequest,
+  rendererExportPngEvent,
   rendererPreviewErrorEvent,
   rendererResizeEvent,
   rendererReadyEvent,
@@ -98,6 +99,16 @@ describe("blueprint renderer embed protocol", () => {
       type: "resize",
       width: 640,
       height: 480,
+    });
+  });
+
+  test("creates transferable PNG export events", () => {
+    const png = new ArrayBuffer(2);
+    expect(rendererExportPngEvent("test.png", png)).toEqual({
+      namespace: BLUEPRINT_RENDERER_NAMESPACE,
+      type: "export-png",
+      filename: "test.png",
+      png,
     });
   });
 });

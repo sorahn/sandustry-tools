@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { decodeBlueprint } from "@daryl.roberts/sandustry-blueprint-core";
 import { BlueprintMap } from "../components/BlueprintMap";
 import { readStorageValue } from "../utils/storage";
@@ -9,6 +9,7 @@ import {
   isRendererRequest,
   parentOrigin,
   rendererPreviewErrorEvent,
+  rendererExportPngEvent,
   rendererResizeEvent,
   rendererReadyEvent,
 } from "../embed/protocol";
@@ -35,6 +36,11 @@ function BlueprintInspectorEmbed() {
   const [showPngBackground, setShowPngBackground] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [fitPolicy, setFitPolicy] = useState<FitPolicy | undefined>();
+  const exportPng = useCallback((png: ArrayBuffer, filename: string) => {
+    const allowedOrigin = parentOrigin();
+    if (!allowedOrigin || window.parent === window) return;
+    window.parent.postMessage(rendererExportPngEvent(filename, png), allowedOrigin, [png]);
+  }, []);
 
   useEffect(() => {
     // The parent iframe owns sizing. Prevent the browser's fallback scrollbar
@@ -174,6 +180,7 @@ function BlueprintInspectorEmbed() {
           fitPolicy={fitPolicy}
           stickyTop="0px"
           embedMode
+          onExportPng={exportPng}
         />
       ) : (
         <p role="status">{status}</p>

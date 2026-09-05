@@ -76,6 +76,7 @@ export function BlueprintMap({
   padding: paddingOverride,
   stickyTop,
   embedMode = false,
+  onExportPng,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -93,6 +94,7 @@ export function BlueprintMap({
   padding?: FitSpacing;
   stickyTop?: string;
   embedMode?: boolean;
+  onExportPng?: (png: ArrayBuffer, filename: string) => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showDebugCells, setShowDebugCells] = useState(false);
@@ -654,11 +656,16 @@ export function BlueprintMap({
         [bitmap],
       );
     }).finally(() => worker.terminate());
+    const filename = `${blueprint.name.trim().replace(/[^a-z0-9._-]+/gi, "-") || "blueprint"}.png`;
+    if (onExportPng) {
+      onExportPng(png, filename);
+      return;
+    }
     const blob = new Blob([png], { type: "image/png" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${blueprint.name.trim().replace(/[^a-z0-9._-]+/gi, "-") || "blueprint"}.png`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     link.remove();
