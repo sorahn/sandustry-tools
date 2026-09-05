@@ -32,7 +32,11 @@ import {
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
 } from "../utils/storage-keys";
-import { decodeBrowserSave, extractSavedBlueprints } from "@sandustry/save-core";
+import {
+  decodeBrowserSave,
+  extractSavedBlueprints,
+  type SaveBlueprintRecord,
+} from "@sandustry/save-core";
 import { encodeSavedBlueprint } from "../utils/save-blueprint";
 import { getSavedGameBytes, listSavedGames, type StoredSaveSummary } from "../utils/save-db";
 
@@ -217,6 +221,10 @@ export function BlueprintInspectorPage({
   const [message, setMessage] = useState(
     initialMessage ?? "Paste a v2 blueprint string to inspect it.",
   );
+  const [droppedSave, setDroppedSave] = useState<{
+    fileName: string;
+    blueprints: SaveBlueprintRecord[];
+  } | null>(null);
   const mapPanelRef = useRef<HTMLDivElement>(null);
   const inspect = () => {
     const value = encoded.trim();
@@ -248,6 +256,45 @@ export function BlueprintInspectorPage({
     setSummary(summarizeBlueprint(nextEncoded, nextBlueprint));
     setMessage(`Loaded test blueprint ${nextBlueprint.name}.`);
     if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, nextEncoded);
+  };
+  const loadSavedBlueprint = (record: SaveBlueprintRecord, fileName: string) => {
+    const nextEncoded = encodeSavedBlueprint(record);
+    const nextBlueprint = decodeBlueprint(nextEncoded);
+    setDroppedSave(null);
+    setEncoded(nextEncoded);
+    setInspectedBlueprintKey(nextEncoded);
+    setBlueprint(nextBlueprint);
+    setSummary(summarizeBlueprint(nextEncoded, nextBlueprint));
+    setMessage(`Loaded ${record.name} from ${fileName}.`);
+  };
+  const handleSaveFile = async (file?: File) => {
+    if (!file) return;
+    if (!file.name.endsWith(".save")) {
+      setMessage("Choose a Sandustry .save file.");
+      return;
+    }
+    setMessage(`Reading ${file.name}…`);
+    try {
+      const extracted = extractSavedBlueprints(
+        (await decodeBrowserSave(await file.arrayBuffer())).payload,
+      );
+      if (!extracted.blueprints.length) {
+        setDroppedSave(null);
+        setMessage("That save contains no valid saved blueprints.");
+        return;
+      }
+      if (extracted.blueprints.length === 1) {
+        loadSavedBlueprint(extracted.blueprints[0], file.name);
+        return;
+      }
+      setDroppedSave({ fileName: file.name, blueprints: extracted.blueprints });
+      setMessage(`Choose one of the ${extracted.blueprints.length} saved blueprints.`);
+    } catch (error) {
+      setDroppedSave(null);
+      setMessage(
+        error instanceof Error ? `Unable to read save: ${error.message}` : "Unable to read save.",
+      );
+    }
   };
   useEffect(() => {
     if (encoded.trim() && (initialEncoded !== undefined || remember)) inspect();
@@ -283,6 +330,11 @@ export function BlueprintInspectorPage({
     <section className="space-y-6">
       <PageHeader title={title}>{description}</PageHeader>
       {initialEncoded === undefined ? <FromSavedGame /> : null}
+      <SaveFileDropzone
+        onFile={handleSaveFile}
+        selection={droppedSave}
+        onSelect={(record) => droppedSave && loadSavedBlueprint(record, droppedSave.fileName)}
+      />
       <BlueprintSubmissionPanel
         encoded={encoded}
         message={message}
@@ -321,6 +373,67 @@ export function BlueprintInspectorPage({
         </>
       ) : null}
     </section>
+  );
+}
+
+function SaveFileDropzone({
+  onFile,
+  selection,
+  onSelect,
+}: {
+  onFile: (file?: File) => void;
+  selection: { fileName: string; blueprints: SaveBlueprintRecord[] } | null;
+  onSelect: (record: SaveBlueprintRecord) => void;
+}) {
+  return (
+    <Panel title="From .save file">
+      <div
+        className="space-y-3 p-4 text-sm text-slate-400"
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          void onFile(event.dataTransfer.files[0]);
+        }}
+      >
+        <label className="flex cursor-pointer items-center gap-3">
+          <span className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-200">
+            Choose .save file
+          </span>
+          <span>or drop one here</span>
+          <input
+            type="file"
+            accept=".save"
+            className="sr-only"
+            onChange={(event) => void onFile(event.target.files?.[0])}
+          />
+        </label>
+        {selection ? (
+          <label className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
+            <span>{selection.fileName}</span>
+            <Select
+              defaultValue=""
+              aria-label="Blueprint from dropped save"
+              onChange={(event) => {
+                const record = selection.blueprints.find(
+                  (candidate) => candidate.id === event.target.value,
+                );
+                if (record) onSelect(record);
+              }}
+            >
+              <option value="">Choose a blueprint…</option>
+              {selection.blueprints.map((blueprint) => (
+                <option key={blueprint.id} value={blueprint.id}>
+                  {blueprint.name}
+                </option>
+              ))}
+            </Select>
+          </label>
+        ) : null}
+      </div>
+    </Panel>
   );
 }
 
