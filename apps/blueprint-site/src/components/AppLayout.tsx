@@ -1,12 +1,14 @@
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useLocation } from "@tanstack/react-router";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
 export function AppLayout() {
-  const query =
-    typeof window !== "undefined" ? new URLSearchParams(window.location.search) : undefined;
-  const visualCapture = query?.get("visualCapture") === "1";
-  const embed = window.location.pathname.endsWith("/inspect/embed");
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.searchStr);
+  const visualCapture =
+    searchParams.get("visualCapture") === "1" ||
+    (location.search as Record<string, unknown> | undefined)?.visualCapture === "1";
+  const embed = location.pathname.endsWith("/inspect/embed");
   if (visualCapture || embed) return <Outlet />;
 
   return (

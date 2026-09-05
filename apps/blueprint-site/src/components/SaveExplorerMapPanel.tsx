@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Button, TooltipSurface } from "@sandustry/ui";
 import type { SaveExplorerCellInspection } from "@sandustry/save-core";
 
@@ -43,6 +44,37 @@ type SaveExplorerMapPanelProps = {
   onInspect: (mapX: number, mapY: number) => void;
 };
 
+export function createDragDepthTracker(getOnDraggingChange: () => (dragging: boolean) => void) {
+  let depth = 0;
+  return {
+    enter(event?: { preventDefault?: () => void }) {
+      event?.preventDefault?.();
+      depth += 1;
+      if (depth === 1) {
+        getOnDraggingChange()(true);
+      }
+    },
+    leave(event?: { preventDefault?: () => void }) {
+      event?.preventDefault?.();
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) {
+        getOnDraggingChange()(false);
+      }
+    },
+    drop(event?: { preventDefault?: () => void }) {
+      event?.preventDefault?.();
+      depth = 0;
+      getOnDraggingChange()(false);
+    },
+    reset() {
+      depth = 0;
+    },
+    get depth() {
+      return depth;
+    },
+  };
+}
+
 export function SaveExplorerMapPanel({
   inputRef,
   canvasRef,
@@ -67,22 +99,38 @@ export function SaveExplorerMapPanel({
   fitMap,
   onInspect,
 }: SaveExplorerMapPanelProps) {
+  const onDraggingChangeRef = useRef(onDraggingChange);
+  onDraggingChangeRef.current = onDraggingChange;
+
+  const trackerRef = useRef<ReturnType<typeof createDragDepthTracker> | null>(null);
+  if (!trackerRef.current) {
+    trackerRef.current = createDragDepthTracker(() => onDraggingChangeRef.current);
+  }
+
+  useEffect(() => {
+    if (!dragging) {
+      trackerRef.current?.reset();
+    }
+  }, [dragging]);
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div
-        className={`save-explorer-dropzone ${dragging ? "save-explorer-dropzone--active" : ""}`}
+        className={`flex min-h-20 items-center justify-center gap-4 border-b p-4 transition-colors duration-150 ${
+          dragging ? "border-yellow-400/70 bg-amber-900/30" : "border-slate-800/90 bg-slate-900/45"
+        }`}
         onDragEnter={(event) => {
-          event.preventDefault();
-          onDraggingChange(true);
+          trackerRef.current?.enter(event);
         }}
-        onDragOver={(event) => event.preventDefault()}
-        onDragLeave={(event) => {
+        onDragOver={(event) => {
           event.preventDefault();
-          onDraggingChange(false);
+          event.dataTransfer.dropEffect = "copy";
+        }}
+        onDragLeave={(event) => {
+          trackerRef.current?.leave(event);
         }}
         onDrop={(event) => {
-          event.preventDefault();
-          onDraggingChange(false);
+          trackerRef.current?.drop(event);
           void onFile(event.dataTransfer.files[0]);
         }}
       >
@@ -93,14 +141,16 @@ export function SaveExplorerMapPanel({
           className="hidden"
           onChange={(event) => void onFile(event.target.files?.[0])}
         />
-        <Button type="button" variant="solid" onClick={onChooseFile} disabled={busy}>
-          {busy ? "Decoding…" : documentLoaded ? "Open another save" : "Choose save file"}
-        </Button>
-        <span className="text-xs text-slate-500">or drop a `.save` file</span>
+        <div className={`flex items-center gap-4 ${dragging ? "pointer-events-none" : ""}`}>
+          <Button type="button" variant="solid" onClick={onChooseFile} disabled={busy}>
+            {busy ? "Decoding…" : documentLoaded ? "Open another save" : "Choose save file"}
+          </Button>
+          <span className="text-xs text-slate-500">or drop a `.save` file</span>
+        </div>
       </div>
       <div
         ref={mapFrameRef}
-        className="save-explorer-map-frame flex-1"
+        className="relative flex flex-1 min-h-[min(65vh,42rem)] items-center justify-center overflow-hidden bg-black p-4 [touch-action:none] [overscroll-behavior:contain]"
         onWheel={(event) => {
           if (!raster) return;
           const rect = event.currentTarget.getBoundingClientRect();
@@ -122,7 +172,9 @@ export function SaveExplorerMapPanel({
         {raster ? (
           <canvas
             ref={canvasRef}
-            className={`save-explorer-map${customCursor ? " save-explorer-map--custom-cursor" : ""}`}
+            className={`absolute block max-w-none select-none [image-rendering:pixelated] ${
+              customCursor ? "cursor-none" : "cursor-grab active:cursor-grabbing"
+            }`}
             aria-label="Save minimap"
             style={{
               width: raster.width * view.scale,
@@ -178,7 +230,7 @@ export function SaveExplorerMapPanel({
           </div>
         )}
         {raster ? (
-          <div className="save-explorer-map-controls">
+          <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded border border-slate-600/85 bg-slate-950/80 p-2 font-mono text-[11px] text-slate-300 backdrop-blur-sm">
             <Button
               type="button"
               onClick={() =>
@@ -211,7 +263,7 @@ export function SaveExplorerMapPanel({
         ) : null}
         {customCursor && hoverCell ? (
           <div
-            className="save-explorer-map-cursor"
+            className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2 border-2 border-yellow-400/95 bg-yellow-400/15 shadow-[0_0_0_1px_rgba(0,0,0,0.7),0_0_10px_rgba(253,224,71,0.35)]"
             style={{
               left: view.offsetX + (hoverCell.mapX + 0.5) * view.scale,
               top: view.offsetY + (hoverCell.mapY + 0.5) * view.scale,
