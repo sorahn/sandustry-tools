@@ -43,3 +43,43 @@
 .noShift:not(:disabled):focus-visible {
   left: 0;
 }
+
+.solid {
+  background: #ffe700 !important;
+  color: #000 !important;
+  border-color: #ffe700 !important;
+  font-weight: 700;
+}
+.solid::before {
+  display: none;
+}
+.solid:not(:disabled):hover,
+.solid:not(:disabled):focus-visible {
+  background: #eed500 !important;
+  color: #000 !important;
+  border-color: #eed500 !important;
+}
+.solid:not(:disabled):hover::first-letter,
+.solid:not(:disabled):focus-visible::first-letter {
+  color: #000 !important;
+}
+
+.quiet {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #94a3b8 !important;
+}
+.quiet::before {
+  display: none;
+}
+.quiet:not(:disabled):hover,
+.quiet:not(:disabled):focus-visible {
+  color: #ffffff !important;
+  background: rgb(30 41 59 / 0.5) !important;
+  border-color: transparent !important;
+}
+.quiet:not(:disabled):hover::first-letter,
+.quiet:not(:disabled):focus-visible::first-letter {
+  color: #ffffff !important;
+}
+

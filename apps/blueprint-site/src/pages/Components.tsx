@@ -7,7 +7,6 @@ import {
   Dialog,
   Divider,
   ElementPicker,
-  Fieldset,
   FilterOverlay,
   FormField,
   Hotbar,
@@ -27,9 +26,11 @@ import {
   SearchInput,
   SegmentedControl,
   Select,
+  Slider,
   SplitPane,
   StatusIndicator,
   Switch,
+  Tabs,
   TextArea,
   TextInput,
   TextAction,
@@ -175,6 +176,7 @@ const colorGroups: ColorGroup[] = [
 const navSections = [
   { id: "hero", label: "Hero" },
   { id: "actions", label: "Actions & Status" },
+  { id: "tabs", label: "Tabs" },
   { id: "forms", label: "Form Controls" },
   { id: "panels", label: "Panels & States" },
   { id: "data", label: "Lists & Metadata" },
@@ -195,8 +197,8 @@ function ShowcaseSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-6 space-y-3">
-      <div className="flex flex-col gap-1 border-b border-slate-800/80 pb-2.5">
+    <section id={id} className="scroll-mt-12 space-y-5">
+      <div className="flex flex-col gap-1.5 border-b border-slate-800/80 pb-3">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-yellow-300/90">
           {title}
         </h2>
@@ -207,12 +209,23 @@ function ShowcaseSection({
   );
 }
 
-function ShowcaseSubgroup({ title, children }: { title: string; children: React.ReactNode }) {
+function ShowcaseSubgroup({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="space-y-2.5">
-      <h3 className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        {title}
-      </h3>
+    <div className="space-y-3.5">
+      <div>
+        <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-300">
+          {title}
+        </h3>
+        {description ? <p className="mt-0.5 text-xs text-slate-500">{description}</p> : null}
+      </div>
       {children}
     </div>
   );
@@ -261,6 +274,9 @@ export function ComponentsPage() {
   const [mode, setMode] = useState<(typeof modeOptions)[number]["value"]>("overview");
   const [selectedItem, setSelectedItem] = useState("sand");
   const [activeTab, setActiveTab] = useState("blueprints");
+  const [activeBuildTab, setActiveBuildTab] = useState("structures");
+  const [sliderVolume, setSliderVolume] = useState(75);
+  const [sliderFov, setSliderFov] = useState(90);
   const [query, setQuery] = useState("");
   const [matter, setMatter] = useState("all");
 
@@ -273,7 +289,7 @@ export function ComponentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-12">
+    <div className="mx-auto max-w-6xl space-y-20 pb-24">
       <header className="border-b border-slate-800 pb-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-yellow-300/80">
@@ -336,32 +352,40 @@ export function ComponentsPage() {
         title="Actions and status"
         description="Interactive button variants, action icons, status badges, and progress indicators."
       >
-        <Panel className="space-y-6 p-6">
-          <ShowcaseSubgroup title="Buttons & Icon Actions">
-            <div className="flex flex-wrap items-center gap-3">
-              <Button>Default action</Button>
-              <Button variant="accent">Accent action</Button>
+        <Panel className="p-7 space-y-8">
+          <ShowcaseSubgroup
+            title="Buttons & Icon Actions"
+            description="Variants include default neutral, solid high-contrast confirm (#ffe700), accent outline, quiet flat action, and danger."
+          >
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Button>Default</Button>
+              <Button variant="solid">Solid confirm</Button>
+              <Button variant="accent">Accent outline</Button>
+              <Button variant="quiet">Quiet action</Button>
               <Button variant="danger">Danger action</Button>
               <Button disabled>Disabled action</Button>
               <IconButton
                 label="Regenerate"
-                className="h-8 w-8 rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
+                className="h-9 w-9 rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
               >
                 ↻
               </IconButton>
               <IconButton
                 label="Settings"
-                className="h-8 w-8 rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
+                className="h-9 w-9 rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
               >
                 ⚙
               </IconButton>
             </div>
           </ShowcaseSubgroup>
 
-          <Divider />
+          <Divider className="py-4" />
 
-          <ShowcaseSubgroup title="Badges">
-            <div className="flex flex-wrap items-center gap-2.5">
+          <ShowcaseSubgroup
+            title="Badges & Status Tags"
+            description="Pill tags for counts, tags, states, and mod versions."
+          >
+            <div className="flex flex-wrap items-center gap-3 pt-1">
               <Badge>Default</Badge>
               <Badge tone="accent">Selected</Badge>
               <Badge tone="success">Ready</Badge>
@@ -371,39 +395,42 @@ export function ComponentsPage() {
             </div>
           </ShowcaseSubgroup>
 
-          <Divider />
+          <Divider className="py-4" />
 
-          <ShowcaseSubgroup title="Progress Bar Tones">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="space-y-1.5">
+          <ShowcaseSubgroup
+            title="Progress Bar Tones"
+            description="Segmented-ready linear progress indicators for meters, durability, and thresholds."
+          >
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5 pt-1">
+              <div className="space-y-2">
                 <div className="flex justify-between text-[11px] text-slate-400">
                   <span>Accent</span>
                   <span>75%</span>
                 </div>
                 <ProgressBar value={75} tone="accent" label="Accent progress" />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex justify-between text-[11px] text-slate-400">
                   <span>Success</span>
                   <span>100%</span>
                 </div>
                 <ProgressBar value={100} tone="success" label="Success progress" />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex justify-between text-[11px] text-slate-400">
                   <span>Info</span>
                   <span>50%</span>
                 </div>
                 <ProgressBar value={50} tone="info" label="Info progress" />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex justify-between text-[11px] text-slate-400">
                   <span>Warning</span>
                   <span>60%</span>
                 </div>
                 <ProgressBar value={60} tone="warning" label="Warning progress" />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex justify-between text-[11px] text-slate-400">
                   <span>Danger</span>
                   <span>25%</span>
@@ -416,11 +443,38 @@ export function ComponentsPage() {
       </ShowcaseSection>
 
       <ShowcaseSection
+        id="tabs"
+        title="Navigation tabs"
+        description="Native underline tab bar matching game category and modal navigation."
+      >
+        <Panel className="p-7 space-y-6">
+          <Tabs
+            value={activeBuildTab}
+            onChange={setActiveBuildTab}
+            items={[
+              { id: "structures", label: "Structures" },
+              { id: "blueprints", label: "Blueprints", badge: <Badge tone="accent">v2</Badge> },
+              { id: "settings", label: "Settings" },
+              { id: "mods", label: "Mods", disabled: true },
+            ]}
+          />
+          <div className="rounded border border-slate-800 bg-slate-950/60 p-5 font-mono text-xs text-slate-400">
+            Active tab panel:{" "}
+            <span className="font-semibold text-yellow-300">{activeBuildTab}</span>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Tabs feature a high-contrast yellow active underline (#ffe700), subtle base border
+              line, and keyboard focus states.
+            </p>
+          </div>
+        </Panel>
+      </ShowcaseSection>
+
+      <ShowcaseSection
         id="forms"
         title="Form controls"
         description="Text inputs, groups, validation states, multiline text, selects, and toggle switches."
       >
-        <Panel className="p-6">
+        <Panel className="p-6 space-y-6">
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="space-y-5">
               <ShowcaseSubgroup title="Text Inputs & Groups">
@@ -519,17 +573,45 @@ export function ComponentsPage() {
                     </div>
                   </FormField>
 
-                  <FormField label="Notes & Description">
-                    <TextArea
-                      rows={3}
-                      placeholder="Enter blueprint documentation or instructions..."
-                      className="min-h-20"
-                    />
+                  <FormField label="Settings sliders">
+                    <div className="space-y-4 rounded border border-slate-800 bg-black/30 p-3">
+                      <Slider
+                        label="Master volume"
+                        showValue
+                        min={0}
+                        max={100}
+                        value={sliderVolume}
+                        onChange={(e) => setSliderVolume(Number(e.target.value))}
+                        valueFormat={(v) => `${v}%`}
+                      />
+                      <Slider
+                        label="Field of view"
+                        showValue
+                        min={60}
+                        max={120}
+                        value={sliderFov}
+                        onChange={(e) => setSliderFov(Number(e.target.value))}
+                        valueFormat={(v) => `${v}°`}
+                      />
+                    </div>
                   </FormField>
                 </div>
               </ShowcaseSubgroup>
             </div>
           </div>
+
+          <Divider className="py-4" />
+
+          <FormField
+            label="Notes & Description"
+            hint="Multiline blueprint documentation, instructions, or circuit logic notes."
+          >
+            <TextArea
+              rows={3}
+              placeholder="Enter blueprint documentation or instructions..."
+              className="min-h-24 w-full"
+            />
+          </FormField>
         </Panel>
       </ShowcaseSection>
 
@@ -552,11 +634,7 @@ export function ComponentsPage() {
             </div>
           </Panel>
 
-          <Fieldset legend="World options (locked)">
-            <div className="p-2">
-              <LockedState icon={<span>♙</span>} />
-            </div>
-          </Fieldset>
+          <LockedState title="World Options" />
         </div>
       </ShowcaseSection>
 
@@ -866,8 +944,10 @@ export function ComponentsPage() {
         onClose={() => setDialogOpen(false)}
         footer={
           <ActionBar>
-            <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button variant="accent" onClick={() => setDialogOpen(false)}>
+            <Button variant="quiet" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="solid" onClick={() => setDialogOpen(false)}>
               Confirm
             </Button>
           </ActionBar>

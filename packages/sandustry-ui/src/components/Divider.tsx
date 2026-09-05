@@ -7,16 +7,15 @@ export type DividerProps = HTMLAttributes<HTMLDivElement> & {
 
 export function Divider({ variant = "solid", className = "", ...props }: DividerProps) {
   return (
-    <div
-      {...props}
-      role={props.role ?? "separator"}
-      className={cx(
-        "h-px w-full",
-        variant === "solid"
-          ? "bg-slate-700/60"
-          : "bg-gradient-to-r from-transparent via-[#ffe700]/40 to-transparent",
-        className,
-      )}
-    />
+    <div {...props} role={props.role ?? "separator"} className={cx("w-full", className)}>
+      <div
+        className={cx(
+          "h-px w-full",
+          variant === "solid"
+            ? "bg-slate-700/60"
+            : "bg-gradient-to-r from-transparent via-[#ffe700]/40 to-transparent",
+        )}
+      />
+    </div>
   );
 }

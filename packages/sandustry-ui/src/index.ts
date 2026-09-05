@@ -62,3 +62,5 @@ export { FormField, type FormFieldProps } from "./components/FormField";
 export { InputGroup, type InputGroupProps } from "./components/InputGroup";
 export { Fieldset, type FieldsetProps } from "./components/Fieldset";
 export { LockedState, type LockedStateProps } from "./components/LockedState";
+export { Tabs, Tab, type TabsProps, type TabProps, type TabItem } from "./components/Tabs";
+export { Slider, type SliderProps } from "./components/Slider";
