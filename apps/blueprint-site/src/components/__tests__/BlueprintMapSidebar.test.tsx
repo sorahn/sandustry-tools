@@ -136,4 +136,53 @@ describe("BlueprintMapSidebar", () => {
     expect(html).toContain("(10, 10) → (20, 20)");
     expect(html).toContain("ON");
   });
+
+  test("clips sprite sheet frames and crops correctly in the thumbnail SVG", () => {
+    const blueprint: Blueprint = {
+      name: "Conveyor blueprint",
+      data: [{ type: 2, x: 0, y: 0 }],
+      signalLinks: [],
+    };
+
+    const preparedStructure = {
+      structure: blueprint.data[0],
+      index: 0,
+      sprite: {
+        asset: {
+          path: "assets/catalog/conveyor.png",
+          sourceSize: { width: 128, height: 16 },
+          frame: { width: 16, height: 16 },
+        },
+        frameIndex: 3,
+        rotation: 90,
+      },
+      lightColor: "#00ff00",
+      footprint: { width: 4, height: 4 },
+      topY: 0,
+      visualTopY: 0,
+      z: 0.5,
+      bounds: { minX: 0, minY: 0, maxX: 3, maxY: 3 },
+    };
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        preparedStructure={preparedStructure as any}
+        blueprint={blueprint}
+        debugOptions={null}
+      />,
+    );
+
+    // ViewBox is exactly one frame: 16x16
+    expect(html).toContain('viewBox="0 0 16 16"');
+    // Full sprite sheet width is 128
+    expect(html).toContain('width="128"');
+    // Offset for frameIndex 3 is -3 * 16 = -48
+    expect(html).toContain('x="-48"');
+    // Rotation transform applied
+    expect(html).toContain("rotate(90 8 8)");
+    // Light bar rendered
+    expect(html).toContain('fill="#00ff00"');
+  });
 });

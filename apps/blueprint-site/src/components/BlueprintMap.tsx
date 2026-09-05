@@ -889,6 +889,9 @@ export function BlueprintMap({
         <BlueprintMapSidebar
           selected={selected}
           selectedIndex={selectedIndex}
+          preparedStructure={
+            selectedIndex !== null ? preparedBlueprint.preparedStructures[selectedIndex] : null
+          }
           totalStructures={blueprint.data.length}
           blueprint={blueprint}
           activeFilterCluster={activeFilterCluster}

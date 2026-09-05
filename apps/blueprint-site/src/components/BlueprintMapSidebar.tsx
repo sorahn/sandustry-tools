@@ -1,6 +1,11 @@
 import { type ReactNode, useMemo } from "react";
 import { type Blueprint } from "../utils/blueprint";
-import { catalogEntry, catalogRender, catalogRenderSize } from "../utils/catalog";
+import {
+  catalogEntry,
+  catalogRender,
+  catalogRenderSize,
+  type CatalogRenderAsset,
+} from "../utils/catalog";
 import {
   structureLabel,
   resolveElement,
@@ -8,6 +13,8 @@ import {
   MATTER_TYPE,
   isFilterStructure,
   type FilterOverlayCluster,
+  type PreparedStructure,
+  type RenderAsset,
 } from "@daryl.roberts/sandustry-blueprint-core";
 import { structureFootprint, structureTopY } from "../utils/blueprint-map";
 import { BlueprintMapSidebarSection } from "./BlueprintMapSidebarSection";
@@ -17,12 +24,93 @@ type BlueprintStructure = Blueprint["data"][number];
 export type BlueprintMapSidebarProps = {
   selected: BlueprintStructure | null;
   selectedIndex?: number | null;
+  preparedStructure?: PreparedStructure | null;
   totalStructures?: number;
   blueprint?: Blueprint;
   activeFilterCluster?: FilterOverlayCluster | null;
   onClearSelection?: () => void;
   debugOptions: ReactNode;
 };
+
+function StructureThumbnail({
+  asset,
+  frameIndex = 0,
+  rotation = 0,
+  lightColor,
+  footprint,
+  name,
+}: {
+  asset?: RenderAsset | CatalogRenderAsset;
+  frameIndex?: number;
+  rotation?: number;
+  lightColor?: string | null;
+  footprint: { width: number; height: number };
+  name: string;
+}) {
+  if (!asset?.path) {
+    return (
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded border border-slate-800 bg-slate-950/80 text-slate-600 font-mono text-xs">
+        {footprint.width}×{footprint.height}
+      </div>
+    );
+  }
+
+  const sourceWidth = asset.sourceSize?.width ?? asset.frame?.width ?? 16;
+  const sourceHeight = asset.sourceSize?.height ?? asset.frame?.height ?? 16;
+  const frameWidth = asset.frame?.width ?? asset.renderSize?.width ?? sourceWidth;
+  const frameHeight = asset.frame?.height ?? asset.renderSize?.height ?? sourceHeight;
+
+  const cropX = asset.sourceCrop?.x ?? 0;
+  const cropY = asset.sourceCrop?.y ?? 0;
+  const cropWidth = asset.sourceCrop?.width ?? frameWidth;
+  const cropHeight = asset.sourceCrop?.height ?? frameHeight;
+
+  const imageX = -frameIndex * frameWidth - cropX;
+  const imageY = -cropY;
+
+  const href = `${import.meta.env.BASE_URL}${asset.path}`;
+  const transform = rotation ? `rotate(${rotation} ${cropWidth / 2} ${cropHeight / 2})` : undefined;
+
+  return (
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded border border-slate-800 bg-slate-950/80 p-1 overflow-hidden">
+      <svg
+        viewBox={`0 0 ${cropWidth} ${cropHeight}`}
+        className="max-h-9 max-w-9 overflow-hidden shrink-0"
+        style={{
+          width: `${cropWidth}px`,
+          height: `${cropHeight}px`,
+          imageRendering: "pixelated",
+        }}
+        aria-label={name}
+      >
+        <image
+          href={href}
+          x={imageX}
+          y={imageY}
+          width={sourceWidth}
+          height={sourceHeight}
+          transform={transform}
+          preserveAspectRatio="none"
+          style={{ imageRendering: "pixelated" }}
+        />
+        {lightColor ? (
+          <g transform={transform}>
+            {[4, 7, 10].map((bar) => (
+              <rect
+                key={bar}
+                x={cropWidth * (bar / 16)}
+                y={cropHeight * 0.25}
+                width={cropWidth * (2 / 16)}
+                height={cropHeight * 0.5}
+                fill={lightColor}
+              />
+            ))}
+          </g>
+        ) : null}
+      </svg>
+    </div>
+  );
+}
 
 function matterLabel(matterType?: number): string {
   switch (matterType) {
@@ -53,6 +141,7 @@ function matterBadgeClass(matterType?: number): string {
 export function BlueprintMapSidebar({
   selected,
   selectedIndex,
+  preparedStructure,
   totalStructures,
   blueprint,
   activeFilterCluster,
@@ -65,7 +154,12 @@ export function BlueprintMapSidebar({
   const topY = selected ? structureTopY(selected) : 0;
   const render = entry ? catalogRender(entry) : undefined;
   const renderSize = render ? catalogRenderSize(render) : undefined;
-  const assetPath = entry?.renderAsset?.path;
+
+  const sprite = preparedStructure?.sprite;
+  const asset = sprite?.asset ?? entry?.renderAsset;
+  const frameIndex = sprite?.frameIndex ?? asset?.frameIndex ?? 0;
+  const rotation = sprite?.rotation ?? asset?.rotation ?? 0;
+  const lightColor = preparedStructure?.lightColor;
 
   // Connected signals
   const connectedSignalLinks = useMemo(() => {
@@ -143,19 +237,14 @@ export function BlueprintMapSidebar({
           <div className="space-y-3.5">
             {/* Header: Sprite Thumbnail + Title + Type/Category */}
             <div className="flex items-start gap-3 rounded-lg border border-slate-800 bg-black/40 p-2.5">
-              {assetPath ? (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded border border-slate-800 bg-slate-950/80 p-1">
-                  <img
-                    src={`${import.meta.env.BASE_URL}${assetPath}`}
-                    alt={name}
-                    className="max-h-9 max-w-9 object-contain [image-rendering:pixelated]"
-                  />
-                </div>
-              ) : (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded border border-slate-800 bg-slate-950/80 text-slate-600 font-mono text-xs">
-                  {footprint.width}×{footprint.height}
-                </div>
-              )}
+              <StructureThumbnail
+                asset={asset}
+                frameIndex={frameIndex}
+                rotation={rotation}
+                lightColor={lightColor}
+                footprint={footprint}
+                name={name}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
                   <h4 className="font-semibold text-slate-100 text-sm leading-snug truncate">
