@@ -1,7 +1,7 @@
 import { createRootRoute, createRoute } from "@tanstack/react-router";
 import { AppLayout } from "./components/AppLayout";
 import { BlueprintCodecPage } from "./pages/Codec";
-import { BlueprintInspectorPage } from "./pages/Inspector";
+import { BlueprintInspectorPage, SavedBlueprintInspectorPage } from "./pages/Inspector";
 import { VaultBlueprintInspectorPage } from "./pages/VaultInspector";
 import { BlueprintVisualFixturePage } from "./pages/VisualFixture";
 import { BlueprintEmbedPage } from "./pages/BlueprintEmbed";
@@ -24,7 +24,7 @@ const inspectorRoute = createRoute({
 const saveBlueprintRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/save/$saveId/blueprint/$blueprintId",
-  component: BlueprintInspectorPage,
+  component: SavedBlueprintInspectorPage,
 });
 const vaultInspectorRoute = createRoute({
   getParentRoute: () => rootRoute,

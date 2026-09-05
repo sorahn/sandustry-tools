@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useParams } from "@tanstack/react-router";
 import { structureLabel } from "@daryl.roberts/sandustry-blueprint-core";
 import {
   decodeBlueprint,
@@ -14,6 +15,7 @@ import {
   type BlueprintSummary,
 } from "../components/BlueprintSubmissionPanel";
 import { BlueprintStructuresPanel } from "../components/BlueprintStructuresPanel";
+import { Panel, Select, StatusIndicator } from "@sandustry/ui";
 import { PageHeader } from "../components/PageHeader";
 import {
   readStorageValue,
@@ -30,6 +32,96 @@ import {
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
 } from "../utils/storage-keys";
+import { decodeBrowserSave, extractSavedBlueprints } from "@sandustry/save-core";
+import { encodeSavedBlueprint } from "../utils/save-blueprint";
+import { getSavedGameBytes, listSavedGames, type StoredSaveSummary } from "../utils/save-db";
+
+export function SavedBlueprintInspectorPage() {
+  const { saveId, blueprintId } = useParams({ from: "/save/$saveId/blueprint/$blueprintId" });
+  const [state, setState] = useState<
+    | { status: "loading" }
+    | { status: "error"; message: string }
+    | { status: "ready"; encoded: string; name: string }
+  >({ status: "loading" });
+
+  useEffect(() => {
+    let disposed = false;
+    const load = async () => {
+      if (!/^[A-Za-z0-9_-]{1,128}$/.test(saveId) || !/^[A-Za-z0-9_-]{1,128}$/.test(blueprintId)) {
+        setState({ status: "error", message: "That saved blueprint link is not valid." });
+        return;
+      }
+      const listed = await listSavedGames();
+      if (!listed.ok) {
+        setState({ status: "error", message: listed.error.message });
+        return;
+      }
+      const summary = listed.value.find((candidate) => candidate.id === saveId);
+      if (!summary) {
+        setState({ status: "error", message: "That saved game is no longer available." });
+        return;
+      }
+      const stored = await getSavedGameBytes(saveId);
+      if (!stored.ok) {
+        setState({
+          status: "error",
+          message: `The saved game is corrupt: ${stored.error.message}`,
+        });
+        return;
+      }
+      try {
+        const extracted = extractSavedBlueprints((await decodeBrowserSave(stored.value)).payload);
+        const record = extracted.blueprints.find((candidate) => candidate.id === blueprintId);
+        if (!record) {
+          setState({
+            status: "error",
+            message: "That blueprint is not present in the saved game.",
+          });
+          return;
+        }
+        const encoded = encodeSavedBlueprint(record);
+        if (!disposed)
+          setState({ status: "ready", encoded, name: summary.worldName || summary.fileName });
+      } catch (error) {
+        if (!disposed)
+          setState({
+            status: "error",
+            message: `The saved blueprint is incompatible: ${error instanceof Error ? error.message : "unable to encode it"}`,
+          });
+      }
+    };
+    void load();
+    return () => {
+      disposed = true;
+    };
+  }, [blueprintId, saveId]);
+
+  if (state.status === "loading")
+    return <SavedBlueprintRouteState message="Loading the saved blueprint…" />;
+  if (state.status === "error") return <SavedBlueprintRouteState message={state.message} error />;
+  return (
+    <BlueprintInspectorPage
+      initialEncoded={state.encoded}
+      title={`Blueprint from ${state.name}`}
+      initialMessage="Loaded from a saved game."
+    />
+  );
+}
+
+function SavedBlueprintRouteState({
+  message,
+  error = false,
+}: {
+  message: string;
+  error?: boolean;
+}) {
+  return (
+    <section className="space-y-6">
+      <PageHeader title="Saved Blueprint Inspector">{message}</PageHeader>
+      <StatusIndicator tone={error ? "danger" : "warning"} label={message} />
+    </section>
+  );
+}
 
 function summarizeBlueprint(input: string, blueprint: Blueprint): BlueprintSummary {
   let minX = 0;
@@ -190,6 +282,7 @@ export function BlueprintInspectorPage({
   return (
     <section className="space-y-6">
       <PageHeader title={title}>{description}</PageHeader>
+      {initialEncoded === undefined ? <FromSavedGame /> : null}
       <BlueprintSubmissionPanel
         encoded={encoded}
         message={message}
@@ -228,5 +321,54 @@ export function BlueprintInspectorPage({
         </>
       ) : null}
     </section>
+  );
+}
+
+function FromSavedGame() {
+  const [saved, setSaved] = useState<StoredSaveSummary[] | null>(null);
+  const [message, setMessage] = useState("Loading saved blueprints…");
+  useEffect(() => {
+    void listSavedGames().then((result) => {
+      if (!result.ok) {
+        setMessage(result.error.message);
+        return;
+      }
+      setSaved(result.value);
+      setMessage(result.value.length ? "Choose a saved blueprint" : "No remembered saves yet.");
+    });
+  }, []);
+  const options = (saved ?? []).flatMap((save) =>
+    save.blueprints.map((blueprint) => ({ save, blueprint })),
+  );
+  return (
+    <Panel title="From saved game">
+      <div className="p-4">
+        {options.length ? (
+          <label className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
+            <span>Saved blueprint</span>
+            <Select
+              value=""
+              onChange={(event) => {
+                const [saveId, blueprintId] = event.target.value.split("/");
+                if (!saveId || !blueprintId) return;
+                window.location.assign(
+                  `${import.meta.env.BASE_URL}save/${encodeURIComponent(saveId)}/blueprint/${encodeURIComponent(blueprintId)}`,
+                );
+              }}
+              aria-label="Saved blueprint"
+            >
+              <option value="">{message}</option>
+              {options.map(({ save, blueprint }) => (
+                <option key={`${save.id}/${blueprint.id}`} value={`${save.id}/${blueprint.id}`}>
+                  {save.fileName}: {blueprint.name}
+                </option>
+              ))}
+            </Select>
+          </label>
+        ) : (
+          <p className="text-sm text-slate-500">{message}</p>
+        )}
+      </div>
+    </Panel>
   );
 }
