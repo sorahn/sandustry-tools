@@ -186,7 +186,7 @@ describe("BlueprintMapSidebar", () => {
     expect(html).toContain('fill="#00ff00"');
   });
 
-  test("renders thumbnail with build menu tile frame, baby blue background, and cell grid", () => {
+  test("renders thumbnail with baby blue background and cell grid filling the window with centered sprite", () => {
     const blueprint: Blueprint = {
       name: "Conveyor blueprint",
       data: [{ type: 2, x: 0, y: 0 }],
@@ -202,15 +202,14 @@ describe("BlueprintMapSidebar", () => {
       />,
     );
 
-    // Build menu tile radial gradient frame
-    expect(html).toContain(
-      "radial-gradient(circle, rgba(100, 100, 100, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%)",
-    );
-    // Baby blue background
+    // Baby blue background fills the 64x64 window
+    expect(html).toContain("background-color:#33a8ff");
     expect(html).toContain('fill="#33a8ff"');
     // Faint cell grid pattern strokes
     expect(html).toContain('stroke="#718096"');
     expect(html).toContain('stroke="#17202c"');
     expect(html).toContain('opacity="0.25"');
+    // No thick border around the sprite
+    expect(html).not.toContain("outline:2px solid black");
   });
 });

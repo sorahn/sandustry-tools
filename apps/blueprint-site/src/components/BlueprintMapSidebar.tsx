@@ -51,7 +51,7 @@ function StructureThumbnail({
   const gridId = `thumb-grid-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const gridBackground = (
-    <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 32 32">
+    <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 64 64">
       <defs>
         <pattern id={`${gridId}-cell`} width="8" height="8" patternUnits="userSpaceOnUse">
           <path
@@ -70,35 +70,24 @@ function StructureThumbnail({
           />
         </pattern>
       </defs>
-      <rect width="32" height="32" fill="#33a8ff" />
+      <rect width="64" height="64" fill="#33a8ff" />
       <g opacity="0.25">
-        <rect width="32" height="32" fill={`url(#${gridId}-cell)`} />
-        <rect width="32" height="32" fill={`url(#${gridId}-block)`} />
+        <rect width="64" height="64" fill={`url(#${gridId}-cell)`} />
+        <rect width="64" height="64" fill={`url(#${gridId}-block)`} />
       </g>
     </svg>
   );
 
-  const tileClasses =
-    "relative flex h-16 w-16 shrink-0 items-center justify-center rounded border border-slate-200/25 shadow-md ring-2 ring-black ring-inset";
-  const tileStyle = {
-    background: "radial-gradient(circle, rgba(100, 100, 100, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%)",
-  };
-  const wellClasses =
-    "relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-[4px] pointer-events-none";
-  const wellStyle = {
-    outline: "2px solid black",
-    backgroundColor: "#33a8ff",
-  };
+  const containerClasses =
+    "relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-700/80 shadow-md";
 
   if (!asset?.path) {
     return (
-      <div className={tileClasses} style={tileStyle}>
-        <div className={wellClasses} style={wellStyle}>
-          {gridBackground}
-          <span className="relative z-10 font-mono text-[10px] font-bold text-slate-900/80">
-            {footprint.width}×{footprint.height}
-          </span>
-        </div>
+      <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
+        {gridBackground}
+        <span className="relative z-10 rounded bg-slate-950/60 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-100 shadow-sm">
+          {footprint.width}×{footprint.height}
+        </span>
       </div>
     );
   }
@@ -118,48 +107,47 @@ function StructureThumbnail({
 
   const href = `${import.meta.env.BASE_URL}${asset.path}`;
   const transform = rotation ? `rotate(${rotation} ${cropWidth / 2} ${cropHeight / 2})` : undefined;
-  const scale = Math.min(32 / cropWidth, 32 / cropHeight);
+  const maxDim = Math.max(cropWidth, cropHeight);
+  const scale = maxDim <= 20 ? 2 : Math.min(48 / cropWidth, 48 / cropHeight);
 
   return (
-    <div className={tileClasses} style={tileStyle}>
-      <div className={wellClasses} style={wellStyle}>
-        {gridBackground}
-        <svg
-          viewBox={`0 0 ${cropWidth} ${cropHeight}`}
-          className="relative z-10 max-h-8 max-w-8 shrink-0 overflow-hidden"
-          style={{
-            width: `${cropWidth * scale}px`,
-            height: `${cropHeight * scale}px`,
-            imageRendering: "pixelated",
-          }}
-          aria-label={name}
-        >
-          <image
-            href={href}
-            x={imageX}
-            y={imageY}
-            width={sourceWidth}
-            height={sourceHeight}
-            transform={transform}
-            preserveAspectRatio="none"
-            style={{ imageRendering: "pixelated" }}
-          />
-          {lightColor ? (
-            <g transform={transform}>
-              {[4, 7, 10].map((bar) => (
-                <rect
-                  key={bar}
-                  x={cropWidth * (bar / 16)}
-                  y={cropHeight * 0.25}
-                  width={cropWidth * (2 / 16)}
-                  height={cropHeight * 0.5}
-                  fill={lightColor}
-                />
-              ))}
-            </g>
-          ) : null}
-        </svg>
-      </div>
+    <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
+      {gridBackground}
+      <svg
+        viewBox={`0 0 ${cropWidth} ${cropHeight}`}
+        className="relative z-10 shrink-0 overflow-hidden"
+        style={{
+          width: `${cropWidth * scale}px`,
+          height: `${cropHeight * scale}px`,
+          imageRendering: "pixelated",
+        }}
+        aria-label={name}
+      >
+        <image
+          href={href}
+          x={imageX}
+          y={imageY}
+          width={sourceWidth}
+          height={sourceHeight}
+          transform={transform}
+          preserveAspectRatio="none"
+          style={{ imageRendering: "pixelated" }}
+        />
+        {lightColor ? (
+          <g transform={transform}>
+            {[4, 7, 10].map((bar) => (
+              <rect
+                key={bar}
+                x={cropWidth * (bar / 16)}
+                y={cropHeight * 0.25}
+                width={cropWidth * (2 / 16)}
+                height={cropHeight * 0.5}
+                fill={lightColor}
+              />
+            ))}
+          </g>
+        ) : null}
+      </svg>
     </div>
   );
 }
