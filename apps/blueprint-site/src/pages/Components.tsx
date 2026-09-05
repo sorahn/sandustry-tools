@@ -8,6 +8,7 @@ import {
   CategoryList,
   Checkbox,
   ColorPicker,
+  CurrencyRow,
   Dialog,
   Divider,
   ElementPicker,
@@ -28,6 +29,8 @@ import {
   ProgressBar,
   ProgressList,
   ProgressListItem,
+  ResourceAmount,
+  SaveSlotCard,
   SearchInput,
   SegmentedControl,
   Select,
@@ -39,6 +42,8 @@ import {
   TextArea,
   TextInput,
   TextAction,
+  Toast,
+  ToastContainer,
   Tooltip,
   TooltipSurface,
 } from "@sandustry/ui";
@@ -288,6 +293,11 @@ export function ComponentsPage() {
   const [activeCategory, setActiveCategory] = useState("logistics");
   const [selectedBuilding, setSelectedBuilding] = useState("conveyor");
   const [pickedColor, setPickedColor] = useState<string | null>("#ff8000");
+  const [selectedSave, setSelectedSave] = useState("exit");
+  const [activeToast, setActiveToast] = useState<{
+    message: string;
+    variant: "default" | "hint" | "danger";
+  } | null>(null);
 
   if (!import.meta.env.DEV) {
     return (
@@ -937,6 +947,79 @@ export function ComponentsPage() {
             </Panel>
           </div>
         </div>
+
+        <div className="mt-6">
+          <Panel className="p-5">
+            <ShowcaseSubgroup title="Save Slot Cards & Telemetry">
+              <p className="mb-4 text-xs text-slate-400">
+                Multi-metric summary cards extracted from the native save game loader with levels,
+                playtimes, structures, and resource breakdown.
+              </p>
+              <div className="grid gap-4 md:grid-cols-3">
+                <SaveSlotCard
+                  title="Sector 01 - Primary Base"
+                  tag="Exit save"
+                  timestamp="2026-03-02 22:45"
+                  level={12}
+                  playtime="18h 42m"
+                  structures={1420}
+                  rate="482/s"
+                  currencies={{ credits: 152000, fluxite: 8400 }}
+                  selected={selectedSave === "exit"}
+                  onClick={() => setSelectedSave("exit")}
+                />
+                <SaveSlotCard
+                  title="Sector 02 - Desert Outpost"
+                  tag="Auto save"
+                  timestamp="2026-03-02 21:10"
+                  level={11}
+                  playtime="16h 05m"
+                  structures={1180}
+                  rate="340/s"
+                  currencies={{ credits: 94000, fluxite: 5200 }}
+                  selected={selectedSave === "auto"}
+                  onClick={() => setSelectedSave("auto")}
+                />
+                <SaveSlotCard
+                  title="Sandpit Alpha - Experimental"
+                  tag="Manual save"
+                  timestamp="2026-03-01 19:30"
+                  level={10}
+                  playtime="12h 18m"
+                  structures={890}
+                  rate="210/s"
+                  currencies={{ credits: 42000, fluxite: 1800, artifact: 2 }}
+                  selected={selectedSave === "manual"}
+                  onClick={() => setSelectedSave("manual")}
+                />
+              </div>
+
+              <Divider className="my-5" />
+
+              <div className="flex flex-wrap items-center justify-between gap-6">
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Standalone Currency Counters
+                  </div>
+                  <div className="flex flex-wrap items-center gap-6 pt-1">
+                    <ResourceAmount type="credits" amount={152000} size="md" />
+                    <ResourceAmount type="fluxite" amount={8400} size="md" />
+                    <ResourceAmount type="artifact" amount={2} size="md" />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Currency Row Layout
+                  </div>
+                  <div className="pt-1">
+                    <CurrencyRow credits={152000} fluxite={8400} artifact={2} />
+                  </div>
+                </div>
+              </div>
+            </ShowcaseSubgroup>
+          </Panel>
+        </div>
       </ShowcaseSection>
 
       <ShowcaseSection
@@ -993,6 +1076,72 @@ export function ComponentsPage() {
             </ShowcaseSubgroup>
           </Panel>
         </div>
+
+        <Panel className="mt-6 space-y-4 p-5">
+          <ShowcaseSubgroup title="HUD Toast Notifications">
+            <p className="text-xs text-slate-400">
+              HUD notifications extracted from native bundle runtime with asymmetric corners,
+              glowing accent borders, and dismiss triggers.
+            </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Toast
+                variant="default"
+                message="Game saved successfully to Slot 1."
+                onClose={() => {}}
+              />
+              <Toast
+                variant="hint"
+                message="Tip: Press Shift + R to rotate blueprints 90° clockwise."
+                onClose={() => {}}
+              />
+              <Toast
+                variant="danger"
+                message="Warning: Circuit overload detected in Sector 4!"
+                onClose={() => {}}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <span className="text-xs text-slate-400">Trigger live toast:</span>
+              <Button
+                variant="quiet"
+                className="text-xs"
+                onClick={() =>
+                  setActiveToast({
+                    variant: "default",
+                    message: "Blueprint 'Refinery Mk2' copied to clipboard.",
+                  })
+                }
+              >
+                Default toast
+              </Button>
+              <Button
+                variant="quiet"
+                className="text-xs"
+                onClick={() =>
+                  setActiveToast({
+                    variant: "hint",
+                    message: "Hover over conduits to inspect matter throughput.",
+                  })
+                }
+              >
+                Hint toast
+              </Button>
+              <Button
+                variant="quiet"
+                className="text-xs"
+                onClick={() =>
+                  setActiveToast({
+                    variant: "danger",
+                    message: "Power grid disconnected! Backup generators offline.",
+                  })
+                }
+              >
+                Danger toast
+              </Button>
+            </div>
+          </ShowcaseSubgroup>
+        </Panel>
       </ShowcaseSection>
 
       <ShowcaseSection
@@ -1158,6 +1307,16 @@ export function ComponentsPage() {
           <TextInput defaultValue="Dialog input" />
         </div>
       </Dialog>
+
+      {activeToast && (
+        <ToastContainer>
+          <Toast
+            variant={activeToast.variant}
+            message={activeToast.message}
+            onClose={() => setActiveToast(null)}
+          />
+        </ToastContainer>
+      )}
     </div>
   );
 }
