@@ -12,6 +12,7 @@ import {
   normalizeElementList,
   MATTER_TYPE,
   isFilterStructure,
+  type BlueprintType,
   type FilterOverlayCluster,
   type PreparedStructure,
   type RenderAsset,
@@ -39,6 +40,7 @@ function StructureThumbnail({
   lightColor,
   footprint,
   name,
+  structureType,
 }: {
   asset?: RenderAsset | CatalogRenderAsset;
   frameIndex?: number;
@@ -46,6 +48,7 @@ function StructureThumbnail({
   lightColor?: string | null;
   footprint: { width: number; height: number };
   name: string;
+  structureType?: BlueprintType;
 }) {
   const rawId = useId();
   const gridId = `thumb-grid-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -115,25 +118,59 @@ function StructureThumbnail({
     );
   }
 
+  // Kinetic Press (type 20) uses a massive 18x417 pressing tower in the world,
+  // but the game's build menu clips it square to the 18x18 press head.
+  const isKineticPress = structureType === 20 || (asset.sourceCrop?.height ?? 0) > 48;
+
   const sourceWidth = asset.sourceSize?.width ?? asset.frame?.width ?? 16;
   const sourceHeight = asset.sourceSize?.height ?? asset.frame?.height ?? 16;
-  const frameWidth = asset.frame?.width ?? asset.renderSize?.width ?? sourceWidth;
-  const frameHeight = asset.frame?.height ?? asset.renderSize?.height ?? sourceHeight;
+  const frameWidth = isKineticPress
+    ? 18
+    : (asset.frame?.width ?? asset.renderSize?.width ?? sourceWidth);
+  const frameHeight = isKineticPress
+    ? 18
+    : (asset.frame?.height ?? asset.renderSize?.height ?? sourceHeight);
 
-  const cropX = asset.sourceCrop?.x ?? 0;
-  const cropY = asset.sourceCrop?.y ?? 0;
-  const cropWidth = asset.sourceCrop?.width ?? frameWidth;
-  const cropHeight = asset.sourceCrop?.height ?? frameHeight;
+  const cropX = isKineticPress ? 0 : (asset.sourceCrop?.x ?? 0);
+  const cropY = isKineticPress ? 0 : (asset.sourceCrop?.y ?? 0);
+  const cropWidth = isKineticPress ? 18 : (asset.sourceCrop?.width ?? frameWidth);
+  const cropHeight = isKineticPress ? 18 : (asset.sourceCrop?.height ?? frameHeight);
 
-  const imageX = -frameIndex * frameWidth - cropX;
-  const imageY = -cropY;
+  // Compute rotated bounding box so non-square sprites (e.g. 23x16 pyros, 18x26 launchers)
+  // are not clipped when rotated by 90° or 270°.
+  const normRot = ((rotation % 360) + 360) % 360;
+  const isRightAngle = normRot === 90 || normRot === 270;
+  const bboxWidth = isRightAngle
+    ? cropHeight
+    : normRot === 0 || normRot === 180
+      ? cropWidth
+      : Math.round(
+          Math.abs(cropWidth * Math.cos((normRot * Math.PI) / 180)) +
+            Math.abs(cropHeight * Math.sin((normRot * Math.PI) / 180)),
+        );
+  const bboxHeight = isRightAngle
+    ? cropWidth
+    : normRot === 0 || normRot === 180
+      ? cropHeight
+      : Math.round(
+          Math.abs(cropWidth * Math.sin((normRot * Math.PI) / 180)) +
+            Math.abs(cropHeight * Math.cos((normRot * Math.PI) / 180)),
+        );
+
+  const boxOffsetX = (bboxWidth - cropWidth) / 2;
+  const boxOffsetY = (bboxHeight - cropHeight) / 2;
+
+  const imageX = boxOffsetX - frameIndex * frameWidth - cropX;
+  const imageY = boxOffsetY - cropY;
 
   const href = `${import.meta.env.BASE_URL}${asset.path}`;
-  const transform = rotation ? `rotate(${rotation} ${cropWidth / 2} ${cropHeight / 2})` : undefined;
-  const maxDim = Math.max(cropWidth, cropHeight);
-  const scale = maxDim <= 20 ? 2 : Math.min(48 / cropWidth, 48 / cropHeight);
-  const renderedWidth = cropWidth * scale;
-  const renderedHeight = cropHeight * scale;
+  const cx = bboxWidth / 2;
+  const cy = bboxHeight / 2;
+  const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
+  const maxDim = Math.max(bboxWidth, bboxHeight);
+  const scale = maxDim <= 20 ? 2 : Math.min(48 / bboxWidth, 48 / bboxHeight);
+  const renderedWidth = bboxWidth * scale;
+  const renderedHeight = bboxHeight * scale;
   const originX = Math.round((64 - renderedWidth) / 2);
   const originY = Math.round((64 - renderedHeight) / 2);
   const cellSize = 4 * scale;
@@ -143,7 +180,7 @@ function StructureThumbnail({
     <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
       {renderGridBackground(originX, originY, cellSize, blockSize)}
       <svg
-        viewBox={`0 0 ${cropWidth} ${cropHeight}`}
+        viewBox={`0 0 ${bboxWidth} ${bboxHeight}`}
         className="relative z-10 shrink-0 overflow-hidden"
         style={{
           width: `${renderedWidth}px`,
@@ -167,8 +204,8 @@ function StructureThumbnail({
             {[4, 7, 10].map((bar) => (
               <rect
                 key={bar}
-                x={cropWidth * (bar / 16)}
-                y={cropHeight * 0.25}
+                x={boxOffsetX + cropWidth * (bar / 16)}
+                y={boxOffsetY + cropHeight * 0.25}
                 width={cropWidth * (2 / 16)}
                 height={cropHeight * 0.5}
                 fill={lightColor}
@@ -313,6 +350,7 @@ export function BlueprintMapSidebar({
                 lightColor={lightColor}
                 footprint={footprint}
                 name={name}
+                structureType={selected?.type}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">

@@ -214,4 +214,93 @@ describe("BlueprintMapSidebar", () => {
     // No thick border around the sprite
     expect(html).not.toContain("outline:2px solid black");
   });
+
+  test("renders rotated non-square sprite (heatCannonDown) with swapped portrait bounding box so nozzle is not cut off", () => {
+    const blueprint: Blueprint = {
+      name: "Pyro blueprint",
+      data: [{ type: "heatCannonDown", x: 0, y: 0 }],
+      signalLinks: [],
+    };
+
+    const preparedStructure = {
+      structure: blueprint.data[0],
+      index: 0,
+      sprite: {
+        asset: {
+          path: "assets/catalog/heat_cannon.png",
+          sourceSize: { width: 23, height: 16 },
+          frame: { width: 23, height: 16 },
+        },
+        frameIndex: 0,
+        rotation: 90,
+      },
+      footprint: { width: 4, height: 4 },
+      topY: 0,
+      visualTopY: 0,
+      z: 0.5,
+      bounds: { minX: 0, minY: 0, maxX: 3, maxY: 3 },
+    };
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        preparedStructure={preparedStructure as any}
+        blueprint={blueprint}
+        debugOptions={null}
+      />,
+    );
+
+    // ViewBox is swapped to 16x23 (portrait) instead of being clipped in 23x16
+    expect(html).toContain('viewBox="0 0 16 23"');
+    // Rotated 90 around the center of the swapped bounding box (8, 11.5)
+    expect(html).toContain("rotate(90 8 11.5)");
+    // Offset centers the 23x16 unrotated crop window inside the 16x23 box
+    expect(html).toContain('x="-3.5"');
+    expect(html).toContain('y="3.5"');
+  });
+
+  test("clips Kinetic Press thumbnail to 18x18 square head matching the game build menu tile", () => {
+    const blueprint: Blueprint = {
+      name: "Kinetic Press blueprint",
+      data: [{ type: 20, x: 0, y: 0 }],
+      signalLinks: [],
+    };
+
+    const preparedStructure = {
+      structure: blueprint.data[0],
+      index: 0,
+      sprite: {
+        asset: {
+          path: "assets/catalog/velocity.png",
+          sourceSize: { width: 18, height: 417 },
+          sourceCrop: { x: 0, y: 0, width: 18, height: 417 },
+        },
+        frameIndex: 0,
+        rotation: 0,
+      },
+      footprint: { width: 4, height: 4 },
+      topY: 0,
+      visualTopY: 0,
+      z: 0.5,
+      bounds: { minX: 0, minY: 0, maxX: 3, maxY: 3 },
+    };
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        preparedStructure={preparedStructure as any}
+        blueprint={blueprint}
+        debugOptions={null}
+      />,
+    );
+
+    // ViewBox is clipped square to the 18x18 press head
+    expect(html).toContain('viewBox="0 0 18 18"');
+    // Scaled 2x to 36x36px and centered at (14, 14)
+    expect(html).toContain("width:36px");
+    expect(html).toContain("height:36px");
+    expect(html).toContain('x="14" y="14"');
+  });
 });
