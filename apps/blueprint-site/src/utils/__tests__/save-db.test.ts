@@ -8,6 +8,7 @@ import {
   formatProductionPoints,
   getSavedGameBytes,
   listSavedGames,
+  migrateLegacyRememberedSave,
   readActiveSaveId,
   SAVE_DATABASE_NAME,
   setActiveSaveId,
@@ -15,6 +16,8 @@ import {
   subscribeToSaveDatabase,
   type SaveDatabaseEvent,
 } from "../save-db";
+import { encodeSaveBytes } from "../save-storage";
+import { SAVED_SAVE_EXPLORER_KEY, SAVED_SAVE_EXPLORER_NAME_KEY } from "../storage-keys";
 
 const originalIndexedDb = (globalThis as typeof globalThis & { indexedDB?: unknown }).indexedDB;
 const originalWindow = (globalThis as typeof globalThis & { window?: unknown }).window;
@@ -127,6 +130,34 @@ describe("save IndexedDB storage", () => {
     expect(bytes).toMatchObject({ ok: false, error: { code: "unavailable" } });
     expect(estimated).toMatchObject({ ok: false, error: { code: "unavailable" } });
     expect(stored).toMatchObject({ ok: false, error: { code: "unavailable" } });
+  });
+
+  test("migrates only the legacy bytes represented by the supplied summary", async () => {
+    await deleteDatabase();
+    const legacyBytes = new Uint8Array([1, 2, 3]);
+    const stored = installStorage({
+      [SAVED_SAVE_EXPLORER_KEY]: encodeSaveBytes(legacyBytes),
+      [SAVED_SAVE_EXPLORER_NAME_KEY]: "legacy.save",
+    });
+    const currentBytes = new Uint8Array([9, 8]);
+    await storeSave(currentBytes, summary("current", currentBytes.length));
+
+    const mismatch = await migrateLegacyRememberedSave(
+      currentBytes,
+      summary("current", currentBytes.length),
+    );
+    expect(mismatch).toMatchObject({ ok: false, error: { code: "corrupt-record" } });
+    expect(await getSavedGameBytes("current")).toMatchObject({ ok: true, value: currentBytes });
+    expect(stored.has(SAVED_SAVE_EXPLORER_KEY)).toBe(true);
+
+    const migrated = await migrateLegacyRememberedSave(
+      legacyBytes,
+      summary("legacy", legacyBytes.length),
+    );
+    expect(migrated).toEqual({ ok: true, value: true });
+    expect(await getSavedGameBytes("legacy")).toMatchObject({ ok: true, value: legacyBytes });
+    expect(stored.has(SAVED_SAVE_EXPLORER_KEY)).toBe(false);
+    expect(stored.has(SAVED_SAVE_EXPLORER_NAME_KEY)).toBe(false);
   });
 
   test("notifies subscribers when saves are stored, deleted, or active save changes", async () => {

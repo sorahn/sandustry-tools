@@ -32,12 +32,9 @@ import {
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
 } from "../utils/storage-keys";
-import {
-  decodeBrowserSave,
-  extractSavedBlueprints,
-  type SaveBlueprintRecord,
-} from "@sandustry/save-core";
+import { type SaveBlueprintRecord } from "@sandustry/save-core";
 import { encodeSavedBlueprint } from "../utils/save-blueprint";
+import { extractSaveBlueprintsInWorker } from "../utils/save-blueprint-worker";
 import {
   getSavedGameBytes,
   listSavedGames,
@@ -56,11 +53,14 @@ export function SavedBlueprintInspectorPage() {
   useEffect(() => {
     let disposed = false;
     const load = async () => {
+      setState({ status: "loading" });
       if (!/^[A-Za-z0-9_-]{1,128}$/.test(saveId) || !/^[A-Za-z0-9_-]{1,128}$/.test(blueprintId)) {
-        setState({ status: "error", message: "That saved blueprint link is not valid." });
+        if (!disposed)
+          setState({ status: "error", message: "That saved blueprint link is not valid." });
         return;
       }
       const listed = await listSavedGames();
+      if (disposed) return;
       if (!listed.ok) {
         setState({ status: "error", message: listed.error.message });
         return;
@@ -71,6 +71,7 @@ export function SavedBlueprintInspectorPage() {
         return;
       }
       const stored = await getSavedGameBytes(saveId);
+      if (disposed) return;
       if (!stored.ok) {
         setState({
           status: "error",
@@ -79,7 +80,8 @@ export function SavedBlueprintInspectorPage() {
         return;
       }
       try {
-        const extracted = extractSavedBlueprints((await decodeBrowserSave(stored.value)).payload);
+        const extracted = await extractSaveBlueprintsInWorker(stored.value);
+        if (disposed) return;
         const record = extracted.blueprints.find((candidate) => candidate.id === blueprintId);
         if (!record) {
           setState({
@@ -89,8 +91,7 @@ export function SavedBlueprintInspectorPage() {
           return;
         }
         const encoded = encodeSavedBlueprint(record);
-        if (!disposed)
-          setState({ status: "ready", encoded, name: summary.worldName || summary.fileName });
+        setState({ status: "ready", encoded, name: summary.worldName || summary.fileName });
       } catch (error) {
         if (!disposed)
           setState({
@@ -231,8 +232,8 @@ export function BlueprintInspectorPage({
     blueprints: SaveBlueprintRecord[];
   } | null>(null);
   const mapPanelRef = useRef<HTMLDivElement>(null);
-  const inspect = () => {
-    const value = encoded.trim();
+  const inspectValue = (input: string) => {
+    const value = input.trim();
     if (value.startsWith("SAND:BP:v1:") || value.startsWith("SAND:BACKUP:v1:")) {
       setBlueprint(null);
       setSummary(null);
@@ -253,6 +254,7 @@ export function BlueprintInspectorPage({
       setMessage(error instanceof Error ? error.message : "Unable to inspect blueprint.");
     }
   };
+  const inspect = () => inspectValue(encoded);
   const loadTestBlueprint = (nextBlueprint: Blueprint) => {
     const nextEncoded = encodeBlueprint(nextBlueprint);
     setEncoded(nextEncoded);
@@ -263,14 +265,20 @@ export function BlueprintInspectorPage({
     if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, nextEncoded);
   };
   const loadSavedBlueprint = (record: SaveBlueprintRecord, fileName: string) => {
-    const nextEncoded = encodeSavedBlueprint(record);
-    const nextBlueprint = decodeBlueprint(nextEncoded);
-    setDroppedSave(null);
-    setEncoded(nextEncoded);
-    setInspectedBlueprintKey(nextEncoded);
-    setBlueprint(nextBlueprint);
-    setSummary(summarizeBlueprint(nextEncoded, nextBlueprint));
-    setMessage(`Loaded ${record.name} from ${fileName}.`);
+    try {
+      const nextEncoded = encodeSavedBlueprint(record);
+      const nextBlueprint = decodeBlueprint(nextEncoded);
+      setDroppedSave(null);
+      setEncoded(nextEncoded);
+      setInspectedBlueprintKey(nextEncoded);
+      setBlueprint(nextBlueprint);
+      setSummary(summarizeBlueprint(nextEncoded, nextBlueprint));
+      setMessage(`Loaded ${record.name} from ${fileName}.`);
+    } catch (error) {
+      setMessage(
+        `Unable to load ${record.name}: ${error instanceof Error ? error.message : "incompatible blueprint"}`,
+      );
+    }
   };
   const handleSaveFile = async (file?: File) => {
     if (!file) return;
@@ -280,9 +288,7 @@ export function BlueprintInspectorPage({
     }
     setMessage(`Reading ${file.name}…`);
     try {
-      const extracted = extractSavedBlueprints(
-        (await decodeBrowserSave(await file.arrayBuffer())).payload,
-      );
+      const extracted = await extractSaveBlueprintsInWorker(await file.arrayBuffer());
       if (!extracted.blueprints.length) {
         setDroppedSave(null);
         setMessage("That save contains no valid saved blueprints.");
@@ -302,8 +308,13 @@ export function BlueprintInspectorPage({
     }
   };
   useEffect(() => {
-    if (encoded.trim() && (initialEncoded !== undefined || remember)) inspect();
-    // The initial value should be inspected once after the page mounts.
+    if (initialEncoded !== undefined) {
+      setEncoded(initialEncoded);
+      inspectValue(initialEncoded);
+    } else if (encoded.trim() && remember) {
+      inspectValue(encoded);
+    }
+    // The initial or remembered value should be inspected after the page mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEncoded]);
   useEffect(() => {

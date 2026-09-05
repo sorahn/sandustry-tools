@@ -59,6 +59,7 @@ let decodedSave: Awaited<ReturnType<typeof decodeBrowserSave>> | null = null;
 let decodedDocument: SaveExplorerDocument | null = null;
 let preparedRenderState: ReturnType<typeof prepareSaveExplorerRenderState> | null = null;
 let _decodedBlueprints: ReturnType<typeof extractSavedBlueprints>["blueprints"] = [];
+let installedDecodeId = 0;
 
 workerScope.onmessage = async ({ data }) => {
   try {
@@ -77,6 +78,7 @@ workerScope.onmessage = async ({ data }) => {
       decodedDocument = doc;
       _decodedBlueprints = extracted.blueprints;
       preparedRenderState = prepareSaveExplorerRenderState(decodedSave, data.render);
+      installedDecodeId = requestId;
       const raster = composeSaveExplorerMinimap(preparedRenderState, data.render);
       workerScope.postMessage(
         {
@@ -93,6 +95,7 @@ workerScope.onmessage = async ({ data }) => {
       );
       return;
     }
+    if (installedDecodeId !== latestDecodeId) throw new Error("A save is still decoding");
     if (!decodedSave || !decodedDocument || !preparedRenderState)
       throw new Error("No save is loaded");
     if (data.type === "inspect") {

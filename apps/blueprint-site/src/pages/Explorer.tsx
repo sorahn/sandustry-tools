@@ -14,6 +14,8 @@ import {
 } from "../components/SaveExplorerMapPanel";
 import { SaveExplorerSidebar, type SaveExplorerLayers } from "../components/SaveExplorerSidebar";
 import { readRememberedSave } from "../utils/save-storage";
+import { readStorageValue, writeStoredBoolean } from "../utils/storage";
+import { REMEMBER_SAVE_EXPLORER_KEY } from "../utils/storage-keys";
 import {
   getSavedGameBytes,
   listSavedGames,
@@ -59,6 +61,8 @@ export function SaveExplorerPage() {
   const activeDecodeIdRef = useRef(0);
   const latestInspectIdRef = useRef(0);
   const latestRenderIdRef = useRef(0);
+  const latestEncodeIdRef = useRef(0);
+  const loadIntentRef = useRef(0);
   const pendingInspectRef = useRef<{ mapX: number; mapY: number } | null>(null);
   const inspectFrameRef = useRef<number | null>(null);
   const [document, setDocument] = useState<SaveExplorerClientDocument | null>(null);
@@ -68,6 +72,9 @@ export function SaveExplorerPage() {
   const hoverCellRef = useRef<{ mapX: number; mapY: number } | null>(null);
   const [message, setMessage] = useState("Drop a .save file here to begin.");
   const [busy, setBusy] = useState(false);
+  const [remember, setRemember] = useState(
+    () => readStorageValue(REMEMBER_SAVE_EXPLORER_KEY) === "true",
+  );
   const [dragging, setDragging] = useState(false);
   const [layers, setLayers] = useState<SaveExplorerLayers>({
     terrain: true,
@@ -80,7 +87,12 @@ export function SaveExplorerPage() {
     authorization: false,
   });
   const [customCursor, setCustomCursor] = useState(false);
-  const currentSaveRef = useRef<{ bytes: Uint8Array; name: string } | null>(null);
+  const currentSaveRef = useRef<{
+    bytes: Uint8Array;
+    name: string;
+    source: "upload" | "stored" | "legacy";
+    persistOnDecode: boolean;
+  } | null>(null);
   const activeSaveIdRef = useRef<string | null>(null);
   const currentSaveIdRef = useRef<string | null>(null);
   const layersRef = useRef(layers);
@@ -155,7 +167,7 @@ export function SaveExplorerPage() {
       const respId = response.id ?? 0;
 
       if (response.type === "inspection") {
-        if (respId < latestInspectIdRef.current) return;
+        if (respId !== latestInspectIdRef.current || respId < activeDecodeIdRef.current) return;
         const current = hoverCellRef.current;
         if (
           response.inspection &&
@@ -167,7 +179,9 @@ export function SaveExplorerPage() {
       }
 
       if (response.type === "encoded") {
+        if (respId !== latestEncodeIdRef.current || respId < activeDecodeIdRef.current) return;
         void copyToClipboard(response.encoded).then((copied) => {
+          if (respId !== latestEncodeIdRef.current || respId < activeDecodeIdRef.current) return;
           setMessage(
             copied
               ? "Blueprint string copied to the clipboard."
@@ -178,14 +192,20 @@ export function SaveExplorerPage() {
       }
 
       if (response.type === "error") {
-        if (
-          response.operation === "inspect" ||
-          response.operation === "encode" ||
-          respId < activeDecodeIdRef.current ||
-          respId < latestRenderIdRef.current
-        ) {
+        if (response.operation === "inspect") {
+          if (respId === latestInspectIdRef.current && respId >= activeDecodeIdRef.current) {
+            setInspection(null);
+            setMessage(`Unable to inspect cell: ${response.message}`);
+          }
           return;
         }
+        if (response.operation === "encode") {
+          if (respId === latestEncodeIdRef.current && respId >= activeDecodeIdRef.current)
+            setMessage(`Unable to encode blueprint: ${response.message}`);
+          return;
+        }
+        if (response.operation === "decode" && respId !== activeDecodeIdRef.current) return;
+        if (response.operation === "render" && respId !== latestRenderIdRef.current) return;
         setBusy(false);
         if (response.operation === "decode") {
           setDocument(null);
@@ -195,13 +215,12 @@ export function SaveExplorerPage() {
         return;
       }
 
-      if (respId < activeDecodeIdRef.current || respId < latestRenderIdRef.current) {
-        return;
-      }
       if (response.type === "rendered") {
+        if (respId !== latestRenderIdRef.current || respId < activeDecodeIdRef.current) return;
         setBusy(false);
       }
       if (response.type === "decoded") {
+        if (respId !== activeDecodeIdRef.current) return;
         setDocument(response.document);
         activeSaveIdRef.current = response.document.metadata.saveId;
         currentSaveIdRef.current = response.document.metadata.saveId;
@@ -232,19 +251,20 @@ export function SaveExplorerPage() {
         const current = currentSaveRef.current;
         const summary = storedSummary(response.document, current.name);
         summary.byteLength = current.bytes.byteLength;
-        void storeSave(current.bytes, summary).then(async (result) => {
-          if (result.ok) {
-            const migrated = await migrateLegacyRememberedSave((bytes, name) => ({
-              ...summary,
-              fileName: name,
-              byteLength: bytes.byteLength,
-            }));
-            if (!migrated.ok)
-              setMessage(`Save decoded, but migration failed: ${migrated.error.message}`);
-            return;
-          }
-          setMessage(`Save decoded, but saving failed: ${result.error.message}`);
-        });
+        if (current.source === "legacy") {
+          void migrateLegacyRememberedSave(current.bytes, summary).then((result) => {
+            if (activeDecodeIdRef.current !== respId) return;
+            if (!result.ok)
+              setMessage(`Save decoded, but migration failed: ${result.error.message}`);
+            else current.persistOnDecode = false;
+          });
+        } else if (current.persistOnDecode) {
+          void storeSave(current.bytes, summary).then((result) => {
+            if (activeDecodeIdRef.current !== respId) return;
+            if (!result.ok) setMessage(`Save decoded, but saving failed: ${result.error.message}`);
+            else current.persistOnDecode = false;
+          });
+        }
       }
     };
     worker.onerror = () => {
@@ -253,23 +273,48 @@ export function SaveExplorerPage() {
     };
     let disposed = false;
     void (async () => {
-      const listed = await listSavedGames();
-      let saved: { bytes: Uint8Array; name: string } | null = null;
-      if (listed.ok && listed.value.length > 0) {
-        const sorted = listed.value.slice().sort((a, b) => b.storedAt.localeCompare(a.storedAt));
-        const activeId = readActiveSaveId();
-        const summary = sorted.find((candidate) => candidate.id === activeId) ?? sorted[0];
-        activeSaveIdRef.current = summary.id;
-        currentSaveIdRef.current = summary.id;
-        const bytes = await getSavedGameBytes(summary.id);
-        if (bytes.ok) saved = { bytes: bytes.value, name: summary.fileName };
-        else if (!disposed) setMessage(bytes.error.message);
-      } else if (listed.ok || listed.error.code === "unavailable") {
-        const legacy = readRememberedSave();
-        if (legacy) saved = { bytes: legacy.bytes.slice(), name: legacy.name };
-      } else if (!disposed) setMessage(listed.error.message);
-      if (disposed || !saved) return;
-      currentSaveRef.current = { bytes: saved.bytes.slice(), name: saved.name };
+      const intent = ++loadIntentRef.current;
+      let saved:
+        | {
+            bytes: Uint8Array;
+            name: string;
+            saveId?: string;
+            source: "stored" | "legacy";
+          }
+        | undefined;
+      const legacy = readRememberedSave();
+      if (legacy) {
+        saved = { bytes: legacy.bytes.slice(), name: legacy.name, source: "legacy" };
+      } else {
+        const listed = await listSavedGames();
+        if (disposed || intent !== loadIntentRef.current) return;
+        if (listed.ok && listed.value.length > 0) {
+          const sorted = listed.value.slice().sort((a, b) => b.storedAt.localeCompare(a.storedAt));
+          const activeId = readActiveSaveId();
+          const summary = sorted.find((candidate) => candidate.id === activeId) ?? sorted[0];
+          const bytes = await getSavedGameBytes(summary.id);
+          if (disposed || intent !== loadIntentRef.current) return;
+          if (bytes.ok)
+            saved = {
+              bytes: bytes.value,
+              name: summary.fileName,
+              saveId: summary.id,
+              source: "stored",
+            };
+          else setMessage(bytes.error.message);
+        } else if (!listed.ok) {
+          setMessage(listed.error.message);
+        }
+      }
+      if (disposed || intent !== loadIntentRef.current || !saved) return;
+      activeSaveIdRef.current = saved.saveId ?? null;
+      currentSaveIdRef.current = saved.saveId ?? null;
+      currentSaveRef.current = {
+        bytes: saved.bytes.slice(),
+        name: saved.name,
+        source: saved.source,
+        persistOnDecode: saved.source === "legacy",
+      };
       setBusy(true);
       setMessage(`Restoring ${saved.name}…`);
       awaitingSettleRef.current = true;
@@ -280,10 +325,12 @@ export function SaveExplorerPage() {
       fitNextRasterRef.current = true;
       const reqId = nextRequestIdRef.current++;
       activeDecodeIdRef.current = reqId;
+      latestRenderIdRef.current = reqId;
       const bytes = saved.bytes.buffer;
       worker.postMessage({ id: reqId, type: "decode", bytes, render: minimapOptions }, [bytes]);
     })();
     const clearExplorerState = () => {
+      loadIntentRef.current += 1;
       if (settleTimerRef.current !== null) {
         clearTimeout(settleTimerRef.current);
         settleTimerRef.current = null;
@@ -298,6 +345,7 @@ export function SaveExplorerPage() {
       setRaster(null);
       setInspection(null);
       setHoverCell(null);
+      cancelQueuedInspect();
       setMessage("Choose a Sandustry .save file.");
     };
     const unsubscribe = subscribeToSaveDatabase(async (event) => {
@@ -308,19 +356,41 @@ export function SaveExplorerPage() {
           return;
         }
         if (event.saveId === activeSaveIdRef.current) return;
+        const intent = ++loadIntentRef.current;
         activeSaveIdRef.current = event.saveId;
         currentSaveIdRef.current = event.saveId;
+        setBusy(true);
+        setDocument(null);
+        setInspection(null);
+        setHoverCell(null);
+        cancelQueuedInspect();
         const bytes = await getSavedGameBytes(event.saveId);
-        if (disposed) return;
+        if (
+          disposed ||
+          intent !== loadIntentRef.current ||
+          event.saveId !== activeSaveIdRef.current
+        )
+          return;
         if (!bytes.ok) {
+          setBusy(false);
           setMessage(bytes.error.message);
           return;
         }
         const listed = await listSavedGames();
+        if (
+          disposed ||
+          intent !== loadIntentRef.current ||
+          event.saveId !== activeSaveIdRef.current
+        )
+          return;
         const summary = listed.ok ? listed.value.find((s) => s.id === event.saveId) : undefined;
         const fileName = summary?.fileName ?? "save.save";
-        currentSaveRef.current = { bytes: bytes.value.slice(), name: fileName };
-        setBusy(true);
+        currentSaveRef.current = {
+          bytes: bytes.value.slice(),
+          name: fileName,
+          source: "stored",
+          persistOnDecode: false,
+        };
         setMessage(`Restoring ${fileName}…`);
         awaitingSettleRef.current = true;
         if (settleTimerRef.current !== null) {
@@ -330,6 +400,7 @@ export function SaveExplorerPage() {
         fitNextRasterRef.current = true;
         const reqId = nextRequestIdRef.current++;
         activeDecodeIdRef.current = reqId;
+        latestRenderIdRef.current = reqId;
         const buffer = bytes.value.buffer;
         const currentLayers = layersRef.current;
         const renderOpts: MinimapRenderOptions = {
@@ -371,7 +442,11 @@ export function SaveExplorerPage() {
     context.imageSmoothingEnabled = false;
     let imageData: ImageData;
     try {
-      imageData = new ImageData(new Uint8ClampedArray(raster.pixels), raster.width, raster.height);
+      imageData = new ImageData(
+        raster.pixels as Uint8ClampedArray<ArrayBuffer>,
+        raster.width,
+        raster.height,
+      );
     } catch {
       imageData = context.createImageData(raster.width, raster.height);
       imageData.data.set(raster.pixels);
@@ -434,9 +509,12 @@ export function SaveExplorerPage() {
       setMessage("Choose a Sandustry .save file.");
       return;
     }
-    const reqId = nextRequestIdRef.current++;
-    activeDecodeIdRef.current = reqId;
+    const intent = ++loadIntentRef.current;
     setBusy(true);
+    setDocument(null);
+    setInspection(null);
+    setHoverCell(null);
+    cancelQueuedInspect();
     setMessage(`Reading ${file.name}…`);
     awaitingSettleRef.current = true;
     if (settleTimerRef.current !== null) {
@@ -444,10 +522,26 @@ export function SaveExplorerPage() {
       settleTimerRef.current = null;
     }
     fitNextRasterRef.current = true;
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    // If a newer decode request was started while reading bytes, discard this one
-    if (reqId < activeDecodeIdRef.current) return;
-    currentSaveRef.current = { bytes: bytes.slice(), name: file.name };
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(await file.arrayBuffer());
+    } catch (error) {
+      if (intent !== loadIntentRef.current) return;
+      setBusy(false);
+      awaitingSettleRef.current = false;
+      setMessage(error instanceof Error ? error.message : `Unable to read ${file.name}.`);
+      return;
+    }
+    if (intent !== loadIntentRef.current) return;
+    const reqId = nextRequestIdRef.current++;
+    activeDecodeIdRef.current = reqId;
+    latestRenderIdRef.current = reqId;
+    currentSaveRef.current = {
+      bytes: bytes.slice(),
+      name: file.name,
+      source: "upload",
+      persistOnDecode: remember,
+    };
     workerRef.current?.postMessage(
       { id: reqId, type: "decode", bytes: bytes.buffer, render: minimapOptions },
       [bytes.buffer],
@@ -499,12 +593,38 @@ export function SaveExplorerPage() {
     }
   };
 
+  const toggleRemember = async () => {
+    if (remember) {
+      setRemember(false);
+      writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, false);
+      setMessage("New saves will stay in memory unless you remember them explicitly.");
+      return;
+    }
+    const current = currentSaveRef.current;
+    if (current && document) {
+      const summary = storedSummary(document, current.name);
+      summary.byteLength = current.bytes.byteLength;
+      setMessage(`Remembering ${current.name}…`);
+      const result = await storeSave(current.bytes, summary);
+      if (!result.ok) {
+        setMessage(`Unable to remember save: ${result.error.message}`);
+        return;
+      }
+      current.persistOnDecode = false;
+    }
+    setRemember(true);
+    writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, true);
+    setMessage(
+      current ? `${current.name} is remembered.` : "Newly opened saves will be remembered.",
+    );
+  };
+
   return (
     <section className="space-y-6">
       <PageHeader title="Save Explorer">
         Work in progress: preview the save parser and native-style minimap renderer. This is an
         early read-only explorer, so some game layers, colors, and bundled content are still being
-        resolved. Files stay in this browser session and are processed locally.
+        resolved. Files are processed locally and are stored only when you choose to remember them.
       </PageHeader>
       <SplitPane
         sidebarPosition="end"
@@ -516,9 +636,11 @@ export function SaveExplorerPage() {
             document={document}
             busy={busy}
             message={message}
+            remember={remember}
             layers={layers}
             customCursor={customCursor}
             onLayerChange={updateLayer}
+            onRemember={() => void toggleRemember()}
             onCustomCursorChange={setCustomCursor}
             onInspectBlueprint={(blueprintId) => {
               const saveId = encodeURIComponent(document?.metadata.saveId || "");
@@ -527,6 +649,7 @@ export function SaveExplorerPage() {
             }}
             onCopyBlueprint={(blueprintId) => {
               const reqId = nextRequestIdRef.current++;
+              latestEncodeIdRef.current = reqId;
               workerRef.current?.postMessage({ id: reqId, type: "encode", blueprintId });
               setMessage("Encoding blueprint string…");
             }}

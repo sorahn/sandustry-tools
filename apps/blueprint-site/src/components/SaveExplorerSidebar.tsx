@@ -18,9 +18,11 @@ type SaveExplorerSidebarProps = {
   document: SaveExplorerClientDocument | null;
   busy: boolean;
   message: string;
+  remember: boolean;
   layers: SaveExplorerLayers;
   customCursor: boolean;
   onLayerChange: (layer: keyof SaveExplorerLayers, checked: boolean) => void;
+  onRemember: () => void;
   onCustomCursorChange: (checked: boolean) => void;
   onInspectBlueprint: (blueprintId: string) => void;
   onCopyBlueprint: (blueprintId: string) => void;
@@ -64,9 +66,11 @@ export function SaveExplorerSidebar({
   document,
   busy,
   message,
+  remember,
   layers,
   customCursor,
   onLayerChange,
+  onRemember,
   onCustomCursorChange,
   onInspectBlueprint,
   onCopyBlueprint,
@@ -78,11 +82,14 @@ export function SaveExplorerSidebar({
         <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">
           Save status
         </h3>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center justify-between gap-3 text-sm">
           <StatusIndicator
             tone={document ? "online" : busy ? "warning" : "neutral"}
             label={busy ? "processing" : document ? "decoded" : "waiting"}
           />
+          <Button type="button" aria-pressed={remember} onClick={onRemember} disabled={busy}>
+            {remember ? "Remembering saves" : "Remember saves"}
+          </Button>
         </div>
         <p className="text-xs leading-5 text-slate-500">{message}</p>
       </section>
@@ -124,6 +131,7 @@ export function SaveExplorerSidebar({
                         : layer
                 }
                 checked={layers[layer]}
+                disabled={busy}
                 onChange={(event) => onLayerChange(layer, event.target.checked)}
               />
             ))}
@@ -133,6 +141,7 @@ export function SaveExplorerSidebar({
               size="small"
               label="custom cursor"
               checked={customCursor}
+              disabled={busy}
               onChange={(event) => onCustomCursorChange(event.target.checked)}
             />
           ) : null}

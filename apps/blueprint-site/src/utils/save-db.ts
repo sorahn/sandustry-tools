@@ -292,11 +292,16 @@ export async function estimateStoredBytes(): Promise<StorageResult<number>> {
 
 /** Migrate the old base64 localStorage record only after an IDB write/read-back succeeds. */
 export async function migrateLegacyRememberedSave(
-  createSummary: (bytes: Uint8Array, fileName: string) => StoredSaveSummary,
+  decodedBytes: Uint8Array,
+  summary: StoredSaveSummary,
 ): Promise<StorageResult<boolean>> {
   const legacy = readRememberedSave();
   if (!legacy) return { ok: true, value: false };
-  const summary = createSummary(legacy.bytes, legacy.name);
+  if (
+    decodedBytes.length !== legacy.bytes.length ||
+    decodedBytes.some((byte, index) => byte !== legacy.bytes[index])
+  )
+    return failure("corrupt-record", "Legacy save changed before migration");
   const stored = await storeSave(legacy.bytes, summary);
   if (!stored.ok) return stored;
   const readBack = await getSavedGameBytes(summary.id);

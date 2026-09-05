@@ -83,7 +83,7 @@ describe("worker protocol and concurrency", () => {
     expect("document" in response).toBe(false);
   });
 
-  test("save explorer response filtering discards superseded decodes and stale errors", () => {
+  test("save explorer accepts the active decode while a later render is pending", () => {
     let activeDecodeId = 5;
     let latestRenderId = 5;
     let currentDocument: string | null = "valid-document";
@@ -93,10 +93,13 @@ describe("worker protocol and concurrency", () => {
       type: "decoded" | "rendered" | "error";
       message?: string;
     }) => {
-      // Discard older results or errors
-      if (response.id < activeDecodeId || response.id < latestRenderId) {
-        return; // discarded!
+      if (response.type === "decoded") {
+        if (response.id !== activeDecodeId) return;
+        currentDocument = "new-document";
+        return;
       }
+
+      if (response.id !== latestRenderId || response.id < activeDecodeId) return;
       if (response.type === "error") {
         currentDocument = null;
       } else {
@@ -108,16 +111,20 @@ describe("worker protocol and concurrency", () => {
     handleResponse({ id: 4, type: "error", message: "Failed decode" });
     expect(currentDocument).toBe("valid-document"); // Preserved!
 
-    // Successful completion of current request (id 5)
-    handleResponse({ id: 5, type: "decoded" });
+    // A new decode starts, followed by a layer render before decoding completes.
+    activeDecodeId = 6;
+    latestRenderId = 7;
+
+    // The active decode must still install its document despite the newer render ID.
+    handleResponse({ id: 6, type: "decoded" });
     expect(currentDocument).toBe("new-document");
 
-    // Start request 6
-    activeDecodeId = 6;
-    latestRenderId = 6;
-
-    // Delayed arrival of request 5 result does not overwrite request 6
+    // Delayed responses from the preceding document remain ignored.
     handleResponse({ id: 5, type: "rendered" });
+    expect(currentDocument).toBe("new-document");
+
+    // The render associated with the current document is accepted.
+    handleResponse({ id: 7, type: "rendered" });
     expect(currentDocument).toBe("new-document");
   });
 
