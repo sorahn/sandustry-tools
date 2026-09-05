@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import cx from "clsx";
 import {
   prepareSvgForPng,
   renderPixelScale,
@@ -667,7 +668,7 @@ export function BlueprintMap({
     <div
       className={
         showSidebar
-          ? "grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]"
+          ? cx("grid items-stretch lg:grid-cols-[minmax(0,1fr)_18rem]", !embedMode && "gap-4")
           : "grid items-stretch"
       }
     >

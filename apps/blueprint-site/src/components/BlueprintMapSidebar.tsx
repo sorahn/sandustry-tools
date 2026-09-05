@@ -513,7 +513,7 @@ export function BlueprintMapSidebar({
     <aside
       className={cx(
         "flex flex-col border-l border-slate-800 pl-4 text-xs text-slate-400",
-        embedMode && "pt-4",
+        embedMode && "pt-4 pr-4",
       )}
     >
       {debugOptions}
