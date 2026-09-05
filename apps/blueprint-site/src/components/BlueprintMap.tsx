@@ -888,6 +888,11 @@ export function BlueprintMap({
       {showSidebar ? (
         <BlueprintMapSidebar
           selected={selected}
+          selectedIndex={selectedIndex}
+          totalStructures={blueprint.data.length}
+          blueprint={blueprint}
+          activeFilterCluster={activeFilterCluster}
+          onClearSelection={() => setSelectedIndex(null)}
           debugOptions={showDebugOptions ? debugOptions : null}
         />
       ) : null}

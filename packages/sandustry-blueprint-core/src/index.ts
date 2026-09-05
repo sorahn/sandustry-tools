@@ -121,6 +121,7 @@ export {
   isLeftFilter,
   layoutFilterLabels,
   measureFilterChip,
+  normalizeElementList,
   renderFilterOverlaySvg,
 } from "./filter-overlay.js";
 
