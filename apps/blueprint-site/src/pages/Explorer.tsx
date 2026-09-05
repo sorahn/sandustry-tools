@@ -14,10 +14,34 @@ import {
 } from "../components/SaveExplorerMapPanel";
 import { SaveExplorerSidebar, type SaveExplorerLayers } from "../components/SaveExplorerSidebar";
 import { readStorageValue, writeStoredBoolean } from "../utils/storage";
-import { forgetRememberedSave, readRememberedSave, rememberSave } from "../utils/save-storage";
+import { forgetRememberedSave, readRememberedSave } from "../utils/save-storage";
+import {
+  deleteSavedGame,
+  getSavedGameBytes,
+  listSavedGames,
+  migrateLegacyRememberedSave,
+  storeSave,
+  type StoredSaveSummary,
+} from "../utils/save-db";
 import { REMEMBER_SAVE_EXPLORER_KEY } from "../utils/storage-keys";
 
 import type { SaveWorkerResponse } from "../save-worker";
+
+function storedSummary(document: SaveExplorerClientDocument, fileName: string): StoredSaveSummary {
+  return {
+    id: document.metadata.saveId,
+    fileName,
+    worldName: document.metadata.worldName,
+    playTime: document.metadata.playTime,
+    saveTimestamp: document.metadata.timestamp,
+    storedAt: new Date().toISOString(),
+    gameVersion: document.metadata.gameVersion,
+    structureCount: document.structureCount,
+    blueprintCount: document.blueprints.length,
+    byteLength: 0,
+    blueprints: document.blueprints,
+  };
+}
 
 export function SaveExplorerPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +68,8 @@ export function SaveExplorerPage() {
   const [remember, setRemember] = useState(
     () => readStorageValue(REMEMBER_SAVE_EXPLORER_KEY) === "true",
   );
+  const rememberRef = useRef(remember);
+  rememberRef.current = remember;
   const [layers, setLayers] = useState<SaveExplorerLayers>({
     terrain: true,
     settledElements: true,
@@ -144,14 +170,48 @@ export function SaveExplorerPage() {
           ? "Save decoded. This first view is a native-style minimap raster."
           : "Minimap layer updated.",
       );
+      if (response.type === "decoded" && rememberRef.current && currentSaveRef.current) {
+        const current = currentSaveRef.current;
+        const summary = storedSummary(response.document, current.name);
+        summary.byteLength = current.bytes.byteLength;
+        void storeSave(current.bytes, summary).then(async (result) => {
+          if (result.ok) {
+            const migrated = await migrateLegacyRememberedSave((bytes, name) => ({
+              ...summary,
+              fileName: name,
+              byteLength: bytes.byteLength,
+            }));
+            if (!migrated.ok)
+              setMessage(`Save decoded, but migration failed: ${migrated.error.message}`);
+            return;
+          }
+          setRemember(false);
+          writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, false);
+          setMessage(`Save decoded, but it was not remembered: ${result.error.message}`);
+        });
+      }
     };
     worker.onerror = () => {
       setBusy(false);
       setMessage("The save worker stopped unexpectedly.");
     };
+    let disposed = false;
     if (remember) {
-      const saved = readRememberedSave();
-      if (saved) {
+      void (async () => {
+        const listed = await listSavedGames();
+        let saved: { bytes: Uint8Array; name: string } | null = null;
+        if (listed.ok && listed.value.length > 0) {
+          const summary = listed.value
+            .slice()
+            .sort((a, b) => b.storedAt.localeCompare(a.storedAt))[0];
+          const bytes = await getSavedGameBytes(summary.id);
+          if (bytes.ok) saved = { bytes: bytes.value, name: summary.fileName };
+          else if (!disposed) setMessage(bytes.error.message);
+        } else if (listed.ok || listed.error.code === "unavailable") {
+          const legacy = readRememberedSave();
+          if (legacy) saved = { bytes: legacy.bytes.slice(), name: legacy.name };
+        } else if (!disposed) setMessage(listed.error.message);
+        if (disposed || !saved) return;
         currentSaveRef.current = { bytes: saved.bytes.slice(), name: saved.name };
         setBusy(true);
         setMessage(`Restoring ${saved.name}…`);
@@ -159,9 +219,10 @@ export function SaveExplorerPage() {
         activeDecodeIdRef.current = reqId;
         const bytes = saved.bytes.buffer;
         worker.postMessage({ id: reqId, type: "decode", bytes, render: minimapOptions }, [bytes]);
-      }
+      })();
     }
     return () => {
+      disposed = true;
       if (inspectFrameRef.current !== null) cancelAnimationFrame(inspectFrameRef.current);
       worker.terminate();
       workerRef.current = null;
@@ -224,7 +285,6 @@ export function SaveExplorerPage() {
     // If a newer decode request was started while reading bytes, discard this one
     if (reqId < activeDecodeIdRef.current) return;
     currentSaveRef.current = { bytes: bytes.slice(), name: file.name };
-    if (remember) rememberSave(bytes, file.name);
     workerRef.current?.postMessage(
       { id: reqId, type: "decode", bytes: bytes.buffer, render: minimapOptions },
       [bytes.buffer],
@@ -276,8 +336,15 @@ export function SaveExplorerPage() {
     }
   };
 
-  const toggleRemember = () => {
+  const toggleRemember = async () => {
     if (remember) {
+      if (document) {
+        const result = await deleteSavedGame(document.metadata.saveId);
+        if (!result.ok && result.error.code !== "unavailable") {
+          setMessage(`Unable to forget save: ${result.error.message}`);
+          return;
+        }
+      }
       setRemember(false);
       writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, false);
       forgetRememberedSave();
@@ -285,8 +352,14 @@ export function SaveExplorerPage() {
       return;
     }
     const current = currentSaveRef.current;
-    if (!current) return;
-    rememberSave(current.bytes, current.name);
+    if (!current || !document) return;
+    const summary = storedSummary(document, current.name);
+    summary.byteLength = current.bytes.byteLength;
+    const result = await storeSave(current.bytes, summary);
+    if (!result.ok) {
+      setMessage(`Save was not remembered: ${result.error.message}`);
+      return;
+    }
     setRemember(true);
     writeStoredBoolean(REMEMBER_SAVE_EXPLORER_KEY, true);
     setMessage(`${current.name} will be restored on the next visit.`);
