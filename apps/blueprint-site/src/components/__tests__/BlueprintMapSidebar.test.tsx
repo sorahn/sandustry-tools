@@ -185,4 +185,32 @@ describe("BlueprintMapSidebar", () => {
     // Light bar rendered
     expect(html).toContain('fill="#00ff00"');
   });
+
+  test("renders thumbnail with build menu tile frame, baby blue background, and cell grid", () => {
+    const blueprint: Blueprint = {
+      name: "Conveyor blueprint",
+      data: [{ type: 2, x: 0, y: 0 }],
+      signalLinks: [],
+    };
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        blueprint={blueprint}
+        debugOptions={null}
+      />,
+    );
+
+    // Build menu tile radial gradient frame
+    expect(html).toContain(
+      "radial-gradient(circle, rgba(100, 100, 100, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%)",
+    );
+    // Baby blue background
+    expect(html).toContain('fill="#33a8ff"');
+    // Faint cell grid pattern strokes
+    expect(html).toContain('stroke="#718096"');
+    expect(html).toContain('stroke="#17202c"');
+    expect(html).toContain('opacity="0.25"');
+  });
 });
