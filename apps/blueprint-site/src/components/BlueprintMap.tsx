@@ -74,6 +74,7 @@ export function BlueprintMap({
   onPolicySelectionChange,
   padding: paddingOverride,
   stickyTop,
+  embedMode = false,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -90,6 +91,7 @@ export function BlueprintMap({
   onPolicySelectionChange?: (value: "legacy" | FitPolicyPreset) => void;
   padding?: FitSpacing;
   stickyTop?: string;
+  embedMode?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showDebugCells, setShowDebugCells] = useState(false);
@@ -897,6 +899,7 @@ export function BlueprintMap({
           activeFilterCluster={activeFilterCluster}
           onClearSelection={() => setSelectedIndex(null)}
           debugOptions={showDebugOptions ? debugOptions : null}
+          embedMode={embedMode}
         />
       ) : null}
     </div>

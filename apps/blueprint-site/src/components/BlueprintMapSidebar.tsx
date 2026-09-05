@@ -1,4 +1,5 @@
 import { type ReactNode, useId, useMemo } from "react";
+import cx from "clsx";
 import { type Blueprint } from "../utils/blueprint";
 import {
   catalogEntry,
@@ -33,6 +34,7 @@ export type BlueprintMapSidebarProps = {
   activeFilterCluster?: FilterOverlayCluster | null;
   onClearSelection?: () => void;
   debugOptions: ReactNode;
+  embedMode?: boolean;
 };
 
 function shapeOutlinePath(shape: number[][], originX: number, originY: number, cellSize: number) {
@@ -397,6 +399,7 @@ export function BlueprintMapSidebar({
   activeFilterCluster,
   onClearSelection,
   debugOptions,
+  embedMode = false,
 }: BlueprintMapSidebarProps) {
   const entry = selected ? catalogEntry(selected.type) : undefined;
   const footprint = selected ? structureFootprint(selected) : { width: 4, height: 4 };
@@ -507,7 +510,12 @@ export function BlueprintMapSidebar({
       : undefined;
 
   return (
-    <aside className="flex flex-col border-l border-slate-800 pl-4 text-xs text-slate-400">
+    <aside
+      className={cx(
+        "flex flex-col border-l border-slate-800 pl-4 text-xs text-slate-400",
+        embedMode && "pt-4",
+      )}
+    >
       {debugOptions}
       <BlueprintMapSidebarSection
         title="Selected record"

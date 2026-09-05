@@ -173,6 +173,7 @@ function BlueprintInspectorEmbed() {
           showDebugOptions={false}
           fitPolicy={fitPolicy}
           stickyTop="0px"
+          embedMode
         />
       ) : (
         <p role="status">{status}</p>
