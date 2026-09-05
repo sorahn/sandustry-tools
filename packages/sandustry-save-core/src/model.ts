@@ -12,7 +12,8 @@ export type SaveExplorerDiagnostic = {
     | "truncated-section"
     | "unknown-id"
     | "dimension-mismatch"
-    | "invalid-structure";
+    | "invalid-structure"
+    | "invalid-blueprint";
   message: string;
   path?: string;
 };
@@ -131,6 +132,7 @@ export type SaveExplorerClientDocument = {
 
 export function toSaveExplorerClientDocument(
   document: SaveExplorerDocument,
+  blueprints: SaveBlueprintSummary[] = [],
 ): SaveExplorerClientDocument {
   const layerAvailability: Partial<Record<SaveExplorerLayerName, boolean>> = {};
   for (const name of ["matrix", "wall", "shadow", "authorization"] as const)
@@ -143,7 +145,7 @@ export function toSaveExplorerClientDocument(
     structureCount: document.structures.length,
     elementCount: document.elements.length,
     diagnostics: document.diagnostics,
-    blueprints: [],
+    blueprints,
   };
 }
 

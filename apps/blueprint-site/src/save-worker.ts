@@ -5,6 +5,7 @@ import {
   normalizeSaveDocument,
   prepareSaveExplorerRenderState,
   composeSaveExplorerMinimap,
+  extractSavedBlueprints,
   inspectPreparedSaveExplorerCell,
   toSaveExplorerClientDocument,
   type MinimapRenderOptions,
@@ -54,6 +55,7 @@ let latestDecodeId = 0;
 let decodedSave: Awaited<ReturnType<typeof decodeBrowserSave>> | null = null;
 let decodedDocument: SaveExplorerDocument | null = null;
 let preparedRenderState: ReturnType<typeof prepareSaveExplorerRenderState> | null = null;
+let _decodedBlueprints: ReturnType<typeof extractSavedBlueprints>["blueprints"] = [];
 
 workerScope.onmessage = async ({ data }) => {
   try {
@@ -62,19 +64,22 @@ workerScope.onmessage = async ({ data }) => {
       latestDecodeId = Math.max(latestDecodeId, requestId);
       const save = await decodeBrowserSave(data.bytes);
       const doc = normalizeSaveDocument(save, data.options);
+      const extracted = extractSavedBlueprints(save.payload);
+      doc.diagnostics.push(...extracted.diagnostics);
       // Discard stale decode if a newer decode was received while awaiting
       if (requestId < latestDecodeId) {
         return;
       }
       decodedSave = save;
       decodedDocument = doc;
+      _decodedBlueprints = extracted.blueprints;
       preparedRenderState = prepareSaveExplorerRenderState(decodedSave, data.render);
       const raster = composeSaveExplorerMinimap(preparedRenderState, data.render);
       workerScope.postMessage(
         {
           id: data.id,
           type: "decoded",
-          document: toSaveExplorerClientDocument(decodedDocument),
+          document: toSaveExplorerClientDocument(decodedDocument, extracted.summaries),
           raster: {
             width: raster.width,
             height: raster.height,

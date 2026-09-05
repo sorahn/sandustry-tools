@@ -72,6 +72,15 @@ export {
 } from "./model";
 
 export {
+  extractSavedBlueprints,
+  type ExtractedSaveBlueprints,
+  type SaveBlueprintRecord,
+  type SaveBlueprintSignalLink,
+  type SaveBlueprintStructure,
+  type SaveBlueprintType,
+} from "./blueprints";
+
+export {
   createSaveExplorerViewport,
   fitSaveExplorerViewport,
   panSaveExplorerViewport,
