@@ -27,6 +27,6 @@
   "exclude": [
     "**/*.integration.test.ts",
     "**/*.integration.test.tsx",
-    "resources/SandustryModTemplate/**"
+    "packages/sandustry-mod-template/**"
   ]
 }

@@ -21,7 +21,7 @@
     "node_modules",
     "apps/sandustry-vault/**",
     "**/build/**",
-    "resources/SandustryModTemplate/**",
+    "packages/sandustry-mod-template/**",
     "**/*.integration.test.ts",
     "**/*.integration.test.tsx"
   ]

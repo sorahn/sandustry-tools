@@ -29,7 +29,7 @@ For native bundle patches:
 - Do not derive anchors from pretty-printed captures, source maps, or
   repository reference bundles.
 
-Use resources/SandustryModTemplate/ and its extracted sources as the runtime
+Use packages/sandustry-mod-template/ and its extracted sources as the runtime
 API reference. Keep unstable private engine internals local to diagnostic code.
 Treat first-party bundled mods as supported content; do not assume base-game
 catalogs are complete, and retain fallbacks for unresolved mod definitions.

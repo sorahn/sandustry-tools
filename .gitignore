@@ -10,6 +10,5 @@ node_modules/
 *.tsbuildinfo
 .openai/
 .repo-rag/
-resources/*
 *-PLAN.md
 .sandustry-save

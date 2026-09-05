@@ -7,7 +7,7 @@ import { spawnSync } from "node:child_process";
 import { resolveSandustryAsar, resolveSandustryBinary } from "../dev/sandustry-paths.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const TEMPLATE = join(ROOT, "resources", "SandustryModTemplate");
+const TEMPLATE = join(ROOT, "packages", "sandustry-mod-template");
 const SHIM_ROOT = join(ROOT, "artifacts", "sandustry-template-host");
 const SHIM_BINARY = join(SHIM_ROOT, "bin", "sandustry");
 const SHIM_ASAR = join(SHIM_ROOT, "bin", "resources", "app.asar");

@@ -6,7 +6,7 @@ the game's private React implementation.
 
 ## Evidence levels
 
-- **DOM** — directly visible in `resources/filter-html.html`.
+- **DOM** — directly visible in `artifacts/reference/filter-html.html`.
 - **Bundle** — component names, labels, Tailwind class strings, or interaction
   hooks found in a captured or freshly extracted Sandustry renderer bundle.
 - **Inferred** — a reusable component hypothesis based on the evidence above;
@@ -229,15 +229,15 @@ The highest-value captures would be:
 
 ## Sources inspected
 
-- `resources/filter-html.html` — direct DOM snapshot of filter and hotbar UI.
+- `artifacts/reference/filter-html.html` — direct DOM snapshot of filter and hotbar UI.
 - `scripts/extract-native-catalog.mjs` — extracts the current renderer bundle
   from the installed `app.asar` with `@electron/asar`.
-- `resources/bundle.js` — historical minified production-bundle capture with UI
+- `artifacts/reference/bundle.js` — historical minified production-bundle capture with UI
   strings, Tailwind class names, overlay names, and interaction identifiers.
-- `resources/sandustry-mod-settings-guide.md` — settings tab and schema
+- `artifacts/reference/sandustry-mod-settings-guide.md` — settings tab and schema
   behavior inferred from the bundle.
-- `resources/v1/debug-info/` — debug settings and developer-tool context.
-- `resources/custom-maps.md` — map-related manifest and file concepts.
+- `artifacts/reference/v1/debug-info/` — debug settings and developer-tool context.
+- `artifacts/reference/custom-maps.md` — map-related manifest and file concepts.
 
 This catalog should be updated when new DOM examples arrive. New observations
 should be labeled with their source and interaction state before they influence

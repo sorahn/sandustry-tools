@@ -81,8 +81,6 @@ test("inspects revealed minimap cells without exposing fogged contents", () => {
 });
 
 const fixture = (name: string) => Bun.file(new URL(`./visual/saves/${name}`, import.meta.url));
-const repositoryFixture = (name: string) =>
-  Bun.file(new URL(`../../../resources/${name}`, import.meta.url));
 
 test("normalizes save metadata, layers, structures, and elements", async () => {
   const save = await decodeBrowserSave(await fixture("main-save.save").bytes());
@@ -139,7 +137,7 @@ test("indexes large worlds without allocating one object per tile", () => {
 });
 
 test("does not mutate uploaded bytes or decoded source data", async () => {
-  const bytes = await repositoryFixture("new-world.save").bytes();
+  const bytes = await fixture("new-world.save").bytes();
   const originalBytes = bytes.slice();
   const save = await decodeBrowserSave(bytes);
   const originalPayload = JSON.stringify(save.payload);

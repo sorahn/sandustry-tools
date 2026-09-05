@@ -17,9 +17,11 @@ from the demo mod, renamed to `SourceBlock.png` and `Trash.png`.
 
 Each active mod is isolated under `mods/<name>` with its source, manifest, and
 assets. Reusable TypeScript helpers live under `shared/` and are compiled into
-each standalone entrypoint. Shared build rules live in `make/mod.mk`; reference
-material remains under `resources/`. The Test Blocks entrypoint is TypeScript
-and compiles to the plain JavaScript file Sandustry expects.
+each standalone entrypoint. Shared build rules live in `make/mod.mk`; local
+game reference captures live under the ignored `artifacts/reference/`, and the
+Sandustry mod template and test harness live under `packages/sandustry-mod-template/`. The
+Test Blocks entrypoint is TypeScript and compiles to the plain JavaScript file
+Sandustry expects.
 
 ## Project documentation
 
@@ -28,10 +30,6 @@ for Sandustry planning, priorities, status, and task tracking. The linked
 plans in `Sandustry/Plans/` are historical archive material. Research notes in
 `Sandustry/Notes/` remain living technical context and can continue to be
 updated with new discoveries.
-
-The repository's `planning/` directory contains archived Markdown copies of
-plans and research notes. Update the Kanban board for planning and status;
-update research notes when new technical findings need to be recorded.
 
 ## Packaging
 
@@ -180,5 +178,5 @@ The same commands are available from inside a mod directory, without the
 `SANDUSTRY_MODS_DIR=/path/to/sandustry/mods`.
 
 Generated `build/` directories and the root `artifacts/` archive directory are
-ignored. Reference mods in `resources/` are not active mods and are not
-packaged.
+ignored. Local reference captures under `artifacts/reference/` are not active
+mods and are not packaged.

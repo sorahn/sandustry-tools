@@ -29,28 +29,7 @@
     {
       "id": "project-docs",
       "authority": "repository-documentation",
-      "include": ["README.md", "AGENTS.md", "*.md", "planning/**/*.md"]
-    },
-    {
-      "id": "sandustry-api-reference-material",
-      "authority": "repository-reference",
-      "include": [
-        "resources/v1/**/*.js",
-        "resources/v1/**/*.json",
-        "resources/v1/**/*.md",
-        "resources/demo/**/*.js",
-        "resources/demo/**/*.json",
-        "resources/demo/**/*.md",
-        "resources/*.md",
-        "resources/*.txt"
-      ],
-      "exclude": [
-        "resources/**/*.png",
-        "resources/**/*.webp",
-        "resources/**/*.save",
-        "resources/**/*.zip",
-        "resources/bundle*.js"
-      ]
+      "include": ["README.md", "AGENTS.md", "*.md"]
     },
     {
       "id": "local-sandustry-types",

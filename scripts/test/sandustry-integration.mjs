@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const TEMPLATE = join(ROOT, "resources", "SandustryModTemplate");
+const TEMPLATE = join(ROOT, "packages", "sandustry-mod-template");
 const TEMPLATE_DIST = join(TEMPLATE, "dist");
 const STAGING_ROOT = join(ROOT, "artifacts", "sandustry-integration");
 const STAGING_MODS = join(STAGING_ROOT, "mods");

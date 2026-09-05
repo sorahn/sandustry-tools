@@ -1,4 +1,4 @@
 {
-  "ignorePatterns": ["**/build/**", "resources/**", "*.zip"],
+  "ignorePatterns": ["**/build/**", "*.zip"],
   "env": { "es2022": true, "browser": true }
 }

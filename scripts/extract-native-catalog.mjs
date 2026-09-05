@@ -10,8 +10,9 @@ import { resolveSandustryAsar } from "./dev/sandustry-paths.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const asarPath = process.env.SANDUSTRY_ASAR ?? resolveSandustryAsar();
-const f8Path = path.join(root, "resources/f8-results.json");
-const menuPath = path.join(root, "resources/building-menu.html");
+const referenceRoot = path.join(root, "artifacts/reference");
+const f8Path = path.join(referenceRoot, "f8-results.json");
+const menuPath = path.join(referenceRoot, "building-menu.html");
 const catalogPath = path.join(root, "apps/blueprint-site/src/structure-catalog.json");
 const assetRoot = path.join(root, "apps/blueprint-site/public/catalog");
 

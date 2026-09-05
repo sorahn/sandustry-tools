@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { setupGame } from "../../../resources/SandustryModTemplate/modkit/test/setup-game.ts";
+import { setupGame } from "../../../packages/sandustry-mod-template/modkit/test/setup-game.ts";
 
 const game = await setupGame();
 

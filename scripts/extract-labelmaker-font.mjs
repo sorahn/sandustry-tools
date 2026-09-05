@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Extracts the lowercase glyphs from resources/ascii-text.webp. The source
+// Extracts the lowercase glyphs from artifacts/reference/ascii-text.webp. The source
 // image is a sprite sheet: each native font pixel is rendered at about 4.25
 // image pixels, and each row of cells has its own shared glyph top.
 import { execFileSync } from "node:child_process";
@@ -9,7 +9,7 @@ const width = 827;
 const height = 1662;
 const pixelScale = 4.25;
 const darknessCutoff = Number(process.env.LABELMAKER_DARKNESS_CUTOFF ?? 128);
-const source = process.argv[2] ?? "resources/ascii-text.webp";
+const source = process.argv[2] ?? "artifacts/reference/ascii-text.webp";
 const gray = execFileSync("magick", [source, "-colorspace", "gray", "-depth", "8", "gray:-"], {
   maxBuffer: width * height + 1024,
 });

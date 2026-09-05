@@ -13,7 +13,7 @@ color; it is not necessarily the exact color of every rendered pixel. Terrain
 
 ## Core elements
 
-Source: `resources/bundle.0.5.4.js:59600-59775`.
+Source: `artifacts/reference/bundle.0.5.4.js:59600-59775`.
 
 | Color     | Game content  | Matter / role                                   |
 | --------- | ------------- | ----------------------------------------------- |
@@ -39,7 +39,7 @@ Source: `resources/bundle.0.5.4.js:59600-59775`.
 
 ## Additional element and mod-content colors
 
-Source: `resources/bundle.0.5.4.js:93650-118620`. These entries are spread
+Source: `artifacts/reference/bundle.0.5.4.js:93650-118620`. These entries are spread
 across the base game and registered mod content in the captured bundle.
 
 | Color     | Game content           | Notes                                       |
@@ -68,8 +68,8 @@ across the base game and registered mod content in the captured bundle.
 
 ## Terrain metadata colors
 
-Source: `resources/bundle.0.5.4.js:11370-11575` and additional terrain
-registrations around `resources/bundle.0.5.4.js:97790-118620`. The HSL column is
+Source: `artifacts/reference/bundle.0.5.4.js:11370-11575` and additional terrain
+registrations around `artifacts/reference/bundle.0.5.4.js:97790-118620`. The HSL column is
 the terrain renderer's explicit `colorHSL`, where present; otherwise the hex is
 the metadata color only.
 
@@ -113,7 +113,7 @@ entry rather than a terrain definition.
 
 ## Named UI and status palette
 
-Source: `resources/bundle.0.5.4.js:51619-51710`. These are explicit semantic
+Source: `artifacts/reference/bundle.0.5.4.js:51619-51710`. These are explicit semantic
 colors from the game's debug/color showcase and are useful candidates for
 shared UI tokens.
 
@@ -149,7 +149,7 @@ the named palette.
 | Color               | Use                                                                        | Source                                                           |
 | ------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `#ffe700`           | Primary game accent: selected, focused, active, attention, tutorial action | `bundle.0.5.4.js:27450`, `47145`, `52849-53235`                  |
-| `#ffd700`           | Energy icon, gold tutorial text, gold progress                             | `bundle.0.5.4.js:52969-52997` and `resources/building-menu.html` |
+| `#ffd700`           | Energy icon, gold tutorial text, gold progress                             | `bundle.0.5.4.js:52969-52997` and `artifacts/reference/building-menu.html` |
 | `#e5b471`           | Wet-sand tutorial text                                                     | `bundle.0.5.4.js:52916`                                          |
 | `#4fc3f7`           | Water tutorial text                                                        | `bundle.0.5.4.js:52920`                                          |
 | `#b87e2e`           | Refined wet-sand tutorial text                                             | `bundle.0.5.4.js:52940`, `53063`                                 |
@@ -185,9 +185,9 @@ content colors.
 | Color                   | Use                                                          | Source                                                     |
 | ----------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
 | `#000000`               | Black outlines, scrims, and foundation linework              | Bundle and DOM captures                                    |
-| `rgba(0,0,0,0.9)`       | Building-menu item radial background                         | `resources/building-menu.html`                             |
-| `rgba(100,100,100,0.9)` | Building-menu item radial highlight                          | `resources/building-menu.html`                             |
-| `rgba(255,231,0,0.15)`  | Selected/attention yellow surface                            | `resources/building-menu.html`                             |
+| `rgba(0,0,0,0.9)`       | Building-menu item radial background                         | `artifacts/reference/building-menu.html`                             |
+| `rgba(100,100,100,0.9)` | Building-menu item radial highlight                          | `artifacts/reference/building-menu.html`                             |
+| `rgba(255,231,0,0.15)`  | Selected/attention yellow surface                            | `artifacts/reference/building-menu.html`                             |
 | `#33a8ff`               | Blueprint/map water background in this repository's renderer | `packages/sandustry-blueprint-core/src/svg-renderer.ts:58` |
 | `#718096`               | Blueprint block grid                                         | `packages/sandustry-blueprint-core/src/svg-renderer.ts:57` |
 | `#17202c`               | Blueprint cell grid                                          | `packages/sandustry-blueprint-core/src/svg-renderer.ts:57` |

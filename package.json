@@ -21,7 +21,7 @@
     "format:bundles": "node scripts/format-bundles.mjs",
     "format:check": "oxfmt --check .",
     "format": "oxfmt --write .",
-    "lint": "node scripts/check-jsx.mjs && oxlint --deny-warnings --ignore-pattern '**/build/**' --ignore-pattern 'resources/**' --ignore-pattern '*.zip' tests scripts types mods packages/*/src apps/blueprint-site/src",
+    "lint": "node scripts/check-jsx.mjs && oxlint --deny-warnings --ignore-pattern '**/build/**' --ignore-pattern '*.zip' tests scripts types mods packages/*/src apps/blueprint-site/src",
     "prepare": "husky",
     "test": "node scripts/run-tests.mjs",
     "tsc:tests": "tsc --noEmit -p tsconfig.tests.json",

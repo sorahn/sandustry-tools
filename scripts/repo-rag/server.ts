@@ -87,11 +87,7 @@ function callTool(name: string, args: Record<string, unknown>) {
     if (name === "search_decisions") {
       matches = matches.filter((match) => {
         const sourcePath = String(match.path ?? "");
-        return (
-          sourcePath.startsWith("planning/") ||
-          sourcePath.startsWith("README") ||
-          sourcePath === "AGENTS.md"
-        );
+        return sourcePath.startsWith("README") || sourcePath === "AGENTS.md";
       });
     }
     const limit = Math.min(Math.max(Number(args.limit ?? 8), 1), 20);

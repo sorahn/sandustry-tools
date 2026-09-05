@@ -5,8 +5,8 @@ import test from "node:test";
 import {
   buildPatchedDistSources,
   collectTestHostPatches,
-} from "../../../resources/SandustryModTemplate/modkit/test/patched-dist.ts";
-import { extractedDistDir } from "../../../resources/SandustryModTemplate/modkit/test/paths.ts";
+} from "../../../packages/sandustry-mod-template/modkit/test/patched-dist.ts";
+import { extractedDistDir } from "../../../packages/sandustry-mod-template/modkit/test/paths.ts";
 
 const MODS_ROOT = join(process.cwd(), "artifacts", "sandustry-integration", "mods");
 const PATCH_IDS = [

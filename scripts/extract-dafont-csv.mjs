@@ -1,7 +1,7 @@
 import fs from "node:fs";
 
-const input = fs.readFileSync("resources/dafont.html", "utf8");
-const output = "resources/dafont-fonts.csv";
+const input = fs.readFileSync("artifacts/reference/dafont.html", "utf8");
+const output = "artifacts/reference/dafont-fonts.csv";
 
 function decode(value) {
   return value
