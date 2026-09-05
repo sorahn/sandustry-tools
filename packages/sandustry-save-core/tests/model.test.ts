@@ -3,6 +3,8 @@ import {
   decodeBrowserSave,
   classifySaveExplorerMatrixValue,
   inspectSaveExplorerCell,
+  inspectPreparedSaveExplorerCell,
+  prepareSaveExplorerRenderState,
   normalizeSaveDocument,
   createSaveExplorerTileIndex,
   renderMinimapRgba,
@@ -79,6 +81,12 @@ test("inspects revealed minimap cells without exposing fogged contents", () => {
     fogValue: 0,
     revealed: false,
   });
+  expect(inspectPreparedSaveExplorerCell(prepareSaveExplorerRenderState(save), 0, 0)).toEqual(
+    inspectSaveExplorerCell(save, 0, 0),
+  );
+  expect(inspectPreparedSaveExplorerCell(prepareSaveExplorerRenderState(save), 1, 0)).toEqual(
+    inspectSaveExplorerCell(save, 1, 0),
+  );
 });
 
 const fixture = (name: string) => Bun.file(new URL(`./visual/saves/${name}`, import.meta.url));

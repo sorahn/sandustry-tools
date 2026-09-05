@@ -31,6 +31,8 @@ export function SaveExplorerPage() {
   const activeDecodeIdRef = useRef(0);
   const latestInspectIdRef = useRef(0);
   const latestRenderIdRef = useRef(0);
+  const pendingInspectRef = useRef<{ mapX: number; mapY: number } | null>(null);
+  const inspectFrameRef = useRef<number | null>(null);
   const [document, setDocument] = useState<SaveExplorerClientDocument | null>(null);
   const [raster, setRaster] = useState<ExplorerRaster | null>(null);
   const [inspection, setInspection] = useState<SaveExplorerCellInspection | null>(null);
@@ -160,6 +162,7 @@ export function SaveExplorerPage() {
       }
     }
     return () => {
+      if (inspectFrameRef.current !== null) cancelAnimationFrame(inspectFrameRef.current);
       worker.terminate();
       workerRef.current = null;
     };
@@ -173,8 +176,13 @@ export function SaveExplorerPage() {
     const context = canvas.getContext("2d");
     if (!context) return;
     context.imageSmoothingEnabled = false;
-    const imageData = context.createImageData(raster.width, raster.height);
-    imageData.data.set(raster.pixels);
+    let imageData: ImageData;
+    try {
+      imageData = new ImageData(new Uint8ClampedArray(raster.pixels), raster.width, raster.height);
+    } catch {
+      imageData = context.createImageData(raster.width, raster.height);
+      imageData.data.set(raster.pixels);
+    }
     context.putImageData(imageData, 0, 0);
   }, [raster]);
 
@@ -246,6 +254,28 @@ export function SaveExplorerPage() {
     }
   };
 
+  const queueInspect = (mapX: number, mapY: number) => {
+    pendingInspectRef.current = { mapX, mapY };
+    if (inspectFrameRef.current !== null) return;
+    inspectFrameRef.current = requestAnimationFrame(() => {
+      inspectFrameRef.current = null;
+      const cell = pendingInspectRef.current;
+      pendingInspectRef.current = null;
+      if (!cell) return;
+      const reqId = nextRequestIdRef.current++;
+      latestInspectIdRef.current = reqId;
+      workerRef.current?.postMessage({ id: reqId, type: "inspect", ...cell });
+    });
+  };
+
+  const cancelQueuedInspect = () => {
+    pendingInspectRef.current = null;
+    if (inspectFrameRef.current !== null) {
+      cancelAnimationFrame(inspectFrameRef.current);
+      inspectFrameRef.current = null;
+    }
+  };
+
   const toggleRemember = () => {
     if (remember) {
       setRemember(false);
@@ -312,16 +342,13 @@ export function SaveExplorerPage() {
             setInspection(null);
           }}
           onClearHover={() => {
+            cancelQueuedInspect();
             setHoverCell(null);
             setInspection(null);
           }}
           onDraggingChange={setDragging}
           fitMap={fitMap}
-          onInspect={(mapX, mapY) => {
-            const reqId = nextRequestIdRef.current++;
-            latestInspectIdRef.current = reqId;
-            workerRef.current?.postMessage({ id: reqId, type: "inspect", mapX, mapY });
-          }}
+          onInspect={queueInspect}
         />
       </SplitPane>
     </section>

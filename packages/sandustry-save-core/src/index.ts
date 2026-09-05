@@ -93,7 +93,11 @@ export {
   type SaveExplorerRenderLayer,
 } from "./layers";
 
-export { inspectSaveExplorerCell, type SaveExplorerCellInspection } from "./inspection";
+export {
+  inspectSaveExplorerCell,
+  inspectPreparedSaveExplorerCell,
+  type SaveExplorerCellInspection,
+} from "./inspection";
 
 export {
   saveExplorerCellName,

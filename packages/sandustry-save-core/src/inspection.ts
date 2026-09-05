@@ -1,6 +1,7 @@
 import { classifySaveExplorerMatrixValue, type SaveExplorerCellKind } from "./model";
 import { decodeDamagedTerrainValue, expandRunLengthPairs, type SaveGameDocument } from "./index";
 import { saveExplorerCellName, saveExplorerStructureName } from "./catalog";
+import type { PreparedSaveExplorerRenderState } from "./minimap";
 
 export type SaveExplorerCellInspection = {
   mapX: number;
@@ -20,6 +21,66 @@ export type SaveExplorerCellInspection = {
   raw?: unknown;
   structures?: Array<{ type: string | number; name?: string; x: number; y: number }>;
 };
+
+/** Inspect a cell using the indexes prepared alongside minimap aggregation. */
+export function inspectPreparedSaveExplorerCell(
+  prepared: PreparedSaveExplorerRenderState,
+  mapX: number,
+  mapY: number,
+): SaveExplorerCellInspection | undefined {
+  if (
+    !Number.isSafeInteger(mapX) ||
+    !Number.isSafeInteger(mapY) ||
+    mapX < 0 ||
+    mapY < 0 ||
+    mapX >= prepared.width ||
+    mapY >= prepared.height
+  )
+    return undefined;
+  const index = mapY * prepared.width + mapX;
+  const worldX = mapX * prepared.cellSize;
+  const worldY = mapY * prepared.cellSize;
+  const fogValue = prepared.fog[index] ?? 0;
+  const inspection: SaveExplorerCellInspection = {
+    mapX,
+    mapY,
+    worldX,
+    worldY,
+    width: Math.min(prepared.cellSize, prepared.worldWidth - worldX),
+    height: Math.min(prepared.cellSize, prepared.worldHeight - worldY),
+    fogValue,
+    revealed: fogValue === 255,
+  };
+  if (!inspection.revealed) return inspection;
+  const value = prepared.inspectionValues[index];
+  if (value !== undefined && value !== 0) {
+    inspection.kind = classifySaveExplorerMatrixValue(value);
+    if (typeof value === "number") {
+      const damaged = decodeDamagedTerrainValue(value);
+      inspection.type = damaged?.cellType ?? (value >= 101 ? value - 100 : value);
+      if (damaged) inspection.terrainHp = damaged.hp;
+    } else if (isRecord(value) && typeof value.type === "number") {
+      inspection.type = value.type;
+      inspection.particle = value.particle === true;
+      if (
+        isRecord(value.velocity) &&
+        typeof value.velocity.x === "number" &&
+        typeof value.velocity.y === "number"
+      )
+        inspection.velocity = { x: value.velocity.x, y: value.velocity.y };
+    }
+    inspection.name = saveExplorerCellName(inspection.kind, inspection.type);
+    inspection.raw = value;
+  }
+  if (!inspection.kind) inspection.kind = "empty";
+  inspection.structures = prepared.structuresByCell.get(index)?.map((structure) => ({
+    type: structure.type,
+    name: saveExplorerStructureName(structure.type),
+    x: structure.x,
+    y: structure.y,
+  }));
+  return inspection;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

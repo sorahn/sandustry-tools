@@ -45,6 +45,8 @@ export type PreparedMinimapStructure = {
 };
 
 export type PreparedSaveExplorerRenderState = {
+  worldWidth: number;
+  worldHeight: number;
   width: number;
   height: number;
   cellSize: number;
@@ -57,6 +59,8 @@ export type PreparedSaveExplorerRenderState = {
   authorization: Uint8Array;
   wallPalette: unknown[];
   structures: PreparedMinimapStructure[];
+  inspectionValues: unknown[];
+  structuresByCell: Map<number, PreparedMinimapStructure[]>;
 };
 
 const DEFAULT_STRUCTURE_PALETTE: Readonly<Record<string, RgbaColor>> = {
@@ -291,6 +295,7 @@ export function prepareSaveExplorerRenderState(
   const settledElementValues = new Int32Array(width * height);
   const elementValues = new Int32Array(width * height);
   const particleValues = new Int32Array(width * height);
+  const inspectionValues = Array.from<unknown>({ length: width * height });
   let position = 0;
   const encoded = document.payload.matrix;
   if (encoded.length % 2 !== 0) throw new Error("Invalid matrix: incomplete value/count pair");
@@ -340,6 +345,7 @@ export function prepareSaveExplorerRenderState(
                 ? particleValues
                 : elementValues;
         if (target[outputIndex] === 0) target[outputIndex] = value;
+        if (inspectionValues[outputIndex] === undefined) inspectionValues[outputIndex] = rawValue;
       }
     }
     position = end;
@@ -373,7 +379,19 @@ export function prepareSaveExplorerRenderState(
           : [];
       })
     : [];
+  const structuresByCell = new Map<number, PreparedMinimapStructure[]>();
+  for (const structure of structures) {
+    const x = Math.floor(structure.x / cellSize);
+    const y = Math.floor(structure.y / cellSize);
+    if (x < 0 || x >= width || y < 0 || y >= height) continue;
+    const key = y * width + x;
+    const grouped = structuresByCell.get(key);
+    if (grouped) grouped.push(structure);
+    else structuresByCell.set(key, [structure]);
+  }
   return {
+    worldWidth,
+    worldHeight,
     width,
     height,
     cellSize,
@@ -386,6 +404,8 @@ export function prepareSaveExplorerRenderState(
     authorization,
     wallPalette: Array.isArray(wallPalette) ? wallPalette : [],
     structures,
+    inspectionValues,
+    structuresByCell,
   };
 }
 

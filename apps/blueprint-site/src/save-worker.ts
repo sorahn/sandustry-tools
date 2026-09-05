@@ -5,7 +5,7 @@ import {
   normalizeSaveDocument,
   prepareSaveExplorerRenderState,
   composeSaveExplorerMinimap,
-  inspectSaveExplorerCell,
+  inspectPreparedSaveExplorerCell,
   toSaveExplorerClientDocument,
   type MinimapRenderOptions,
   type NormalizeSaveOptions,
@@ -91,7 +91,7 @@ workerScope.onmessage = async ({ data }) => {
       workerScope.postMessage({
         id: data.id,
         type: "inspection",
-        inspection: inspectSaveExplorerCell(decodedSave, data.mapX, data.mapY),
+        inspection: inspectPreparedSaveExplorerCell(preparedRenderState, data.mapX, data.mapY),
       });
       return;
     }
