@@ -258,6 +258,10 @@ describe("BlueprintMapSidebar", () => {
     // Offset centers the 23x16 unrotated crop window inside the 16x23 box
     expect(html).toContain('x="-3.5"');
     expect(html).toContain('y="3.5"');
+    // Renders at clean 2x integer scale (32x46px) with footprint-aligned grid (x=16, y=16)
+    expect(html).toContain("width:32px");
+    expect(html).toContain("height:46px");
+    expect(html).toContain('x="16" y="16"');
   });
 
   test("clips Kinetic Press thumbnail to 18x18 square head matching the game build menu tile", () => {
@@ -298,9 +302,9 @@ describe("BlueprintMapSidebar", () => {
 
     // ViewBox is clipped square to the 18x18 press head
     expect(html).toContain('viewBox="0 0 18 18"');
-    // Scaled 2x to 36x36px and centered at (14, 14)
+    // Scaled 2x to 36x36px and symmetrically centered over the 4x4 footprint block (x=16, y=16)
     expect(html).toContain("width:36px");
     expect(html).toContain("height:36px");
-    expect(html).toContain('x="14" y="14"');
+    expect(html).toContain('x="16" y="16"');
   });
 });

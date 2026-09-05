@@ -168,11 +168,13 @@ function StructureThumbnail({
   const cy = bboxHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
   const maxDim = Math.max(bboxWidth, bboxHeight);
-  const scale = maxDim <= 20 ? 2 : Math.min(48 / bboxWidth, 48 / bboxHeight);
+  const scale = maxDim <= 28 ? 2 : Math.min(56 / bboxWidth, 56 / bboxHeight);
   const renderedWidth = bboxWidth * scale;
   const renderedHeight = bboxHeight * scale;
-  const originX = Math.round((64 - renderedWidth) / 2);
-  const originY = Math.round((64 - renderedHeight) / 2);
+  const fpPxWidth = (footprint?.width || 4) * 4;
+  const fpPxHeight = (footprint?.height || 4) * 4;
+  const originX = Math.round((64 - fpPxWidth * scale) / 2);
+  const originY = Math.round((64 - fpPxHeight * scale) / 2);
   const cellSize = 4 * scale;
   const blockSize = cellSize * 4;
 
