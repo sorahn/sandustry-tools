@@ -3,6 +3,7 @@ import {
   ActionBar,
   Badge,
   Button,
+  Checkbox,
   Dialog,
   Divider,
   ElementPicker,
@@ -10,22 +11,26 @@ import {
   FilterOverlay,
   FormField,
   Hotbar,
+  HotbarStepper,
   IconButton,
   InputGroup,
   ItemCard,
+  List,
   ListItem,
   LockedState,
-  List,
   MetadataRow,
   Panel,
   Popover,
+  ProgressBar,
   ProgressList,
   ProgressListItem,
-  ProgressBar,
+  SearchInput,
   SegmentedControl,
+  Select,
   SplitPane,
   StatusIndicator,
   Switch,
+  TextArea,
   TextInput,
   TextAction,
   Tooltip,
@@ -167,14 +172,49 @@ const colorGroups: ColorGroup[] = [
   },
 ];
 
-function ShowcaseSection({ title, children }: { title: string; children: React.ReactNode }) {
+const navSections = [
+  { id: "hero", label: "Hero" },
+  { id: "actions", label: "Actions & Status" },
+  { id: "forms", label: "Form Controls" },
+  { id: "panels", label: "Panels & States" },
+  { id: "data", label: "Lists & Metadata" },
+  { id: "overlays", label: "Overlays" },
+  { id: "hud", label: "Game HUD" },
+  { id: "palette", label: "Colors" },
+];
+
+function ShowcaseSection({
+  id,
+  title,
+  description,
+  children,
+}: {
+  id?: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section>
-      <h2 className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-yellow-300/80">
-        {title}
-      </h2>
+    <section id={id} className="scroll-mt-6 space-y-3">
+      <div className="flex flex-col gap-1 border-b border-slate-800/80 pb-2.5">
+        <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-yellow-300/90">
+          {title}
+        </h2>
+        {description ? <p className="text-xs text-slate-400">{description}</p> : null}
+      </div>
       {children}
     </section>
+  );
+}
+
+function ShowcaseSubgroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2.5">
+      <h3 className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+        {title}
+      </h3>
+      {children}
+    </div>
   );
 }
 
@@ -198,7 +238,7 @@ function TerrainTooltipContent() {
             </span>
             <span
               aria-hidden="true"
-              className="inline-flex h-6 w-4 items-center justify-center shrink-0"
+              className="inline-flex h-6 w-4 shrink-0 items-center justify-center"
             >
               +
             </span>
@@ -214,8 +254,13 @@ export function ComponentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [switchOn, setSwitchOn] = useState(true);
+  const [checkboxA, setCheckboxA] = useState(true);
+  const [checkboxB, setCheckboxB] = useState(false);
+  const [selectValue, setSelectValue] = useState("normal");
+  const [searchDemo, setSearchDemo] = useState("");
   const [mode, setMode] = useState<(typeof modeOptions)[number]["value"]>("overview");
   const [selectedItem, setSelectedItem] = useState("sand");
+  const [activeTab, setActiveTab] = useState("blueprints");
   const [query, setQuery] = useState("");
   const [matter, setMatter] = useState("all");
 
@@ -228,27 +273,45 @@ export function ComponentsPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="mx-auto max-w-6xl space-y-12">
       <header className="border-b border-slate-800 pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-yellow-300/80">
-          Development only
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-yellow-300/80">
+            Development only
+          </p>
+          <span className="rounded border border-yellow-300/30 bg-yellow-300/10 px-2 py-0.5 font-mono text-[10px] text-yellow-300">
+            @sandustry/ui
+          </span>
+        </div>
         <h1 className="mt-2 text-3xl font-bold text-white">Component showcase</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-          Interactive states for the browser UI kit. This route is intentionally not linked from the
-          public site navigation.
+          Interactive states and reference styling for the browser UI kit. This route is
+          intentionally not linked from the public site navigation.
         </p>
+        <nav className="mt-5 flex flex-wrap items-center gap-1.5" aria-label="Component sections">
+          {navSections.map((sec) => (
+            <a
+              key={sec.id}
+              href={`#${sec.id}`}
+              className="rounded border border-slate-800 bg-slate-900/60 px-2.5 py-1 font-mono text-[11px] text-slate-400 transition hover:border-yellow-300/40 hover:text-yellow-300"
+            >
+              {sec.label}
+            </a>
+          ))}
+        </nav>
       </header>
 
-      <ShowcaseSection title="Hero panel and text actions">
-        <Panel variant="hero" className="mx-auto max-w-3xl px-8 py-5 text-center">
-          <h2 className="text-2xl tracking-wider text-[#ffe700]">
+      <ShowcaseSection
+        id="hero"
+        title="Hero panel and text actions"
+        description="High-attention announcement banner for welcome context, milestones, and primary community actions."
+      >
+        <Panel variant="hero" className="p-6 text-center">
+          <h2 className="text-2xl font-bold tracking-wider text-[#ffe700]">
             This library is still in development.
           </h2>
-          <div className="px-4 py-2">
-            <Divider variant="accent" />
-          </div>
-          <p className="mt-2 text-sm leading-relaxed text-white/90">
+          <Divider variant="accent" className="my-3" />
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-white/90">
             A high-attention surface for welcome messages, release notes, or important product
             context.
           </p>
@@ -268,67 +331,526 @@ export function ComponentsPage() {
         </Panel>
       </ShowcaseSection>
 
-      <ShowcaseSection title="Actions and status">
-        <Panel className="p-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button>Default action</Button>
-            <Button variant="accent">Accent action</Button>
-            <Button variant="danger">Danger action</Button>
-            <Button disabled>Disabled action</Button>
-            <Badge>Default</Badge>
-            <Badge tone="accent">Selected</Badge>
-            <Badge tone="success">Ready</Badge>
-            <Badge tone="warning">Warning</Badge>
-            <Badge tone="danger">Error</Badge>
-            <Badge tone="info">Info</Badge>
-          </div>
-          <div className="mt-5 max-w-xl space-y-2">
-            <ProgressBar value={68} label="Example progress" />
-            <div className="flex justify-between text-xs text-slate-500">
-              <span>ProgressBar</span>
-              <span>68%</span>
+      <ShowcaseSection
+        id="actions"
+        title="Actions and status"
+        description="Interactive button variants, action icons, status badges, and progress indicators."
+      >
+        <Panel className="space-y-6 p-6">
+          <ShowcaseSubgroup title="Buttons & Icon Actions">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button>Default action</Button>
+              <Button variant="accent">Accent action</Button>
+              <Button variant="danger">Danger action</Button>
+              <Button disabled>Disabled action</Button>
+              <IconButton
+                label="Regenerate"
+                className="h-8 w-8 rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
+              >
+                ↻
+              </IconButton>
+              <IconButton
+                label="Settings"
+                className="h-8 w-8 rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
+              >
+                ⚙
+              </IconButton>
+            </div>
+          </ShowcaseSubgroup>
+
+          <Divider />
+
+          <ShowcaseSubgroup title="Badges">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Badge>Default</Badge>
+              <Badge tone="accent">Selected</Badge>
+              <Badge tone="success">Ready</Badge>
+              <Badge tone="warning">Warning</Badge>
+              <Badge tone="danger">Error</Badge>
+              <Badge tone="info">Info</Badge>
+            </div>
+          </ShowcaseSubgroup>
+
+          <Divider />
+
+          <ShowcaseSubgroup title="Progress Bar Tones">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[11px] text-slate-400">
+                  <span>Accent</span>
+                  <span>75%</span>
+                </div>
+                <ProgressBar value={75} tone="accent" label="Accent progress" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[11px] text-slate-400">
+                  <span>Success</span>
+                  <span>100%</span>
+                </div>
+                <ProgressBar value={100} tone="success" label="Success progress" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[11px] text-slate-400">
+                  <span>Info</span>
+                  <span>50%</span>
+                </div>
+                <ProgressBar value={50} tone="info" label="Info progress" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[11px] text-slate-400">
+                  <span>Warning</span>
+                  <span>60%</span>
+                </div>
+                <ProgressBar value={60} tone="warning" label="Warning progress" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[11px] text-slate-400">
+                  <span>Danger</span>
+                  <span>25%</span>
+                </div>
+                <ProgressBar value={25} tone="danger" label="Danger progress" />
+              </div>
+            </div>
+          </ShowcaseSubgroup>
+        </Panel>
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        id="forms"
+        title="Form controls"
+        description="Text inputs, groups, validation states, multiline text, selects, and toggle switches."
+      >
+        <Panel className="p-6">
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div className="space-y-5">
+              <ShowcaseSubgroup title="Text Inputs & Groups">
+                <div className="space-y-4">
+                  <FormField label="World name" required>
+                    <InputGroup>
+                      <TextInput defaultValue="Claybarren" maxLength={64} />
+                      <IconButton
+                        label="Regenerate name"
+                        className="h-[38px] w-[38px] rounded-sm border border-slate-600 bg-black/60 hover:border-[#ffe700] hover:text-[#ffe700]"
+                      >
+                        ↻
+                      </IconButton>
+                    </InputGroup>
+                  </FormField>
+
+                  <FormField
+                    label="Seed"
+                    hint="Use a short stable identifier for repeatable layouts."
+                  >
+                    <InputGroup>
+                      <TextInput defaultValue="llcfshrd" monospace tone="accent" maxLength={32} />
+                      <IconButton
+                        label="Regenerate seed"
+                        className="h-[38px] w-[38px] rounded-sm border border-slate-600 bg-black/60 hover:border-[#ffe700] hover:text-[#ffe700]"
+                      >
+                        ↻
+                      </IconButton>
+                    </InputGroup>
+                  </FormField>
+
+                  <FormField label="Search filter">
+                    <SearchInput
+                      placeholder="Search resources, tags, blueprints..."
+                      value={searchDemo}
+                      onChange={(e) => setSearchDemo(e.target.value)}
+                    />
+                  </FormField>
+
+                  <FormField label="Invalid field" error="This value is required.">
+                    <TextInput aria-invalid="true" className="border-red-400" defaultValue="" />
+                  </FormField>
+                </div>
+              </ShowcaseSubgroup>
+            </div>
+
+            <div className="space-y-5">
+              <ShowcaseSubgroup title="Selection & Toggles">
+                <div className="space-y-4">
+                  <FormField label="Biome preset">
+                    <Select
+                      value={selectValue}
+                      onChange={(e) => setSelectValue(e.target.value)}
+                      className="w-full"
+                    >
+                      <option value="normal">Standard Desert</option>
+                      <option value="void">Void Trench</option>
+                      <option value="cavern">Deep Caverns</option>
+                      <option value="ice">Freezing Tundra</option>
+                    </Select>
+                  </FormField>
+
+                  <FormField label="View mode">
+                    <SegmentedControl options={modeOptions} value={mode} onChange={setMode} />
+                  </FormField>
+
+                  <FormField label="Preferences">
+                    <div className="space-y-3 pt-1">
+                      <div className="flex items-center justify-between rounded border border-slate-800 bg-black/30 px-3 py-2">
+                        <span className="text-xs text-slate-300">Show blueprint grid</span>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={switchOn}
+                            onChange={(e) => setSwitchOn(e.target.checked)}
+                            label="Show grid"
+                          />
+                          <span className="font-mono text-[10px] text-slate-500">
+                            {switchOn ? "ON" : "OFF"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 px-1 pt-1">
+                        <Checkbox
+                          label="Auto-rotate conveyors"
+                          checked={checkboxA}
+                          onChange={(e) => setCheckboxA(e.target.checked)}
+                        />
+                        <Checkbox
+                          boxed
+                          label="Snap to grid"
+                          checked={checkboxB}
+                          onChange={(e) => setCheckboxB(e.target.checked)}
+                        />
+                      </div>
+                    </div>
+                  </FormField>
+
+                  <FormField label="Notes & Description">
+                    <TextArea
+                      rows={3}
+                      placeholder="Enter blueprint documentation or instructions..."
+                      className="min-h-20"
+                    />
+                  </FormField>
+                </div>
+              </ShowcaseSubgroup>
             </div>
           </div>
         </Panel>
       </ShowcaseSection>
 
-      <ShowcaseSection title="Color catalog">
+      <ShowcaseSection
+        id="panels"
+        title="Panels and containers"
+        description="Card containers, collapsible panels, and locked feature states."
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Panel title="Collapsible panel" collapsible contentClassName="p-4">
+            <div className="space-y-2">
+              <p className="text-sm leading-6 text-slate-300">
+                Panel content can be collapsed without leaving the surrounding layout. Click the
+                header toggle arrow to expand or collapse.
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <Badge tone="accent">Feature preview</Badge>
+                <span className="text-xs text-slate-500">Smooth state toggle</span>
+              </div>
+            </div>
+          </Panel>
+
+          <Fieldset legend="World options (locked)">
+            <div className="p-2">
+              <LockedState icon={<span>♙</span>} />
+            </div>
+          </Fieldset>
+        </div>
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        id="data"
+        title="Lists, items and split-pane layout"
+        description="Standard list items, progress step tracking, card items, and two-pane navigation."
+      >
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="space-y-6 lg:col-span-5">
+            <Panel className="p-4">
+              <ShowcaseSubgroup title="List Density Variants">
+                <List variant="panel">
+                  <ListItem label="Default item" description="Standard list density" />
+                  <ListItem label="Compact item" description="Reduced spacing" variant="compact" />
+                  <ListItem
+                    label="Subtle item"
+                    description="Muted presentation variant"
+                    variant="subtle"
+                  />
+                  <ListItem label="Selected item" description="Active highlight state" selected />
+                </List>
+              </ShowcaseSubgroup>
+            </Panel>
+
+            <Panel className="p-4">
+              <ShowcaseSubgroup title="Progress List Steps">
+                <ProgressList>
+                  <ProgressListItem>Loading sounds</ProgressListItem>
+                  <ProgressListItem>Initializing systems</ProgressListItem>
+                  <ProgressListItem variant="active" last>
+                    Starting game
+                  </ProgressListItem>
+                  <ProgressListItem variant="substep">Generating cave systems</ProgressListItem>
+                  <ProgressListItem variant="substep" last>
+                    Generating wall textures
+                  </ProgressListItem>
+                </ProgressList>
+              </ShowcaseSubgroup>
+            </Panel>
+          </div>
+
+          <div className="lg:col-span-7">
+            <Panel className="h-full p-4">
+              <ShowcaseSubgroup title="SplitPane Master-Detail View">
+                <SplitPane
+                  className="h-[360px] overflow-hidden rounded border border-slate-800 bg-black/50"
+                  sidebarClassName="w-48 bg-slate-950/80"
+                  sidebar={
+                    <div className="flex flex-col">
+                      <div className="border-b border-slate-800 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                        Projects
+                      </div>
+                      <ListItem
+                        label="Blueprints"
+                        description="12 items"
+                        selected={activeTab === "blueprints"}
+                        onClick={() => setActiveTab("blueprints")}
+                      />
+                      <ListItem
+                        label="Maps"
+                        description="4 items"
+                        trailing={<Badge tone="info">new</Badge>}
+                        selected={activeTab === "maps"}
+                        onClick={() => setActiveTab("maps")}
+                      />
+                      <ListItem
+                        label="Archives"
+                        description="8 items"
+                        selected={activeTab === "archives"}
+                        onClick={() => setActiveTab("archives")}
+                      />
+                    </div>
+                  }
+                >
+                  <div className="flex h-full flex-col">
+                    <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
+                      <div className="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
+                        <span className="font-mono text-xs text-yellow-300">Active Selection</span>
+                        <Badge tone="success">Ready</Badge>
+                      </div>
+                      <ItemCard label="Factory starter" meta="v2" selected />
+                      <ItemCard label="Signal test rig" meta="v1" />
+                      <ItemCard label="Quantum manifold" meta="draft" />
+                      <MetadataRow
+                        items={[
+                          { label: "Structures", value: "48", tone: "accent" },
+                          { label: "Updated", value: "12m ago", tone: "muted" },
+                          { label: "Status", value: "Ready", tone: "success" },
+                        ]}
+                      />
+                    </div>
+                    <ActionBar className="justify-end gap-2 bg-slate-950/40">
+                      <Button className="text-xs">Duplicate</Button>
+                      <Button variant="accent" className="text-xs">
+                        Inspect
+                      </Button>
+                    </ActionBar>
+                  </div>
+                </SplitPane>
+              </ShowcaseSubgroup>
+            </Panel>
+          </div>
+        </div>
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        id="overlays"
+        title="Dialogs and floating overlays"
+        description="Modal dialogs, popovers, and rich content tooltips."
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Panel className="space-y-4 p-5">
+            <ShowcaseSubgroup title="Interactive Triggers">
+              <p className="text-xs text-slate-400">
+                Click or hover below to inspect modal and floating popover behavior.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Button variant="accent" onClick={() => setDialogOpen(true)}>
+                  Open modal dialog
+                </Button>
+                <Tooltip content={<TerrainTooltipContent />}>
+                  <Button>Hover terrain tooltip</Button>
+                </Tooltip>
+                <Popover
+                  open={popoverOpen}
+                  onClose={() => setPopoverOpen(false)}
+                  content={
+                    <div className="space-y-2 p-1 text-xs text-slate-300">
+                      <div className="font-bold text-white">Quick actions</div>
+                      <div>Configured filter targets for route #4</div>
+                      <Button
+                        variant="accent"
+                        className="w-full text-xs"
+                        onClick={() => setPopoverOpen(false)}
+                      >
+                        Apply filter
+                      </Button>
+                    </div>
+                  }
+                >
+                  <Button onClick={() => setPopoverOpen((open) => !open)}>Toggle popover</Button>
+                </Popover>
+              </div>
+            </ShowcaseSubgroup>
+          </Panel>
+
+          <Panel className="space-y-3 p-5">
+            <ShowcaseSubgroup title="Tooltip Surface (Static Preview)">
+              <p className="text-xs text-slate-400">
+                Direct rendering of the game's terrain inspector card over a blueprint canvas grid.
+              </p>
+              <div className="flex items-center justify-center rounded border border-slate-800 bg-sd-950 p-6 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px]">
+                <TooltipSurface>
+                  <TerrainTooltipContent />
+                </TooltipSurface>
+              </div>
+            </ShowcaseSubgroup>
+          </Panel>
+        </div>
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        id="hud"
+        title="Game HUD and routing visualizers"
+        description="Hotbars, steppers, conveyor filter overlays, and the element picker."
+      >
+        <div className="space-y-6">
+          <Panel className="p-5">
+            <div className="grid gap-8 lg:grid-cols-2">
+              <ShowcaseSubgroup title="Action Hotbar & Stepper">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <Hotbar
+                      slots={hotbarSlots}
+                      selectedId={selectedItem}
+                      onSelect={(slot) => setSelectedItem(slot.id)}
+                    />
+                    <HotbarStepper
+                      onChange={(direction) => {
+                        const currentIndex = hotbarSlots.findIndex((s) => s.id === selectedItem);
+                        const nextIndex =
+                          direction === "next"
+                            ? (currentIndex + 1) % hotbarSlots.length
+                            : (currentIndex - 1 + hotbarSlots.length) % hotbarSlots.length;
+                        setSelectedItem(hotbarSlots[nextIndex].id);
+                      }}
+                    />
+                  </div>
+                  <span className="font-mono text-xs text-slate-400">
+                    Active slot: <span className="text-yellow-300">{selectedItem}</span>
+                  </span>
+                </div>
+              </ShowcaseSubgroup>
+
+              <ShowcaseSubgroup title="Conveyor Filter Routing">
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <FilterOverlay
+                    status="block"
+                    from={{
+                      items: [{ label: "Others" }],
+                      direction: "down",
+                    }}
+                    to={{
+                      items: [{ label: "Wet Seed", swatchColor: "#66cc66" }],
+                      direction: "right",
+                      directionTone: "block",
+                    }}
+                  />
+                  <FilterOverlay
+                    from={{
+                      items: [{ label: "Others" }],
+                      direction: "left",
+                      directionTone: "block",
+                    }}
+                    to={{
+                      items: [{ label: "Sand", swatchColor: "#e7cd74" }],
+                      direction: "right",
+                    }}
+                  />
+                  <FilterOverlay
+                    from={{
+                      items: [
+                        { label: "Voidjuice", swatchColor: "#9b5fcf" },
+                        { label: "Voidbloom", swatchColor: "#7a00a8" },
+                      ],
+                      direction: "right",
+                    }}
+                    to={{
+                      items: [{ label: "Others" }],
+                      direction: "left",
+                      directionTone: "block",
+                    }}
+                  />
+                </div>
+              </ShowcaseSubgroup>
+            </div>
+          </Panel>
+
+          <ShowcaseSubgroup title="Element Picker">
+            <div className="max-w-md">
+              <ElementPicker
+                items={pickerItems}
+                value={selectedItem}
+                query={query}
+                matter={matter}
+                matterOptions={matterOptions}
+                onQueryChange={setQuery}
+                onMatterChange={setMatter}
+                onSelect={(item) => setSelectedItem(item.id)}
+              />
+            </div>
+          </ShowcaseSubgroup>
+        </div>
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        id="palette"
+        title="Color catalog"
+        description="A compact view of the game catalog, grouped into broad color families. Each swatch keeps its native game-facing hex value and role."
+      >
         <Panel className="p-5">
-          <p className="mb-4 max-w-3xl text-sm leading-6 text-slate-400">
-            A compact view of the catalog, grouped into broad color families for easier browsing.
-            Each family runs from lightest to darkest by perceived brightness. The grouping is for
-            navigation rather than an exact color conversion; each swatch keeps its original
-            game-facing hex value and role.
-          </p>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {colorGroups.map((group) => (
               <section
                 key={group.name}
-                className="overflow-hidden rounded border border-slate-700/80 bg-black/40"
+                className="flex flex-col overflow-hidden rounded border border-slate-800 bg-black/40"
               >
-                <div className="border-b border-slate-700/70 px-3 py-2">
+                <div className="border-b border-slate-800/80 bg-slate-950/50 px-3 py-2">
                   <h3 className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-white">
                     {group.name}
                   </h3>
-                  <p className="mt-1 text-[11px] leading-4 text-slate-500">{group.description}</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-slate-400">{group.description}</p>
                 </div>
-                <div className="divide-y divide-slate-800/80">
+                <div className="flex-1 divide-y divide-slate-800/60">
                   {group.colors.map((color) => (
                     <div
                       key={`${group.name}-${color.name}`}
-                      className="flex items-center gap-2 px-3 py-2"
+                      className="flex items-center gap-2.5 px-3 py-2 transition hover:bg-white/[0.02]"
                     >
                       <span
-                        className="h-6 w-6 shrink-0 rounded-sm border border-white/20 shadow-inner"
+                        className="h-5 w-5 shrink-0 rounded-sm border border-white/20 shadow-inner"
                         style={{ backgroundColor: color.value }}
                         title={`${color.name}: ${color.value}`}
                       />
-                      <div className="min-w-0">
-                        <div className="truncate text-xs text-slate-200">{color.name}</div>
-                        <div className="font-mono text-[10px] text-slate-500">
-                          {color.value} · {color.use}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-medium text-slate-200">
+                          {color.name}
                         </div>
+                        <div className="font-mono text-[10px] text-slate-400">{color.value}</div>
                       </div>
+                      <span className="shrink-0 rounded bg-slate-800/80 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-slate-400">
+                        {color.use}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -336,217 +858,6 @@ export function ComponentsPage() {
             ))}
           </div>
         </Panel>
-      </ShowcaseSection>
-
-      <ShowcaseSection title="Form controls">
-        <Panel className="p-5">
-          <div className="grid gap-6 md:grid-cols-2">
-            <FormField label="World name" required>
-              <InputGroup>
-                <TextInput defaultValue="Claybarren" maxLength={64} />
-                <IconButton
-                  label="Regenerate name"
-                  className="h-[38px] w-[38px] rounded-sm border border-slate-600 bg-black/60 hover:border-[#ffe700] hover:text-[#ffe700]"
-                >
-                  ↻
-                </IconButton>
-              </InputGroup>
-            </FormField>
-            <FormField label="Seed" hint="Use a short stable identifier for repeatable layouts.">
-              <InputGroup>
-                <TextInput defaultValue="llcfshrd" monospace tone="accent" maxLength={32} />
-                <IconButton
-                  label="Regenerate seed"
-                  className="h-[38px] w-[38px] rounded-sm border border-slate-600 bg-black/60 hover:border-[#ffe700] hover:text-[#ffe700]"
-                >
-                  ↻
-                </IconButton>
-              </InputGroup>
-            </FormField>
-            <FormField label="Invalid field" error="This value is required.">
-              <TextInput aria-invalid="true" className="border-red-400" />
-            </FormField>
-            <div className="grid content-start gap-6">
-              <div className="flex items-center gap-5">
-                <Switch
-                  checked={switchOn}
-                  onChange={(event) => setSwitchOn(event.target.checked)}
-                  label="Show grid"
-                />
-                <span className="text-xs text-slate-500">{switchOn ? "on" : "off"}</span>
-              </div>
-              <SegmentedControl options={modeOptions} value={mode} onChange={setMode} />
-            </div>
-          </div>
-        </Panel>
-      </ShowcaseSection>
-
-      <ShowcaseSection title="Panels and states">
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Fieldset legend="World options">
-            <LockedState icon={<span>♙</span>} />
-          </Fieldset>
-          <Panel title="Collapsible panel" collapsible contentClassName="p-4">
-            <p className="text-sm leading-6 text-slate-400">
-              Panel content can be collapsed without leaving the surrounding layout.
-            </p>
-          </Panel>
-        </div>
-      </ShowcaseSection>
-
-      <div className="grid gap-10 lg:grid-cols-2">
-        <ShowcaseSection title="Lists and variants">
-          <Panel className="p-5">
-            <List variant="panel">
-              <ListItem label="Default item" description="Standard list density" />
-              <ListItem label="Compact item" description="Reduced spacing" variant="compact" />
-              <ListItem
-                label="Subtle item"
-                description="Muted presentation variant"
-                variant="subtle"
-              />
-              <ListItem label="Selected item" selected />
-            </List>
-          </Panel>
-        </ShowcaseSection>
-
-        <ShowcaseSection title="Progress list">
-          <Panel className="p-5">
-            <ProgressList>
-              <ProgressListItem>Loading sounds</ProgressListItem>
-              <ProgressListItem>Initializing systems</ProgressListItem>
-              <ProgressListItem variant="active" last>
-                Starting game
-              </ProgressListItem>
-              <ProgressListItem variant="substep">Generating cave systems</ProgressListItem>
-              <ProgressListItem variant="substep" last>
-                Generating wall textures
-              </ProgressListItem>
-            </ProgressList>
-          </Panel>
-        </ShowcaseSection>
-      </div>
-
-      <ShowcaseSection title="Lists and metadata">
-        <SplitPane
-          className="min-h-80 overflow-hidden rounded border border-slate-700 bg-black/40"
-          sidebarClassName="w-56"
-          sidebar={
-            <>
-              <div className="border-b border-slate-700/30 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-300">
-                Projects
-              </div>
-              <ListItem label="Blueprints" description="12 items" selected />
-              <ListItem
-                label="Maps"
-                description="4 items"
-                trailing={<Badge tone="info">new</Badge>}
-              />
-            </>
-          }
-        >
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-            <ItemCard label="Factory starter" meta="v2" selected />
-            <ItemCard label="Signal test rig" meta="v1" />
-            <MetadataRow
-              items={[
-                { label: "Structures", value: "48", tone: "accent" },
-                { label: "Updated", value: "12m ago", tone: "muted" },
-                { label: "Status", value: "Ready", tone: "success" },
-              ]}
-            />
-          </div>
-        </SplitPane>
-      </ShowcaseSection>
-
-      <ShowcaseSection title="Overlays and navigation">
-        <Panel className="p-5">
-          <div className="flex flex-wrap items-center gap-4">
-            <Button variant="accent" onClick={() => setDialogOpen(true)}>
-              Open dialog
-            </Button>
-            <Tooltip content={<TerrainTooltipContent />}>
-              <Button>Hover terrain tooltip</Button>
-            </Tooltip>
-            <Popover
-              open={popoverOpen}
-              content={
-                <span className="text-xs text-slate-300">Popover content with actions.</span>
-              }
-            >
-              <Button onClick={() => setPopoverOpen((open) => !open)}>Toggle popover</Button>
-            </Popover>
-          </div>
-          <div className="mt-5 flex flex-wrap items-start gap-3">
-            <span className="pt-1 text-xs text-slate-500">Always visible:</span>
-            <TooltipSurface>
-              <TerrainTooltipContent />
-            </TooltipSurface>
-          </div>
-          <div className="mt-5 border-t border-slate-800 pt-4">
-            <p className="mb-3 text-xs text-slate-500">Active filter labels:</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <FilterOverlay
-                status="block"
-                from={{
-                  items: [{ label: "Others" }],
-                  direction: "down",
-                }}
-                to={{
-                  items: [{ label: "Wet Seed", swatchColor: "#66cc66" }],
-                  direction: "right",
-                  directionTone: "block",
-                }}
-              />
-              <FilterOverlay
-                from={{
-                  items: [{ label: "Others" }],
-                  direction: "left",
-                  directionTone: "block",
-                }}
-                to={{
-                  items: [{ label: "Sand", swatchColor: "#e7cd74" }],
-                  direction: "right",
-                }}
-              />
-              <FilterOverlay
-                from={{
-                  items: [
-                    { label: "Voidjuice", swatchColor: "#9b5fcf" },
-                    { label: "Voidbloom", swatchColor: "#7a00a8" },
-                  ],
-                  direction: "right",
-                }}
-                to={{
-                  items: [{ label: "Others" }],
-                  direction: "left",
-                  directionTone: "block",
-                }}
-              />
-            </div>
-          </div>
-          <div className="mt-5 flex items-center gap-3 overflow-x-auto">
-            <Hotbar
-              slots={hotbarSlots}
-              selectedId="filter"
-              onSelect={(slot) => setSelectedItem(slot.id)}
-            />
-            <span className="text-xs text-slate-500">Selected: {selectedItem}</span>
-          </div>
-        </Panel>
-      </ShowcaseSection>
-
-      <ShowcaseSection title="Element picker">
-        <ElementPicker
-          items={pickerItems}
-          value={selectedItem}
-          query={query}
-          matter={matter}
-          matterOptions={matterOptions}
-          onQueryChange={setQuery}
-          onMatterChange={setMatter}
-          onSelect={(item) => setSelectedItem(item.id)}
-        />
       </ShowcaseSection>
 
       <Dialog

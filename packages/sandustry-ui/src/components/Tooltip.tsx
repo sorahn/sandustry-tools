@@ -15,7 +15,10 @@ export function TooltipSurface({ children, className = "", ...props }: TooltipSu
     <div
       {...props}
       role="tooltip"
-      className={cx("w-max max-w-64 rounded bg-black/70 px-2 py-1 text-base text-white", className)}
+      className={cx(
+        "w-max max-w-64 rounded border border-slate-600/80 bg-slate-950/95 px-2.5 py-1.5 text-base text-white shadow-2xl ring-1 ring-black/60 backdrop-blur-sm",
+        className,
+      )}
     >
       {children}
     </div>
