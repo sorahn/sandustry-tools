@@ -20,6 +20,8 @@
   "exclude": [
     "node_modules",
     "apps/sandustry-vault/**",
+    "apps/blueprint-site/**",
+    "packages/sandustry-ui/**",
     "**/build/**",
     "packages/sandustry-mod-template/**",
     "**/*.integration.test.ts",

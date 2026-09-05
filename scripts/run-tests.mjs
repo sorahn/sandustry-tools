@@ -25,7 +25,7 @@ const projects = [
   },
   {
     path: "packages/sandustry-ui",
-    command: ["node", "-e", "console.log('no tests')"],
+    command: ["bun", "test", "src"],
   },
   {
     path: "apps/blueprint-site",

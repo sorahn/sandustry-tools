@@ -22,6 +22,9 @@ describe("worker protocol and concurrency", () => {
         mapY: 20,
         worldX: 40,
         worldY: 80,
+        width: 4,
+        height: 4,
+        fogValue: 0,
         revealed: true,
       },
     };
@@ -105,7 +108,7 @@ describe("worker protocol and concurrency", () => {
 
     // Response for request 11 arrives
     handleInspectResponse({ id: 11, cell: { mapX: 5, mapY: 5 } });
-    expect(displayedCell).toEqual({ mapX: 5, mapY: 5 });
+    expect<{ mapX: number; mapY: number } | null>(displayedCell).toEqual({ mapX: 5, mapY: 5 });
   });
 
   test("createBrowserPngPlatform revokes object URL even when image loading rejects", async () => {
@@ -138,8 +141,8 @@ describe("worker protocol and concurrency", () => {
       await expect(platform.loadSvg("<svg></svg>")).rejects.toThrow(
         "Unable to render blueprint SVG",
       );
-      expect(createdUrl).toBe("blob:mock-url");
-      expect(revokedUrl).toBe("blob:mock-url");
+      expect<string | null>(createdUrl).toBe("blob:mock-url");
+      expect<string | null>(revokedUrl).toBe("blob:mock-url");
     } finally {
       URL.createObjectURL = originalCreateObjectURL;
       URL.revokeObjectURL = originalRevokeObjectURL;
