@@ -307,4 +307,172 @@ describe("BlueprintMapSidebar", () => {
     expect(html).toContain("height:36px");
     expect(html).toContain('x="16" y="16"');
   });
+
+  test("renders a 2px outline for prepared solid-cell structures at 2x scale", () => {
+    const blueprint: Blueprint = {
+      name: "Foundation blueprint",
+      data: [{ type: 11, x: 0, y: 0 }],
+      signalLinks: [],
+    };
+    const preparedStructure = {
+      structure: blueprint.data[0],
+      index: 0,
+      shape: [
+        [1, 1, 0, 0],
+        [1, 1, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+      ],
+      rawShape: true,
+      footprint: { width: 4, height: 4 },
+      topY: 0,
+      visualTopY: 0,
+      z: 0.5,
+      bounds: { minX: 0, minY: 0, maxX: 3, maxY: 3 },
+    };
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        preparedStructure={preparedStructure as any}
+        blueprint={blueprint}
+        debugOptions={null}
+      />,
+    );
+
+    expect(html).toContain('stroke="#17202c" stroke-width="2"');
+  });
+
+  test("renders a solid outline for conveyor belts without an explicit prepared shape", () => {
+    const blueprint: Blueprint = {
+      name: "Conveyor blueprint",
+      data: [{ type: 2, x: 0, y: 0 }],
+      signalLinks: [],
+    };
+    const preparedStructure = {
+      structure: blueprint.data[0],
+      index: 0,
+      footprint: { width: 4, height: 4 },
+      topY: 0,
+      visualTopY: 0,
+      z: 0.5,
+      bounds: { minX: 0, minY: 0, maxX: 3, maxY: 3 },
+    };
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        preparedStructure={preparedStructure as any}
+        blueprint={blueprint}
+        debugOptions={null}
+      />,
+    );
+
+    expect(html).toContain('stroke="#17202c" stroke-width="2"');
+  });
+
+  test("renders SVG preview for prefab terrain cells with masked foundation texture and perimeter outline", () => {
+    const shape = [
+      [1, 1, 0, 0],
+      [1, 1, 1, 0],
+      [0, 1, 1, 1],
+      [0, 0, 1, 1],
+    ];
+    const cellIds = [
+      [31, 31, 0, 0],
+      [31, 31, 31, 0],
+      [0, 31, 31, 31],
+      [0, 0, 31, 31],
+    ];
+
+    const blueprint: Blueprint = {
+      name: "Prefab blueprint",
+      data: [
+        {
+          type: "prefabTerrain_5",
+          x: 4,
+          y: 8,
+          data: {
+            __prefabulatorBlueprint: {
+              definition: {
+                shape,
+                cellIds,
+              },
+            },
+          },
+        },
+      ],
+      signalLinks: [],
+    };
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        totalStructures={1}
+        blueprint={blueprint}
+        debugOptions={null}
+      />,
+    );
+
+    // Human-readable title and category
+    expect(html).toContain("Terrain Prefab #5");
+    expect(html).toContain("blocks");
+
+    // Suppresses unknown structure warning
+    expect(html).not.toContain("Unknown structure — no catalog entry or sprite is available");
+
+    // Renders SVG custom shape preview instead of generic 4×4 badge
+    expect(html).toContain("catalog/img__block.png");
+    expect(html).toContain("-prefab-mask");
+    expect(html).toContain('fill="#434c5e"');
+    expect(html).toContain('stroke="#17202c"');
+    expect(html).not.toContain("4×4</div>");
+
+    // Prefab Terrain Definition card
+    expect(html).toContain("Prefab Terrain Definition");
+    expect(html).toContain("Procedural");
+    expect(html).toContain("10 solid cells");
+    expect(html).not.toContain("Composition");
+    expect(html).not.toContain("Moonhop");
+
+    // Geometry grid details
+    expect(html).toContain("Foundation Texture");
+    expect(html).toContain("img__block.png");
+    expect(html).toContain("10 / 16 solid cells");
+  });
+
+  test("renders fallback text badge and alert for unknown non-prefab structure without asset", () => {
+    const blueprint: Blueprint = {
+      name: "Unknown blueprint",
+      data: [
+        {
+          type: "unregisteredCustomModBlock",
+          x: 12,
+          y: 16,
+        },
+      ],
+      signalLinks: [],
+    };
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[0]}
+        selectedIndex={0}
+        totalStructures={1}
+        blueprint={blueprint}
+        debugOptions={null}
+      />,
+    );
+
+    // Displays unknown structure alert
+    expect(html).toContain("Unknown structure — no catalog entry or sprite is available");
+
+    // Falls back to generic text badge
+    expect(html).toContain("4×4");
+    expect(html).not.toContain("catalog/img__block.png");
+    expect(html).not.toContain("-prefab-mask");
+  });
 });

@@ -12,6 +12,8 @@ import {
   normalizeElementList,
   MATTER_TYPE,
   isFilterStructure,
+  customShapeFromStructure,
+  isFoundationStructure,
   type BlueprintType,
   type FilterOverlayCluster,
   type PreparedStructure,
@@ -33,6 +35,32 @@ export type BlueprintMapSidebarProps = {
   debugOptions: ReactNode;
 };
 
+function shapeOutlinePath(shape: number[][], originX: number, originY: number, cellSize: number) {
+  let path = "";
+  const rows = shape.length;
+  const cols = shape[0]?.length ?? 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if ((shape[r]?.[c] ?? 0) <= 0) continue;
+      const x = originX + c * cellSize;
+      const y = originY + r * cellSize;
+      if (r === 0 || (shape[r - 1]?.[c] ?? 0) <= 0) {
+        path += `M ${x} ${y} L ${x + cellSize} ${y} `;
+      }
+      if (r === rows - 1 || (shape[r + 1]?.[c] ?? 0) <= 0) {
+        path += `M ${x} ${y + cellSize} L ${x + cellSize} ${y + cellSize} `;
+      }
+      if (c === 0 || (shape[r]?.[c - 1] ?? 0) <= 0) {
+        path += `M ${x} ${y} L ${x} ${y + cellSize} `;
+      }
+      if (c === cols - 1 || (shape[r]?.[c + 1] ?? 0) <= 0) {
+        path += `M ${x + cellSize} ${y} L ${x + cellSize} ${y + cellSize} `;
+      }
+    }
+  }
+  return path;
+}
+
 function StructureThumbnail({
   asset,
   frameIndex = 0,
@@ -41,6 +69,8 @@ function StructureThumbnail({
   footprint,
   name,
   structureType,
+  customShape,
+  outlineShape,
 }: {
   asset?: RenderAsset | CatalogRenderAsset;
   frameIndex?: number;
@@ -49,6 +79,8 @@ function StructureThumbnail({
   footprint: { width: number; height: number };
   name: string;
   structureType?: BlueprintType;
+  customShape?: number[][];
+  outlineShape?: number[][];
 }) {
   const rawId = useId();
   const gridId = `thumb-grid-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -102,6 +134,100 @@ function StructureThumbnail({
       </g>
     </svg>
   );
+
+  const isCustomShape = Boolean(
+    customShape && customShape.some((row) => row.some((val) => val > 0)),
+  );
+
+  if (isCustomShape && customShape) {
+    const shapeRows = customShape.length;
+    const shapeCols = customShape[0]?.length ?? 4;
+    const cellSize = 8;
+    const renderedWidth = shapeCols * cellSize;
+    const renderedHeight = shapeRows * cellSize;
+    const originX = Math.round((64 - renderedWidth) / 2);
+    const originY = Math.round((64 - renderedHeight) / 2);
+    const blockSize = 32;
+
+    const outlinePath = shapeOutlinePath(customShape, originX, originY, cellSize);
+
+    const transform = rotation ? `rotate(${rotation} 32 32)` : undefined;
+
+    return (
+      <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
+        {renderGridBackground(originX, originY, cellSize, blockSize)}
+        <svg
+          className="relative z-10 shrink-0 overflow-hidden"
+          viewBox="0 0 64 64"
+          style={{ width: "64px", height: "64px", imageRendering: "pixelated" }}
+          aria-label={name}
+        >
+          <defs>
+            <mask
+              id={`${gridId}-prefab-mask`}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="0"
+              width="64"
+              height="64"
+            >
+              <rect width="64" height="64" fill="black" />
+              {customShape.map((row, r) =>
+                row.map((val, c) =>
+                  val > 0 ? (
+                    <rect
+                      key={`mask-${r}-${c}`}
+                      x={originX + c * cellSize}
+                      y={originY + r * cellSize}
+                      width={cellSize}
+                      height={cellSize}
+                      fill="white"
+                    />
+                  ) : null,
+                ),
+              )}
+            </mask>
+          </defs>
+          <g transform={transform}>
+            {customShape.map((row, r) =>
+              row.map((val, c) =>
+                val > 0 ? (
+                  <rect
+                    key={`bg-${r}-${c}`}
+                    x={originX + c * cellSize}
+                    y={originY + r * cellSize}
+                    width={cellSize}
+                    height={cellSize}
+                    fill="#434c5e"
+                  />
+                ) : null,
+              ),
+            )}
+            <image
+              href={`${import.meta.env.BASE_URL}catalog/img__block.png`}
+              x={originX}
+              y={originY}
+              width={renderedWidth}
+              height={renderedHeight}
+              preserveAspectRatio="none"
+              mask={`url(#${gridId}-prefab-mask)`}
+              style={{ imageRendering: "pixelated" }}
+            />
+            {outlinePath ? (
+              <path
+                d={outlinePath}
+                stroke="#17202c"
+                strokeWidth="2"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
+                fill="none"
+              />
+            ) : null}
+          </g>
+        </svg>
+      </div>
+    );
+  }
 
   if (!asset?.path) {
     const renderedWidth = footprint.width * 8;
@@ -216,6 +342,22 @@ function StructureThumbnail({
           </g>
         ) : null}
       </svg>
+      {outlineShape ? (
+        <svg
+          className="pointer-events-none absolute inset-0 z-20 h-full w-full"
+          viewBox="0 0 64 64"
+          aria-hidden="true"
+        >
+          <path
+            d={shapeOutlinePath(outlineShape, originX, originY, cellSize)}
+            stroke="#17202c"
+            strokeWidth="2"
+            strokeLinecap="square"
+            strokeLinejoin="miter"
+            fill="none"
+          />
+        </svg>
+      ) : null}
     </div>
   );
 }
@@ -257,11 +399,51 @@ export function BlueprintMapSidebar({
   debugOptions,
 }: BlueprintMapSidebarProps) {
   const entry = selected ? catalogEntry(selected.type) : undefined;
-  const name = selected ? (entry?.name ?? structureLabel(selected.type)) : "";
   const footprint = selected ? structureFootprint(selected) : { width: 4, height: 4 };
   const topY = selected ? structureTopY(selected) : 0;
   const render = entry ? catalogRender(entry) : undefined;
   const renderSize = render ? catalogRenderSize(render) : undefined;
+
+  const customShape = useMemo(() => {
+    return (
+      preparedStructure?.customShape ?? (selected ? customShapeFromStructure(selected) : undefined)
+    );
+  }, [selected, preparedStructure]);
+
+  const isPrefab = Boolean(
+    (typeof selected?.type === "string" && selected.type.startsWith("prefabTerrain")) ||
+    customShape,
+  );
+
+  const name = useMemo(() => {
+    if (!selected) return "";
+    if (entry?.name) return entry.name;
+    const typeStr = String(selected.type);
+    const prefabMatch = typeStr.match(/^prefabTerrain(?:_(\d+))?$/);
+    if (prefabMatch) {
+      return prefabMatch[1] ? `Terrain Prefab #${prefabMatch[1]}` : "Terrain Prefab";
+    }
+    if (customShape) return "Custom Prefab";
+    return structureLabel(selected.type);
+  }, [selected, entry?.name, customShape]);
+
+  const category = entry?.category ?? (isPrefab ? "blocks" : undefined);
+
+  const solidCellCount = useMemo(() => {
+    if (!customShape) return 0;
+    return customShape.reduce(
+      (acc, row) => acc + row.reduce((rAcc, cell) => rAcc + (cell > 0 ? 1 : 0), 0),
+      0,
+    );
+  }, [customShape]);
+
+  const outlineShape =
+    preparedStructure && isFoundationStructure(preparedStructure)
+      ? (preparedStructure.shape ??
+        Array.from({ length: preparedStructure.footprint.height }, () =>
+          Array.from({ length: preparedStructure.footprint.width }, () => 1),
+        ))
+      : undefined;
 
   const sprite = preparedStructure?.sprite;
   const asset = sprite?.asset ?? entry?.renderAsset;
@@ -353,15 +535,17 @@ export function BlueprintMapSidebar({
                 footprint={footprint}
                 name={name}
                 structureType={selected?.type}
+                customShape={customShape}
+                outlineShape={outlineShape}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
                   <h4 className="font-semibold text-slate-100 text-sm leading-snug truncate">
                     {name}
                   </h4>
-                  {entry?.category ? (
+                  {category ? (
                     <span className="shrink-0 rounded bg-slate-800/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-300 uppercase tracking-wide">
-                      {entry.category}
+                      {category}
                     </span>
                   ) : null}
                 </div>
@@ -380,8 +564,8 @@ export function BlueprintMapSidebar({
               </div>
             </div>
 
-            {/* Unknown structure alert if no catalog entry */}
-            {!entry ? (
+            {/* Unknown structure alert if no catalog entry and not a prefab */}
+            {!entry && !isPrefab ? (
               <p className="rounded border border-amber-700/60 bg-amber-950/30 p-2 text-amber-200 text-xs">
                 Unknown structure — no catalog entry or sprite is available. Showing a placeholder
                 using the raw blueprint record.
@@ -576,6 +760,25 @@ export function BlueprintMapSidebar({
               </div>
             ) : null}
 
+            {/* Prefab Terrain Details */}
+            {isPrefab && customShape ? (
+              <div className="rounded-lg border border-slate-800 bg-black/30 p-2.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                    Prefab Terrain Definition
+                  </span>
+                  <span className="rounded border border-sky-800/60 bg-sky-950/40 px-1.5 py-0.5 text-[10px] font-medium text-sky-300">
+                    Procedural
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Procedural foundation block generated from {solidCellCount} solid{" "}
+                  {solidCellCount === 1 ? "cell" : "cells"}.
+                </p>
+                {/* TODO: Render composition after adding terrain-ID resolution for prefab cellIds. */}
+              </div>
+            ) : null}
+
             {/* Signal connections */}
             {connectedSignalLinks.length > 0 ? (
               <div className="rounded-lg border border-slate-800 bg-black/30 p-2.5 space-y-1.5">
@@ -649,6 +852,19 @@ export function BlueprintMapSidebar({
                     </span>
                     <span className="text-slate-600 text-[10px]">
                       {renderSize.width}×{renderSize.height}px
+                    </span>
+                  </div>
+                ) : isPrefab ? (
+                  <div className="rounded border border-slate-800/60 bg-slate-950/50 p-2">
+                    <span className="text-slate-500 block text-[10px]">Foundation Texture</span>
+                    <span
+                      className="font-mono text-slate-400 text-[11px] truncate block"
+                      title="img__block.png"
+                    >
+                      img__block.png
+                    </span>
+                    <span className="text-slate-600 text-[10px]">
+                      {solidCellCount} / {footprint.width * footprint.height} solid cells
                     </span>
                   </div>
                 ) : null}
