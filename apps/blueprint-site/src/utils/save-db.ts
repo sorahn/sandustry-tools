@@ -5,6 +5,7 @@ export const SAVE_DATABASE_NAME = "sandustry-save-explorer-db";
 export const SAVE_DATABASE_VERSION = 1;
 const SUMMARY_STORE = "saveSummaries";
 const BLOB_STORE = "saveBlobs";
+export const ACTIVE_SAVE_ID_KEY = "sandustry-save-explorer-active-save";
 
 export type StoredSaveSummary = {
   id: string;
@@ -33,6 +34,24 @@ export type SaveStorageError = {
 };
 
 export type StorageResult<T> = { ok: true; value: T } | { ok: false; error: SaveStorageError };
+
+export function readActiveSaveId(): string | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage.getItem(ACTIVE_SAVE_ID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setActiveSaveId(saveId: string | null): void {
+  try {
+    if (typeof localStorage === "undefined") return;
+    if (saveId) localStorage.setItem(ACTIVE_SAVE_ID_KEY, saveId);
+    else localStorage.removeItem(ACTIVE_SAVE_ID_KEY);
+  } catch {
+    // Active selection is a convenience and must not make save persistence fail.
+  }
+}
 
 function failure(
   code: SaveStorageErrorCode,
@@ -102,7 +121,7 @@ export async function storeSave(
     transaction
       .objectStore(BLOB_STORE)
       .put({ id: summary.id, bytes: new Blob([new Uint8Array(bytes)]) });
-    return await new Promise((resolve) => {
+    const result = await new Promise<StorageResult<void>>((resolve) => {
       transaction.oncomplete = () => resolve({ ok: true, value: undefined });
       transaction.onerror = () =>
         resolve({ ok: false, error: storageError(transaction.error, "Unable to store save") });
@@ -112,6 +131,8 @@ export async function storeSave(
           error: storageError(transaction.error, "Save storage transaction aborted"),
         });
     });
+    if (result.ok) setActiveSaveId(summary.id);
+    return result;
   } catch (error) {
     return failure("transaction-aborted", "Unable to store save", error);
   } finally {
@@ -161,7 +182,7 @@ export async function deleteSavedGame(saveId: string): Promise<StorageResult<voi
     const transaction = database.transaction([SUMMARY_STORE, BLOB_STORE], "readwrite");
     transaction.objectStore(SUMMARY_STORE).delete(saveId);
     transaction.objectStore(BLOB_STORE).delete(saveId);
-    return await new Promise((resolve) => {
+    const result = await new Promise<StorageResult<void>>((resolve) => {
       transaction.oncomplete = () => resolve({ ok: true, value: undefined });
       transaction.onerror = () =>
         resolve({ ok: false, error: storageError(transaction.error, "Unable to delete save") });
@@ -171,6 +192,8 @@ export async function deleteSavedGame(saveId: string): Promise<StorageResult<voi
           error: storageError(transaction.error, "Save deletion transaction aborted"),
         });
     });
+    if (result.ok && readActiveSaveId() === saveId) setActiveSaveId(null);
+    return result;
   } catch (error) {
     return failure("transaction-aborted", "Unable to delete save", error);
   } finally {

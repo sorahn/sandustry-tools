@@ -20,6 +20,7 @@ import {
   getSavedGameBytes,
   listSavedGames,
   migrateLegacyRememberedSave,
+  readActiveSaveId,
   storeSave,
   type StoredSaveSummary,
 } from "../utils/save-db";
@@ -214,9 +215,9 @@ export function SaveExplorerPage() {
         const listed = await listSavedGames();
         let saved: { bytes: Uint8Array; name: string } | null = null;
         if (listed.ok && listed.value.length > 0) {
-          const summary = listed.value
-            .slice()
-            .sort((a, b) => b.storedAt.localeCompare(a.storedAt))[0];
+          const sorted = listed.value.slice().sort((a, b) => b.storedAt.localeCompare(a.storedAt));
+          const activeId = readActiveSaveId();
+          const summary = sorted.find((candidate) => candidate.id === activeId) ?? sorted[0];
           const bytes = await getSavedGameBytes(summary.id);
           if (bytes.ok) saved = { bytes: bytes.value, name: summary.fileName };
           else if (!disposed) setMessage(bytes.error.message);
