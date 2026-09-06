@@ -4,6 +4,7 @@ artifacts/
 mods/*/build/
 apps/*/dist/
 apps/sandustry-vault/
+apps/ipad-poc/
 packages/sandustry-blueprint-core/dist/
 node_modules/
 .DS_Store

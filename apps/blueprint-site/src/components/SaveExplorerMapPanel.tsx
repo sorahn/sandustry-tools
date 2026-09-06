@@ -303,13 +303,13 @@ export function SaveExplorerMapPanel({
               onClick={() =>
                 onViewChange((current) => ({
                   ...current,
-                  scale: Math.min(8, current.scale * 1.25),
+                  scale: Math.max(0.25, current.scale * 0.8),
                 }))
               }
-              aria-label="Zoom in (+)"
-              title="Zoom in (+)"
+              aria-label="Zoom out (-)"
+              title="Zoom out (-)"
             >
-              +
+              −
             </Button>
             <span>{Math.round(view.scale * 100)}%</span>
             <Button
@@ -318,13 +318,13 @@ export function SaveExplorerMapPanel({
               onClick={() =>
                 onViewChange((current) => ({
                   ...current,
-                  scale: Math.max(0.25, current.scale * 0.8),
+                  scale: Math.min(8, current.scale * 1.25),
                 }))
               }
-              aria-label="Zoom out (-)"
-              title="Zoom out (-)"
+              aria-label="Zoom in (+)"
+              title="Zoom in (+)"
             >
-              −
+              +
             </Button>
             <Button
               type="button"
