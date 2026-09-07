@@ -1,9 +1,10 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
+import type { ControlSize } from "../types";
 
 export type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
-  size?: "small" | "default" | "large";
+  size?: ControlSize;
   children: ReactNode;
 };
 

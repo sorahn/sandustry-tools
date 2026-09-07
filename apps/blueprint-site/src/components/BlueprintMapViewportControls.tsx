@@ -1,5 +1,4 @@
-import { Button, buttonStyles } from "@sandustry/ui";
-import cx from "clsx";
+import { Button } from "@sandustry/ui";
 
 export function BlueprintMapViewportControls({
   zoom,
@@ -29,21 +28,15 @@ export function BlueprintMapViewportControls({
       className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded border border-slate-700/80 bg-slate-950/60 p-2 font-mono text-xs text-slate-300 shadow-lg backdrop-blur-sm"
       translate="no"
     >
-      <Button
-        type="button"
-        className={cx(buttonStyles.compact, buttonStyles.noShift)}
-        onClick={onExport}
-      >
+      <Button type="button" size="small" noShift onClick={onExport}>
         Export PNG
       </Button>
       <span className="mr-1">{Number((zoom * 100).toFixed(1))}%</span>
       <Button
         type="button"
-        className={cx(
-          buttonStyles.compact,
-          buttonStyles.noShift,
-          "focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
-        )}
+        size="small"
+        noShift
+        className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
         onClick={onZoomOut}
         disabled={zoom <= minZoom}
         aria-label="Zoom out (-)"
@@ -53,11 +46,9 @@ export function BlueprintMapViewportControls({
       </Button>
       <Button
         type="button"
-        className={cx(
-          buttonStyles.compact,
-          buttonStyles.noShift,
-          "focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
-        )}
+        size="small"
+        noShift
+        className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
         onClick={onFit}
         disabled={fitMode && zoom === measuredFitZoom && pan.x === 0 && pan.y === 0}
         aria-label="Fit to viewport (0 or F)"
@@ -67,11 +58,9 @@ export function BlueprintMapViewportControls({
       </Button>
       <Button
         type="button"
-        className={cx(
-          buttonStyles.compact,
-          buttonStyles.noShift,
-          "focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
-        )}
+        size="small"
+        noShift
+        className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
         onClick={onZoomIn}
         disabled={zoom >= maxZoom}
         aria-label="Zoom in (+)"

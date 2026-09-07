@@ -1,6 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { Button, TooltipSurface } from "@sandustry/ui";
+import {
+  Button,
+  FileDropZone,
+  LoadingOverlay,
+  TooltipSurface,
+  createDragDepthTracker,
+} from "@sandustry/ui";
 import type { SaveExplorerCellInspection } from "@sandustry/save-core";
+
+export { createDragDepthTracker };
 
 export type ExplorerRaster = {
   width: number;
@@ -44,81 +51,6 @@ type SaveExplorerMapPanelProps = {
   onInspect: (mapX: number, mapY: number) => void;
 };
 
-export function createDragDepthTracker(getOnDraggingChange: () => (dragging: boolean) => void) {
-  let depth = 0;
-  return {
-    enter(event?: { preventDefault?: () => void }) {
-      event?.preventDefault?.();
-      depth += 1;
-      if (depth === 1) {
-        getOnDraggingChange()(true);
-      }
-    },
-    leave(event?: { preventDefault?: () => void }) {
-      event?.preventDefault?.();
-      depth = Math.max(0, depth - 1);
-      if (depth === 0) {
-        getOnDraggingChange()(false);
-      }
-    },
-    drop(event?: { preventDefault?: () => void }) {
-      event?.preventDefault?.();
-      depth = 0;
-      getOnDraggingChange()(false);
-    },
-    reset() {
-      depth = 0;
-    },
-    get depth() {
-      return depth;
-    },
-  };
-}
-
-function LoadingOverlay({ busy, message }: { busy: boolean; message: string }) {
-  const [mounted, setMounted] = useState(busy);
-  const [visible, setVisible] = useState(busy);
-  const [displayMessage, setDisplayMessage] = useState(message);
-
-  useEffect(() => {
-    if (busy) {
-      setDisplayMessage(message);
-      setMounted(true);
-      const frame = requestAnimationFrame(() => {
-        setVisible(true);
-      });
-      return () => cancelAnimationFrame(frame);
-    } else {
-      setVisible(false);
-      const timer = setTimeout(() => {
-        setMounted(false);
-      }, 250);
-      return () => clearTimeout(timer);
-    }
-  }, [busy, message]);
-
-  if (!mounted) return null;
-
-  return (
-    <div
-      data-testid="explorer-loading-overlay"
-      className={`absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-[250ms] ease-out ${
-        visible ? "opacity-100" : "pointer-events-none opacity-0"
-      }`}
-      aria-live="polite"
-      aria-busy={busy}
-    >
-      <div className="flex items-center gap-2.5 rounded-lg border border-slate-700/80 bg-slate-900/90 px-4 py-2.5 shadow-2xl backdrop-blur-md">
-        <span
-          className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent"
-          aria-hidden="true"
-        />
-        <span className="font-mono text-xs font-medium text-slate-200">{displayMessage}</span>
-      </div>
-    </div>
-  );
-}
-
 export function SaveExplorerMapPanel({
   inputRef,
   canvasRef,
@@ -143,55 +75,25 @@ export function SaveExplorerMapPanel({
   fitMap,
   onInspect,
 }: SaveExplorerMapPanelProps) {
-  const onDraggingChangeRef = useRef(onDraggingChange);
-  onDraggingChangeRef.current = onDraggingChange;
-
-  const trackerRef = useRef<ReturnType<typeof createDragDepthTracker> | null>(null);
-  if (!trackerRef.current) {
-    trackerRef.current = createDragDepthTracker(() => onDraggingChangeRef.current);
-  }
-
-  useEffect(() => {
-    if (!dragging) {
-      trackerRef.current?.reset();
-    }
-  }, [dragging]);
-
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div
-        className={`flex min-h-20 items-center justify-center gap-4 border-b p-4 transition-colors duration-150 ${
-          dragging ? "border-yellow-400/70 bg-amber-900/30" : "border-slate-800/90 bg-slate-900/45"
-        }`}
-        onDragEnter={(event) => {
-          trackerRef.current?.enter(event);
-        }}
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "copy";
-        }}
-        onDragLeave={(event) => {
-          trackerRef.current?.leave(event);
-        }}
-        onDrop={(event) => {
-          trackerRef.current?.drop(event);
-          void onFile(event.dataTransfer.files[0]);
-        }}
+      <FileDropZone
+        accept=".save"
+        dragging={dragging}
+        onDraggingChange={onDraggingChange}
+        onFile={(file) => void onFile(file)}
+        inputRef={inputRef}
+        inputProps={{ className: "hidden" }}
+        className="flex min-h-20 items-center justify-center gap-4 border-b border-slate-800/90 bg-slate-900/45 p-4 transition-colors duration-150"
+        activeClassName="border-yellow-400/70 bg-amber-900/30"
       >
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".save"
-          className="hidden"
-          onChange={(event) => void onFile(event.target.files?.[0])}
-        />
         <div className={`flex items-center gap-4 ${dragging ? "pointer-events-none" : ""}`}>
           <Button type="button" variant="solid" onClick={onChooseFile} disabled={busy}>
             {busy ? "Decoding…" : documentLoaded ? "Open another save" : "Choose save file"}
           </Button>
           <span className="text-xs text-slate-500">or drop a `.save` file</span>
         </div>
-      </div>
+      </FileDropZone>
       <div
         ref={mapFrameRef}
         tabIndex={0}
@@ -402,7 +304,7 @@ export function SaveExplorerMapPanel({
             )}
           </TooltipSurface>
         ) : null}
-        <LoadingOverlay busy={busy} message={message} />
+        <LoadingOverlay busy={busy} message={message} data-testid="explorer-loading-overlay" />
       </div>
       <div className="border-t border-slate-800 px-4 py-3 font-mono text-xs text-slate-500">
         {raster ? `${message} · ${raster.width}×${raster.height} minimap pixels` : message}

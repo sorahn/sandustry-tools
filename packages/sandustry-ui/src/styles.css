@@ -16,6 +16,9 @@
   --sd-space: var(--spacing, 0.25rem);
   --sd-panel-shadow: var(--shadow-xl, 0 8px 22px rgb(0 0 0 / 0.45));
   --sd-control-height: 30px;
+  --sd-form-control-small-height: 28px;
+  --sd-form-control-height: 38px;
+  --sd-form-control-large-height: 44px;
   --sd-caret-size: 6px;
   --sd-caret-inset: 9px;
 }

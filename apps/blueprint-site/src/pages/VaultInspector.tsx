@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BlueprintInspectorPage } from "./Inspector";
 import { PageHeader } from "../components/PageHeader";
-import { StatusIndicator, Toast } from "@sandustry/ui";
+import { Spinner, Toast } from "@sandustry/ui";
 import { useParams } from "@tanstack/react-router";
 
 type VaultBlueprint = {
@@ -80,8 +80,11 @@ export function VaultBlueprintInspectorPage() {
         <PageHeader title={`Vault blueprint #${vaultId}`}>
           Loading the blueprint from Sandustry Vault…
         </PageHeader>
-        <div className="rounded border border-slate-800 bg-black/40 p-4">
-          <StatusIndicator tone="warning" label="Fetching blueprint data from Sandustry Vault…" />
+        <div className="flex items-center gap-3 rounded border border-slate-800 bg-black/40 p-4">
+          <Spinner size="small" tone="accent" />
+          <span className="text-xs text-slate-400">
+            Fetching blueprint data from Sandustry Vault…
+          </span>
         </div>
       </section>
     );

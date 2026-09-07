@@ -15,7 +15,7 @@ import {
   type BlueprintSummary,
 } from "../components/BlueprintSubmissionPanel";
 import { BlueprintStructuresPanel } from "../components/BlueprintStructuresPanel";
-import { Panel, Select, StatusIndicator } from "@sandustry/ui";
+import { FileDropZone, Panel, Select, StatusIndicator } from "@sandustry/ui";
 import { PageHeader } from "../components/PageHeader";
 import {
   readStorageValue,
@@ -404,53 +404,50 @@ function SaveFileDropzone({
   onSelect: (record: SaveBlueprintRecord) => void;
 }) {
   return (
-    <Panel title="From .save file">
-      <div
-        className="space-y-3 p-4 text-sm text-slate-400"
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "copy";
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          void onFile(event.dataTransfer.files[0]);
-        }}
+    <Panel title="From .save file" padded>
+      <FileDropZone
+        accept=".save"
+        onFile={(file) => void onFile(file)}
+        className="space-y-3 rounded border border-dashed border-slate-700/80 p-4 text-sm text-slate-400 transition-colors"
+        activeClassName="border-yellow-400/70 bg-amber-900/20"
       >
-        <label className="flex cursor-pointer items-center gap-3">
-          <span className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-200">
-            Choose .save file
-          </span>
-          <span>or drop one here</span>
-          <input
-            type="file"
-            accept=".save"
-            className="sr-only"
-            onChange={(event) => void onFile(event.target.files?.[0])}
-          />
-        </label>
-        {selection ? (
-          <label className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
-            <span>{selection.fileName}</span>
-            <Select
-              defaultValue=""
-              aria-label="Blueprint from dropped save"
-              onChange={(event) => {
-                const record = selection.blueprints.find(
-                  (candidate) => candidate.id === event.target.value,
-                );
-                if (record) onSelect(record);
-              }}
-            >
-              <option value="">Choose a blueprint…</option>
-              {selection.blueprints.map((blueprint) => (
-                <option key={blueprint.id} value={blueprint.id}>
-                  {blueprint.name}
-                </option>
-              ))}
-            </Select>
-          </label>
-        ) : null}
-      </div>
+        {({ openFileDialog }) => (
+          <>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-200 hover:border-yellow-400/70 hover:text-white focus-visible:outline-2 focus-visible:outline-yellow-300 focus-visible:outline-offset-2"
+                onClick={openFileDialog}
+              >
+                Choose .save file
+              </button>
+              <span>or drop one here</span>
+            </div>
+            {selection ? (
+              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
+                <span>{selection.fileName}</span>
+                <Select
+                  defaultValue=""
+                  aria-label="Blueprint from dropped save"
+                  onChange={(event) => {
+                    const record = selection.blueprints.find(
+                      (candidate) => candidate.id === event.target.value,
+                    );
+                    if (record) onSelect(record);
+                  }}
+                >
+                  <option value="">Choose a blueprint…</option>
+                  {selection.blueprints.map((blueprint) => (
+                    <option key={blueprint.id} value={blueprint.id}>
+                      {blueprint.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ) : null}
+          </>
+        )}
+      </FileDropZone>
     </Panel>
   );
 }
@@ -482,59 +479,57 @@ export function FromSavedGame({
   const hasOptions = hasSavedBlueprints || hasTestFixtures;
 
   return (
-    <Panel title="From saved game">
-      <div className="p-4">
-        {hasOptions ? (
-          <label className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
-            <span>Saved blueprint</span>
-            <Select
-              value=""
-              onChange={(event) => {
-                const value = event.target.value;
-                if (!value) return;
-                if (value.startsWith("fixture:")) {
-                  const fixtureId = value.slice("fixture:".length);
-                  const fixture = BLUEPRINT_VISUAL_FIXTURES.find(
-                    (candidate) => candidate.id === fixtureId,
-                  );
-                  if (fixture) onSelectFixture?.(fixture.blueprint);
-                  return;
-                }
-                const [saveId, blueprintId] = value.split("/");
-                if (!saveId || !blueprintId) return;
-                window.location.assign(
-                  `${import.meta.env.BASE_URL}save/${encodeURIComponent(saveId)}/blueprint/${encodeURIComponent(blueprintId)}`,
+    <Panel title="From saved game" padded>
+      {hasOptions ? (
+        <label className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
+          <span>Saved blueprint</span>
+          <Select
+            value=""
+            onChange={(event) => {
+              const value = event.target.value;
+              if (!value) return;
+              if (value.startsWith("fixture:")) {
+                const fixtureId = value.slice("fixture:".length);
+                const fixture = BLUEPRINT_VISUAL_FIXTURES.find(
+                  (candidate) => candidate.id === fixtureId,
                 );
-              }}
-              aria-label="Saved blueprint"
-            >
-              <option value="">
-                {hasSavedBlueprints ? "Choose a blueprint…" : "Choose a test fixture…"}
-              </option>
-              {hasTestFixtures ? (
-                <optgroup label="Test Fixtures">
-                  {BLUEPRINT_VISUAL_FIXTURES.map((fixture) => (
-                    <option key={fixture.id} value={`fixture:${fixture.id}`}>
-                      {fixture.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null}
-              {savesWithBlueprints.map((save) => (
-                <optgroup key={save.id} label={formatSaveOptgroupLabel(save)}>
-                  {save.blueprints.map((blueprint) => (
-                    <option key={`${save.id}/${blueprint.id}`} value={`${save.id}/${blueprint.id}`}>
-                      {blueprint.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </Select>
-          </label>
-        ) : (
-          <p className="text-sm text-slate-500">{message}</p>
-        )}
-      </div>
+                if (fixture) onSelectFixture?.(fixture.blueprint);
+                return;
+              }
+              const [saveId, blueprintId] = value.split("/");
+              if (!saveId || !blueprintId) return;
+              window.location.assign(
+                `${import.meta.env.BASE_URL}save/${encodeURIComponent(saveId)}/blueprint/${encodeURIComponent(blueprintId)}`,
+              );
+            }}
+            aria-label="Saved blueprint"
+          >
+            <option value="">
+              {hasSavedBlueprints ? "Choose a blueprint…" : "Choose a test fixture…"}
+            </option>
+            {hasTestFixtures ? (
+              <optgroup label="Test Fixtures">
+                {BLUEPRINT_VISUAL_FIXTURES.map((fixture) => (
+                  <option key={fixture.id} value={`fixture:${fixture.id}`}>
+                    {fixture.label}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+            {savesWithBlueprints.map((save) => (
+              <optgroup key={save.id} label={formatSaveOptgroupLabel(save)}>
+                {save.blueprints.map((blueprint) => (
+                  <option key={`${save.id}/${blueprint.id}`} value={`${save.id}/${blueprint.id}`}>
+                    {blueprint.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </Select>
+        </label>
+      ) : (
+        <p className="text-sm text-slate-500">{message}</p>
+      )}
     </Panel>
   );
 }
