@@ -408,41 +408,45 @@ function SaveFileDropzone({
       <FileDropZone
         accept=".save"
         onFile={(file) => void onFile(file)}
-        clickable
         className="space-y-3 rounded border border-dashed border-slate-700/80 p-4 text-sm text-slate-400 transition-colors"
         activeClassName="border-yellow-400/70 bg-amber-900/20"
       >
-        <div className="flex items-center gap-3">
-          <span className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-200">
-            Choose .save file
-          </span>
-          <span>or drop one here</span>
-        </div>
-        {selection ? (
-          <label
-            className="flex flex-wrap items-center gap-3 text-xs text-slate-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span>{selection.fileName}</span>
-            <Select
-              defaultValue=""
-              aria-label="Blueprint from dropped save"
-              onChange={(event) => {
-                const record = selection.blueprints.find(
-                  (candidate) => candidate.id === event.target.value,
-                );
-                if (record) onSelect(record);
-              }}
-            >
-              <option value="">Choose a blueprint…</option>
-              {selection.blueprints.map((blueprint) => (
-                <option key={blueprint.id} value={blueprint.id}>
-                  {blueprint.name}
-                </option>
-              ))}
-            </Select>
-          </label>
-        ) : null}
+        {({ openFileDialog }) => (
+          <>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-200 hover:border-yellow-400/70 hover:text-white focus-visible:outline-2 focus-visible:outline-yellow-300 focus-visible:outline-offset-2"
+                onClick={openFileDialog}
+              >
+                Choose .save file
+              </button>
+              <span>or drop one here</span>
+            </div>
+            {selection ? (
+              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
+                <span>{selection.fileName}</span>
+                <Select
+                  defaultValue=""
+                  aria-label="Blueprint from dropped save"
+                  onChange={(event) => {
+                    const record = selection.blueprints.find(
+                      (candidate) => candidate.id === event.target.value,
+                    );
+                    if (record) onSelect(record);
+                  }}
+                >
+                  <option value="">Choose a blueprint…</option>
+                  {selection.blueprints.map((blueprint) => (
+                    <option key={blueprint.id} value={blueprint.id}>
+                      {blueprint.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ) : null}
+          </>
+        )}
       </FileDropZone>
     </Panel>
   );

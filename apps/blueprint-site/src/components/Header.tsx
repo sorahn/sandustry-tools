@@ -145,7 +145,7 @@ function SaveManager() {
                           as={Link}
                           to="/explorer"
                           variant={isActive ? "accent" : "quiet"}
-                          compact
+                          size="small"
                           onClick={() => {
                             setActiveSaveId(save.id);
                             setOpen(false);
@@ -157,12 +157,16 @@ function SaveManager() {
                           <div className="flex items-center gap-1">
                             <Button
                               variant="danger"
-                              compact
+                              size="small"
                               onClick={() => void confirmDelete(save)}
                             >
                               Confirm
                             </Button>
-                            <Button variant="quiet" compact onClick={() => setPendingDelete(null)}>
+                            <Button
+                              variant="quiet"
+                              size="small"
+                              onClick={() => setPendingDelete(null)}
+                            >
                               Cancel
                             </Button>
                           </div>
@@ -196,7 +200,7 @@ function SaveManager() {
               as={Link}
               to="/explorer"
               variant="quiet"
-              compact
+              size="small"
               className="w-full justify-center text-xs text-slate-400 hover:text-yellow-300"
               onClick={() => setOpen(false)}
             >
