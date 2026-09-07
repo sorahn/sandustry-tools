@@ -42,6 +42,18 @@ import {
   TextArea,
   TextInput,
   TextAction,
+  Alert,
+  Collapsible,
+  FileDropZone,
+  LoadingOverlay,
+  PropertyTile,
+  Spinner,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
   Toast,
   ToastContainer,
   Tooltip,
@@ -191,6 +203,8 @@ const navSections = [
   { id: "tools", label: "Game Tools" },
   { id: "panels", label: "Panels & States" },
   { id: "data", label: "Lists & Metadata" },
+  { id: "files", label: "File Drop & Loading" },
+  { id: "display", label: "Display & Tables" },
   { id: "overlays", label: "Overlays" },
   { id: "hud", label: "Game HUD" },
   { id: "palette", label: "Colors" },
@@ -294,6 +308,8 @@ export function ComponentsPage() {
   const [selectedBuilding, setSelectedBuilding] = useState("conveyor");
   const [pickedColor, setPickedColor] = useState<string | null>("#ff8000");
   const [selectedSave, setSelectedSave] = useState("exit");
+  const [loadingOverlayBusy, setLoadingOverlayBusy] = useState(false);
+  const [droppedFileName, setDroppedFileName] = useState<string | null>(null);
   const [activeToast, setActiveToast] = useState<{
     message: string;
     variant: "default" | "hint" | "danger";
@@ -383,9 +399,19 @@ export function ComponentsPage() {
               <Button variant="quiet">Quiet action</Button>
               <Button variant="danger">Danger action</Button>
               <Button disabled>Disabled action</Button>
+              <Button size="small" variant="accent">
+                Small
+              </Button>
+              <Button size="large" variant="solid">
+                Large
+              </Button>
+              <Button size="small" noShift variant="quiet">
+                No-shift action
+              </Button>
               <IconButton
+                size="small"
                 label="Regenerate"
-                className="h-9 w-9 rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
+                className="rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
               >
                 ↻
               </IconButton>
@@ -402,15 +428,71 @@ export function ComponentsPage() {
 
           <ShowcaseSubgroup
             title="Badges & Status Tags"
-            description="Pill tags for counts, tags, states, and mod versions."
+            description="Cut and rounded pill tags across default and generic presentation tones."
           >
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Badge>Default</Badge>
-              <Badge tone="accent">Selected</Badge>
-              <Badge tone="success">Ready</Badge>
-              <Badge tone="warning">Warning</Badge>
-              <Badge tone="danger">Error</Badge>
-              <Badge tone="info">Info</Badge>
+            <div className="space-y-3 pt-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs text-slate-500 font-mono w-24">Cut shape:</span>
+                <Badge shape="cut">Default</Badge>
+                <Badge shape="cut" tone="accent">
+                  Selected
+                </Badge>
+                <Badge shape="cut" tone="success">
+                  Ready
+                </Badge>
+                <Badge shape="cut" tone="warning">
+                  Warning
+                </Badge>
+                <Badge shape="cut" tone="danger">
+                  Error
+                </Badge>
+                <Badge shape="cut" tone="info">
+                  Info
+                </Badge>
+                <Badge shape="cut" tone="neutral">
+                  Neutral
+                </Badge>
+                <Badge shape="cut" tone="amber">
+                  Amber
+                </Badge>
+                <Badge shape="cut" tone="blue">
+                  Blue
+                </Badge>
+                <Badge shape="cut" tone="purple">
+                  Purple
+                </Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs text-slate-500 font-mono w-24">Rounded:</span>
+                <Badge shape="rounded">Default</Badge>
+                <Badge shape="rounded" tone="accent">
+                  Selected
+                </Badge>
+                <Badge shape="rounded" tone="success">
+                  Ready
+                </Badge>
+                <Badge shape="rounded" tone="warning">
+                  Warning
+                </Badge>
+                <Badge shape="rounded" tone="danger">
+                  Error
+                </Badge>
+                <Badge shape="rounded" tone="info">
+                  Info
+                </Badge>
+                <Badge shape="rounded" tone="neutral">
+                  Neutral
+                </Badge>
+                <Badge shape="rounded" tone="amber">
+                  Amber
+                </Badge>
+                <Badge shape="rounded" tone="blue">
+                  Blue
+                </Badge>
+                <Badge shape="rounded" tone="purple">
+                  Purple
+                </Badge>
+              </div>
             </div>
           </ShowcaseSubgroup>
 
@@ -631,6 +713,75 @@ export function ComponentsPage() {
               className="min-h-24 w-full"
             />
           </FormField>
+
+          <Divider className="py-4" />
+
+          <ShowcaseSubgroup
+            title="Uniform Control Sizing (ControlSize)"
+            description="Normalized small, default, and large sizing vocabulary across all inputs, selects, switches, checkboxes, sliders, and icon buttons."
+          >
+            <div className="space-y-6 pt-1">
+              <div className="space-y-2">
+                <span className="font-mono text-xs text-yellow-300">size=&quot;small&quot;</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <TextInput size="small" defaultValue="Compact input" className="w-48" />
+                  <SearchInput size="small" placeholder="Search…" className="w-48" />
+                  <Select size="small" defaultValue="a">
+                    <option value="a">Option A</option>
+                    <option value="b">Option B</option>
+                  </Select>
+                  <Checkbox size="small" label="Compact" defaultChecked />
+                  <Switch size="small" label="Compact switch" defaultChecked />
+                  <div className="w-32">
+                    <Slider size="small" label="Level" min={0} max={100} defaultValue={40} />
+                  </div>
+                  <IconButton size="small" label="Small icon">
+                    ✕
+                  </IconButton>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <span className="font-mono text-xs text-yellow-300">size=&quot;default&quot;</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <TextInput size="default" defaultValue="Default input" className="w-48" />
+                  <SearchInput size="default" placeholder="Search…" className="w-48" />
+                  <Select size="default" defaultValue="a">
+                    <option value="a">Option A</option>
+                    <option value="b">Option B</option>
+                  </Select>
+                  <Checkbox size="default" label="Default" defaultChecked />
+                  <Switch size="default" label="Default switch" defaultChecked />
+                  <div className="w-32">
+                    <Slider size="default" label="Level" min={0} max={100} defaultValue={60} />
+                  </div>
+                  <IconButton size="default" label="Default icon">
+                    ✕
+                  </IconButton>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <span className="font-mono text-xs text-yellow-300">size=&quot;large&quot;</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <TextInput size="large" defaultValue="Large input" className="w-48" />
+                  <SearchInput size="large" placeholder="Search…" className="w-48" />
+                  <Select size="large" defaultValue="a">
+                    <option value="a">Option A</option>
+                    <option value="b">Option B</option>
+                  </Select>
+                  <Checkbox size="large" label="Large" defaultChecked />
+                  <Switch size="large" label="Large switch" defaultChecked />
+                  <div className="w-32">
+                    <Slider size="large" label="Level" min={0} max={100} defaultValue={80} />
+                  </div>
+                  <IconButton size="large" label="Large icon">
+                    ✕
+                  </IconButton>
+                </div>
+              </div>
+            </div>
+          </ShowcaseSubgroup>
         </Panel>
       </ShowcaseSection>
 
@@ -829,16 +980,35 @@ export function ComponentsPage() {
         description="Card containers, collapsible panels, and locked feature states."
       >
         <div className="grid gap-6 lg:grid-cols-2">
-          <Panel title="Collapsible panel" collapsible contentClassName="p-4">
+          <Panel title="Padded collapsible panel" collapsible padded>
             <div className="space-y-2">
               <p className="text-sm leading-6 text-slate-300">
-                Panel content can be collapsed without leaving the surrounding layout. Click the
-                header toggle arrow to expand or collapse.
+                Panel content can be collapsed without leaving the surrounding layout. The padded
+                prop applies standard p-4 padding inside the card container.
               </p>
               <div className="flex items-center gap-2 pt-2">
                 <Badge tone="accent">Feature preview</Badge>
                 <span className="text-xs text-slate-500">Smooth state toggle</span>
               </div>
+            </div>
+          </Panel>
+
+          <Panel title="Lightweight disclosure (Collapsible)" padded>
+            <div className="space-y-4">
+              <Collapsible
+                title="Sidebar disclosure section"
+                headerAction={<Badge tone="neutral">Auto</Badge>}
+              >
+                <div className="rounded border border-slate-800/80 bg-black/40 p-3 text-xs text-slate-400">
+                  Borderless, lightweight disclosure block with rotating chevron and optional header
+                  action slot.
+                </div>
+              </Collapsible>
+              <Collapsible title="Default collapsed disclosure" defaultCollapsed>
+                <div className="rounded border border-slate-800/80 bg-black/40 p-3 text-xs text-slate-400">
+                  Expanded content when toggled open.
+                </div>
+              </Collapsible>
             </div>
           </Panel>
 
@@ -1019,6 +1189,196 @@ export function ComponentsPage() {
               </div>
             </ShowcaseSubgroup>
           </Panel>
+        </div>
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        id="files"
+        title="File drop zone and loading overlay"
+        description="Drag-and-drop file target with depth tracking, keyboard invocation, animated spinner, and backdrop loading overlay."
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Panel title="Interactive FileDropZone" padded className="space-y-4">
+            <FileDropZone
+              accept=".save,.blueprint,.png"
+              clickable
+              onFile={(file) => setDroppedFileName(file.name)}
+              className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded border border-dashed border-slate-700/80 bg-slate-950/40 p-6 text-center transition-colors hover:border-yellow-400/50"
+              activeClassName="border-yellow-400 bg-amber-950/25"
+            >
+              {({ dragging }) => (
+                <div className="space-y-2 pointer-events-none">
+                  <div className="text-xl">{dragging ? "📥" : "📁"}</div>
+                  <div className="text-xs text-slate-300">
+                    <span className="font-semibold text-yellow-300">Click to browse</span> or drag a
+                    file here
+                  </div>
+                  <div className="font-mono text-[10px] text-slate-500">
+                    Accepts .save, .blueprint, .png
+                  </div>
+                </div>
+              )}
+            </FileDropZone>
+            {droppedFileName ? (
+              <div className="flex items-center justify-between rounded border border-slate-800 bg-slate-900/50 px-3 py-2 text-xs">
+                <span className="text-slate-300 font-mono">Last selected: {droppedFileName}</span>
+                <Button size="small" variant="quiet" onClick={() => setDroppedFileName(null)}>
+                  Clear
+                </Button>
+              </div>
+            ) : null}
+          </Panel>
+
+          <Panel title="Spinner & LoadingOverlay" padded className="relative space-y-5">
+            <ShowcaseSubgroup
+              title="Standalone Spinner"
+              description="Tokenized circular spinners across sizes and tone variants."
+            >
+              <div className="flex flex-wrap items-center gap-5 pt-1">
+                <div className="flex items-center gap-2">
+                  <Spinner size="small" tone="accent" />
+                  <span className="text-xs text-slate-400">Small accent</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Spinner size="default" tone="accent" />
+                  <span className="text-xs text-slate-400">Default</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Spinner size="large" tone="neutral" />
+                  <span className="text-xs text-slate-400">Large neutral</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Spinner size="small" tone="white" />
+                  <span className="text-xs text-slate-400">White</span>
+                </div>
+              </div>
+            </ShowcaseSubgroup>
+
+            <Divider className="py-2" />
+
+            <ShowcaseSubgroup
+              title="Backdrop LoadingOverlay Preview"
+              description="Backdrop blur overlay with spinner, timer cleanup, and polite screen reader announcements."
+            >
+              <div className="pt-1">
+                <Button
+                  variant="solid"
+                  size="small"
+                  onClick={() => {
+                    setLoadingOverlayBusy(true);
+                    setTimeout(() => setLoadingOverlayBusy(false), 2000);
+                  }}
+                >
+                  {loadingOverlayBusy ? "Loading active (2s)…" : "Trigger 2s loading overlay"}
+                </Button>
+              </div>
+            </ShowcaseSubgroup>
+
+            <LoadingOverlay
+              busy={loadingOverlayBusy}
+              message="Processing simulation frames…"
+              className="rounded"
+            />
+          </Panel>
+        </div>
+      </ShowcaseSection>
+
+      <ShowcaseSection
+        id="display"
+        title="Display primitives, property tiles and tables"
+        description="Static inline alerts, compact property metrics, and semantic monospace table wrappers."
+      >
+        <div className="space-y-6">
+          <Panel title="Inline Alerts" padded>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Alert tone="warning" title="Warning notice">
+                Circuit connection threshold is nearing capacity limit.
+              </Alert>
+              <Alert tone="info" title="Informational callout">
+                Blueprint contains custom terrain cell foundation definitions.
+              </Alert>
+              <Alert tone="danger" title="Error state">
+                Failed to parse legacy blueprint version string.
+              </Alert>
+              <Alert tone="accent" title="Accent announcement">
+                New mod definition catalog entry is active.
+              </Alert>
+              <Alert tone="neutral" title="Neutral note">
+                Default structure coordinates are aligned to map origin.
+              </Alert>
+            </div>
+          </Panel>
+
+          <div className="grid gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <Panel title="PropertyTile Metric Grid" padded>
+                <div className="grid grid-cols-2 gap-2">
+                  <PropertyTile label="Position" value="128, 64" />
+                  <PropertyTile label="Footprint" value="4×4 cells" />
+                  <PropertyTile
+                    label="Bounds"
+                    value="X: 128..131, Y: 64..67"
+                    valueClassName="text-[11px] text-slate-400"
+                  />
+                  <PropertyTile
+                    label="Asset"
+                    value="kinetic_press.png"
+                    valueClassName="text-[11px] text-slate-400 truncate"
+                    subValue="32×32px"
+                  />
+                </div>
+              </Panel>
+            </div>
+
+            <div className="lg:col-span-7">
+              <Panel title="Semantic Table" padded>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHead>
+                      <tr>
+                        <TableHeaderCell>#</TableHeaderCell>
+                        <TableHeaderCell>Structure</TableHeaderCell>
+                        <TableHeaderCell>Position</TableHeaderCell>
+                        <TableHeaderCell>State</TableHeaderCell>
+                      </tr>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="text-slate-600">1</TableCell>
+                        <TableCell className="text-yellow-200">ConveyorBelt</TableCell>
+                        <TableCell>10, 20</TableCell>
+                        <TableCell>
+                          <Badge tone="success" shape="rounded">
+                            Active
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="text-slate-600">2</TableCell>
+                        <TableCell className="text-yellow-200">MatterFilter</TableCell>
+                        <TableCell>12, 20</TableCell>
+                        <TableCell>
+                          <Badge tone="amber" shape="rounded">
+                            Solid
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="text-slate-600">3</TableCell>
+                        <TableCell className="text-yellow-200">InfiniteSource</TableCell>
+                        <TableCell>14, 20</TableCell>
+                        <TableCell>
+                          <Badge tone="blue" shape="rounded">
+                            Liquid
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </Panel>
+            </div>
+          </div>
         </div>
       </ShowcaseSection>
 

@@ -43,63 +43,57 @@ export function BlueprintCodecPage() {
         structure IDs, filters, arbitrary structure data, and v4 signal links.
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="Blueprint string">
-          <div className="space-y-4 p-4">
-            <label htmlFor="codec-blueprint-string" className="sr-only">
-              Blueprint string
-            </label>
-            <TextArea
-              id="codec-blueprint-string"
-              aria-label="Blueprint string"
-              aria-describedby={message ? "codec-status-message" : undefined}
-              value={encoded}
-              onChange={(event) => setEncoded(event.target.value)}
-              placeholder="SAND:BP:v2:..."
-              spellCheck={false}
-              className="placeholder:text-slate-600 focus-visible:ring-2 focus-visible:ring-yellow-400/80"
-            />
-            <div className="flex flex-wrap gap-3">
-              <Button variant="solid" onClick={decode}>
-                Decode to JSON
-              </Button>
-              <Button onClick={() => void copyToClipboard(encoded)}>Copy string</Button>
-            </div>
+        <Panel title="Blueprint string" padded contentClassName="space-y-4">
+          <label htmlFor="codec-blueprint-string" className="sr-only">
+            Blueprint string
+          </label>
+          <TextArea
+            id="codec-blueprint-string"
+            aria-label="Blueprint string"
+            aria-describedby={message ? "codec-status-message" : undefined}
+            value={encoded}
+            onChange={(event) => setEncoded(event.target.value)}
+            placeholder="SAND:BP:v2:..."
+            spellCheck={false}
+            className="placeholder:text-slate-600 focus-visible:ring-2 focus-visible:ring-yellow-400/80"
+          />
+          <div className="flex flex-wrap gap-3">
+            <Button variant="solid" onClick={decode}>
+              Decode to JSON
+            </Button>
+            <Button onClick={() => void copyToClipboard(encoded)}>Copy string</Button>
           </div>
         </Panel>
-        <Panel title="Normalized JSON">
-          <div className="space-y-4 p-4">
-            <label htmlFor="codec-normalized-json" className="sr-only">
-              Normalized JSON blueprint definition
+        <Panel title="Normalized JSON" padded contentClassName="space-y-4">
+          <label htmlFor="codec-normalized-json" className="sr-only">
+            Normalized JSON blueprint definition
+          </label>
+          <TextArea
+            id="codec-normalized-json"
+            aria-label="Normalized JSON blueprint definition"
+            aria-describedby={message ? "codec-status-message" : undefined}
+            value={json}
+            onChange={(event) => setJson(event.target.value)}
+            spellCheck={false}
+            className="focus-visible:ring-2 focus-visible:ring-yellow-400/80"
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="font-mono text-xs text-slate-400">
+              Format{" "}
+              <Select
+                value={format}
+                onChange={(event) => setFormat(event.target.value as "binary" | "text" | "legacy")}
+                className="ml-2"
+              >
+                <option value="binary">v2 binary</option>
+                <option value="text">v2 text</option>
+                <option value="legacy">legacy v1 (conversion only)</option>
+              </Select>
             </label>
-            <TextArea
-              id="codec-normalized-json"
-              aria-label="Normalized JSON blueprint definition"
-              aria-describedby={message ? "codec-status-message" : undefined}
-              value={json}
-              onChange={(event) => setJson(event.target.value)}
-              spellCheck={false}
-              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80"
-            />
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="font-mono text-xs text-slate-400">
-                Format{" "}
-                <Select
-                  value={format}
-                  onChange={(event) =>
-                    setFormat(event.target.value as "binary" | "text" | "legacy")
-                  }
-                  className="ml-2"
-                >
-                  <option value="binary">v2 binary</option>
-                  <option value="text">v2 text</option>
-                  <option value="legacy">legacy v1 (conversion only)</option>
-                </Select>
-              </label>
-              <Button variant="solid" onClick={encode}>
-                Encode string
-              </Button>
-              <Button onClick={() => void copyToClipboard(json)}>Copy JSON</Button>
-            </div>
+            <Button variant="solid" onClick={encode}>
+              Encode string
+            </Button>
+            <Button onClick={() => void copyToClipboard(json)}>Copy JSON</Button>
           </div>
         </Panel>
       </div>

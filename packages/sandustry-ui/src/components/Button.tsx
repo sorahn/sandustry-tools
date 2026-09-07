@@ -1,6 +1,7 @@
 import type { ComponentPropsWithoutRef, ElementType, PropsWithChildren } from "react";
 import cx from "clsx";
 import styles from "../styles/button.module.css";
+import type { ControlSize } from "../types";
 
 export const buttonStyles = {
   button: cx(
@@ -14,13 +15,17 @@ export const buttonStyles = {
   quiet: cx(styles.quiet, "border-transparent bg-transparent text-slate-400"),
   danger: "border-red-400 bg-black text-white",
   compact: "min-h-0 px-2 py-0.5 text-[10px] leading-tight",
-  noShift: styles.noShift,
+  small: "min-h-0 px-2 py-0.5 text-[10px] leading-tight",
+  large: "min-h-11 px-5 py-2.5 text-sm leading-normal",
+  noShift: cx(styles.noShift ?? "noShift", "hover:!left-0 focus-visible:!left-0"),
 };
 
 type SharedButtonProps = {
   accent?: boolean;
   variant?: "default" | "accent" | "solid" | "quiet" | "danger";
+  size?: ControlSize;
   compact?: boolean;
+  noShift?: boolean;
   className?: string;
 };
 
@@ -32,7 +37,9 @@ export function Button<T extends ElementType = "button">({
   as,
   accent = false,
   variant,
+  size,
   compact = false,
+  noShift = false,
   className = "",
   children,
   ...props
@@ -53,14 +60,23 @@ export function Button<T extends ElementType = "button">({
             ? buttonStyles.danger
             : buttonStyles.default;
 
+  const effectiveSize: ControlSize = size ?? (compact ? "small" : "default");
+  const sizeClassName =
+    effectiveSize === "small"
+      ? buttonStyles.compact
+      : effectiveSize === "large"
+        ? buttonStyles.large
+        : "min-h-9 px-3.5 py-2 text-xs";
+
   return (
     <Component
       {...(isNativeButton ? { type: buttonType } : {})}
       className={cx(
         styles.effects,
         "relative left-0 inline-flex items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border font-medium transition-[border-color,left] duration-1000 ease-in-out",
-        compact ? buttonStyles.compact : "min-h-9 px-3.5 py-2 text-xs",
+        sizeClassName,
         variantClassName,
+        noShift && buttonStyles.noShift,
         className,
       )}
       {...props}

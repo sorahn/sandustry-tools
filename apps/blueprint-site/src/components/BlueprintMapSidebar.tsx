@@ -16,7 +16,15 @@ import {
 import { structureFootprint, structureTopY } from "../utils/blueprint-map";
 import { BlueprintMapSidebarSection } from "./BlueprintMapSidebarSection";
 import { StructureThumbnail } from "./StructureThumbnail";
-import { Badge, Checkbox, TextAction } from "@sandustry/ui";
+import {
+  Alert,
+  Badge,
+  type BadgeTone,
+  Checkbox,
+  Collapsible,
+  PropertyTile,
+  TextAction,
+} from "@sandustry/ui";
 
 type BlueprintStructure = Blueprint["data"][number];
 
@@ -48,16 +56,16 @@ function matterLabel(matterType?: number): string {
   }
 }
 
-function matterBadgeClass(matterType?: number): string {
+function matterBadgeTone(matterType?: number): BadgeTone {
   switch (matterType) {
     case MATTER_TYPE.SOLID:
-      return "bg-amber-950/60 text-amber-300 border-amber-800/40";
+      return "amber";
     case MATTER_TYPE.LIQUID:
-      return "bg-blue-950/60 text-blue-300 border-blue-800/40";
+      return "blue";
     case MATTER_TYPE.GAS:
-      return "bg-purple-950/60 text-purple-300 border-purple-800/40";
+      return "purple";
     default:
-      return "bg-slate-900 text-slate-400 border-slate-800";
+      return "neutral";
   }
 }
 
@@ -248,10 +256,10 @@ export function BlueprintMapSidebar({
 
             {/* Unknown structure alert if no catalog entry and not a prefab */}
             {!entry && !isPrefab ? (
-              <p className="rounded border border-amber-700/60 bg-amber-950/30 p-2 text-amber-200 text-xs">
+              <Alert tone="warning">
                 Unknown structure — no catalog entry or sprite is available. Showing a placeholder
                 using the raw blueprint record.
-              </p>
+              </Alert>
             ) : null}
 
             {/* Filter Configuration Card */}
@@ -311,13 +319,13 @@ export function BlueprintMapSidebar({
                           </span>
                           <span className="text-[10px] font-mono text-slate-500">#{el.id}</span>
                         </div>
-                        <span
-                          className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-mono ${matterBadgeClass(
-                            el.matterType,
-                          )}`}
+                        <Badge
+                          shape="rounded"
+                          tone={matterBadgeTone(el.matterType)}
+                          className="shrink-0 font-mono text-[10px]"
                         >
                           {matterLabel(el.matterType)}
-                        </span>
+                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -445,13 +453,13 @@ export function BlueprintMapSidebar({
                       #{sourceElement.id}
                     </span>
                   </div>
-                  <span
-                    className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-mono ${matterBadgeClass(
-                      sourceElement.matterType,
-                    )}`}
+                  <Badge
+                    shape="rounded"
+                    tone={matterBadgeTone(sourceElement.matterType)}
+                    className="shrink-0 font-mono text-[10px]"
                   >
                     {matterLabel(sourceElement.matterType)}
-                  </span>
+                  </Badge>
                 </div>
                 <span className="text-[10px] text-slate-500 block">
                   Emits material continuously into empty cells below
@@ -520,78 +528,67 @@ export function BlueprintMapSidebar({
                 Placement & Geometry
               </span>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded border border-slate-800/60 bg-slate-950/50 p-2">
-                  <span className="text-slate-500 block text-[10px]">Position</span>
-                  <span className="font-mono text-slate-200 font-medium">
-                    {selected.x}, {selected.y}
-                  </span>
-                </div>
-                <div className="rounded border border-slate-800/60 bg-slate-950/50 p-2">
-                  <span className="text-slate-500 block text-[10px]">Footprint</span>
-                  <span className="font-mono text-slate-200 font-medium">
-                    {footprint.width}×{footprint.height} cells
-                  </span>
-                </div>
-                <div className="rounded border border-slate-800/60 bg-slate-950/50 p-2">
-                  <span className="text-slate-500 block text-[10px]">Cell Bounds</span>
-                  <span className="font-mono text-slate-400 text-[11px]">
-                    X: {selected.x}..{selected.x + footprint.width - 1}
-                    <br />
-                    Y: {topY}..{topY + footprint.height - 1}
-                  </span>
-                </div>
+                <PropertyTile label="Position" value={`${selected.x}, ${selected.y}`} />
+                <PropertyTile
+                  label="Footprint"
+                  value={`${footprint.width}×${footprint.height} cells`}
+                />
+                <PropertyTile
+                  label="Cell Bounds"
+                  value={
+                    <>
+                      X: {selected.x}..{selected.x + footprint.width - 1}
+                      <br />
+                      Y: {topY}..{topY + footprint.height - 1}
+                    </>
+                  }
+                  valueClassName="text-[11px] text-slate-400"
+                />
                 {renderSize ? (
-                  <div className="rounded border border-slate-800/60 bg-slate-950/50 p-2">
-                    <span className="text-slate-500 block text-[10px]">Sprite Asset</span>
-                    <span
-                      className="font-mono text-slate-400 text-[11px] truncate block"
-                      title={render?.imageName}
-                    >
-                      {render?.imageName ?? "—"}
-                    </span>
-                    <span className="text-slate-600 text-[10px]">
-                      {renderSize.width}×{renderSize.height}px
-                    </span>
-                  </div>
+                  <PropertyTile
+                    label="Sprite Asset"
+                    value={render?.imageName ?? "—"}
+                    title={render?.imageName}
+                    valueClassName="text-[11px] text-slate-400 truncate block"
+                    subValue={`${renderSize.width}×${renderSize.height}px`}
+                  />
                 ) : isPrefab ? (
-                  <div className="rounded border border-slate-800/60 bg-slate-950/50 p-2">
-                    <span className="text-slate-500 block text-[10px]">Foundation Texture</span>
-                    <span
-                      className="font-mono text-slate-400 text-[11px] truncate block"
-                      title="img__block.png"
-                    >
-                      img__block.png
-                    </span>
-                    <span className="text-slate-600 text-[10px]">
-                      {solidCellCount} / {footprint.width * footprint.height} solid cells
-                    </span>
-                  </div>
+                  <PropertyTile
+                    label="Foundation Texture"
+                    value="img__block.png"
+                    title="img__block.png"
+                    valueClassName="text-[11px] text-slate-400 truncate block"
+                    subValue={`${solidCellCount} / ${footprint.width * footprint.height} solid cells`}
+                  />
                 ) : null}
               </div>
             </div>
 
             {/* Collapsible Raw Blueprint Record & Catalog Definition */}
-            <details className="rounded-lg border border-slate-800 bg-black/40 p-2 group text-xs">
-              <summary className="cursor-pointer text-slate-400 hover:text-slate-200 select-none flex items-center justify-between font-mono text-[11px]">
-                <span>Raw Record (JSON)</span>
-                <span className="text-[10px] text-slate-600 group-open:rotate-180 transition-transform">
-                  ▼
-                </span>
-              </summary>
-              <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-all text-[11px] leading-relaxed text-slate-400 bg-black/60 p-2 rounded border border-slate-900 font-mono">
+            <Collapsible
+              title="Raw Record (JSON)"
+              defaultCollapsed
+              className="rounded-lg border border-slate-800 bg-black/40 p-2 text-xs"
+              headerClassName="text-slate-400 hover:text-slate-200 select-none flex items-center justify-between font-mono text-[11px]"
+              contentClassName="mt-2"
+            >
+              <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-all text-[11px] leading-relaxed text-slate-400 bg-black/60 p-2 rounded border border-slate-900 font-mono">
                 {JSON.stringify(selected, null, 2)}
               </pre>
               {entry ? (
-                <details className="mt-2 border-t border-slate-900 pt-2">
-                  <summary className="cursor-pointer text-slate-500 hover:text-slate-300 text-[11px] select-none font-mono">
-                    Catalog Definition
-                  </summary>
-                  <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all text-[10px] leading-relaxed text-slate-500 bg-black/60 p-2 rounded border border-slate-900 font-mono">
+                <Collapsible
+                  title="Catalog Definition"
+                  defaultCollapsed
+                  className="mt-2 border-t border-slate-900 pt-2"
+                  headerClassName="text-slate-500 hover:text-slate-300 text-[11px] select-none font-mono"
+                  contentClassName="mt-1"
+                >
+                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all text-[10px] leading-relaxed text-slate-500 bg-black/60 p-2 rounded border border-slate-900 font-mono">
                     {JSON.stringify(entry.definition ?? entry, null, 2)}
                   </pre>
-                </details>
+                </Collapsible>
               ) : null}
-            </details>
+            </Collapsible>
           </div>
         ) : (
           <p className="leading-6">
