@@ -610,7 +610,7 @@ export function BlueprintMap({
       }
     };
   }, [pan]);
-  const setMapZoom = (nextZoom: number) => {
+  const setMapZoom = (nextZoom: number, pointer?: { x: number; y: number }) => {
     fitModeRef.current = false;
     const snappedZoom = snapMapZoom(nextZoom, zoomLevels);
     const nextViewWidth = width / snappedZoom;
@@ -625,18 +625,24 @@ export function BlueprintMap({
       0,
       (height * snappedZoom - (viewportSize.height || height)) / (2 * snappedZoom),
     );
-    const centerX = width / 2 + pan.x;
-    const centerY = height / 2 + pan.y;
+    const viewportWidth = viewportSize.width || width;
+    const viewportHeight = viewportSize.height || height;
+    const centerX = pointer
+      ? width / 2 + pan.x + (pointer.x - viewportWidth / 2) / zoom
+      : width / 2 + pan.x;
+    const centerY = pointer
+      ? height / 2 + pan.y + (pointer.y - viewportHeight / 2) / zoom
+      : height / 2 + pan.y;
+    const nextPanX = pointer
+      ? centerX - width / 2 - (pointer.x - viewportWidth / 2) / snappedZoom
+      : centerX - nextViewWidth / 2 - nextCenteredViewX;
+    const nextPanY = pointer
+      ? centerY - height / 2 - (pointer.y - viewportHeight / 2) / snappedZoom
+      : centerY - nextViewHeight / 2 - nextCenteredViewY;
     setZoom(snappedZoom);
     setPan({
-      x: Math.max(
-        -nextMaxPanX,
-        Math.min(nextMaxPanX, centerX - nextViewWidth / 2 - nextCenteredViewX),
-      ),
-      y: Math.max(
-        -nextMaxPanY,
-        Math.min(nextMaxPanY, centerY - nextViewHeight / 2 - nextCenteredViewY),
-      ),
+      x: Math.max(-nextMaxPanX, Math.min(nextMaxPanX, nextPanX)),
+      y: Math.max(-nextMaxPanY, Math.min(nextMaxPanY, nextPanY)),
     });
   };
   const exportPng = async () => {
@@ -751,7 +757,7 @@ export function BlueprintMap({
               ? `: selected ${structureLabel(selected.type)} at ${selected.x}, ${selected.y} (${(selectedIndex ?? 0) + 1} of ${blueprint.data.length})`
               : ""
           }`}
-          className="blueprint-map__viewport relative min-h-[32rem] overflow-hidden rounded border border-slate-800 bg-[#33a8ff] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
+          className="blueprint-map__viewport relative min-h-[32rem] overflow-hidden rounded border border-slate-800 bg-[#33a8ff] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
           translate="no"
           onKeyDown={(event) => {
             if (event.target !== event.currentTarget) return;
@@ -788,6 +794,26 @@ export function BlueprintMap({
                 setSelectedIndex(null);
               }
             }
+          }}
+          onWheelCapture={(event) => {
+            if (!captureOnly) event.preventDefault();
+          }}
+          onWheel={(event) => {
+            if (captureOnly) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.deltaY === 0) return;
+            const rect = event.currentTarget.getBoundingClientRect();
+            const point = {
+              x: event.clientX - rect.left,
+              y: event.clientY - rect.top,
+            };
+            const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
+            const nextIndex =
+              event.deltaY < 0
+                ? Math.min(zoomLevels.length - 1, index + 1)
+                : Math.max(0, index - 1);
+            setMapZoom(zoomLevels[nextIndex], point);
           }}
           style={
             captureOnly

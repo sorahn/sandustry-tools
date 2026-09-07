@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Panel } from "@sandustry/ui";
+import {
+  Panel,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@sandustry/ui";
 import { type Blueprint } from "../utils/blueprint";
 
 type BlueprintStructuresPanelProps = {
@@ -21,38 +29,35 @@ export function BlueprintStructuresPanel({
     >
       {!collapsed ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[42rem] text-left font-mono text-xs">
-            <thead className="border-b border-slate-800 text-slate-500">
+          <Table className="min-w-[42rem]">
+            <TableHead>
               <tr>
-                <th className="px-4 py-3">#</th>
-                <th className="px-4 py-3">type</th>
-                <th className="px-4 py-3">position</th>
-                <th className="px-4 py-3">details</th>
+                <TableHeaderCell>#</TableHeaderCell>
+                <TableHeaderCell>type</TableHeaderCell>
+                <TableHeaderCell>position</TableHeaderCell>
+                <TableHeaderCell>details</TableHeaderCell>
               </tr>
-            </thead>
-            <tbody>
+            </TableHead>
+            <TableBody>
               {blueprint.data.map((structure, index) => (
-                <tr
-                  key={`${index}-${structure.x}-${structure.y}`}
-                  className="border-b border-slate-900 align-top text-slate-300"
-                >
-                  <td className="px-4 py-3 text-slate-600">{index + 1}</td>
-                  <td className="px-4 py-3 break-all text-yellow-200">
+                <TableRow key={`${index}-${structure.x}-${structure.y}`}>
+                  <TableCell className="text-slate-600">{index + 1}</TableCell>
+                  <TableCell className="break-all text-yellow-200">
                     {structureLabel(structure.type)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
                     {structure.x}, {structure.y}
-                  </td>
-                  <td className="max-w-xl whitespace-pre-wrap break-all px-4 py-3 text-slate-500">
+                  </TableCell>
+                  <TableCell className="max-w-xl whitespace-pre-wrap break-all text-slate-500">
                     {structure.filter ? `filter ${JSON.stringify(structure.filter)}` : ""}
                     {structure.filter && structure.data !== undefined ? " · " : ""}
                     {structure.data !== undefined ? `data ${JSON.stringify(structure.data)}` : ""}
                     {structure.filter === undefined && structure.data === undefined ? "—" : ""}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       ) : null}
     </Panel>

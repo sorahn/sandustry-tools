@@ -10,6 +10,7 @@ export type PanelProps = PropsWithChildren<HTMLAttributes<HTMLElement>> & {
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   variant?: "default" | "hero";
+  padded?: boolean;
   contentClassName?: string;
 };
 
@@ -21,6 +22,7 @@ export function Panel({
   collapsed: controlledCollapsed,
   onCollapsedChange,
   variant = "default",
+  padded = false,
   contentClassName = "",
   className = "",
   children,
@@ -86,7 +88,7 @@ export function Panel({
       {...props}
     >
       {panelHeader}
-      {collapsed ? null : <div className={contentClassName}>{children}</div>}
+      {collapsed ? null : <div className={cx(padded && "p-4", contentClassName)}>{children}</div>}
     </section>
   );
 }

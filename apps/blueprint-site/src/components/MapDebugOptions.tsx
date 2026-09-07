@@ -219,7 +219,7 @@ export function MapDebugOptions({
         <label className="flex items-center justify-between gap-3 text-xs text-slate-400">
           <span>Initial fit policy</span>
           <Select
-            className="!min-h-0 !py-1 !px-2 text-xs"
+            size="small"
             value={policySelection}
             onChange={(event) =>
               onPolicySelectionChange?.(event.target.value as "legacy" | FitPolicyPreset)

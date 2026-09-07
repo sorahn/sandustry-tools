@@ -57,6 +57,7 @@ export function ElementPicker({
         <SegmentedControl
           options={matterOptions}
           value={matter}
+          size="small"
           onChange={(nextMatter) => onMatterChange?.(nextMatter)}
         />
       ) : null}

@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
+import type { ControlSize } from "../types";
 
 export type Segment<T extends string = string> = {
   value: T;
@@ -14,12 +15,14 @@ export type SegmentedControlProps<T extends string = string> = Omit<
   options: readonly Segment<T>[];
   value: T;
   onChange: (value: T) => void;
+  size?: ControlSize;
 };
 
 export function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
+  size = "default",
   className = "",
   ...props
 }: SegmentedControlProps<T>) {
@@ -35,7 +38,10 @@ export function SegmentedControl<T extends string>({
             disabled={option.disabled || props.disabled}
             aria-pressed={selected}
             className={cx(
-              "rounded-tr-lg rounded-bl-lg border border-slate-200 px-3 py-1 text-xs transition-colors",
+              "rounded-tr-lg rounded-bl-lg border border-slate-200 px-3 text-xs transition-colors",
+              size === "small" && "h-[var(--sd-form-control-small-height)] py-1 text-[11px]",
+              size === "default" && "h-[var(--sd-form-control-height)] py-1 text-xs",
+              size === "large" && "h-[var(--sd-form-control-large-height)] py-2 text-sm",
               selected
                 ? "border-[#ffe700]/50 bg-[#ffe700]/10 text-[#ffe700]"
                 : "border-slate-200/25 bg-black text-white hover:border-transparent hover:text-[#ffe700]",
