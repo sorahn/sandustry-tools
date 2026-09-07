@@ -315,20 +315,12 @@ export function ComponentsPage() {
     variant: "default" | "hint" | "danger";
   } | null>(null);
 
-  if (!import.meta.env.DEV) {
-    return (
-      <Panel className="mx-auto max-w-xl p-8">
-        The Components page is available in development builds only.
-      </Panel>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-6xl space-y-20 pb-24">
       <header className="border-b border-slate-800 pb-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-yellow-300/80">
-            Development only
+            UI kit reference - Development Sneak Peak
           </p>
           <span className="rounded border border-yellow-300/30 bg-yellow-300/10 px-2 py-0.5 font-mono text-[10px] text-yellow-300">
             @sandustry/ui
@@ -733,7 +725,7 @@ export function ComponentsPage() {
                   <Checkbox size="small" label="Compact" defaultChecked />
                   <Switch size="small" label="Compact switch" defaultChecked />
                   <div className="w-32">
-                    <Slider size="small" label="Level" min={0} max={100} defaultValue={40} />
+                    <Slider size="small" aria-label="Level" min={0} max={100} defaultValue={40} />
                   </div>
                   <IconButton size="small" label="Small icon">
                     ✕
@@ -753,7 +745,7 @@ export function ComponentsPage() {
                   <Checkbox size="default" label="Default" defaultChecked />
                   <Switch size="default" label="Default switch" defaultChecked />
                   <div className="w-32">
-                    <Slider size="default" label="Level" min={0} max={100} defaultValue={60} />
+                    <Slider size="default" aria-label="Level" min={0} max={100} defaultValue={60} />
                   </div>
                   <IconButton size="default" label="Default icon">
                     ✕
@@ -773,7 +765,7 @@ export function ComponentsPage() {
                   <Checkbox size="large" label="Large" defaultChecked />
                   <Switch size="large" label="Large switch" defaultChecked />
                   <div className="w-32">
-                    <Slider size="large" label="Level" min={0} max={100} defaultValue={80} />
+                    <Slider size="large" aria-label="Level" min={0} max={100} defaultValue={80} />
                   </div>
                   <IconButton size="large" label="Large icon">
                     ✕

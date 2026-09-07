@@ -212,7 +212,13 @@ describe("@sandustry/ui component suite", () => {
     const smallSlider = renderToStaticMarkup(
       <Slider size="small" label="Volume" showValue value={50} readOnly />,
     );
-    expect(smallSlider).toContain("!h-1");
+    expect(smallSlider).toContain('data-size="small"');
+
+    const defaultSlider = renderToStaticMarkup(<Slider size="default" value={50} readOnly />);
+    expect(defaultSlider).toContain('data-size="default"');
+
+    const largeSlider = renderToStaticMarkup(<Slider size="large" value={50} readOnly />);
+    expect(largeSlider).toContain('data-size="large"');
 
     const smallIconBtn = renderToStaticMarkup(
       <IconButton size="small" label="Close">

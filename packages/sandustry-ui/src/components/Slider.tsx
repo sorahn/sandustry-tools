@@ -63,7 +63,8 @@ export function Slider({
         min={min}
         max={max}
         value={value}
-        className={cx(styles.slider, size === "small" && "!h-1", size === "large" && "!h-2")}
+        data-size={size}
+        className={cx(styles.slider)}
         {...props}
       />
     </div>
