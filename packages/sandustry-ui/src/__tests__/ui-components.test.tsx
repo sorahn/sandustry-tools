@@ -137,15 +137,15 @@ describe("@sandustry/ui component suite", () => {
 
   test("Button supports size, compact alias, and noShift", () => {
     const smallHtml = renderToStaticMarkup(<Button size="small">Small</Button>);
-    expect(smallHtml).toContain("min-h-0");
+    expect(smallHtml).toContain("h-[var(--sd-form-control-small-height)]");
     expect(smallHtml).toContain("text-[10px]");
 
     const compactHtml = renderToStaticMarkup(<Button compact>Compact</Button>);
-    expect(compactHtml).toContain("min-h-0");
+    expect(compactHtml).toContain("h-[var(--sd-form-control-small-height)]");
     expect(compactHtml).toContain("text-[10px]");
 
     const largeHtml = renderToStaticMarkup(<Button size="large">Large</Button>);
-    expect(largeHtml).toContain("min-h-11");
+    expect(largeHtml).toContain("h-[var(--sd-form-control-large-height)]");
     expect(largeHtml).toContain("text-sm");
 
     const noShiftHtml = renderToStaticMarkup(<Button noShift>No Shift</Button>);
@@ -158,7 +158,7 @@ describe("@sandustry/ui component suite", () => {
         <option value="1">1</option>
       </Select>,
     );
-    expect(smallHtml).toContain("min-h-0");
+    expect(smallHtml).toContain("h-[var(--sd-form-control-small-height)]");
     expect(smallHtml).toContain("py-1");
     expect(smallHtml).not.toContain('size="');
 
@@ -167,7 +167,7 @@ describe("@sandustry/ui component suite", () => {
         <option value="1">1</option>
       </Select>,
     );
-    expect(compactHtml).toContain("min-h-0");
+    expect(compactHtml).toContain("h-[var(--sd-form-control-small-height)]");
     expect(compactHtml).toContain("py-1");
 
     const largeHtml = renderToStaticMarkup(
@@ -175,23 +175,23 @@ describe("@sandustry/ui component suite", () => {
         <option value="1">1</option>
       </Select>,
     );
-    expect(largeHtml).toContain("min-h-10");
+    expect(largeHtml).toContain("h-[var(--sd-form-control-large-height)]");
   });
 
   test("TextInput and SearchInput support uniform size vocabulary", () => {
     const smallText = renderToStaticMarkup(<TextInput size="small" placeholder="text" />);
-    expect(smallText).toContain("h-7");
+    expect(smallText).toContain("h-[var(--sd-form-control-small-height)]");
     expect(smallText).not.toContain('size="');
 
     const largeText = renderToStaticMarkup(<TextInput size="large" placeholder="text" />);
-    expect(largeText).toContain("h-11");
+    expect(largeText).toContain("h-[var(--sd-form-control-large-height)]");
 
     const smallSearch = renderToStaticMarkup(<SearchInput size="small" placeholder="search" />);
-    expect(smallSearch).toContain("py-1");
+    expect(smallSearch).toContain("h-[var(--sd-form-control-small-height)]");
     expect(smallSearch).not.toContain('size="');
 
     const largeSearch = renderToStaticMarkup(<SearchInput size="large" placeholder="search" />);
-    expect(largeSearch).toContain("px-3.5 py-2");
+    expect(largeSearch).toContain("h-[var(--sd-form-control-large-height)]");
   });
 
   test("Checkbox, Switch, Slider, and IconButton support uniform control sizing", () => {

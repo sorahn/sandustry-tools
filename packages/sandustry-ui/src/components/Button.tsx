@@ -14,9 +14,9 @@ export const buttonStyles = {
   solid: cx(styles.solid, "border-[#ffe700] bg-[#ffe700] text-black font-bold"),
   quiet: cx(styles.quiet, "border-transparent bg-transparent text-slate-400"),
   danger: "border-red-400 bg-black text-white",
-  compact: "min-h-0 px-2 py-0.5 text-[10px] leading-tight",
-  small: "min-h-0 px-2 py-0.5 text-[10px] leading-tight",
-  large: "min-h-11 px-5 py-2.5 text-sm leading-normal",
+  compact: "h-[var(--sd-form-control-small-height)] px-2 py-0.5 text-[10px] leading-tight",
+  small: "h-[var(--sd-form-control-small-height)] px-2 py-0.5 text-[10px] leading-tight",
+  large: "h-[var(--sd-form-control-large-height)] px-5 py-2.5 text-sm leading-normal",
   noShift: cx(styles.noShift ?? "noShift", "hover:!left-0 focus-visible:!left-0"),
 };
 
@@ -66,7 +66,7 @@ export function Button<T extends ElementType = "button">({
       ? buttonStyles.compact
       : effectiveSize === "large"
         ? buttonStyles.large
-        : "min-h-9 px-3.5 py-2 text-xs";
+        : "h-[var(--sd-form-control-height)] px-3.5 py-2 text-xs";
 
   return (
     <Component
