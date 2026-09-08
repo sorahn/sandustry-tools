@@ -74,14 +74,8 @@
   &:not(:disabled):hover,
   &:not(:disabled):focus-visible {
     left: 4px;
-    border-color: transparent;
-    color: #fff;
     outline: 0;
     transition-duration: 0s;
-
-    &::first-letter {
-      color: var(--sd-yellow);
-    }
 
     &::before {
       transform: translateX(-208px) rotate(6deg);
