@@ -58,6 +58,11 @@ import {
   ToastContainer,
   Tooltip,
   TooltipSurface,
+  ModeTabs,
+  ModeTab,
+  TierPips,
+  ItemDetailPanel,
+  ModalFooterTip,
 } from "@sandustry/ui";
 
 const modeOptions = [
@@ -288,6 +293,74 @@ function TerrainTooltipContent() {
   );
 }
 
+const buildingDetails: Record<
+  string,
+  { title: string; category: string; description: string; tier?: number; requirement?: "energy" }
+> = {
+  conveyor: {
+    title: "Conveyor Belt",
+    category: "Logistics",
+    description:
+      "Transports Sand and other solid elements. Hold Alt to reverse direction when building.",
+  },
+  "conveyor-mk2": {
+    title: "Conveyor Mk.2",
+    category: "Logistics",
+    description: "High-speed conveyor belt transporting elements at 2x velocity.",
+    tier: 2,
+  },
+  launcher: {
+    title: "Launcher",
+    category: "Logistics",
+    description: "Launches elements across gaps or over obstacles with calibrated trajectory.",
+    tier: 3,
+  },
+  drill: {
+    title: "Drill",
+    category: "Excavation",
+    description: "Automated high-frequency drill head. Consumes electrical energy.",
+    requirement: "energy",
+    tier: 1,
+  },
+  rocket: {
+    title: "Rocket Launcher",
+    category: "Excavation",
+    description: "Fires explosive excavation rockets to blast bedrock and extract minerals.",
+    requirement: "energy",
+    tier: 3,
+  },
+  synthesizer: {
+    title: "Synthesizer",
+    category: "Production",
+    description: "Fabricates complex structural compounds. Consumes electrical power.",
+    requirement: "energy",
+    tier: 4,
+  },
+};
+
+const navSubTabsByMode: Record<
+  string,
+  Array<{ id: string; label: string; badge?: React.ReactNode }>
+> = {
+  toolbox: [
+    { id: "items", label: "Items" },
+    { id: "stratacores", label: "Stratacores" },
+  ],
+  building: [
+    { id: "structures", label: "Structures" },
+    { id: "blueprints", label: "Blueprints", badge: <Badge tone="accent">v2</Badge> },
+  ],
+  research: [
+    { id: "technologies", label: "Technologies" },
+    { id: "milestones", label: "Milestones" },
+  ],
+  upgrades: [
+    { id: "player", label: "Player" },
+    { id: "drones", label: "Drones" },
+    { id: "factory", label: "Factory" },
+  ],
+};
+
 export function ComponentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -300,12 +373,16 @@ export function ComponentsPage() {
   const [selectedItem, setSelectedItem] = useState("sand");
   const [activeTab, setActiveTab] = useState("blueprints");
   const [activeBuildTab, setActiveBuildTab] = useState("structures");
+  const [activeNavMode, setActiveNavMode] = useState("building");
+  const [activeNavSubTab, setActiveNavSubTab] = useState("structures");
   const [sliderVolume, setSliderVolume] = useState(75);
   const [sliderFov, setSliderFov] = useState(90);
   const [query, setQuery] = useState("");
   const [matter, setMatter] = useState("all");
   const [activeCategory, setActiveCategory] = useState("logistics");
   const [selectedBuilding, setSelectedBuilding] = useState("conveyor");
+  const [activeModeTab, setActiveModeTab] = useState("building");
+  const [disableDragDrop, setDisableDragDrop] = useState(false);
   const [pickedColor, setPickedColor] = useState<string | null>("#ff8000");
   const [selectedSave, setSelectedSave] = useState("exit");
   const [loadingOverlayBusy, setLoadingOverlayBusy] = useState(false);
@@ -538,26 +615,92 @@ export function ComponentsPage() {
       <ShowcaseSection
         id="tabs"
         title="Navigation tabs"
-        description="Native underline tab bar matching game category and modal navigation."
+        description="Multi-tier navigation hierarchy: primary chamfered mode tabs stacked directly above secondary underline view tabs."
       >
-        <Panel className="p-7 space-y-6">
-          <Tabs
-            value={activeBuildTab}
-            onChange={setActiveBuildTab}
-            items={[
-              { id: "structures", label: "Structures" },
-              { id: "blueprints", label: "Blueprints", badge: <Badge tone="accent">v2</Badge> },
-              { id: "settings", label: "Settings" },
-              { id: "mods", label: "Mods", disabled: true },
-            ]}
-          />
-          <div className="rounded border border-slate-800 bg-slate-950/60 p-5 font-mono text-xs text-slate-400">
-            Active tab panel:{" "}
-            <span className="font-semibold text-yellow-300">{activeBuildTab}</span>
-            <p className="mt-2 text-[11px] text-slate-500">
-              Tabs feature a high-contrast yellow active underline (#ffe700), subtle base border
-              line, and keyboard focus states.
-            </p>
+        <Panel className="p-7">
+          <div className="space-y-6">
+            <ShowcaseSubgroup
+              title="Multi-Tier Navigation (Mode Tabs + Secondary Underline Tabs)"
+              description="Replicates native game dialog headers where 192px chamfered mode tabs control primary system modes, and compact underline tabs switch secondary views directly beneath."
+            >
+              <div className="space-y-4 pt-2">
+                {/* Tier 1: Primary Mode Tabs */}
+                <div className="overflow-x-auto pb-1">
+                  <ModeTabs
+                    value={activeNavMode}
+                    onChange={(mode) => {
+                      setActiveNavMode(mode);
+                      const firstSub = navSubTabsByMode[mode]?.[0]?.id;
+                      if (firstSub) setActiveNavSubTab(firstSub);
+                    }}
+                  >
+                    <ModeTab id="toolbox" hotkey="Tab">
+                      Toolbox
+                    </ModeTab>
+                    <ModeTab id="building" hotkey="Q">
+                      Building
+                    </ModeTab>
+                    <ModeTab id="research" hotkey="T">
+                      Research
+                    </ModeTab>
+                    <ModeTab id="upgrades" hotkey="U">
+                      Upgrades
+                    </ModeTab>
+                  </ModeTabs>
+                </div>
+
+                {/* Tier 2: Secondary Underline Tabs */}
+                <div className="overflow-x-auto">
+                  <Tabs
+                    value={activeNavSubTab}
+                    onChange={setActiveNavSubTab}
+                    items={navSubTabsByMode[activeNavMode] ?? []}
+                  />
+                </div>
+
+                {/* Breadcrumb & State Info */}
+                <div className="rounded border border-slate-800 bg-slate-950/60 p-5 font-mono text-xs text-slate-400">
+                  Active navigation hierarchy:{" "}
+                  <span className="font-semibold text-yellow-300 capitalize">{activeNavMode}</span>
+                  <span className="mx-2 text-slate-600">▸</span>
+                  <span className="font-semibold text-yellow-300 capitalize">
+                    {activeNavSubTab}
+                  </span>
+                  <p className="mt-2 text-[11px] text-slate-500">
+                    Switching primary mode tabs dynamically updates the available secondary view
+                    tabs beneath, mirroring the in-game Toolbox and Building modal headers.
+                  </p>
+                </div>
+              </div>
+            </ShowcaseSubgroup>
+
+            <Divider className="my-6" />
+
+            <ShowcaseSubgroup
+              title="Standalone Underline Tabs"
+              description="Independent underline tab bar with badge support and disabled states."
+            >
+              <div className="space-y-4 pt-2">
+                <Tabs
+                  value={activeBuildTab}
+                  onChange={setActiveBuildTab}
+                  items={[
+                    { id: "structures", label: "Structures" },
+                    {
+                      id: "blueprints",
+                      label: "Blueprints",
+                      badge: <Badge tone="accent">v2</Badge>,
+                    },
+                    { id: "settings", label: "Settings" },
+                    { id: "mods", label: "Mods", disabled: true },
+                  ]}
+                />
+                <div className="rounded border border-slate-800 bg-slate-950/40 px-4 py-3 font-mono text-xs text-slate-400">
+                  Active tab:{" "}
+                  <span className="font-semibold text-yellow-300">{activeBuildTab}</span>
+                </div>
+              </div>
+            </ShowcaseSubgroup>
           </div>
         </Panel>
       </ShowcaseSection>
@@ -786,100 +929,188 @@ export function ComponentsPage() {
           {/* Building Menu / Category split */}
           <Panel className="p-6">
             <ShowcaseSubgroup
-              title="Building Menu Layout (Category List & Structure Slots)"
-              description="Native building menu sidebar featuring hover-nudge animation paired with 64x64 structure slots."
+              title="Building Menu Layout (Mode Tabs, Categories, Slots, Inspector & Footer)"
+              description="Full native game toolbox and building layout: major mode tabs, category hover-nudge sidebar, structure slots with energy requirements and tier pips, detail inspector sidebar, and tip footer."
             >
-              <div className="flex flex-col gap-6 pt-2 md:flex-row">
-                <div className="w-full shrink-0 md:w-36">
-                  <CategoryList>
-                    <CategoryButton
-                      label="All"
-                      badge="32"
-                      selected={activeCategory === "all"}
-                      onClick={() => setActiveCategory("all")}
-                    />
-                    <CategoryButton
-                      label="Logistics"
-                      badge="6"
-                      selected={activeCategory === "logistics"}
-                      onClick={() => setActiveCategory("logistics")}
-                    />
-                    <CategoryButton
-                      label="Production"
-                      badge="12"
-                      selected={activeCategory === "production"}
-                      onClick={() => setActiveCategory("production")}
-                    />
-                    <CategoryButton
-                      label="Blocks"
-                      badge="8"
-                      selected={activeCategory === "blocks"}
-                      onClick={() => setActiveCategory("blocks")}
-                    />
-                    <CategoryButton
-                      label="Economy"
-                      badge="4"
-                      selected={activeCategory === "economy"}
-                      onClick={() => setActiveCategory("economy")}
-                    />
-                    <CategoryButton
-                      label="Fluids"
-                      badge="5"
-                      selected={activeCategory === "fluids"}
-                      onClick={() => setActiveCategory("fluids")}
-                    />
-                  </CategoryList>
+              <div className="space-y-6 pt-2">
+                {/* 1. Mode Tabs */}
+                <div className="overflow-x-auto pb-2">
+                  <ModeTabs value={activeModeTab} onChange={setActiveModeTab}>
+                    <ModeTab id="toolbox" hotkey="Tab">
+                      Toolbox
+                    </ModeTab>
+                    <ModeTab id="building" hotkey="Q">
+                      Building
+                    </ModeTab>
+                    <ModeTab id="research" hotkey="T">
+                      Research
+                    </ModeTab>
+                    <ModeTab id="upgrades" hotkey="U">
+                      Upgrades
+                    </ModeTab>
+                  </ModeTabs>
                 </div>
 
-                <div className="min-w-0 flex-1 space-y-3">
-                  <div className="border-b border-slate-800 pb-1 font-mono text-xs text-slate-400">
-                    Category: <span className="capitalize text-yellow-300">{activeCategory}</span>
+                {/* 2. Three-column body: Category sidebar, Grid of tiles, Detail Inspector */}
+                <div className="flex flex-col gap-6 lg:flex-row">
+                  <div className="w-full shrink-0 lg:w-36">
+                    <CategoryList>
+                      <CategoryButton
+                        label="All"
+                        badge="32"
+                        selected={activeCategory === "all"}
+                        onClick={() => setActiveCategory("all")}
+                      />
+                      <CategoryButton
+                        label="Logistics"
+                        badge="6"
+                        selected={activeCategory === "logistics"}
+                        onClick={() => setActiveCategory("logistics")}
+                      />
+                      <CategoryButton
+                        label="Production"
+                        badge="12"
+                        selected={activeCategory === "production"}
+                        onClick={() => setActiveCategory("production")}
+                      />
+                      <CategoryButton
+                        label="Blocks"
+                        badge="8"
+                        selected={activeCategory === "blocks"}
+                        onClick={() => setActiveCategory("blocks")}
+                      />
+                      <CategoryButton
+                        label="Economy"
+                        badge="4"
+                        selected={activeCategory === "economy"}
+                        onClick={() => setActiveCategory("economy")}
+                      />
+                      <CategoryButton
+                        label="Fluids"
+                        badge="5"
+                        selected={activeCategory === "fluids"}
+                        onClick={() => setActiveCategory("fluids")}
+                      />
+                    </CategoryList>
                   </div>
-                  <div className="flex flex-wrap gap-3">
-                    <BuildingTile
-                      label="Conveyor Belt"
-                      hotkey="1"
-                      selected={selectedBuilding === "conveyor"}
-                      onClick={() => setSelectedBuilding("conveyor")}
-                      icon={<span className="text-sm font-bold text-yellow-300">→</span>}
-                    />
-                    <BuildingTile
-                      label="Conveyor Mk.2"
-                      hotkey="2"
-                      badge="mk2"
-                      selected={selectedBuilding === "conveyor-mk2"}
-                      onClick={() => setSelectedBuilding("conveyor-mk2")}
-                      icon={<span className="text-sm font-bold text-yellow-300">⇉</span>}
-                    />
-                    <BuildingTile
-                      label="Launcher"
-                      hotkey="3"
-                      selected={selectedBuilding === "launcher"}
-                      onClick={() => setSelectedBuilding("launcher")}
-                      icon={<span className="text-sm font-bold text-yellow-300">▲</span>}
-                    />
-                    <BuildingTile
-                      label="Sorter"
-                      hotkey="4"
-                      selected={selectedBuilding === "sorter"}
-                      onClick={() => setSelectedBuilding("sorter")}
-                      icon={<span className="text-sm font-bold text-yellow-300">⇄</span>}
-                    />
-                    <BuildingTile
-                      label="Storage Bin"
-                      hotkey="5"
-                      selected={selectedBuilding === "storage"}
-                      onClick={() => setSelectedBuilding("storage")}
-                      icon={<span className="text-sm font-bold text-yellow-300">▤</span>}
-                    />
-                    <BuildingTile
-                      label="Kinetic Press"
-                      disabled
-                      badge="lock"
-                      icon={<span className="text-sm font-bold text-slate-500">⚙</span>}
-                    />
+
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div className="border-b border-slate-800 pb-1 font-mono text-xs text-slate-400">
+                      Category: <span className="capitalize text-yellow-300">{activeCategory}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <BuildingTile
+                        label="Conveyor Belt"
+                        hotkey="1"
+                        selected={selectedBuilding === "conveyor"}
+                        onClick={() => setSelectedBuilding("conveyor")}
+                        icon={<span className="text-sm font-bold text-yellow-300">→</span>}
+                      />
+                      <BuildingTile
+                        label="Conveyor Mk.2"
+                        hotkey="2"
+                        tier={2}
+                        selected={selectedBuilding === "conveyor-mk2"}
+                        onClick={() => setSelectedBuilding("conveyor-mk2")}
+                        icon={<span className="text-sm font-bold text-yellow-300">⇉</span>}
+                      />
+                      <BuildingTile
+                        label="Launcher"
+                        hotkey="3"
+                        tier={3}
+                        selected={selectedBuilding === "launcher"}
+                        onClick={() => setSelectedBuilding("launcher")}
+                        icon={<span className="text-sm font-bold text-yellow-300">▲</span>}
+                      />
+                      <BuildingTile
+                        label="Drill"
+                        hotkey="4"
+                        requirement="energy"
+                        tier={1}
+                        selected={selectedBuilding === "drill"}
+                        onClick={() => setSelectedBuilding("drill")}
+                        icon={<span className="text-sm font-bold text-yellow-300">▼</span>}
+                      />
+                      <BuildingTile
+                        label="Rocket Launcher"
+                        hotkey="5"
+                        requirement="energy"
+                        tier={3}
+                        selected={selectedBuilding === "rocket"}
+                        onClick={() => setSelectedBuilding("rocket")}
+                        icon={<span className="text-sm font-bold text-yellow-300">🚀</span>}
+                      />
+                      <BuildingTile
+                        label="Synthesizer"
+                        hotkey="6"
+                        requirement="energy"
+                        tier={4}
+                        selected={selectedBuilding === "synthesizer"}
+                        onClick={() => setSelectedBuilding("synthesizer")}
+                        icon={<span className="text-sm font-bold text-yellow-300">⌂</span>}
+                      />
+                      <BuildingTile
+                        label="Kinetic Press"
+                        disabled
+                        badge="lock"
+                        icon={<span className="text-sm font-bold text-slate-500">⚙</span>}
+                      />
+                    </div>
                   </div>
+
+                  {/* 3. Detail Inspector Sidebar */}
+                  <ItemDetailPanel
+                    title={buildingDetails[selectedBuilding]?.title}
+                    category={buildingDetails[selectedBuilding]?.category}
+                    description={buildingDetails[selectedBuilding]?.description}
+                    footer={
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <span>Tier {buildingDetails[selectedBuilding]?.tier ?? 1}</span>
+                          <TierPips
+                            current={buildingDetails[selectedBuilding]?.tier ?? 1}
+                            max={5}
+                          />
+                        </div>
+                        {buildingDetails[selectedBuilding]?.requirement === "energy" ? (
+                          <span className="flex items-center gap-1 text-yellow-300">
+                            ⚡ Powered
+                          </span>
+                        ) : (
+                          <span>Passive</span>
+                        )}
+                      </div>
+                    }
+                  />
                 </div>
+
+                {/* 4. Modal Footer Tip */}
+                <ModalFooterTip
+                  tip={
+                    <span>
+                      Tip: Drag and drop{" "}
+                      <em className="font-medium not-italic text-[#ffe700]">items</em> or{" "}
+                      <em className="font-medium not-italic text-[#ffe700]">blocks</em> to the
+                      hotbar for quick access.
+                    </span>
+                  }
+                  action={
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-300">Disable Drag &amp; Drop</span>
+                        <Checkbox
+                          checked={disableDragDrop}
+                          onChange={(e) => setDisableDragDrop(e.target.checked)}
+                        />
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        If the buttons feel{" "}
+                        <strong className="text-slate-200">sticky and hard to click</strong>, use
+                        this!
+                      </div>
+                    </div>
+                  }
+                />
               </div>
             </ShowcaseSubgroup>
           </Panel>

@@ -34,6 +34,13 @@ import {
   TableRow,
   TableCell,
   TableHeaderCell,
+  ModeTabs,
+  ModeTab,
+  TierPips,
+  EnergyRequirementIcon,
+  BuildingTile,
+  ItemDetailPanel,
+  ModalFooterTip,
 } from "../index";
 
 describe("@sandustry/ui component suite", () => {
@@ -504,5 +511,85 @@ describe("@sandustry/ui component suite", () => {
     expect(tableHtml).toContain("border-slate-800");
     expect(tableHtml).toContain("border-slate-900");
     expect(tableHtml).toContain("Conveyor");
+  });
+
+  test("ModeTabs and ModeTab render mode tabs with hotkey and active gradient", () => {
+    const tabsHtml = renderToStaticMarkup(
+      <ModeTabs value="toolbox">
+        <ModeTab id="toolbox" selected hotkey="Tab">
+          Toolbox
+        </ModeTab>
+        <ModeTab id="building" hotkey="Q">
+          Building
+        </ModeTab>
+      </ModeTabs>,
+    );
+    expect(tabsHtml).toContain('role="tablist"');
+    expect(tabsHtml).toContain('role="tab"');
+    expect(tabsHtml).toContain("Toolbox");
+    expect(tabsHtml).toContain("Building");
+    expect(tabsHtml).toContain("[Tab]");
+    expect(tabsHtml).toContain("[Q]");
+    expect(tabsHtml).toContain("border-[#ffe700]");
+    expect(tabsHtml).toContain("rounded-tr-md rounded-bl-md");
+  });
+
+  test("TierPips renders active glowing pips and inactive pips", () => {
+    const pipsHtml = renderToStaticMarkup(<TierPips current={3} max={5} />);
+    expect(pipsHtml).toContain('role="progressbar"');
+    expect(pipsHtml).toContain('aria-valuenow="3"');
+    expect(pipsHtml).toContain('aria-valuemax="5"');
+    expect(pipsHtml).toContain("bg-green-400");
+    expect(pipsHtml).toContain("bg-gray-700");
+  });
+
+  test("EnergyRequirementIcon renders svg with accessible label", () => {
+    const iconHtml = renderToStaticMarkup(<EnergyRequirementIcon />);
+    expect(iconHtml).toContain("<svg");
+    expect(iconHtml).toContain("Requires Energy");
+    expect(iconHtml).toContain('fill="#ffd700"');
+  });
+
+  test("BuildingTile renders energy requirement badge and tier pips", () => {
+    const tileHtml = renderToStaticMarkup(
+      <BuildingTile label="Rocket Launcher" requirement="energy" tier={3} />,
+    );
+    expect(tileHtml).toContain("Rocket Launcher");
+    expect(tileHtml).toContain("<svg");
+    expect(tileHtml).toContain("Requires Energy");
+    expect(tileHtml).toContain('role="progressbar"');
+    expect(tileHtml).toContain("bg-green-400");
+  });
+
+  test("ItemDetailPanel renders title, description, and footer", () => {
+    const emptyPanelHtml = renderToStaticMarkup(<ItemDetailPanel isEmpty />);
+    expect(emptyPanelHtml).toContain("Block");
+    expect(emptyPanelHtml).toContain("Hover over an item to see details.");
+
+    const activePanelHtml = renderToStaticMarkup(
+      <ItemDetailPanel
+        category="Logistics"
+        title="Conveyor Belt"
+        description="Transports Sand."
+        footer={<button type="button">Upgrade</button>}
+      />,
+    );
+    expect(activePanelHtml).toContain("Logistics");
+    expect(activePanelHtml).toContain("Conveyor Belt");
+    expect(activePanelHtml).toContain("Transports Sand.");
+    expect(activePanelHtml).toContain("Upgrade");
+    expect(activePanelHtml).toContain("border-slate-800");
+  });
+
+  test("ModalFooterTip renders tip and action slot", () => {
+    const footerHtml = renderToStaticMarkup(
+      <ModalFooterTip
+        tip={<span>Tip: Drag and drop items</span>}
+        action={<button type="button">Disable Drag</button>}
+      />,
+    );
+    expect(footerHtml).toContain("<footer");
+    expect(footerHtml).toContain("Tip: Drag and drop items");
+    expect(footerHtml).toContain("Disable Drag");
   });
 });

@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
+import { EnergyRequirementIcon, TierPips } from "./TierPips";
 
 export type BuildingTileProps = Omit<HTMLAttributes<HTMLButtonElement>, "children"> & {
   label: ReactNode;
@@ -8,6 +9,8 @@ export type BuildingTileProps = Omit<HTMLAttributes<HTMLButtonElement>, "childre
   disabled?: boolean;
   hotkey?: string;
   badge?: ReactNode;
+  requirement?: "energy" | ReactNode;
+  tier?: number | { current: number; max?: number };
   size?: "md" | "sm";
 };
 
@@ -18,6 +21,8 @@ export function BuildingTile({
   disabled = false,
   hotkey,
   badge,
+  requirement,
+  tier,
   size = "md",
   className = "",
   onClick,
@@ -75,6 +80,25 @@ export function BuildingTile({
             <span className="absolute right-1 top-0.5 font-mono text-[9px] text-slate-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {badge}
             </span>
+          ) : null}
+
+          {/* Requirement indicator (top-right) */}
+          {requirement === "energy" ? (
+            <EnergyRequirementIcon className="absolute -top-1 -right-1 z-10" />
+          ) : requirement ? (
+            <div className="absolute -top-1 -right-1 z-10 pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              {requirement}
+            </div>
+          ) : null}
+
+          {/* Tier pips bar (bottom-center) */}
+          {tier !== undefined ? (
+            <div className="absolute bottom-1 left-0 right-0 flex justify-center items-center pointer-events-none z-10">
+              <TierPips
+                current={typeof tier === "number" ? tier : tier.current}
+                max={typeof tier === "number" ? 5 : (tier.max ?? 5)}
+              />
+            </div>
           ) : null}
         </div>
       </div>

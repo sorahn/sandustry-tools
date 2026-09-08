@@ -1,0 +1,28 @@
+import type { HTMLAttributes, ReactNode } from "react";
+import cx from "clsx";
+
+export type ModalFooterTipProps = HTMLAttributes<HTMLDivElement> & {
+  tip?: ReactNode;
+  action?: ReactNode;
+};
+
+export function ModalFooterTip({
+  tip,
+  action,
+  className = "",
+  children,
+  ...props
+}: ModalFooterTipProps) {
+  return (
+    <footer
+      className={cx("flex items-end justify-between gap-8 mt-4 shrink-0 select-none", className)}
+      {...props}
+    >
+      <div className="flex flex-col justify-end">
+        {tip ? <div className="text-slate-300 text-sm italic">{tip}</div> : null}
+      </div>
+
+      <div className="flex flex-col items-end">{action || children}</div>
+    </footer>
+  );
+}
