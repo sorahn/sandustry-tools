@@ -1,6 +1,5 @@
 import type { PropsWithChildren, SelectHTMLAttributes } from "react";
 import cx from "clsx";
-import styles from "../styles/select.module.css";
 import type { ControlSize } from "../types";
 
 export type SelectProps = PropsWithChildren<
@@ -14,7 +13,7 @@ export function Select({ size, compact = false, className = "", children, ...pro
   const effectiveSize: ControlSize = size ?? (compact ? "small" : "default");
 
   return (
-    <span className={styles.selectWrap}>
+    <span className="relative inline-block after:pointer-events-none after:absolute after:top-1/2 after:right-[var(--sd-caret-inset)] after:h-[var(--sd-caret-size)] after:w-[var(--sd-caret-size)] after:-translate-y-[65%] after:rotate-45 after:border-r after:border-b after:border-slate-400 after:content-['']">
       <select
         className={cx(
           "appearance-none rounded-[var(--sd-radius)_0_var(--sd-radius)_0] border border-slate-700 bg-black/70 font-mono text-slate-200 focus:border-slate-500 focus:outline-2 focus:outline-yellow-300 focus:outline-offset-2",

@@ -1,6 +1,5 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
-import styles from "../styles/slider.module.css";
 import type { ControlSize } from "../types";
 
 export type SliderProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "size"> & {
@@ -64,7 +63,7 @@ export function Slider({
         max={max}
         value={value}
         data-size={size}
-        className={cx(styles.slider)}
+        className="sd-slider"
         {...props}
       />
     </div>

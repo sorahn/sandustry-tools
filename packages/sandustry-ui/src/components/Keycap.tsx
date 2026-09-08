@@ -6,13 +6,6 @@ export type KeycapProps = PropsWithChildren<HTMLAttributes<HTMLSpanElement>> & {
   size?: "sm" | "md" | "lg";
 };
 
-const keycap3dStyle = {
-  background: "linear-gradient(rgb(58, 58, 58) 0%, rgb(42, 42, 42) 100%)",
-  boxShadow:
-    "rgb(26, 26, 26) 0px 2px 0px, rgba(0, 0, 0, 0.4) 0px 3px 6px, rgba(255, 255, 255, 0.1) 0px 1px 0px inset",
-  textShadow: "rgba(255, 231, 0, 0.5) 0px 0px 8px",
-};
-
 export function Keycap({
   children,
   variant = "keycap",
@@ -61,12 +54,15 @@ export function Keycap({
     <span
       className={cx(
         "inline-flex select-none items-center justify-center rounded border border-[#444] font-bold text-[#ffe700]",
+        "bg-gradient-to-b from-[#3a3a3a] to-[#2a2a2a]",
+        "shadow-[0_2px_0_#1a1a1a,0_3px_6px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)]",
+        "[text-shadow:0_0_8px_rgba(255,231,0,0.5)]",
         size === "sm" && "h-5 min-w-[1.25rem] px-1 text-[10px]",
         size === "md" && "h-7 min-w-[1.75rem] px-2 text-xs",
         size === "lg" && "h-8 min-w-[2rem] px-2.5 text-sm",
         className,
       )}
-      style={{ ...keycap3dStyle, ...style }}
+      style={style}
       {...props}
     >
       {children}

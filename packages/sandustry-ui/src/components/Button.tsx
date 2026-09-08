@@ -1,23 +1,22 @@
 import type { ComponentPropsWithoutRef, ElementType, PropsWithChildren } from "react";
 import cx from "clsx";
-import styles from "../styles/button.module.css";
 import type { ControlSize } from "../types";
 
 export const buttonStyles = {
-  button: cx(
-    styles.effects,
-    "relative left-0 inline-flex min-h-9 items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border px-3.5 py-2 text-xs font-medium transition-[border-color,left] duration-1000 ease-in-out",
-  ),
-  effects: styles.effects,
+  button:
+    "sd-btn-effects relative left-0 inline-flex min-h-9 items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border px-3.5 py-2 text-xs font-medium transition-[border-color,left] duration-1000 ease-in-out",
+  effects: "sd-btn-effects",
   default: "border-slate-200 bg-black text-white",
   accent: "border-yellow-300/50 bg-yellow-300/10 text-yellow-300",
-  solid: cx(styles.solid, "border-[#ffe700] bg-[#ffe700] text-black font-bold"),
-  quiet: cx(styles.quiet, "border-transparent bg-transparent text-slate-400"),
+  solid:
+    "border-[#ffe700] bg-[#ffe700] text-black font-bold hover:bg-[#eed500] hover:border-[#eed500] hover:text-black focus-visible:bg-[#eed500] focus-visible:border-[#eed500] focus-visible:text-black hover:first-letter:text-black focus-visible:first-letter:text-black before:hidden",
+  quiet:
+    "border-transparent bg-transparent text-slate-400 hover:bg-slate-800/50 hover:text-white hover:border-transparent focus-visible:bg-slate-800/50 focus-visible:text-white focus-visible:border-transparent hover:first-letter:text-white focus-visible:first-letter:text-white before:hidden",
   danger: "border-red-400 bg-black text-white",
   compact: "h-[var(--sd-form-control-small-height)] px-2 py-0.5 text-[10px] leading-tight",
   small: "h-[var(--sd-form-control-small-height)] px-2 py-0.5 text-[10px] leading-tight",
   large: "h-[var(--sd-form-control-large-height)] px-5 py-2.5 text-sm leading-normal",
-  noShift: cx(styles.noShift ?? "noShift", "hover:!left-0 focus-visible:!left-0"),
+  noShift: "sd-btn-no-shift noShift hover:!left-0 focus-visible:!left-0",
 };
 
 type SharedButtonProps = {
@@ -72,7 +71,7 @@ export function Button<T extends ElementType = "button">({
     <Component
       {...(isNativeButton ? { type: buttonType } : {})}
       className={cx(
-        styles.effects,
+        "sd-btn-effects",
         "relative left-0 inline-flex items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border font-medium transition-[border-color,left] duration-1000 ease-in-out",
         sizeClassName,
         variantClassName,
