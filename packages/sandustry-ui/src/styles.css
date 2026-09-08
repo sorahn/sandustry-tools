@@ -3,6 +3,14 @@
 @import "@fontsource/play/400.css";
 @import "@fontsource/play/700.css";
 
+@theme {
+  --color-sd-yellow: #ffe700;
+  --color-sd-yellow-soft: rgb(255 231 0 / 0.1);
+  --spacing-sd-control-sm: 28px;
+  --spacing-sd-control: 38px;
+  --spacing-sd-control-lg: 44px;
+}
+
 :root {
   --font-sans: "Play", sans-serif;
   --sd-font-family: var(--font-sans);
@@ -220,3 +228,139 @@
     box-shadow: none;
   }
 }
+
+@utility sd-sheen {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    position: absolute;
+    top: -1rem;
+    right: 0;
+    width: 24px;
+    height: 80px;
+    background: rgb(255 255 255 / 0.1);
+    content: "";
+    pointer-events: none;
+    transform: translateX(48px) rotate(6deg);
+    transition: transform 700ms ease;
+  }
+
+  &:not(:disabled):hover::before,
+  &:not(:disabled):focus-visible::before {
+    transform: translateX(-240px) rotate(6deg);
+  }
+
+  &:disabled::before {
+    display: none;
+  }
+}
+
+@utility sd-cut-sm {
+  border-radius: 0 var(--sd-radius, 4px) 0 var(--sd-radius, 4px);
+}
+
+@utility sd-cut-md {
+  border-radius: 0 6px 0 6px;
+}
+
+@utility sd-cut {
+  border-radius: 0 var(--sd-button-radius, 8px) 0 var(--sd-button-radius, 8px);
+}
+
+@utility sd-cut-lg {
+  border-radius: 0 12px 0 12px;
+}
+
+@utility sd-cut-reverse {
+  border-radius: var(--sd-radius, 4px) 0 var(--sd-radius, 4px) 0;
+}
+
+@utility sd-keycap-3d {
+  background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+  box-shadow:
+    0 2px 0 #1a1a1a,
+    0 3px 6px rgb(0 0 0 / 0.4),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+  text-shadow: 0 0 8px rgb(255 231 0 / 0.5);
+}
+
+@utility sd-checkerboard {
+  background-image:
+    linear-gradient(45deg, rgb(68 68 68) 25%, transparent 25%),
+    linear-gradient(-45deg, rgb(68 68 68) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgb(68 68 68) 75%),
+    linear-gradient(-45deg, transparent 75%, rgb(68 68 68) 75%);
+  background-size: 8px 8px;
+  background-position: 0px 0px, 0px 4px, 4px -4px, -4px 0px;
+}
+
+@utility sd-select-caret {
+  position: relative;
+  display: inline-block;
+
+  &::after {
+    position: absolute;
+    top: 50%;
+    right: var(--sd-caret-inset, 9px);
+    width: var(--sd-caret-size, 6px);
+    height: var(--sd-caret-size, 6px);
+    border-right: 1px solid var(--color-slate-400, #94a3b8);
+    border-bottom: 1px solid var(--color-slate-400, #94a3b8);
+    content: "";
+    pointer-events: none;
+    transform: translateY(-65%) rotate(45deg);
+  }
+}
+
+@utility sd-no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility animate-sd-progress-fade-in {
+  animation: sd-progress-item-fade-in 0.5s ease-out forwards;
+}
+
+@utility animate-sd-progress-pulse {
+  animation: sd-progress-marker-pulse 2s ease-in-out infinite;
+}
+
+@utility animate-sd-progress-slide {
+  animation: sd-progress-marker-slide 1.5s ease-in-out infinite;
+}
+
+@utility pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+@utility sd-glow-yellow {
+  box-shadow: 0 0 10px rgb(255 231 0 / 0.35);
+}
+
+@utility sd-text-glow-yellow {
+  text-shadow: 0 0 8px rgb(255 231 0 / 0.5);
+}
+
+@utility sd-drop-shadow {
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.9));
+}
+
+@utility sd-control-sm {
+  height: var(--sd-form-control-small-height, 28px);
+}
+
+@utility sd-control {
+  height: var(--sd-form-control-height, 38px);
+}
+
+@utility sd-control-lg {
+  height: var(--sd-form-control-large-height, 44px);
+}
+

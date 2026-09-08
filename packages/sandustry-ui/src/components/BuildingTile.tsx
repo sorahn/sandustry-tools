@@ -51,7 +51,7 @@ export function BuildingTile({
             "rounded-tr-md rounded-bl-md active:brightness-125",
             isSm ? "h-14 w-14" : "h-16 w-16",
             selected
-              ? "border-[#ffe700] shadow-[0_0_10px_rgba(255,231,0,0.35)]"
+              ? "border-[#ffe700] sd-glow-yellow"
               : "border-slate-200/25 hover:border-slate-200/60",
           )}
           style={{
@@ -71,13 +71,13 @@ export function BuildingTile({
 
           {/* Optional corner hotkey or badge */}
           {hotkey ? (
-            <span className="absolute left-1 top-0.5 font-mono text-[9px] font-bold text-yellow-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            <span className="absolute left-1 top-0.5 font-mono text-[9px] font-bold text-yellow-300 sd-drop-shadow">
               {hotkey}
             </span>
           ) : null}
 
           {badge ? (
-            <span className="absolute right-1 top-0.5 font-mono text-[9px] text-slate-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            <span className="absolute right-1 top-0.5 font-mono text-[9px] text-slate-300 sd-drop-shadow">
               {badge}
             </span>
           ) : null}

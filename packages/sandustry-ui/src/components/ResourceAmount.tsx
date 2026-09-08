@@ -25,7 +25,7 @@ export function CreditsIcon({ className = "h-3 w-3" }: { className?: string }) {
     <img
       src={CREDITS_SPRITE}
       alt="Credits"
-      className={cx("shrink-0 object-contain [image-rendering:pixelated]", className)}
+      className={cx("shrink-0 object-contain pixelated", className)}
       aria-hidden="true"
     />
   );
@@ -36,7 +36,7 @@ export function FluxiteIcon({ className = "h-3 w-3" }: { className?: string }) {
     <img
       src={FLUXITE_SPRITE}
       alt="Fluxite"
-      className={cx("shrink-0 object-contain [image-rendering:pixelated]", className)}
+      className={cx("shrink-0 object-contain pixelated", className)}
       aria-hidden="true"
     />
   );
@@ -47,7 +47,7 @@ export function ArtifactIcon({ className = "h-3 w-3" }: { className?: string }) 
     <img
       src={ARTIFACT_SPRITE}
       alt="Artifact"
-      className={cx("shrink-0 object-contain [image-rendering:pixelated]", className)}
+      className={cx("shrink-0 object-contain pixelated", className)}
       aria-hidden="true"
     />
   );

@@ -73,7 +73,7 @@ export function ModeTab({
       className={cx(
         "relative flex h-10 w-48 items-center justify-between overflow-hidden rounded-tr-md rounded-bl-md border px-3 text-sm font-medium tracking-wider shadow-md transition-all duration-200 select-none cursor-pointer",
         "active:scale-90",
-        "before:pointer-events-none before:absolute before:top-0 before:right-0 before:h-12 before:w-6 before:translate-x-12 before:rotate-6 before:bg-white before:opacity-10 before:duration-700 before:ease hover:before:-translate-x-56 focus-visible:before:-translate-x-56",
+        "sd-sheen",
         selected
           ? "border-[#ffe700] text-[#ffe700] bg-[linear-gradient(45deg,rgba(255,231,0,0.15),transparent)]"
           : "border-slate-500 bg-black/25 text-white hover:border-transparent hover:text-[#ffe700]",
@@ -86,7 +86,7 @@ export function ModeTab({
       {formattedHotkey ? (
         <span
           className={cx(
-            "ml-2 shrink-0 font-mono text-xs font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] transition-colors",
+            "ml-2 shrink-0 font-mono text-xs font-bold sd-drop-shadow transition-colors",
             selected ? "text-[#ffe700]" : "text-[#ffe700] group-hover:text-[#ffe700]",
           )}
         >

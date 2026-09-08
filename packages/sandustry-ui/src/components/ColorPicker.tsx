@@ -20,13 +20,6 @@ export const DEFAULT_PRESET_COLORS: readonly string[] = [
   "#000000",
 ];
 
-const checkerboardStyle = {
-  backgroundImage:
-    "linear-gradient(45deg, rgb(68, 68, 68) 25%, transparent 25%), linear-gradient(-45deg, rgb(68, 68, 68) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgb(68, 68, 68) 75%), linear-gradient(-45deg, transparent 75%, rgb(68, 68, 68) 75%)",
-  backgroundSize: "8px 8px",
-  backgroundPosition: "0px 0px, 0px 4px, 4px -4px, -4px 0px",
-};
-
 export type ColorPickerProps = Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
   value?: string | null;
   onChange?: (color: string | null) => void;
@@ -106,10 +99,9 @@ export function ColorPicker({
         >
           <div
             className={cx(
-              "h-5 w-5 rounded-sm border transition-all",
+              "h-5 w-5 rounded-sm border transition-all sd-checkerboard",
               isDefaultSelected ? "border-white shadow-[0_0_4px_#ffffff]" : "border-slate-500",
             )}
-            style={checkerboardStyle}
           />
           <span
             className={cx(
@@ -162,7 +154,7 @@ export function ColorPicker({
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               aria-label="Custom color picker"
             />
-            <span className="pointer-events-none font-mono text-[10px] text-white opacity-90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            <span className="pointer-events-none font-mono text-[10px] text-white opacity-90 sd-drop-shadow">
               {value && !isDefaultSelected ? value.toUpperCase() : "None"}
             </span>
           </div>

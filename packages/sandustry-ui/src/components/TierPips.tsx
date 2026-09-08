@@ -12,10 +12,7 @@ export function EnergyRequirementIcon({ className = "", ...props }: SVGProps<SVG
       paintOrder="stroke"
       aria-label="Requires Energy"
       role="img"
-      className={cx(
-        "w-[18px] h-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] pointer-events-none select-none",
-        className,
-      )}
+      className={cx("w-[18px] h-[18px] sd-drop-shadow pointer-events-none select-none", className)}
       {...props}
     >
       <title>Requires Energy</title>

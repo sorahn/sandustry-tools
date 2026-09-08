@@ -18,7 +18,7 @@ export function Keycap({
     return (
       <span
         className={cx(
-          "inline-flex select-none font-mono font-bold tracking-wider text-[#ffe700] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]",
+          "inline-flex select-none font-mono font-bold tracking-wider text-[#ffe700] sd-drop-shadow",
           size === "sm" && "text-[10px]",
           size === "md" && "text-xs",
           size === "lg" && "text-sm",
@@ -54,9 +54,7 @@ export function Keycap({
     <span
       className={cx(
         "inline-flex select-none items-center justify-center rounded border border-[#444] font-bold text-[#ffe700]",
-        "bg-gradient-to-b from-[#3a3a3a] to-[#2a2a2a]",
-        "shadow-[0_2px_0_#1a1a1a,0_3px_6px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)]",
-        "[text-shadow:0_0_8px_rgba(255,231,0,0.5)]",
+        "sd-keycap-3d",
         size === "sm" && "h-5 min-w-[1.25rem] px-1 text-[10px]",
         size === "md" && "h-7 min-w-[1.75rem] px-2 text-xs",
         size === "lg" && "h-8 min-w-[2rem] px-2.5 text-sm",

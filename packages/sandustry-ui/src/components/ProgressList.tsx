@@ -17,7 +17,7 @@ export function ProgressList({
       role={props.role ?? "list"}
       className={cx(
         "relative overflow-y-auto rounded border border-slate-200/20 bg-black/30 p-4 pr-5 text-left text-sm leading-[1.8] text-white/75",
-        "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "sd-no-scrollbar",
         className,
       )}
       style={{ ...props.style, height }}
@@ -46,8 +46,8 @@ export function ProgressListItem({
       {...props}
       role={props.role ?? "listitem"}
       className={cx(
-        "relative mb-2 pl-5 font-medium opacity-0 [animation:sd-progress-item-fade-in_0.5s_ease-out_forwards]",
-        variant === "active" && "text-[#ffe700] [text-shadow:0_0_10px_rgba(255,231,0,0.5)]",
+        "relative mb-2 pl-5 font-medium opacity-0 animate-sd-progress-fade-in",
+        variant === "active" && "text-[#ffe700] sd-text-glow-yellow",
         variant === "substep" && "mb-1 text-[13px] font-normal text-white/75",
         last && "mb-0",
         className,
@@ -59,10 +59,10 @@ export function ProgressListItem({
           "absolute left-0 w-4 text-center font-bold text-[#ffe700]",
           variant === "substep"
             ? last
-              ? "text-sm [animation:sd-progress-marker-slide_1.5s_ease-in-out_infinite]"
+              ? "text-sm animate-sd-progress-slide"
               : "text-sm"
-            : "text-base [animation:sd-progress-marker-pulse_2s_ease-in-out_infinite]",
-          variant === "active" && "[animation:none] [text-shadow:0_0_10px_rgba(255,231,0,0.5)]",
+            : "text-base animate-sd-progress-pulse",
+          variant === "active" && "[animation:none] sd-text-glow-yellow",
           variant === "substep" && !last && "before:content-['•']",
           variant === "substep" && last && "before:content-['→']",
           variant !== "substep" && "before:content-['▸']",
