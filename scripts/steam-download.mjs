@@ -6,13 +6,32 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const APP_ID = "2764460";
-const workshopId = process.argv[2];
 const install = process.env.INSTALL === "1";
 const steamcmd = process.env.STEAMCMD || "steamcmd";
 const steamcmdUser = process.env.STEAMCMD_USER || "sorahn";
 
-if (!/^\d+$/.test(workshopId ?? "")) {
-  console.error("Usage: make steamdl ID=<numeric-workshop-id> [INSTALL=1]");
+function parseWorkshopId(input) {
+  const value = input?.trim() ?? "";
+  if (/^\d+$/.test(value)) return value;
+
+  try {
+    const url = new URL(value);
+    if (
+      url.hostname !== "steamcommunity.com" ||
+      !/^\/sharedfiles\/filedetails\/?$/.test(url.pathname)
+    ) {
+      return null;
+    }
+    const id = url.searchParams.get("id") ?? "";
+    return /^\d+$/.test(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+const workshopId = parseWorkshopId(process.argv[2]);
+if (!workshopId) {
+  console.error("Usage: make steamdl ID=<workshop-id-or-url> [INSTALL=1]");
   process.exit(2);
 }
 

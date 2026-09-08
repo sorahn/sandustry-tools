@@ -60,10 +60,11 @@ updates that item; otherwise it creates a new item and records the ID SteamCMD
 writes back to the temporary VDF. Set `STEAMCMD=/path/to/steamcmd`,
 `STEAM_ACCOUNT=<account>`, or `CHANGE_NOTE="..."` to override the defaults.
 
-Download a Workshop mod by Published File ID with SteamCMD:
+Download a Workshop mod by Published File ID or copied Steam Workshop URL with SteamCMD:
 
 ```sh
 make steamdl ID=3783080659
+make steamdl ID='https://steamcommunity.com/sharedfiles/filedetails/?id=3790524223'
 make steamdl ID=3783080659 INSTALL=1
 ```
 
