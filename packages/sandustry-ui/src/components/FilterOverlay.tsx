@@ -1,8 +1,8 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
-
-export type FilterOverlayDirection = "up" | "down" | "left" | "right";
-export type FilterOverlayTone = "pass" | "block";
+import type { FilterOverlayDirection, FilterOverlayTone } from "../elements/filter-overlay";
+import "../elements/filter-overlay";
+export type { FilterOverlayDirection, FilterOverlayTone };
 
 export type FilterOverlayItem = {
   label: ReactNode;
@@ -76,18 +76,20 @@ export function FilterOverlay({
   ...props
 }: FilterOverlayProps) {
   return (
-    <button
-      {...props}
-      type="button"
-      className={cx(
-        "inline-flex h-[22px] items-center gap-1.5 whitespace-nowrap border bg-black/[.85] px-[5px] py-0.5 text-[10px] text-white",
-        status === "pass" ? "border-[#00ff47]" : "border-red-500",
-        className,
-      )}
-    >
-      <FilterOverlayEndpointView {...from} />
-      <span aria-hidden="true" className="h-3.5 w-px shrink-0 bg-white/20" />
-      <FilterOverlayEndpointView {...to} />
-    </button>
+    <sandustry-filter-overlay status={status} class="inline-flex">
+      <button
+        {...props}
+        type="button"
+        className={cx(
+          "inline-flex h-[22px] items-center gap-1.5 whitespace-nowrap border bg-black/[.85] px-[5px] py-0.5 text-[10px] text-white cursor-pointer",
+          status === "pass" ? "border-[#00ff47]" : "border-red-500",
+          className,
+        )}
+      >
+        <FilterOverlayEndpointView {...from} />
+        <span aria-hidden="true" className="h-3.5 w-px shrink-0 bg-white/20" />
+        <FilterOverlayEndpointView {...to} />
+      </button>
+    </sandustry-filter-overlay>
   );
 }

@@ -2,11 +2,14 @@ import { useId, useLayoutEffect, useRef, useState } from "react";
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import cx from "clsx";
+import type { PopoverSide } from "../elements/popover";
+import "../elements/popover";
+export type { PopoverSide };
 
 export type PopoverProps = Omit<PropsWithChildren<HTMLAttributes<HTMLDivElement>>, "content"> & {
   content: ReactNode;
   open?: boolean;
-  side?: "top" | "bottom" | "left" | "right";
+  side?: PopoverSide;
   onClose?: () => void;
 };
 
@@ -85,28 +88,30 @@ export function Popover({
   }, [open, side, onClose]);
 
   return (
-    <span ref={triggerRef} className="inline-flex">
-      {children}
-      {open && typeof document !== "undefined"
-        ? createPortal(
-            <div
-              {...props}
-              ref={popoverRef}
-              id={popoverId}
-              role="dialog"
-              className={cx(
-                "fixed z-50 min-w-48 rounded border border-slate-700 bg-black/90 p-2 text-white shadow-xl backdrop-blur-sm",
-                side === "top" && "-translate-y-full",
-                side === "left" && "-translate-x-full",
-                className,
-              )}
-              style={{ left: position.left, top: position.top, ...props.style }}
-            >
-              {content}
-            </div>,
-            document.body,
-          )
-        : null}
-    </span>
+    <sandustry-popover open={open ? "" : undefined} side={side} class="inline-flex">
+      <span ref={triggerRef} className="inline-flex">
+        {children}
+        {open && typeof document !== "undefined"
+          ? createPortal(
+              <div
+                {...props}
+                ref={popoverRef}
+                id={popoverId}
+                role="dialog"
+                className={cx(
+                  "fixed z-50 min-w-48 rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/95 p-2 text-[var(--sd-color-text,#e8eef5)] shadow-xl backdrop-blur-sm",
+                  side === "top" && "-translate-y-full",
+                  side === "left" && "-translate-x-full",
+                  className,
+                )}
+                style={{ left: position.left, top: position.top, ...props.style }}
+              >
+                {content}
+              </div>,
+              document.body,
+            )
+          : null}
+      </span>
+    </sandustry-popover>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState, type HTMLAttributes, type ReactNode } from "react"
 import cx from "clsx";
 import { Spinner } from "./Spinner";
 import type { ControlSize } from "../types";
+import "../elements/loading-overlay";
 
 export type LoadingOverlayProps = HTMLAttributes<HTMLDivElement> & {
   busy: boolean;
@@ -66,12 +67,14 @@ export function LoadingOverlay({
     ((props as Record<string, unknown>)["data-testid"] as string | undefined) ?? dataTestId;
 
   return (
-    <div
+    <sandustry-loading-overlay
+      busy={busy ? "" : undefined}
+      visible={visible ? "" : undefined}
       data-testid={testId}
       aria-live={ariaLive}
-      aria-busy={busy}
+      aria-busy={busy ? "true" : "false"}
       {...props}
-      className={cx(
+      class={cx(
         "absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity ease-out motion-reduce:transition-none",
         visible ? "opacity-100" : "pointer-events-none opacity-0",
         className,
@@ -83,15 +86,17 @@ export function LoadingOverlay({
     >
       <div
         className={cx(
-          "flex items-center gap-2.5 rounded-lg border border-slate-700/80 bg-slate-900/90 px-4 py-2.5 shadow-2xl backdrop-blur-md",
+          "flex items-center gap-2.5 rounded-lg border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-elevated,#2b2b2b)]/95 px-4 py-2.5 shadow-2xl backdrop-blur-md",
           cardClassName,
         )}
       >
         <Spinner size={spinnerSize} tone="accent" aria-hidden="true" />
         {displayMessage ? (
-          <span className="font-mono text-xs font-medium text-slate-200">{displayMessage}</span>
+          <span className="font-mono text-xs font-medium text-[var(--sd-color-text,#e8eef5)]">
+            {displayMessage}
+          </span>
         ) : null}
       </div>
-    </div>
+    </sandustry-loading-overlay>
   );
 }

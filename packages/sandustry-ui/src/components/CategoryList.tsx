@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/category-list";
 
 export type CategoryButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> & {
   label: ReactNode;
@@ -18,18 +19,25 @@ export function CategoryButton({
   ...props
 }: CategoryButtonProps) {
   return (
-    <div
-      className={cx("group w-full", disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer")}
+    <sandustry-category-button
+      selected={selected ? "" : undefined}
+      disabled={disabled ? true : undefined}
+      class={cx(
+        "group block w-full",
+        disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer",
+      )}
     >
       <button
         type="button"
         disabled={disabled}
         aria-pressed={selected}
         className={cx(
-          "relative left-0 flex w-full items-center justify-between overflow-hidden rounded px-3 py-2 text-left text-sm transition-all duration-200",
+          "relative left-0 flex w-full items-center justify-between overflow-hidden rounded px-3 py-2 text-left text-sm transition-all duration-200 cursor-pointer",
           !disabled &&
-            "group-hover:left-2 group-hover:duration-0 group-hover:bg-slate-800 group-hover:text-[#ffe700]",
-          selected ? "left-1 bg-slate-800 font-medium text-[#ffe700]" : "text-slate-200",
+            "group-hover:left-2 group-hover:duration-0 group-hover:bg-[var(--sd-color-surface-hover,#333333)] group-hover:text-[var(--sd-color-primary,#ffe700)]",
+          selected
+            ? "left-1 bg-[var(--sd-color-surface-elevated,#2b2b2b)] font-medium text-[var(--sd-color-primary,#ffe700)]"
+            : "text-[var(--sd-color-text-muted,#b6bcc1)]",
           className,
         )}
         {...props}
@@ -42,14 +50,16 @@ export function CategoryButton({
           <span
             className={cx(
               "ml-2 shrink-0 font-mono text-[11px]",
-              selected ? "text-yellow-300/80" : "text-slate-500 group-hover:text-yellow-300/80",
+              selected
+                ? "text-[var(--sd-color-primary,#ffe700)]"
+                : "text-[var(--sd-color-text-subtle,#808080)] group-hover:text-[var(--sd-color-primary,#ffe700)]",
             )}
           >
             {badge}
           </span>
         ) : null}
       </button>
-    </div>
+    </sandustry-category-button>
   );
 }
 
@@ -64,15 +74,16 @@ export function CategoryList({
   ...props
 }: CategoryListProps) {
   return (
-    <nav
-      className={cx(
+    <sandustry-category-list
+      {...props}
+      bordered={bordered ? "" : undefined}
+      class={cx(
         "flex flex-col gap-1 overflow-y-auto pr-2",
-        bordered && "border-r border-slate-800",
+        bordered && "border-r border-[var(--sd-color-border-subtle,#242424)]",
         className,
       )}
-      {...props}
     >
       {children}
-    </nav>
+    </sandustry-category-list>
   );
 }

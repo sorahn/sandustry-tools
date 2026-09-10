@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./elements": {
+      "types": "./src/elements/index.ts",
+      "import": "./src/elements/index.ts"
+    },
     "./styles.css": "./src/styles.css"
   },
   "scripts": {
@@ -17,7 +21,9 @@
   },
   "dependencies": {
     "@fontsource/play": "^5.3.0",
+    "@lit/react": "^1.0.8",
     "clsx": "^2.1.1",
+    "lit": "^3.3.3",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

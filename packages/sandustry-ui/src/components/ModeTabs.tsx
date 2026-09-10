@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/mode-tabs";
 
 export type ModeTabItem = {
   id: string;
@@ -23,7 +24,12 @@ export function ModeTabs({
   ...props
 }: ModeTabsProps) {
   return (
-    <div role="tablist" className={cx("flex items-center gap-2", className)} {...props}>
+    <sandustry-mode-tabs
+      {...props}
+      role="tablist"
+      value={value}
+      class={cx("flex items-center gap-2", className)}
+    >
       {items
         ? items.map((item) => (
             <ModeTab
@@ -37,7 +43,7 @@ export function ModeTabs({
             </ModeTab>
           ))
         : children}
-    </div>
+    </sandustry-mode-tabs>
   );
 }
 
@@ -64,35 +70,44 @@ export function ModeTab({
     : null;
 
   return (
-    <button
-      {...props}
-      type="button"
-      role="tab"
-      disabled={disabled}
-      aria-selected={selected}
-      className={cx(
-        "relative flex h-10 w-48 items-center justify-between overflow-hidden rounded-tr-md rounded-bl-md border px-3 text-sm font-medium tracking-wider shadow-md transition-all duration-200 select-none cursor-pointer",
-        "active:scale-90",
-        "sd-sheen",
-        selected
-          ? "border-[#ffe700] text-[#ffe700] bg-[linear-gradient(45deg,rgba(255,231,0,0.15),transparent)]"
-          : "border-slate-500 bg-black/25 text-white hover:border-transparent hover:text-[#ffe700]",
-        disabled &&
-          "cursor-not-allowed opacity-40 hover:border-slate-500 hover:text-white before:hidden active:scale-100",
-        className,
-      )}
+    <sandustry-mode-tab
+      selected={selected ? "" : undefined}
+      disabled={disabled ? true : undefined}
+      hotkey={formattedHotkey ?? undefined}
+      class="inline-block"
     >
-      <span className="truncate">{children}</span>
-      {formattedHotkey ? (
-        <span
-          className={cx(
-            "ml-2 shrink-0 font-mono text-xs font-bold sd-drop-shadow transition-colors",
-            selected ? "text-[#ffe700]" : "text-[#ffe700] group-hover:text-[#ffe700]",
-          )}
-        >
-          {formattedHotkey}
-        </span>
-      ) : null}
-    </button>
+      <button
+        {...props}
+        type="button"
+        role="tab"
+        disabled={disabled}
+        aria-selected={selected}
+        className={cx(
+          "relative flex h-10 w-48 items-center justify-between overflow-hidden rounded-tr-md rounded-bl-md border px-3 text-sm font-medium tracking-wider shadow-md transition-all duration-200 select-none cursor-pointer",
+          "active:scale-90",
+          "sd-sheen",
+          selected
+            ? "border-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary,#ffe700)] bg-[linear-gradient(45deg,var(--sd-color-primary-soft,rgba(255,231,0,0.15)),transparent)]"
+            : "border-[var(--sd-color-border-strong,#3d3d3d)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.25))] text-[var(--sd-color-text,#e8eef5)] hover:border-[var(--sd-color-primary,#ffe700)] hover:text-[var(--sd-color-primary,#ffe700)]",
+          disabled &&
+            "cursor-not-allowed opacity-40 hover:border-[var(--sd-color-border-strong,#3d3d3d)] hover:text-[var(--sd-color-text,#e8eef5)] before:hidden active:scale-100",
+          className,
+        )}
+      >
+        <span className="truncate">{children}</span>
+        {formattedHotkey ? (
+          <span
+            className={cx(
+              "ml-2 shrink-0 font-mono text-xs font-bold sd-drop-shadow transition-colors",
+              selected
+                ? "text-[var(--sd-color-primary,#ffe700)]"
+                : "text-[var(--sd-color-primary,#ffe700)] group-hover:text-[var(--sd-color-primary,#ffe700)]",
+            )}
+          >
+            {formattedHotkey}
+          </span>
+        ) : null}
+      </button>
+    </sandustry-mode-tab>
   );
 }

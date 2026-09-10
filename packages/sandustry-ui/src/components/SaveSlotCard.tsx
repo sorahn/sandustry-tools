@@ -1,6 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
 import { CurrencyRow } from "./ResourceAmount";
+import "../elements/save-slot-card";
 
 export type SaveSlotCardProps = Omit<HTMLAttributes<HTMLDivElement>, "title" | "onClick"> & {
   title: ReactNode;
@@ -38,7 +39,16 @@ export function SaveSlotCard({
   ...props
 }: SaveSlotCardProps) {
   return (
-    <div
+    <sandustry-save-slot-card
+      selected={selected ? "" : undefined}
+      class={cx(
+        "group relative rounded-lg border p-3.5 transition-all duration-150 select-none block",
+        onClick && "cursor-pointer",
+        selected
+          ? "border-[var(--sd-color-border-strong,#3d3d3d)] bg-[var(--sd-color-surface-elevated,#2b2b2b)] border-l-2 border-l-[var(--sd-color-primary,#ffe700)]"
+          : "border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.25))] hover:border-[var(--sd-color-border-hover,#4a4a4a)] hover:bg-[var(--sd-color-surface-hover,#333333)]",
+        className,
+      )}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
@@ -52,30 +62,22 @@ export function SaveSlotCard({
             }
           : undefined
       }
-      className={cx(
-        "group relative rounded-lg border p-3.5 transition-all duration-150 select-none",
-        onClick && "cursor-pointer",
-        selected
-          ? "border-slate-600 bg-slate-800/60 border-l-2 border-l-[#ffe700]"
-          : "border-slate-700/40 bg-slate-900/30 hover:border-slate-600/60 hover:bg-slate-800/40",
-        className,
-      )}
       {...props}
     >
       {/* Header: Title, Tag badge, and Timestamp */}
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-[13px] font-semibold text-white group-hover:text-yellow-300 transition-colors">
+          <span className="truncate text-[13px] font-semibold text-[var(--sd-color-text,#e8eef5)] group-hover:text-[var(--sd-color-primary,#ffe700)] transition-colors">
             {title}
           </span>
           {tag ? (
-            <span className="shrink-0 rounded bg-slate-700/60 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-300">
+            <span className="shrink-0 rounded bg-[var(--sd-color-surface-hover,#333333)] px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[var(--sd-color-text,#ffffff)]">
               {tag}
             </span>
           ) : null}
         </div>
         {timestamp ? (
-          <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-400">
+          <span className="shrink-0 font-mono text-[11px] tabular-nums text-[var(--sd-color-text-subtle,#808080)]">
             {timestamp}
           </span>
         ) : null}
@@ -84,7 +86,7 @@ export function SaveSlotCard({
       {/* Stats metadata row */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
         {level !== undefined ? (
-          <span className="inline-flex items-center gap-1 text-[#ffe700]">
+          <span className="inline-flex items-center gap-1 text-[var(--sd-color-primary,#ffe700)]">
             <svg
               viewBox="0 0 16 16"
               fill="currentColor"
@@ -97,14 +99,14 @@ export function SaveSlotCard({
                 clipRule="evenodd"
               />
             </svg>
-            <span className="font-mono text-slate-300">
+            <span className="font-mono text-[var(--sd-color-text-muted,#b6bcc1)]">
               {typeof level === "number" ? `Lv.${level}` : level}
             </span>
           </span>
         ) : null}
 
         {playtime ? (
-          <span className="inline-flex items-center gap-1 text-slate-400">
+          <span className="inline-flex items-center gap-1 text-[var(--sd-color-text-subtle,#808080)]">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -119,7 +121,7 @@ export function SaveSlotCard({
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <span className="font-mono text-slate-300">{playtime}</span>
+            <span className="font-mono text-[var(--sd-color-text-muted,#b6bcc1)]">{playtime}</span>
           </span>
         ) : null}
 
@@ -134,7 +136,9 @@ export function SaveSlotCard({
               <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
               <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
             </svg>
-            <span className="font-mono text-slate-300">{structures.toLocaleString()}</span>
+            <span className="font-mono text-[var(--sd-color-text-muted,#b6bcc1)]">
+              {structures.toLocaleString()}
+            </span>
           </span>
         ) : null}
 
@@ -166,7 +170,9 @@ export function SaveSlotCard({
                   clipRule="evenodd"
                 />
               </svg>
-              <span className="font-mono text-slate-300">{productionDisplay}</span>
+              <span className="font-mono text-[var(--sd-color-text-muted,#b6bcc1)]">
+                {productionDisplay}
+              </span>
             </span>
           );
         })()}
@@ -174,7 +180,7 @@ export function SaveSlotCard({
 
       {/* Currencies & Actions Footer */}
       {currencies || actions ? (
-        <div className="mt-2.5 flex items-center justify-between border-t border-slate-700/30 pt-2">
+        <div className="mt-2.5 flex items-center justify-between border-t border-[var(--sd-color-border-subtle,#242424)] pt-2">
           {currencies ? (
             <CurrencyRow
               credits={currencies.credits}
@@ -187,6 +193,6 @@ export function SaveSlotCard({
           {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
-    </div>
+    </sandustry-save-slot-card>
   );
 }

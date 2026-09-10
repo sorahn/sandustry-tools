@@ -1,5 +1,6 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/locked-state";
 
 export type LockedStateProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>> & {
   title?: ReactNode;
@@ -38,7 +39,7 @@ export function LockedState({
     <div
       aria-disabled="true"
       className={cx(
-        "flex items-center justify-center gap-2 py-2 text-slate-300",
+        "flex items-center justify-center gap-2 py-2 text-[var(--sd-color-text-muted,#94a3b8)]",
         !isBoxed && className,
       )}
     >
@@ -49,26 +50,27 @@ export function LockedState({
 
   if (isBoxed) {
     return (
-      <div
+      <sandustry-locked-state
         {...props}
-        className={cx(
-          "relative rounded-tr-lg rounded-bl-lg border border-dashed border-slate-600 p-4",
+        boxed=""
+        class={cx(
+          "relative rounded-tr-lg rounded-bl-lg border border-dashed border-[var(--sd-color-border-strong,#3d3d3d)] p-4 block",
           className,
         )}
       >
         {title ? (
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-slate-300">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-[var(--sd-color-text-muted,#b6bcc1)]">
             {title}
           </label>
         ) : null}
         {content}
-      </div>
+      </sandustry-locked-state>
     );
   }
 
   return (
-    <div {...props} className={className}>
+    <sandustry-locked-state {...props} class={cx("block", className)}>
       {content}
-    </div>
+    </sandustry-locked-state>
   );
 }

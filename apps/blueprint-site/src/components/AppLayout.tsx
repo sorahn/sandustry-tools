@@ -12,7 +12,7 @@ export function AppLayout() {
   if (visualCapture || embed) return <Outlet />;
 
   return (
-    <div className="flex min-h-screen flex-col bg-sd-950 text-slate-100">
+    <div className="flex min-h-screen flex-col bg-[var(--sd-color-bg,#181c20)] text-[var(--sd-color-text,#e8eef5)] transition-colors duration-200">
       <Header />
       <main className="site-shell mx-auto w-full flex-1 px-6 py-10">
         <Outlet />

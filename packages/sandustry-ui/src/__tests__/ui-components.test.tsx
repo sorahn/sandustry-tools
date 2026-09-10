@@ -36,22 +36,41 @@ import {
   TableHeaderCell,
   ModeTabs,
   ModeTab,
+  Tabs,
+  Tab,
+  CategoryList,
+  CategoryButton,
+  List,
+  ListItem,
+  ProgressList,
+  ProgressListItem,
+  SplitPane,
   TierPips,
   EnergyRequirementIcon,
   BuildingTile,
   ItemDetailPanel,
   ModalFooterTip,
+  Dialog,
+  Popover,
+  Tooltip,
+  TooltipSurface,
+  ColorPicker,
+  ElementPicker,
+  FilterOverlay,
+  ProgressBar,
+  Hotbar,
+  HotbarStepper,
 } from "../index";
 
 describe("@sandustry/ui component suite", () => {
   test("Button renders variants and polymorphic element", () => {
     const defaultHtml = renderToStaticMarkup(<Button>Click me</Button>);
-    expect(defaultHtml).toContain("<button");
+    expect(defaultHtml).toContain("<sandustry-button");
     expect(defaultHtml).toContain("Click me");
 
     const solidHtml = renderToStaticMarkup(<Button variant="solid">Solid Action</Button>);
     expect(solidHtml).toContain("Solid Action");
-    expect(solidHtml).toContain("border-[#ffe700]");
+    expect(solidHtml).toContain("border-[var(--sd-color-primary,#ffe700)]");
 
     const linkHtml = renderToStaticMarkup(
       <Button as="a" href="/test">
@@ -69,7 +88,7 @@ describe("@sandustry/ui component suite", () => {
 
     const successBadge = renderToStaticMarkup(<Badge tone="success">Active</Badge>);
     expect(successBadge).toContain("Active");
-    expect(successBadge).toContain("emerald");
+    expect(successBadge).toContain("var(--sd-color-success");
   });
 
   test("Keycap renders shortcut label", () => {
@@ -99,7 +118,7 @@ describe("@sandustry/ui component suite", () => {
 
   test("TextAction renders link and button semantics", () => {
     const buttonAction = renderToStaticMarkup(<TextAction>Reset</TextAction>);
-    expect(buttonAction).toContain("<button");
+    expect(buttonAction).toContain("<sandustry-text-action");
     expect(buttonAction).toContain("Reset");
 
     const linkAction = renderToStaticMarkup(
@@ -114,10 +133,12 @@ describe("@sandustry/ui component suite", () => {
 
   test("Batch 3 telemetry components render accurately", () => {
     const resourceHtml = renderToStaticMarkup(<ResourceAmount label="Iron" amount={1250} />);
+    expect(resourceHtml).toContain("<sandustry-resource-amount");
     expect(resourceHtml).toContain("Iron");
     expect(resourceHtml).toContain("1,250");
 
     const currencyHtml = renderToStaticMarkup(<CurrencyRow credits={50000} />);
+    expect(currencyHtml).toContain("<sandustry-currency-row");
     expect(currencyHtml).toContain("50,000");
 
     const saveSlotHtml = renderToStaticMarkup(
@@ -131,6 +152,7 @@ describe("@sandustry/ui component suite", () => {
 
   test("Toast and ToastContainer render alerts", () => {
     const toastHtml = renderToStaticMarkup(<Toast message="Operation succeeded" variant="hint" />);
+    expect(toastHtml).toContain("<sandustry-toast");
     expect(toastHtml).toContain("Operation succeeded");
 
     const containerHtml = renderToStaticMarkup(
@@ -138,6 +160,7 @@ describe("@sandustry/ui component suite", () => {
         <div>Toast Item</div>
       </ToastContainer>,
     );
+    expect(containerHtml).toContain("<sandustry-toast-container");
     expect(containerHtml).toContain("Toast Item");
     expect(containerHtml).toContain("top-4 right-4");
   });
@@ -165,6 +188,7 @@ describe("@sandustry/ui component suite", () => {
         <option value="1">1</option>
       </Select>,
     );
+    expect(smallHtml).toContain("<sandustry-select");
     expect(smallHtml).toContain("h-[var(--sd-form-control-small-height)]");
     expect(smallHtml).toContain("py-1");
     expect(smallHtml).not.toContain('size="');
@@ -260,16 +284,16 @@ describe("@sandustry/ui component suite", () => {
     expect(roundedBadge).not.toContain("rounded-tr-lg rounded-bl-lg");
 
     const amberBadge = renderToStaticMarkup(<Badge tone="amber">Solid</Badge>);
-    expect(amberBadge).toContain("amber-300");
+    expect(amberBadge).toContain("var(--sd-badge-amber-text");
 
     const blueBadge = renderToStaticMarkup(<Badge tone="blue">Liquid</Badge>);
-    expect(blueBadge).toContain("blue-300");
+    expect(blueBadge).toContain("var(--sd-badge-blue-text");
 
     const purpleBadge = renderToStaticMarkup(<Badge tone="purple">Gas</Badge>);
-    expect(purpleBadge).toContain("purple-300");
+    expect(purpleBadge).toContain("var(--sd-badge-purple-text");
 
     const neutralBadge = renderToStaticMarkup(<Badge tone="neutral">None</Badge>);
-    expect(neutralBadge).toContain("border-slate-800 bg-slate-900 text-slate-400");
+    expect(neutralBadge).toContain("var(--sd-color-border-subtle");
   });
 
   test("Spinner renders sizes, tones, and accessibility attributes", () => {
@@ -297,6 +321,7 @@ describe("@sandustry/ui component suite", () => {
     const busyOverlay = renderToStaticMarkup(
       <LoadingOverlay busy={true} message="Loading blueprint data…" dataTestId="test-overlay" />,
     );
+    expect(busyOverlay).toContain("<sandustry-loading-overlay");
     expect(busyOverlay).toContain('data-testid="test-overlay"');
     expect(busyOverlay).toContain('aria-live="polite"');
     expect(busyOverlay).toContain('aria-busy="true"');
@@ -377,6 +402,7 @@ describe("@sandustry/ui component suite", () => {
       </FileDropZone>,
     );
 
+    expect(dropzoneHtml).toContain("<sandustry-file-dropzone");
     expect(dropzoneHtml).toContain('accept=".save"');
     expect(dropzoneHtml).toContain('type="file"');
     expect(dropzoneHtml).toContain("Drop file here");
@@ -421,6 +447,7 @@ describe("@sandustry/ui component suite", () => {
         <div>Hidden body</div>
       </Collapsible>,
     );
+    expect(openHtml).toContain("<sandustry-collapsible");
     expect(openHtml).toContain('aria-expanded="true"');
     expect(openHtml).toContain("Details");
     expect(openHtml).toContain("Hidden body");
@@ -449,8 +476,8 @@ describe("@sandustry/ui component suite", () => {
   test("Alert renders tones, titles, and accessibility roles", () => {
     const warningAlert = renderToStaticMarkup(<Alert tone="warning">Caution message</Alert>);
     expect(warningAlert).toContain('role="alert"');
-    expect(warningAlert).toContain("border-amber-700/60");
-    expect(warningAlert).toContain("text-amber-200");
+    expect(warningAlert).toContain("var(--sd-color-warning-border");
+    expect(warningAlert).toContain("var(--sd-color-warning");
     expect(warningAlert).toContain("Caution message");
 
     const infoAlert = renderToStaticMarkup(
@@ -459,13 +486,13 @@ describe("@sandustry/ui component suite", () => {
       </Alert>,
     );
     expect(infoAlert).toContain('role="status"');
-    expect(infoAlert).toContain("border-blue-700/60");
+    expect(infoAlert).toContain("var(--sd-color-info-border");
     expect(infoAlert).toContain("Note");
     expect(infoAlert).toContain("Informational text");
 
     const dangerAlert = renderToStaticMarkup(<Alert tone="danger">Error occurred</Alert>);
     expect(dangerAlert).toContain('role="alert"');
-    expect(dangerAlert).toContain("border-red-700/60");
+    expect(dangerAlert).toContain("var(--sd-color-danger-border");
   });
 
   test("PropertyTile renders label, value, and subValue", () => {
@@ -475,7 +502,7 @@ describe("@sandustry/ui component suite", () => {
     expect(tileHtml).toContain("Position");
     expect(tileHtml).toContain("12, 34");
     expect(tileHtml).toContain("Top-left");
-    expect(tileHtml).toContain("bg-slate-950/50");
+    expect(tileHtml).toContain("border-[var(--sd-color-border-subtle,#242424)]");
 
     const customTileHtml = renderToStaticMarkup(
       <PropertyTile label="Custom">
@@ -503,13 +530,13 @@ describe("@sandustry/ui component suite", () => {
         </TableBody>
       </Table>,
     );
+    expect(tableHtml).toContain("<sandustry-table");
     expect(tableHtml).toContain("<table");
     expect(tableHtml).toContain("<thead");
     expect(tableHtml).toContain("<tbody");
     expect(tableHtml).toContain("<th");
     expect(tableHtml).toContain("<td");
-    expect(tableHtml).toContain("border-slate-800");
-    expect(tableHtml).toContain("border-slate-900");
+    expect(tableHtml).toContain("border-[var(--sd-color-border-subtle,#242424)]");
     expect(tableHtml).toContain("Conveyor");
   });
 
@@ -524,13 +551,15 @@ describe("@sandustry/ui component suite", () => {
         </ModeTab>
       </ModeTabs>,
     );
+    expect(tabsHtml).toContain("<sandustry-mode-tabs");
+    expect(tabsHtml).toContain("<sandustry-mode-tab");
     expect(tabsHtml).toContain('role="tablist"');
     expect(tabsHtml).toContain('role="tab"');
     expect(tabsHtml).toContain("Toolbox");
     expect(tabsHtml).toContain("Building");
     expect(tabsHtml).toContain("[Tab]");
     expect(tabsHtml).toContain("[Q]");
-    expect(tabsHtml).toContain("border-[#ffe700]");
+    expect(tabsHtml).toContain("border-[var(--sd-color-primary,#ffe700)]");
     expect(tabsHtml).toContain("rounded-tr-md rounded-bl-md");
   });
 
@@ -539,8 +568,8 @@ describe("@sandustry/ui component suite", () => {
     expect(pipsHtml).toContain('role="progressbar"');
     expect(pipsHtml).toContain('aria-valuenow="3"');
     expect(pipsHtml).toContain('aria-valuemax="5"');
-    expect(pipsHtml).toContain("bg-green-400");
-    expect(pipsHtml).toContain("bg-gray-700");
+    expect(pipsHtml).toContain("bg-[var(--sd-color-success,#34d399)]");
+    expect(pipsHtml).toContain("bg-[var(--sd-color-surface-hover,#333333)]");
   });
 
   test("EnergyRequirementIcon renders svg with accessible label", () => {
@@ -558,7 +587,7 @@ describe("@sandustry/ui component suite", () => {
     expect(tileHtml).toContain("<svg");
     expect(tileHtml).toContain("Requires Energy");
     expect(tileHtml).toContain('role="progressbar"');
-    expect(tileHtml).toContain("bg-green-400");
+    expect(tileHtml).toContain("bg-[var(--sd-color-success,#34d399)]");
   });
 
   test("ItemDetailPanel renders title, description, and footer", () => {
@@ -578,7 +607,7 @@ describe("@sandustry/ui component suite", () => {
     expect(activePanelHtml).toContain("Conveyor Belt");
     expect(activePanelHtml).toContain("Transports Sand.");
     expect(activePanelHtml).toContain("Upgrade");
-    expect(activePanelHtml).toContain("border-slate-800");
+    expect(activePanelHtml).toContain("border-[var(--sd-color-border-subtle,#242424)]");
   });
 
   test("ModalFooterTip renders tip and action slot", () => {
@@ -588,8 +617,207 @@ describe("@sandustry/ui component suite", () => {
         action={<button type="button">Disable Drag</button>}
       />,
     );
+    expect(footerHtml).toContain("<sandustry-modal-footer-tip");
     expect(footerHtml).toContain("<footer");
     expect(footerHtml).toContain("Tip: Drag and drop items");
     expect(footerHtml).toContain("Disable Drag");
+  });
+
+  test("Tabs and Tab render custom elements with active selection and items", () => {
+    const tabsHtml = renderToStaticMarkup(
+      <Tabs
+        value="tab2"
+        items={[
+          { id: "tab1", label: "Overview" },
+          { id: "tab2", label: "Settings", badge: "2" },
+        ]}
+      />,
+    );
+    expect(tabsHtml).toContain("<sandustry-tabs");
+    expect(tabsHtml).toContain("<sandustry-tab");
+    expect(tabsHtml).toContain('role="tablist"');
+    expect(tabsHtml).toContain('role="tab"');
+    expect(tabsHtml).toContain("Overview");
+    expect(tabsHtml).toContain("Settings");
+    expect(tabsHtml).toContain("border-[var(--sd-color-primary,#ffe700)]");
+
+    const directTabHtml = renderToStaticMarkup(<Tab selected>Manual Tab</Tab>);
+    expect(directTabHtml).toContain("<sandustry-tab");
+    expect(directTabHtml).toContain("Manual Tab");
+    expect(directTabHtml).toContain("border-[var(--sd-color-primary,#ffe700)]");
+  });
+
+  test("CategoryList and CategoryButton render custom elements with selection and badge", () => {
+    const listHtml = renderToStaticMarkup(
+      <CategoryList bordered>
+        <CategoryButton label="Logistics" badge="12" selected />
+        <CategoryButton label="Production" disabled />
+      </CategoryList>,
+    );
+    expect(listHtml).toContain("<sandustry-category-list");
+    expect(listHtml).toContain("<sandustry-category-button");
+    expect(listHtml).toContain("Logistics");
+    expect(listHtml).toContain("Production");
+    expect(listHtml).toContain("12");
+    expect(listHtml).toContain("text-[var(--sd-color-primary,#ffe700)]");
+  });
+
+  test("List and ListItem render custom elements and variants", () => {
+    const listHtml = renderToStaticMarkup(
+      <List variant="panel">
+        <ListItem label="Iron Ingot" description="Basic resource" selected />
+        <ListItem label="Copper Wire" variant="compact" />
+      </List>,
+    );
+    expect(listHtml).toContain("<sandustry-list");
+    expect(listHtml).toContain("<sandustry-list-item");
+    expect(listHtml).toContain('role="list"');
+    expect(listHtml).toContain("Iron Ingot");
+    expect(listHtml).toContain("Basic resource");
+    expect(listHtml).toContain("border-l-[var(--sd-color-primary,#ffe700)]");
+  });
+
+  test("ProgressList and ProgressListItem render custom elements and variants", () => {
+    const progressHtml = renderToStaticMarkup(
+      <ProgressList height="150px">
+        <ProgressListItem variant="active">Analyzing world data…</ProgressListItem>
+        <ProgressListItem variant="substep" last>
+          Extracting entities
+        </ProgressListItem>
+      </ProgressList>,
+    );
+    expect(progressHtml).toContain("<sandustry-progress-list");
+    expect(progressHtml).toContain("<sandustry-progress-list-item");
+    expect(progressHtml).toContain('role="list"');
+    expect(progressHtml).toContain('role="listitem"');
+    expect(progressHtml).toContain("Analyzing world data…");
+    expect(progressHtml).toContain("Extracting entities");
+    expect(progressHtml).toContain("sd-text-glow-yellow");
+  });
+
+  test("SplitPane renders custom element with sidebar and content slots", () => {
+    const splitHtml = renderToStaticMarkup(
+      <SplitPane sidebar={<div>Sidebar Content</div>} sidebarPosition="start">
+        <div>Main Content</div>
+      </SplitPane>,
+    );
+    expect(splitHtml).toContain("<sandustry-split-pane");
+    expect(splitHtml).toContain("<aside");
+    expect(splitHtml).toContain("<main");
+    expect(splitHtml).toContain("Sidebar Content");
+    expect(splitHtml).toContain("Main Content");
+  });
+
+  test("Dialog renders custom element when open and null when closed", () => {
+    const closedHtml = renderToStaticMarkup(
+      <Dialog open={false} title="Modal">
+        Content
+      </Dialog>,
+    );
+    expect(closedHtml).toBe("");
+
+    const openHtml = renderToStaticMarkup(
+      <Dialog open={true} title="Modal Title" footer={<button>Save</button>}>
+        <div>Dialog Body</div>
+      </Dialog>,
+    );
+    expect(openHtml).toContain("<sandustry-dialog");
+    expect(openHtml).toContain('role="dialog"');
+    expect(openHtml).toContain("Modal Title");
+    expect(openHtml).toContain("Dialog Body");
+    expect(openHtml).toContain("Save");
+  });
+
+  test("Popover renders custom element and trigger", () => {
+    const popoverHtml = renderToStaticMarkup(
+      <Popover content={<div>Popup Menu</div>} open={false}>
+        <button>Open Menu</button>
+      </Popover>,
+    );
+    expect(popoverHtml).toContain("<sandustry-popover");
+    expect(popoverHtml).toContain("Open Menu");
+  });
+
+  test("Tooltip and TooltipSurface render custom elements", () => {
+    const tooltipHtml = renderToStaticMarkup(
+      <Tooltip content="Help info">
+        <button>Hover me</button>
+      </Tooltip>,
+    );
+    expect(tooltipHtml).toContain("<sandustry-tooltip");
+    expect(tooltipHtml).toContain("Hover me");
+
+    const surfaceHtml = renderToStaticMarkup(<TooltipSurface>Direct surface</TooltipSurface>);
+    expect(surfaceHtml).toContain("<sandustry-tooltip-surface");
+    expect(surfaceHtml).toContain("Direct surface");
+    expect(surfaceHtml).toContain('role="tooltip"');
+  });
+
+  test("ColorPicker renders custom element with swatches and header", () => {
+    const pickerHtml = renderToStaticMarkup(<ColorPicker value="#ff0000" title="Custom Tone" />);
+    expect(pickerHtml).toContain("<sandustry-color-picker");
+    expect(pickerHtml).toContain('role="dialog"');
+    expect(pickerHtml).toContain("Custom Tone");
+    expect(pickerHtml).toContain("Default");
+  });
+
+  test("ElementPicker renders custom element and search input", () => {
+    const pickerHtml = renderToStaticMarkup(
+      <ElementPicker
+        items={[
+          { id: "iron", label: "Iron Ore", matter: "solid" },
+          { id: "water", label: "Water", matter: "liquid" },
+        ]}
+        value="iron"
+      />,
+    );
+    expect(pickerHtml).toContain("<sandustry-element-picker");
+    expect(pickerHtml).toContain("Iron Ore");
+    expect(pickerHtml).toContain("Water");
+  });
+
+  test("FilterOverlay renders custom element with directional endpoints", () => {
+    const filterHtml = renderToStaticMarkup(
+      <FilterOverlay
+        from={{ items: [{ label: "Sand" }], direction: "right" }}
+        to={{ items: [{ label: "Glass" }], direction: "right" }}
+        status="pass"
+      />,
+    );
+    expect(filterHtml).toContain("<sandustry-filter-overlay");
+    expect(filterHtml).toContain("Sand");
+    expect(filterHtml).toContain("Glass");
+    expect(filterHtml).toContain("border-[#00ff47]");
+  });
+
+  test("ProgressBar renders custom element, accessibility attributes, and tones", () => {
+    const progressHtml = renderToStaticMarkup(
+      <ProgressBar value={75} max={100} tone="accent" label="Power" />,
+    );
+    expect(progressHtml).toContain("<sandustry-progress-bar");
+    expect(progressHtml).toContain('role="progressbar"');
+    expect(progressHtml).toContain('aria-valuenow="75"');
+    expect(progressHtml).toContain('aria-valuemax="100"');
+    expect(progressHtml).toContain("bg-[var(--sd-color-primary,#ffe700)]");
+  });
+
+  test("Hotbar and HotbarStepper render custom elements with key shortcuts", () => {
+    const hotbarHtml = renderToStaticMarkup(
+      <Hotbar
+        slots={[
+          { id: "slot1", label: "Conveyor" },
+          { id: "slot2", label: "Drill" },
+        ]}
+        selectedId="slot1"
+      />,
+    );
+    expect(hotbarHtml).toContain("<sandustry-hotbar");
+    expect(hotbarHtml).toContain('role="toolbar"');
+    expect(hotbarHtml).toContain("border-[var(--sd-color-primary,#ffe700)]");
+
+    const stepperHtml = renderToStaticMarkup(<HotbarStepper />);
+    expect(stepperHtml).toContain("<sandustry-hotbar-stepper");
+    expect(stepperHtml).toContain("▲");
+    expect(stepperHtml).toContain("▼");
   });
 });
