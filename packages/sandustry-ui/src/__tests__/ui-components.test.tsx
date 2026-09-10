@@ -46,7 +46,7 @@ import {
 describe("@sandustry/ui component suite", () => {
   test("Button renders variants and polymorphic element", () => {
     const defaultHtml = renderToStaticMarkup(<Button>Click me</Button>);
-    expect(defaultHtml).toContain("<button");
+    expect(defaultHtml).toContain("<sandustry-button");
     expect(defaultHtml).toContain("Click me");
 
     const solidHtml = renderToStaticMarkup(<Button variant="solid">Solid Action</Button>);
@@ -99,7 +99,7 @@ describe("@sandustry/ui component suite", () => {
 
   test("TextAction renders link and button semantics", () => {
     const buttonAction = renderToStaticMarkup(<TextAction>Reset</TextAction>);
-    expect(buttonAction).toContain("<button");
+    expect(buttonAction).toContain("<sandustry-text-action");
     expect(buttonAction).toContain("Reset");
 
     const linkAction = renderToStaticMarkup(

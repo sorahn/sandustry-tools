@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
 import type { ControlSize } from "../types";
+import "../elements/segmented-control";
 
 export type Segment<T extends string = string> = {
   value: T;
@@ -27,7 +28,12 @@ export function SegmentedControl<T extends string>({
   ...props
 }: SegmentedControlProps<T>) {
   return (
-    <div className={cx("flex flex-wrap gap-1", className)} role="group">
+    <sandustry-segmented-control
+      size={size}
+      value={value}
+      class={cx("flex flex-wrap gap-1", className)}
+      role="group"
+    >
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -54,6 +60,6 @@ export function SegmentedControl<T extends string>({
           </button>
         );
       })}
-    </div>
+    </sandustry-segmented-control>
   );
 }

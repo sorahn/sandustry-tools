@@ -1,6 +1,7 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
 import type { ControlSize } from "../types";
+import "../elements/checkbox";
 
 export type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "type"> & {
   boxed?: boolean;
@@ -16,8 +17,10 @@ export function Checkbox({
   ...props
 }: CheckboxProps) {
   return (
-    <label
-      className={cx(
+    <sandustry-checkbox
+      boxed={boxed ? "" : undefined}
+      size={size}
+      class={cx(
         "inline-flex cursor-pointer items-center gap-1.5 font-mono text-slate-400",
         size === "small" && "min-h-6 gap-1 text-[10px]",
         size === "default" && "text-[11px]",
@@ -27,17 +30,19 @@ export function Checkbox({
         className,
       )}
     >
-      {label ? <span>{label}</span> : null}
-      <input
-        {...props}
-        type="checkbox"
-        className={cx(
-          "cursor-pointer accent-yellow-300",
-          size === "small" && "h-3 w-3",
-          size === "default" && "h-3.5 w-3.5",
-          size === "large" && "h-4 w-4",
-        )}
-      />
-    </label>
+      <label className="contents cursor-pointer">
+        {label ? <span slot="label">{label}</span> : null}
+        <input
+          {...props}
+          type="checkbox"
+          className={cx(
+            "cursor-pointer accent-yellow-300",
+            size === "small" && "h-3 w-3",
+            size === "default" && "h-3.5 w-3.5",
+            size === "large" && "h-4 w-4",
+          )}
+        />
+      </label>
+    </sandustry-checkbox>
   );
 }

@@ -1,6 +1,7 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
 import type { ControlSize } from "../types";
+import "../elements/slider";
 
 export type SliderProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "size"> & {
   label?: ReactNode;
@@ -24,8 +25,10 @@ export function Slider({
   const formattedValue = valueFormat ? valueFormat(numericValue) : `${numericValue}`;
 
   return (
-    <div
-      className={cx(
+    <sandustry-slider
+      size={size}
+      showValue={showValue}
+      class={cx(
         "flex w-full flex-col",
         size === "small" && "gap-1",
         size === "default" && "gap-1.5",
@@ -35,6 +38,7 @@ export function Slider({
     >
       {label || showValue ? (
         <div
+          slot="header"
           className={cx(
             "flex items-center justify-between text-slate-300",
             size === "small" && "text-[11px]",
@@ -66,6 +70,6 @@ export function Slider({
         className="sd-slider"
         {...props}
       />
-    </div>
+    </sandustry-slider>
   );
 }
