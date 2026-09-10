@@ -1,5 +1,6 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/split-pane";
 
 export type SplitPaneProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>> & {
   sidebar: ReactNode;
@@ -32,12 +33,16 @@ export function SplitPane({
   );
 
   return (
-    <div {...props} className={cx("flex min-h-0", className)}>
+    <sandustry-split-pane
+      {...props}
+      sidebar-position={sidebarPosition}
+      class={cx("flex min-h-0", className)}
+    >
       {sidebarPosition === "start" ? sidebarNode : null}
       <main className={cx("flex min-h-0 min-w-0 flex-1 flex-col", contentClassName)}>
         {children}
       </main>
       {sidebarPosition === "end" ? sidebarNode : null}
-    </div>
+    </sandustry-split-pane>
   );
 }

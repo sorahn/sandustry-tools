@@ -36,6 +36,15 @@ import {
   TableHeaderCell,
   ModeTabs,
   ModeTab,
+  Tabs,
+  Tab,
+  CategoryList,
+  CategoryButton,
+  List,
+  ListItem,
+  ProgressList,
+  ProgressListItem,
+  SplitPane,
   TierPips,
   EnergyRequirementIcon,
   BuildingTile,
@@ -421,6 +430,7 @@ describe("@sandustry/ui component suite", () => {
         <div>Hidden body</div>
       </Collapsible>,
     );
+    expect(openHtml).toContain("<sandustry-collapsible");
     expect(openHtml).toContain('aria-expanded="true"');
     expect(openHtml).toContain("Details");
     expect(openHtml).toContain("Hidden body");
@@ -503,6 +513,7 @@ describe("@sandustry/ui component suite", () => {
         </TableBody>
       </Table>,
     );
+    expect(tableHtml).toContain("<sandustry-table");
     expect(tableHtml).toContain("<table");
     expect(tableHtml).toContain("<thead");
     expect(tableHtml).toContain("<tbody");
@@ -524,6 +535,8 @@ describe("@sandustry/ui component suite", () => {
         </ModeTab>
       </ModeTabs>,
     );
+    expect(tabsHtml).toContain("<sandustry-mode-tabs");
+    expect(tabsHtml).toContain("<sandustry-mode-tab");
     expect(tabsHtml).toContain('role="tablist"');
     expect(tabsHtml).toContain('role="tab"');
     expect(tabsHtml).toContain("Toolbox");
@@ -591,5 +604,90 @@ describe("@sandustry/ui component suite", () => {
     expect(footerHtml).toContain("<footer");
     expect(footerHtml).toContain("Tip: Drag and drop items");
     expect(footerHtml).toContain("Disable Drag");
+  });
+
+  test("Tabs and Tab render custom elements with active selection and items", () => {
+    const tabsHtml = renderToStaticMarkup(
+      <Tabs
+        value="tab2"
+        items={[
+          { id: "tab1", label: "Overview" },
+          { id: "tab2", label: "Settings", badge: "2" },
+        ]}
+      />,
+    );
+    expect(tabsHtml).toContain("<sandustry-tabs");
+    expect(tabsHtml).toContain("<sandustry-tab");
+    expect(tabsHtml).toContain('role="tablist"');
+    expect(tabsHtml).toContain('role="tab"');
+    expect(tabsHtml).toContain("Overview");
+    expect(tabsHtml).toContain("Settings");
+    expect(tabsHtml).toContain("border-[#ffe700]");
+
+    const directTabHtml = renderToStaticMarkup(<Tab selected>Manual Tab</Tab>);
+    expect(directTabHtml).toContain("<sandustry-tab");
+    expect(directTabHtml).toContain("Manual Tab");
+    expect(directTabHtml).toContain("border-[#ffe700]");
+  });
+
+  test("CategoryList and CategoryButton render custom elements with selection and badge", () => {
+    const listHtml = renderToStaticMarkup(
+      <CategoryList bordered>
+        <CategoryButton label="Logistics" badge="12" selected />
+        <CategoryButton label="Production" disabled />
+      </CategoryList>,
+    );
+    expect(listHtml).toContain("<sandustry-category-list");
+    expect(listHtml).toContain("<sandustry-category-button");
+    expect(listHtml).toContain("Logistics");
+    expect(listHtml).toContain("Production");
+    expect(listHtml).toContain("12");
+    expect(listHtml).toContain("text-[#ffe700]");
+  });
+
+  test("List and ListItem render custom elements and variants", () => {
+    const listHtml = renderToStaticMarkup(
+      <List variant="panel">
+        <ListItem label="Iron Ingot" description="Basic resource" selected />
+        <ListItem label="Copper Wire" variant="compact" />
+      </List>,
+    );
+    expect(listHtml).toContain("<sandustry-list");
+    expect(listHtml).toContain("<sandustry-list-item");
+    expect(listHtml).toContain('role="list"');
+    expect(listHtml).toContain("Iron Ingot");
+    expect(listHtml).toContain("Basic resource");
+    expect(listHtml).toContain("border-l-[#ffe700]");
+  });
+
+  test("ProgressList and ProgressListItem render custom elements and variants", () => {
+    const progressHtml = renderToStaticMarkup(
+      <ProgressList height="150px">
+        <ProgressListItem variant="active">Analyzing world data…</ProgressListItem>
+        <ProgressListItem variant="substep" last>
+          Extracting entities
+        </ProgressListItem>
+      </ProgressList>,
+    );
+    expect(progressHtml).toContain("<sandustry-progress-list");
+    expect(progressHtml).toContain("<sandustry-progress-list-item");
+    expect(progressHtml).toContain('role="list"');
+    expect(progressHtml).toContain('role="listitem"');
+    expect(progressHtml).toContain("Analyzing world data…");
+    expect(progressHtml).toContain("Extracting entities");
+    expect(progressHtml).toContain("sd-text-glow-yellow");
+  });
+
+  test("SplitPane renders custom element with sidebar and content slots", () => {
+    const splitHtml = renderToStaticMarkup(
+      <SplitPane sidebar={<div>Sidebar Content</div>} sidebarPosition="start">
+        <div>Main Content</div>
+      </SplitPane>,
+    );
+    expect(splitHtml).toContain("<sandustry-split-pane");
+    expect(splitHtml).toContain("<aside");
+    expect(splitHtml).toContain("<main");
+    expect(splitHtml).toContain("Sidebar Content");
+    expect(splitHtml).toContain("Main Content");
   });
 });

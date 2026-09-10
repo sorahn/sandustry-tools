@@ -1,5 +1,8 @@
 import type { HTMLAttributes, PropsWithChildren } from "react";
 import cx from "clsx";
+import type { ProgressListItemVariant } from "../elements/progress-list";
+import "../elements/progress-list";
+export type { ProgressListItemVariant };
 
 export type ProgressListProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>> & {
   height?: string;
@@ -12,22 +15,21 @@ export function ProgressList({
   ...props
 }: ProgressListProps) {
   return (
-    <div
+    <sandustry-progress-list
       {...props}
+      height={height}
       role={props.role ?? "list"}
-      className={cx(
-        "relative overflow-y-auto rounded border border-slate-200/20 bg-black/30 p-4 pr-5 text-left text-sm leading-[1.8] text-white/75",
+      class={cx(
+        "relative block overflow-y-auto rounded border border-slate-200/20 bg-black/30 p-4 pr-5 text-left text-sm leading-[1.8] text-white/75",
         "sd-no-scrollbar",
         className,
       )}
       style={{ ...props.style, height }}
     >
       {children}
-    </div>
+    </sandustry-progress-list>
   );
 }
-
-export type ProgressListItemVariant = "default" | "active" | "substep";
 
 export type ProgressListItemProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>> & {
   variant?: ProgressListItemVariant;
@@ -42,11 +44,13 @@ export function ProgressListItem({
   ...props
 }: ProgressListItemProps) {
   return (
-    <div
+    <sandustry-progress-list-item
       {...props}
+      variant={variant}
+      last={last ? "" : undefined}
       role={props.role ?? "listitem"}
-      className={cx(
-        "relative mb-2 pl-5 font-medium opacity-0 animate-sd-progress-fade-in",
+      class={cx(
+        "relative block mb-2 pl-5 font-medium opacity-0 animate-sd-progress-fade-in",
         variant === "active" && "text-[#ffe700] sd-text-glow-yellow",
         variant === "substep" && "mb-1 text-[13px] font-normal text-white/75",
         last && "mb-0",
@@ -69,6 +73,6 @@ export function ProgressListItem({
         )}
       />
       {children}
-    </div>
+    </sandustry-progress-list-item>
   );
 }

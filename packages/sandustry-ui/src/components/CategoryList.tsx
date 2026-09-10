@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/category-list";
 
 export type CategoryButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> & {
   label: ReactNode;
@@ -18,15 +19,20 @@ export function CategoryButton({
   ...props
 }: CategoryButtonProps) {
   return (
-    <div
-      className={cx("group w-full", disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer")}
+    <sandustry-category-button
+      selected={selected ? "" : undefined}
+      disabled={disabled ? true : undefined}
+      class={cx(
+        "group block w-full",
+        disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer",
+      )}
     >
       <button
         type="button"
         disabled={disabled}
         aria-pressed={selected}
         className={cx(
-          "relative left-0 flex w-full items-center justify-between overflow-hidden rounded px-3 py-2 text-left text-sm transition-all duration-200",
+          "relative left-0 flex w-full items-center justify-between overflow-hidden rounded px-3 py-2 text-left text-sm transition-all duration-200 cursor-pointer",
           !disabled &&
             "group-hover:left-2 group-hover:duration-0 group-hover:bg-slate-800 group-hover:text-[#ffe700]",
           selected ? "left-1 bg-slate-800 font-medium text-[#ffe700]" : "text-slate-200",
@@ -49,7 +55,7 @@ export function CategoryButton({
           </span>
         ) : null}
       </button>
-    </div>
+    </sandustry-category-button>
   );
 }
 
@@ -64,15 +70,16 @@ export function CategoryList({
   ...props
 }: CategoryListProps) {
   return (
-    <nav
-      className={cx(
+    <sandustry-category-list
+      {...props}
+      bordered={bordered ? "" : undefined}
+      class={cx(
         "flex flex-col gap-1 overflow-y-auto pr-2",
         bordered && "border-r border-slate-800",
         className,
       )}
-      {...props}
     >
       {children}
-    </nav>
+    </sandustry-category-list>
   );
 }

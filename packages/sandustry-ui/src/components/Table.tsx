@@ -5,15 +5,20 @@ import type {
   ThHTMLAttributes,
 } from "react";
 import cx from "clsx";
+import "../elements/table";
 
 export type TableProps = TableHTMLAttributes<HTMLTableElement>;
 
-export function Table({ className = "", ...props }: TableProps) {
+export function Table({ className = "", children, ...props }: TableProps) {
   return (
-    <table
-      {...props}
-      className={cx("w-full text-left font-mono text-xs border-collapse", className)}
-    />
+    <sandustry-table class="block w-full overflow-x-auto">
+      <table
+        {...props}
+        className={cx("w-full text-left font-mono text-xs border-collapse", className)}
+      >
+        {children}
+      </table>
+    </sandustry-table>
   );
 }
 

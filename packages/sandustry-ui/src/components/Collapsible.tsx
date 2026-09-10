@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import cx from "clsx";
+import "../elements/collapsible";
 
 export type CollapsibleProps = PropsWithChildren<
   Omit<HTMLAttributes<HTMLElement>, "title"> & {
@@ -75,7 +76,12 @@ export function Collapsible({
   };
 
   return (
-    <section {...props} className={cx("group", className)}>
+    <sandustry-collapsible
+      {...props}
+      open={isOpen ? "" : undefined}
+      collapsible={collapsible ? "" : undefined}
+      class={cx("group block", className)}
+    >
       <div
         className={cx(
           "flex flex-row items-center justify-between font-mono text-xs uppercase tracking-[0.18em] text-slate-500",
@@ -122,6 +128,6 @@ export function Collapsible({
           {children}
         </div>
       ) : null}
-    </section>
+    </sandustry-collapsible>
   );
 }

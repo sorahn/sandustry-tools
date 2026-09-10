@@ -255,6 +255,98 @@ declare global {
         label?: string;
         class?: string;
       };
+      "sandustry-tabs": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        value?: string;
+        class?: string;
+      };
+      "sandustry-tab": React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        selected?: boolean | string;
+        disabled?: boolean | string;
+        class?: string;
+      };
+      "sandustry-mode-tabs": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        value?: string;
+        class?: string;
+      };
+      "sandustry-mode-tab": React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        selected?: boolean | string;
+        disabled?: boolean | string;
+        hotkey?: string;
+        class?: string;
+      };
+      "sandustry-category-list": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        bordered?: boolean | string;
+        class?: string;
+      };
+      "sandustry-category-button": React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        selected?: boolean | string;
+        disabled?: boolean | string;
+        label?: string;
+        class?: string;
+      };
+      "sandustry-list": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        variant?: string;
+        class?: string;
+      };
+      "sandustry-list-item": React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        selected?: boolean | string;
+        disabled?: boolean | string;
+        variant?: string;
+        class?: string;
+      };
+      "sandustry-progress-list": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        height?: string;
+        class?: string;
+      };
+      "sandustry-progress-list-item": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        variant?: string;
+        last?: boolean | string;
+        class?: string;
+      };
+      "sandustry-table": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        class?: string;
+      };
+      "sandustry-split-pane": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        sidebarPosition?: string;
+        "sidebar-position"?: string;
+        class?: string;
+      };
+      "sandustry-collapsible": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        open?: boolean | string;
+        collapsible?: boolean | string;
+        title?: string;
+        class?: string;
+      };
     }
   }
 }
