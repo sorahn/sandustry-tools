@@ -1,6 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
 import { CurrencyRow } from "./ResourceAmount";
+import "../elements/save-slot-card";
 
 export type SaveSlotCardProps = Omit<HTMLAttributes<HTMLDivElement>, "title" | "onClick"> & {
   title: ReactNode;
@@ -38,7 +39,16 @@ export function SaveSlotCard({
   ...props
 }: SaveSlotCardProps) {
   return (
-    <div
+    <sandustry-save-slot-card
+      selected={selected ? "" : undefined}
+      class={cx(
+        "group relative rounded-lg border p-3.5 transition-all duration-150 select-none block",
+        onClick && "cursor-pointer",
+        selected
+          ? "border-slate-600 bg-slate-800/60 border-l-2 border-l-[#ffe700]"
+          : "border-slate-700/40 bg-slate-900/30 hover:border-slate-600/60 hover:bg-slate-800/40",
+        className,
+      )}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
@@ -52,14 +62,6 @@ export function SaveSlotCard({
             }
           : undefined
       }
-      className={cx(
-        "group relative rounded-lg border p-3.5 transition-all duration-150 select-none",
-        onClick && "cursor-pointer",
-        selected
-          ? "border-slate-600 bg-slate-800/60 border-l-2 border-l-[#ffe700]"
-          : "border-slate-700/40 bg-slate-900/30 hover:border-slate-600/60 hover:bg-slate-800/40",
-        className,
-      )}
       {...props}
     >
       {/* Header: Title, Tag badge, and Timestamp */}
@@ -187,6 +189,6 @@ export function SaveSlotCard({
           {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
-    </div>
+    </sandustry-save-slot-card>
   );
 }

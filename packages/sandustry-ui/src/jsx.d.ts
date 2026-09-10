@@ -159,6 +159,102 @@ declare global {
         value?: string;
         class?: string;
       };
+      "sandustry-panel": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        variant?: string;
+        collapsible?: string | boolean;
+        collapsed?: string | boolean;
+        padded?: string | boolean;
+        title?: string;
+        class?: string;
+      };
+      "sandustry-item-card": React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        selected?: string | boolean;
+        disabled?: boolean;
+        label?: string;
+        meta?: string;
+        class?: string;
+      };
+      "sandustry-item-detail-panel": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        title?: string;
+        category?: string;
+        description?: string;
+        isEmpty?: boolean;
+        "is-empty"?: boolean | string;
+        class?: string;
+      };
+      "sandustry-building-tile": React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        selected?: string | boolean;
+        disabled?: boolean;
+        size?: string;
+        label?: string;
+        hotkey?: string;
+        class?: string;
+      };
+      "sandustry-save-slot-card": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        selected?: string | boolean;
+        title?: string;
+        tag?: string;
+        timestamp?: string;
+        class?: string;
+      };
+      "sandustry-form-field": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        label?: string;
+        hint?: string;
+        error?: string;
+        required?: string | boolean;
+        class?: string;
+      };
+      "sandustry-input-group": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        class?: string;
+      };
+      "sandustry-fieldset": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        legend?: string;
+        class?: string;
+      };
+      "sandustry-metadata-row": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        wrap?: string | boolean;
+        class?: string;
+      };
+      "sandustry-action-bar": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        align?: string;
+        class?: string;
+      };
+      "sandustry-locked-state": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        boxed?: string | boolean;
+        title?: string;
+        label?: string;
+        class?: string;
+      };
     }
   }
 }

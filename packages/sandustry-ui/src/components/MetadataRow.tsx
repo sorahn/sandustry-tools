@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/metadata-row";
 
 export type MetadataItem = {
   label?: ReactNode;
@@ -15,13 +16,10 @@ export type MetadataRowProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> 
 
 export function MetadataRow({ items, wrap = true, className = "", ...props }: MetadataRowProps) {
   return (
-    <div
+    <sandustry-metadata-row
+      wrap={wrap ? "" : undefined}
+      class={cx("flex items-center gap-x-4 gap-y-1 text-[11px]", wrap && "flex-wrap", className)}
       {...props}
-      className={cx(
-        "flex items-center gap-x-4 gap-y-1 text-[11px]",
-        wrap && "flex-wrap",
-        className,
-      )}
     >
       {items.map((item, index) => (
         <span
@@ -40,6 +38,6 @@ export function MetadataRow({ items, wrap = true, className = "", ...props }: Me
           <span className="tabular-nums">{item.value}</span>
         </span>
       ))}
-    </div>
+    </sandustry-metadata-row>
   );
 }

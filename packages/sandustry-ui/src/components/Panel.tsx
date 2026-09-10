@@ -1,6 +1,8 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import { useState } from "react";
 import cx from "clsx";
+import "../elements/panel";
+export type { PanelVariant } from "../elements/panel";
 
 export type PanelProps = PropsWithChildren<HTMLAttributes<HTMLElement>> & {
   header?: ReactNode;
@@ -42,7 +44,10 @@ export function Panel({
 
   const panelHeader =
     header || (collapsible && title) ? (
-      <div className="box-border flex min-h-[var(--sd-control-height)] items-center justify-between border-b border-slate-800 px-4 py-2">
+      <div
+        slot="header"
+        className="box-border flex min-h-[var(--sd-control-height)] items-center justify-between border-b border-slate-800 px-4 py-2"
+      >
         {collapsible ? (
           <button
             type="button"
@@ -77,18 +82,22 @@ export function Panel({
     ) : null;
 
   return (
-    <section
-      className={cx(
+    <sandustry-panel
+      {...props}
+      variant={variant}
+      collapsible={collapsible ? "" : undefined}
+      collapsed={collapsed ? "" : undefined}
+      padded={padded ? "" : undefined}
+      class={cx(
         "overflow-hidden border border-slate-700 bg-black/75 shadow-xl",
         variant === "hero"
           ? "rounded-[0_12px] border-slate-500/70 bg-black/[0.92] shadow-[0_28px_64px_rgba(0,0,0,0.56)] outline outline-1 outline-black"
           : "rounded",
         className,
       )}
-      {...props}
     >
       {panelHeader}
       {collapsed ? null : <div className={cx(padded && "p-4", contentClassName)}>{children}</div>}
-    </section>
+    </sandustry-panel>
   );
 }

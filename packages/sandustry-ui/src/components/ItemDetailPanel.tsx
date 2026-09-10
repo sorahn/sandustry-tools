@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/item-detail-panel";
 
 export type ItemDetailPanelProps = HTMLAttributes<HTMLDivElement> & {
   title?: ReactNode;
@@ -28,13 +29,13 @@ export function ItemDetailPanel({
   const displayDescription = isActuallyEmpty ? emptyDescription : description;
 
   return (
-    <aside
-      aria-label="Item Details"
-      className={cx(
+    <sandustry-item-detail-panel
+      {...props}
+      is-empty={isActuallyEmpty ? "" : undefined}
+      class={cx(
         "flex w-64 flex-shrink-0 flex-col bg-black/75 p-4 text-white shadow-lg border border-slate-800 rounded",
         className,
       )}
-      {...props}
     >
       <div className="flex-grow overflow-y-auto min-h-0">
         {category ? (
@@ -54,6 +55,6 @@ export function ItemDetailPanel({
       {footer ? (
         <div className="mt-auto pt-4 border-t border-slate-800 shrink-0">{footer}</div>
       ) : null}
-    </aside>
+    </sandustry-item-detail-panel>
   );
 }
