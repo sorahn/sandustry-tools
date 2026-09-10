@@ -34,8 +34,10 @@ export function CategoryButton({
         className={cx(
           "relative left-0 flex w-full items-center justify-between overflow-hidden rounded px-3 py-2 text-left text-sm transition-all duration-200 cursor-pointer",
           !disabled &&
-            "group-hover:left-2 group-hover:duration-0 group-hover:bg-slate-800 group-hover:text-[#ffe700]",
-          selected ? "left-1 bg-slate-800 font-medium text-[#ffe700]" : "text-slate-200",
+            "group-hover:left-2 group-hover:duration-0 group-hover:bg-slate-800 group-hover:text-[var(--sd-color-primary,#ffe700)]",
+          selected
+            ? "left-1 bg-slate-800 font-medium text-[var(--sd-color-primary,#ffe700)]"
+            : "text-slate-200",
           className,
         )}
         {...props}

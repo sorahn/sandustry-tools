@@ -45,7 +45,7 @@ export function SaveSlotCard({
         "group relative rounded-lg border p-3.5 transition-all duration-150 select-none block",
         onClick && "cursor-pointer",
         selected
-          ? "border-slate-600 bg-slate-800/60 border-l-2 border-l-[#ffe700]"
+          ? "border-slate-600 bg-slate-800/60 border-l-2 border-l-[var(--sd-color-primary,#ffe700)]"
           : "border-slate-700/40 bg-slate-900/30 hover:border-slate-600/60 hover:bg-slate-800/40",
         className,
       )}
@@ -86,7 +86,7 @@ export function SaveSlotCard({
       {/* Stats metadata row */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
         {level !== undefined ? (
-          <span className="inline-flex items-center gap-1 text-[#ffe700]">
+          <span className="inline-flex items-center gap-1 text-[var(--sd-color-primary,#ffe700)]">
             <svg
               viewBox="0 0 16 16"
               fill="currentColor"

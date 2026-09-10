@@ -17,7 +17,7 @@ export class SandustryCheckbox extends LitElement {
       gap: 0.375rem;
       cursor: pointer;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      color: #94a3b8;
+      color: var(--sd-color-text-muted, #94a3b8);
       box-sizing: border-box;
       user-select: none;
     }
@@ -45,14 +45,14 @@ export class SandustryCheckbox extends LitElement {
       border-bottom-left-radius: var(--sd-radius, 0.5rem);
       border-width: 1px;
       border-style: solid;
-      border-color: rgba(203, 213, 225, 0.25);
-      background-color: #000000;
+      border-color: var(--sd-color-border-subtle, rgba(203, 213, 225, 0.25));
+      background-color: var(--sd-color-bg, #000000);
       padding: 0.25rem 0.625rem;
     }
 
     .checkbox {
       cursor: pointer;
-      accent-color: #fde047;
+      accent-color: var(--sd-color-primary-hover, #fde047);
       margin: 0;
     }
 

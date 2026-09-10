@@ -11,8 +11,8 @@ export class SandustryPropertyTile extends LitElement {
     :host {
       display: block;
       border-radius: 0.25rem;
-      border: 1px solid rgba(30, 41, 59, 0.6);
-      background-color: rgba(2, 6, 23, 0.5);
+      border: 1px solid var(--sd-color-border-subtle, rgba(30, 41, 59, 0.6));
+      background-color: var(--sd-color-surface, rgba(2, 6, 23, 0.5));
       padding: 0.5rem;
       box-sizing: border-box;
       font-family: var(--sd-font-family, inherit);
@@ -24,19 +24,19 @@ export class SandustryPropertyTile extends LitElement {
       text-transform: uppercase;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       letter-spacing: 0.05em;
-      color: #64748b;
+      color: var(--sd-color-text-subtle, #64748b);
     }
 
     .value {
       display: block;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      color: #e2e8f0;
+      color: var(--sd-color-text, #e2e8f0);
       font-weight: 500;
     }
 
     .sub-value {
       display: block;
-      color: #475569;
+      color: var(--sd-color-text-subtle, #475569);
       font-size: 10px;
       margin-top: 0.125rem;
     }

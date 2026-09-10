@@ -22,24 +22,24 @@ export class SandustryTextArea extends LitElement {
       border-radius: 0.25rem;
       border-width: 1px;
       border-style: solid;
-      border-color: #334155;
-      background-color: rgba(0, 0, 0, 0.7);
+      border-color: var(--sd-color-border, #334155);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.7));
       padding: 0.75rem;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 0.75rem;
       line-height: 1.5rem;
-      color: #e2e8f0;
+      color: var(--sd-color-text, #e2e8f0);
       box-sizing: border-box;
       outline: none;
     }
 
     .textarea::placeholder {
-      color: #475569;
+      color: var(--sd-color-text-subtle, #475569);
     }
 
     .textarea:focus {
-      border-color: #64748b;
-      outline: 2px solid #fde047;
+      border-color: var(--sd-color-border-strong, #64748b);
+      outline: 2px solid var(--sd-color-primary-hover, #fde047);
       outline-offset: 2px;
     }
 

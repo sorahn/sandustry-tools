@@ -391,9 +391,19 @@ export function ComponentsPage() {
     message: string;
     variant: "default" | "hint" | "danger";
   } | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<string>("default");
+
+  const themes = [
+    { id: "default", label: "Default Gold", className: "" },
+    { id: "cyber-cyan", label: "Cyber Cyan", className: "theme-cyber-cyan" },
+    { id: "neon-emerald", label: "Neon Emerald", className: "theme-neon-emerald" },
+    { id: "solar-amber", label: "Solar Amber", className: "theme-solar-amber" },
+  ];
+
+  const currentThemeClass = themes.find((t) => t.id === selectedTheme)?.className ?? "";
 
   return (
-    <div className="mx-auto max-w-6xl space-y-20 pb-24">
+    <div className={`mx-auto max-w-6xl space-y-20 pb-24 ${currentThemeClass}`}>
       <header className="border-b border-slate-800 pb-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-yellow-300/80">
@@ -419,6 +429,23 @@ export function ComponentsPage() {
             </a>
           ))}
         </nav>
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-800/80 pt-4">
+          <span className="font-mono text-xs text-slate-400">Theme tokens:</span>
+          {themes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSelectedTheme(t.id)}
+              className={`rounded px-2.5 py-1 font-mono text-xs transition ${
+                selectedTheme === t.id
+                  ? "border border-yellow-400 bg-yellow-400/20 font-semibold text-yellow-300"
+                  : "border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </header>
 
       <ShowcaseSection

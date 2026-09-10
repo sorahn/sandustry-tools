@@ -15,13 +15,13 @@ export class SandustryProgressList extends LitElement {
       border-radius: 0.25rem;
       border-width: 1px;
       border-style: solid;
-      border-color: rgba(226, 232, 240, 0.2);
-      background-color: rgba(0, 0, 0, 0.3);
+      border-color: var(--sd-color-border-subtle, rgba(226, 232, 240, 0.2));
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.3));
       padding: 1rem 1.25rem 1rem 1rem;
       text-align: left;
       font-size: 0.875rem;
       line-height: 1.8;
-      color: rgba(255, 255, 255, 0.75);
+      color: var(--sd-color-text-muted, rgba(255, 255, 255, 0.75));
       box-sizing: border-box;
       font-family: var(--sd-font-family, inherit);
     }

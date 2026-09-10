@@ -55,15 +55,15 @@ export class SandustrySpinner extends LitElement {
     :host([tone="accent"]),
     :host([tone="yellow"]),
     :host(:not([tone])) {
-      border-color: #facc15;
+      border-color: var(--sd-color-primary, #facc15);
     }
 
     :host([tone="neutral"]) {
-      border-color: #94a3b8;
+      border-color: var(--sd-color-text-muted, #94a3b8);
     }
 
     :host([tone="white"]) {
-      border-color: #ffffff;
+      border-color: var(--sd-color-text, #ffffff);
     }
   `;
 

@@ -26,7 +26,7 @@ export function MetadataRow({ items, wrap = true, className = "", ...props }: Me
           key={index}
           className={cx(
             "inline-flex items-center gap-1",
-            item.tone === "accent" && "text-[#ffe700]",
+            item.tone === "accent" && "text-[var(--sd-color-primary,#ffe700)]",
             item.tone === "muted" && "text-slate-400",
             item.tone === "success" && "text-emerald-400/70",
             item.tone === "warning" && "text-amber-300",

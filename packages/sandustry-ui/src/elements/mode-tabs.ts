@@ -61,15 +61,19 @@ export class SandustryModeTab extends LitElement {
     }
 
     :host([selected]) {
-      border-color: #ffe700;
-      color: #ffe700;
-      background: linear-gradient(45deg, rgba(255, 231, 0, 0.15), transparent);
+      border-color: var(--sd-color-primary, #ffe700);
+      color: var(--sd-color-primary, #ffe700);
+      background: linear-gradient(
+        45deg,
+        var(--sd-color-primary-soft, rgba(255, 231, 0, 0.15)),
+        transparent
+      );
     }
 
     :host(:not([selected])) {
-      border-color: #64748b;
-      background-color: rgba(0, 0, 0, 0.25);
-      color: #ffffff;
+      border-color: var(--sd-color-border-strong, #64748b);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.25));
+      color: var(--sd-color-text, #ffffff);
     }
 
     :host([disabled]) {

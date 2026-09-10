@@ -16,14 +16,14 @@ export class SandustryIconButton extends LitElement {
       align-items: center;
       justify-content: center;
       border-radius: 0.25rem;
-      color: #94a3b8;
+      color: var(--sd-color-text-muted, #94a3b8);
       box-sizing: border-box;
       transition: color 150ms ease-in-out;
       cursor: pointer;
     }
 
     :host(:hover:not([disabled])) {
-      color: #ffffff;
+      color: var(--sd-color-text, #ffffff);
     }
 
     :host([size="small"]) {
@@ -48,7 +48,7 @@ export class SandustryIconButton extends LitElement {
     :host([disabled]) {
       cursor: not-allowed;
       opacity: 0.4;
-      color: #94a3b8;
+      color: var(--sd-color-text-muted, #94a3b8);
     }
 
     button {
@@ -67,7 +67,7 @@ export class SandustryIconButton extends LitElement {
     }
 
     button:focus-visible {
-      outline: 2px solid #fde047;
+      outline: 2px solid var(--sd-color-primary-hover, #fde047);
       outline-offset: 2px;
     }
   `;

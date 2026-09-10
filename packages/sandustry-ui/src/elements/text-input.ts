@@ -26,10 +26,10 @@ export class SandustryTextInput extends LitElement {
       border-radius: 0.125rem;
       border-width: 1px;
       border-style: solid;
-      border-color: #475569;
-      background-color: rgba(0, 0, 0, 0.6);
+      border-color: var(--sd-color-border-hover, #475569);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.6));
       letter-spacing: 0.025em;
-      color: #ffffff;
+      color: var(--sd-color-text, #ffffff);
       outline: none;
       box-sizing: border-box;
       transition: border-color 150ms ease-in-out;
@@ -37,7 +37,7 @@ export class SandustryTextInput extends LitElement {
     }
 
     .input:focus {
-      border-color: #ffe700;
+      border-color: var(--sd-color-primary, #ffe700);
     }
 
     :host([scale="small"]) .input {
@@ -63,7 +63,7 @@ export class SandustryTextInput extends LitElement {
     }
 
     :host([tone="accent"]) .input {
-      color: #f5a623;
+      color: var(--sd-color-primary-hover, #f5a623);
     }
 
     :host([monospace]) .input {

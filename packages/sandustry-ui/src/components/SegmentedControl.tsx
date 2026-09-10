@@ -49,8 +49,8 @@ export function SegmentedControl<T extends string>({
               size === "default" && "h-[var(--sd-form-control-height)] py-1 text-xs",
               size === "large" && "h-[var(--sd-form-control-large-height)] py-2 text-sm",
               selected
-                ? "border-[#ffe700]/50 bg-[#ffe700]/10 text-[#ffe700]"
-                : "border-slate-200/25 bg-black text-white hover:border-transparent hover:text-[#ffe700]",
+                ? "border-[var(--sd-color-primary,#ffe700)]/50 bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))] text-[var(--sd-color-primary,#ffe700)]"
+                : "border-slate-200/25 bg-black text-white hover:border-transparent hover:text-[var(--sd-color-primary,#ffe700)]",
               (option.disabled || props.disabled) &&
                 "cursor-not-allowed border-slate-200/10 bg-black text-slate-600 hover:text-slate-600",
             )}

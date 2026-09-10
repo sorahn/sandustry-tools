@@ -63,34 +63,34 @@ export class SandustryButton extends LitElement {
 
     :host([variant="default"]),
     :host(:not([variant])) {
-      border-color: #e2e8f0;
-      background-color: #000000;
-      color: #ffffff;
+      border-color: var(--sd-color-text, #e2e8f0);
+      background-color: var(--sd-color-bg, #000000);
+      color: var(--sd-color-text, #ffffff);
     }
 
     :host([variant="accent"]) {
-      border-color: rgba(253, 224, 71, 0.5);
-      background-color: rgba(253, 224, 71, 0.1);
-      color: #fde047;
+      border-color: var(--sd-color-primary-hover, rgba(253, 224, 71, 0.5));
+      background-color: var(--sd-color-primary-soft, rgba(253, 224, 71, 0.1));
+      color: var(--sd-color-primary-hover, #fde047);
     }
 
     :host([variant="solid"]) {
-      border-color: #ffe700;
-      background-color: #ffe700;
-      color: #000000;
+      border-color: var(--sd-color-primary, #ffe700);
+      background-color: var(--sd-color-primary, #ffe700);
+      color: var(--sd-color-primary-foreground, #000000);
       font-weight: 700;
     }
 
     :host([variant="quiet"]) {
       border-color: transparent;
       background-color: transparent;
-      color: #94a3b8;
+      color: var(--sd-color-text-muted, #94a3b8);
     }
 
     :host([variant="danger"]) {
-      border-color: #f87171;
-      background-color: #000000;
-      color: #ffffff;
+      border-color: var(--sd-color-danger, #f87171);
+      background-color: var(--sd-color-bg, #000000);
+      color: var(--sd-color-text, #ffffff);
     }
 
     :host([disabled]) {

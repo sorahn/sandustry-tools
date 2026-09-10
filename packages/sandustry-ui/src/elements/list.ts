@@ -26,8 +26,8 @@ export class SandustryList extends LitElement {
       border-radius: 0.25rem;
       border-width: 1px;
       border-style: solid;
-      border-color: #334155;
-      background-color: rgba(0, 0, 0, 0.3);
+      border-color: var(--sd-color-border, #334155);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.3));
       padding: 0.5rem;
     }
   `;

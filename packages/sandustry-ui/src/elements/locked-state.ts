@@ -20,7 +20,7 @@ export class SandustryLockedState extends LitElement {
       border-bottom-left-radius: 0.5rem;
       border-width: 1px;
       border-style: dashed;
-      border-color: #475569;
+      border-color: var(--sd-color-border-hover, #475569);
       padding: 1rem;
     }
   `;

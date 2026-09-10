@@ -29,7 +29,7 @@ export function ItemCard({
         className={cx(
           "group flex w-full items-center gap-2 rounded border px-2 py-1.5 text-left transition-all duration-200",
           selected
-            ? "border-[#ffe700] bg-[#ffe700]/10"
+            ? "border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))]"
             : "border-slate-700 bg-black/40 hover:border-slate-500 hover:bg-black/60",
           props.disabled && "cursor-not-allowed opacity-50",
           className,
@@ -41,7 +41,9 @@ export function ItemCard({
         <span
           className={cx(
             "truncate text-xs transition-colors",
-            selected ? "text-[#ffe700]" : "text-slate-300 group-hover:text-white",
+            selected
+              ? "text-[var(--sd-color-primary,#ffe700)]"
+              : "text-slate-300 group-hover:text-white",
           )}
         >
           {label}

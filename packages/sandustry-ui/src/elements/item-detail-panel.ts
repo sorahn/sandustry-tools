@@ -14,13 +14,13 @@ export class SandustryItemDetailPanel extends LitElement {
       width: 16rem;
       flex-shrink: 0;
       flex-direction: column;
-      background-color: rgba(0, 0, 0, 0.75);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.75));
       padding: 1rem;
-      color: #ffffff;
+      color: var(--sd-color-text, #ffffff);
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
       border-width: 1px;
       border-style: solid;
-      border-color: #1e293b;
+      border-color: var(--sd-color-border-subtle, #1e293b);
       border-radius: 0.25rem;
       box-sizing: border-box;
       font-family: var(--sd-font-family, inherit);

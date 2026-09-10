@@ -36,7 +36,7 @@ export function ProgressBar({
       <div
         className={cx(
           "h-full rounded-full transition-all duration-300",
-          tone === "accent" && "bg-[#ffe700]",
+          tone === "accent" && "bg-[var(--sd-color-primary,#ffe700)]",
           tone === "success" && "bg-emerald-400",
           tone === "info" && "bg-cyan-300",
           tone === "warning" && "bg-amber-300",

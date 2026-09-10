@@ -22,9 +22,9 @@ export class SandustrySearchInput extends LitElement {
       border-radius: 0.25rem;
       border-width: 1px;
       border-style: solid;
-      border-color: #334155;
-      background-color: rgba(0, 0, 0, 0.6);
-      color: #ffffff;
+      border-color: var(--sd-color-border, #334155);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.6));
+      color: var(--sd-color-text, #ffffff);
       box-sizing: border-box;
       outline: none;
       transition: border-color 150ms ease-in-out;
@@ -32,11 +32,11 @@ export class SandustrySearchInput extends LitElement {
     }
 
     .input::placeholder {
-      color: #475569;
+      color: var(--sd-color-text-subtle, #475569);
     }
 
     .input:focus {
-      border-color: #64748b;
+      border-color: var(--sd-color-border-strong, #64748b);
     }
 
     :host([scale="small"]) .input {

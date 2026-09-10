@@ -58,7 +58,7 @@ export function BuildingTile({
               "rounded-tr-md rounded-bl-md active:brightness-125",
               isSm ? "h-14 w-14" : "h-16 w-16",
               selected
-                ? "border-[#ffe700] sd-glow-yellow"
+                ? "border-[var(--sd-color-primary,#ffe700)] sd-glow-primary"
                 : "border-slate-200/25 hover:border-slate-200/60",
             )}
             style={{

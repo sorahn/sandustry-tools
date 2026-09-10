@@ -39,7 +39,7 @@ export function ListItem({
           variant === "compact" && "px-2 py-1.5",
           variant === "subtle" && "px-3 py-2 text-slate-400",
           selected
-            ? "border-l-[#ffe700] bg-slate-800/60"
+            ? "border-l-[var(--sd-color-primary,#ffe700)] bg-slate-800/60"
             : "border-l-transparent hover:border-l-slate-600 hover:bg-slate-800/30",
           props.disabled && "cursor-not-allowed opacity-50",
           className,

@@ -15,7 +15,7 @@ export class SandustrySwitch extends LitElement {
       align-items: center;
       gap: 0.5rem;
       cursor: pointer;
-      color: #cbd5e1;
+      color: var(--sd-color-text, #cbd5e1);
       font-family: var(--sd-font-family, inherit);
       box-sizing: border-box;
       user-select: none;
@@ -52,8 +52,8 @@ export class SandustrySwitch extends LitElement {
       flex-shrink: 0;
       align-items: center;
       border-radius: 9999px;
-      background-color: #000000;
-      box-shadow: inset 0 0 0 1px #334155;
+      background-color: var(--sd-color-bg, #000000);
+      box-shadow: inset 0 0 0 1px var(--sd-color-border, #334155);
       transition:
         background-color 200ms ease-in-out,
         box-shadow 200ms ease-in-out;
@@ -61,21 +61,21 @@ export class SandustrySwitch extends LitElement {
     }
 
     :host([checked]) .track {
-      background-color: #ffe700;
-      box-shadow: inset 0 0 0 1px #ffe700;
+      background-color: var(--sd-color-primary, #ffe700);
+      box-shadow: inset 0 0 0 1px var(--sd-color-primary, #ffe700);
     }
 
     .thumb {
       position: absolute;
       border-radius: 9999px;
-      background-color: #64748b;
+      background-color: var(--sd-color-border-strong, #64748b);
       transition:
         transform 200ms ease-in-out,
         background-color 200ms ease-in-out;
     }
 
     :host([checked]) .thumb {
-      background-color: #000000;
+      background-color: var(--sd-color-primary-foreground, #000000);
     }
 
     /* small */

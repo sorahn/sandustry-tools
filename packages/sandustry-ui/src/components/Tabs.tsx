@@ -59,7 +59,7 @@ export function Tab({ selected = false, className = "", children, ...props }: Ta
         className={cx(
           "cursor-pointer border-b-2 px-2 pb-2 text-sm font-medium tracking-wider outline-none transition-colors",
           selected
-            ? "border-[#ffe700] text-[#ffe700]"
+            ? "border-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary,#ffe700)]"
             : "border-transparent text-slate-300 hover:border-slate-500 hover:text-white",
           props.disabled &&
             "cursor-not-allowed opacity-40 hover:border-transparent hover:text-slate-300",

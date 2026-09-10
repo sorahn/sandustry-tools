@@ -12,7 +12,7 @@ export const buttonStyles = {
     "border-slate-200 bg-black text-white hover:text-white hover:border-transparent hover:first-letter:text-[var(--sd-yellow)] focus-visible:text-white focus-visible:border-transparent focus-visible:first-letter:text-[var(--sd-yellow)]",
   accent: "border-yellow-300/50 bg-yellow-300/10 text-yellow-300",
   solid:
-    "border-[#ffe700] bg-[#ffe700] text-black font-bold hover:bg-black hover:text-[#ffe700] hover:border-[#ffe700] hover:shadow-[0_0_12px_rgba(255,231,0,0.35)] focus-visible:bg-black focus-visible:text-[#ffe700] focus-visible:border-[#ffe700]",
+    "border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary-foreground,#000)] font-bold hover:bg-black hover:text-[var(--sd-color-primary,#ffe700)] hover:border-[var(--sd-color-primary,#ffe700)] hover:shadow-[0_0_12px_var(--sd-color-primary-glow,rgba(255,231,0,0.35))] focus-visible:bg-black focus-visible:text-[var(--sd-color-primary,#ffe700)] focus-visible:border-[var(--sd-color-primary,#ffe700)]",
   quiet:
     "border-transparent bg-transparent text-slate-400 hover:bg-slate-800/50 hover:text-white hover:border-transparent focus-visible:bg-slate-800/50 focus-visible:text-white focus-visible:border-transparent hover:first-letter:text-white focus-visible:first-letter:text-white before:hidden",
   danger: "border-red-400 bg-black text-white",

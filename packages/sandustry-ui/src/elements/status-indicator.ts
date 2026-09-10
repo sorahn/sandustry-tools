@@ -16,7 +16,7 @@ export class SandustryStatusIndicator extends LitElement {
       gap: 0.375rem;
       font-size: 0.75rem;
       line-height: 1rem;
-      color: rgba(255, 255, 255, 0.7);
+      color: var(--sd-color-text-muted, rgba(255, 255, 255, 0.7));
       font-family: var(--sd-font-family, inherit);
     }
 
@@ -32,23 +32,23 @@ export class SandustryStatusIndicator extends LitElement {
     }
 
     .indicator--neutral {
-      border-color: #64748b;
-      background-color: #94a3b8;
+      border-color: var(--sd-color-border-strong, #64748b);
+      background-color: var(--sd-color-text-muted, #94a3b8);
     }
 
     .indicator--online {
-      border-color: #16a34a;
-      background-color: #22c55e;
+      border-color: var(--sd-color-success-border, #16a34a);
+      background-color: var(--sd-color-success, #22c55e);
     }
 
     .indicator--warning {
-      border-color: #f59e0b;
-      background-color: #fbbf24;
+      border-color: var(--sd-color-warning-border, #f59e0b);
+      background-color: var(--sd-color-warning, #fbbf24);
     }
 
     .indicator--danger {
-      border-color: #dc2626;
-      background-color: #ef4444;
+      border-color: var(--sd-color-danger-border, #dc2626);
+      background-color: var(--sd-color-danger, #ef4444);
     }
 
     .tabular {

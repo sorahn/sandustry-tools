@@ -51,7 +51,7 @@ export function ProgressListItem({
       role={props.role ?? "listitem"}
       class={cx(
         "relative block mb-2 pl-5 font-medium opacity-0 animate-sd-progress-fade-in",
-        variant === "active" && "text-[#ffe700] sd-text-glow-yellow",
+        variant === "active" && "text-[var(--sd-color-primary,#ffe700)] sd-text-glow-yellow",
         variant === "substep" && "mb-1 text-[13px] font-normal text-white/75",
         last && "mb-0",
         className,
@@ -60,7 +60,7 @@ export function ProgressListItem({
       <span
         aria-hidden="true"
         className={cx(
-          "absolute left-0 w-4 text-center font-bold text-[#ffe700]",
+          "absolute left-0 w-4 text-center font-bold text-[var(--sd-color-primary,#ffe700)]",
           variant === "substep"
             ? last
               ? "text-sm animate-sd-progress-slide"

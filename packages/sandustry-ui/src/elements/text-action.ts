@@ -15,7 +15,7 @@ export class SandustryTextAction extends LitElement {
       white-space: nowrap;
       font-size: 0.875rem;
       line-height: 1.25rem;
-      color: rgba(255, 255, 255, 0.85);
+      color: var(--sd-color-text, rgba(255, 255, 255, 0.85));
       font-family: var(--sd-font-family, inherit);
       box-sizing: border-box;
       cursor: pointer;
@@ -23,7 +23,7 @@ export class SandustryTextAction extends LitElement {
     }
 
     :host(:hover:not([disabled])) {
-      color: #ffe700;
+      color: var(--sd-color-primary, #ffe700);
     }
 
     :host([disabled]) {
@@ -46,7 +46,7 @@ export class SandustryTextAction extends LitElement {
     }
 
     .base:focus-visible {
-      outline: 2px solid #ffe700;
+      outline: 2px solid var(--sd-color-primary, #ffe700);
       outline-offset: 2px;
     }
   `;

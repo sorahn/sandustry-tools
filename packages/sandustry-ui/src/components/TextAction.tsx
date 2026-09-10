@@ -23,7 +23,7 @@ export function TextAction<T extends ElementType = "button">({
   const isCustom = Boolean(Component && Component !== "button");
 
   const classes = cx(
-    "inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-white/85 transition-colors hover:text-[#ffe700] focus-visible:outline-2 focus-visible:outline-[#ffe700] focus-visible:outline-offset-2",
+    "inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-white/85 transition-colors hover:text-[var(--sd-color-primary,#ffe700)] focus-visible:outline-2 focus-visible:outline-[var(--sd-color-primary,#ffe700)] focus-visible:outline-offset-2",
     className,
   );
 

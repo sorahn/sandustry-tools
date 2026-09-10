@@ -22,7 +22,7 @@ export function Divider({ variant = "solid", className = "", ...props }: Divider
           "h-px w-full",
           variant === "solid"
             ? "bg-slate-700/60"
-            : "bg-gradient-to-r from-transparent via-[#ffe700]/40 to-transparent",
+            : "bg-gradient-to-r from-transparent via-[var(--sd-color-primary,#ffe700)]/40 to-transparent",
         )}
       />
     </sandustry-divider>

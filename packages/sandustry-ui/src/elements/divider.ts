@@ -19,11 +19,16 @@ export class SandustryDivider extends LitElement {
     }
 
     .line--solid {
-      background-color: rgba(51, 65, 85, 0.6);
+      background-color: var(--sd-color-border, rgba(51, 65, 85, 0.6));
     }
 
     .line--accent {
-      background: linear-gradient(to right, transparent, rgba(255, 231, 0, 0.4), transparent);
+      background: linear-gradient(
+        to right,
+        transparent,
+        var(--sd-color-primary-glow, rgba(255, 231, 0, 0.4)),
+        transparent
+      );
     }
   `;
 

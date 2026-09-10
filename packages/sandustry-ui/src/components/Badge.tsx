@@ -27,7 +27,8 @@ export function Badge({
         shape === "cut" ? "rounded-tr-lg rounded-bl-lg" : "rounded",
         {
           "border-slate-200/25 text-white": tone === "default",
-          "border-[#ffe700]/50 bg-[#ffe700]/10 text-[#ffe700]": tone === "accent",
+          "border-[var(--sd-color-primary,#ffe700)]/50 bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))] text-[var(--sd-color-primary,#ffe700)]":
+            tone === "accent",
           "border-emerald-400/50 text-emerald-400": tone === "success",
           "border-amber-300/50 text-amber-200": tone === "warning",
           "border-red-400/50 text-red-300": tone === "danger",

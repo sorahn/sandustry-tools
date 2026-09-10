@@ -32,9 +32,9 @@ export class SandustrySegmentedControl extends LitElement {
       border-bottom-left-radius: 0.5rem;
       border-width: 1px;
       border-style: solid;
-      border-color: rgba(226, 232, 240, 0.25);
-      background-color: #000000;
-      color: #ffffff;
+      border-color: var(--sd-color-border-subtle, rgba(226, 232, 240, 0.25));
+      background-color: var(--sd-color-bg, #000000);
+      color: var(--sd-color-text, #ffffff);
       padding-left: 0.75rem;
       padding-right: 0.75rem;
       cursor: pointer;
@@ -46,13 +46,13 @@ export class SandustrySegmentedControl extends LitElement {
 
     button:hover:not(:disabled) {
       border-color: transparent;
-      color: #ffe700;
+      color: var(--sd-color-primary, #ffe700);
     }
 
     button[aria-pressed="true"] {
-      border-color: rgba(255, 231, 0, 0.5);
-      background-color: rgba(255, 231, 0, 0.1);
-      color: #ffe700;
+      border-color: var(--sd-color-primary-glow, rgba(255, 231, 0, 0.5));
+      background-color: var(--sd-color-primary-soft, rgba(255, 231, 0, 0.1));
+      color: var(--sd-color-primary, #ffe700);
     }
 
     :host([size="small"]) button {
@@ -79,9 +79,9 @@ export class SandustrySegmentedControl extends LitElement {
 
     button:disabled {
       cursor: not-allowed;
-      border-color: rgba(226, 232, 240, 0.1);
-      background-color: #000000;
-      color: #475569;
+      border-color: var(--sd-color-border-subtle, rgba(226, 232, 240, 0.1));
+      background-color: var(--sd-color-bg, #000000);
+      color: var(--sd-color-text-subtle, #475569);
     }
   `;
 

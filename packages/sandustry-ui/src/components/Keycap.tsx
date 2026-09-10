@@ -24,7 +24,7 @@ export function Keycap({
         variant="bracket"
         size={size}
         class={cx(
-          "inline-flex select-none font-mono font-bold tracking-wider text-[#ffe700] sd-drop-shadow",
+          "inline-flex select-none font-mono font-bold tracking-wider text-[var(--sd-color-primary,#ffe700)] sd-drop-shadow",
           size === "sm" && "text-[10px]",
           size === "md" && "text-xs",
           size === "lg" && "text-sm",
@@ -44,7 +44,7 @@ export function Keycap({
         variant="outline"
         size={size}
         class={cx(
-          "inline-flex select-none items-center justify-center rounded border border-yellow-300/40 bg-yellow-300/10 font-mono font-bold text-[#ffe700]",
+          "inline-flex select-none items-center justify-center rounded border border-[var(--sd-color-primary-hover,#fde047)]/40 bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))] font-mono font-bold text-[var(--sd-color-primary,#ffe700)]",
           size === "sm" && "h-5 min-w-[1.25rem] px-1 text-[10px]",
           size === "md" && "h-6 min-w-[1.5rem] px-1.5 text-xs",
           size === "lg" && "h-7 min-w-[1.75rem] px-2 text-sm",
@@ -63,7 +63,7 @@ export function Keycap({
       variant="keycap"
       size={size}
       class={cx(
-        "inline-flex select-none items-center justify-center rounded border border-[#444] font-bold text-[#ffe700]",
+        "inline-flex select-none items-center justify-center rounded border border-[#444] font-bold text-[var(--sd-color-primary,#ffe700)]",
         "sd-keycap-3d",
         size === "sm" && "h-5 min-w-[1.25rem] px-1 text-[10px]",
         size === "md" && "h-7 min-w-[1.75rem] px-2 text-xs",

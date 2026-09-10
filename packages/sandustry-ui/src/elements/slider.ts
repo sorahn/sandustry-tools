@@ -39,14 +39,14 @@ export class SandustrySlider extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      color: #cbd5e1;
+      color: var(--sd-color-text, #cbd5e1);
     }
 
     :host([size="small"]) .header {
       font-size: 11px;
     }
 
-    :host([size="default"]) .header,
+    :host([size="default"]),
     :host(:not([size])) .header {
       font-size: 0.75rem;
     }
@@ -58,14 +58,14 @@ export class SandustrySlider extends LitElement {
     .value {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-variant-numeric: tabular-nums;
-      color: #94a3b8;
+      color: var(--sd-color-text-muted, #94a3b8);
     }
 
     :host([size="small"]) .value {
       font-size: 10px;
     }
 
-    :host([size="default"]) .value,
+    :host([size="default"]),
     :host(:not([size])) .value {
       font-size: 11px;
     }
@@ -76,7 +76,7 @@ export class SandustrySlider extends LitElement {
 
     input[type="range"] {
       width: 100%;
-      accent-color: #ffe700;
+      accent-color: var(--sd-color-primary, #ffe700);
     }
 
     :host([disabled]) {

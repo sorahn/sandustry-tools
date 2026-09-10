@@ -15,7 +15,7 @@ export class SandustryActionBar extends LitElement {
       gap: 0.75rem;
       border-top-width: 1px;
       border-top-style: solid;
-      border-top-color: rgba(51, 65, 85, 0.4);
+      border-top-color: var(--sd-color-border-subtle, rgba(51, 65, 85, 0.4));
       padding: 0.75rem 1rem;
       box-sizing: border-box;
       font-family: var(--sd-font-family, inherit);

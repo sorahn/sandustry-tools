@@ -10,10 +10,10 @@ export class SandustryTierPips extends LitElement {
     :host {
       display: inline-flex;
       align-items: center;
-      background-color: rgba(0, 0, 0, 0.75);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.75));
       padding: 0.125rem 0.375rem;
       border-radius: 9999px;
-      border: 1px solid #1e293b;
+      border: 1px solid var(--sd-color-border-subtle, #1e293b);
       position: relative;
       overflow: hidden;
       box-sizing: border-box;
@@ -31,12 +31,12 @@ export class SandustryTierPips extends LitElement {
     }
 
     .pip--active {
-      background-color: #4ade80;
-      box-shadow: 0 0 4px rgba(74, 222, 128, 0.8);
+      background-color: var(--sd-color-success, #4ade80);
+      box-shadow: 0 0 4px var(--sd-color-success, rgba(74, 222, 128, 0.8));
     }
 
     .pip--inactive {
-      background-color: #374151;
+      background-color: var(--sd-color-border, #374151);
     }
   `;
 

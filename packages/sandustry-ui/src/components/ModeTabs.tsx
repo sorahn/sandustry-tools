@@ -87,8 +87,8 @@ export function ModeTab({
           "active:scale-90",
           "sd-sheen",
           selected
-            ? "border-[#ffe700] text-[#ffe700] bg-[linear-gradient(45deg,rgba(255,231,0,0.15),transparent)]"
-            : "border-slate-500 bg-black/25 text-white hover:border-transparent hover:text-[#ffe700]",
+            ? "border-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary,#ffe700)] bg-[linear-gradient(45deg,var(--sd-color-primary-soft,rgba(255,231,0,0.15)),transparent)]"
+            : "border-slate-500 bg-black/25 text-white hover:border-transparent hover:text-[var(--sd-color-primary,#ffe700)]",
           disabled &&
             "cursor-not-allowed opacity-40 hover:border-slate-500 hover:text-white before:hidden active:scale-100",
           className,
@@ -99,7 +99,9 @@ export function ModeTab({
           <span
             className={cx(
               "ml-2 shrink-0 font-mono text-xs font-bold sd-drop-shadow transition-colors",
-              selected ? "text-[#ffe700]" : "text-[#ffe700] group-hover:text-[#ffe700]",
+              selected
+                ? "text-[var(--sd-color-primary,#ffe700)]"
+                : "text-[var(--sd-color-primary,#ffe700)] group-hover:text-[var(--sd-color-primary,#ffe700)]",
             )}
           >
             {formattedHotkey}

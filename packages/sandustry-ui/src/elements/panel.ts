@@ -17,8 +17,8 @@ export class SandustryPanel extends LitElement {
       overflow: hidden;
       border-width: 1px;
       border-style: solid;
-      border-color: #334155;
-      background-color: rgba(0, 0, 0, 0.75);
+      border-color: var(--sd-color-border, #334155);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.75));
       box-shadow:
         0 20px 25px -5px rgba(0, 0, 0, 0.1),
         0 8px 10px -6px rgba(0, 0, 0, 0.1);
@@ -32,10 +32,10 @@ export class SandustryPanel extends LitElement {
       border-bottom-left-radius: 12px;
       border-top-left-radius: 0;
       border-bottom-right-radius: 0;
-      border-color: rgba(100, 116, 139, 0.7);
-      background-color: rgba(0, 0, 0, 0.92);
+      border-color: var(--sd-color-border-strong, rgba(100, 116, 139, 0.7));
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.92));
       box-shadow: 0 28px 64px rgba(0, 0, 0, 0.56);
-      outline: 1px solid #000000;
+      outline: 1px solid var(--sd-color-bg, #000000);
     }
 
     :host([padded]) .content {

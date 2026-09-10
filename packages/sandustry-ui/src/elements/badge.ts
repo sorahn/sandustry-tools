@@ -26,7 +26,7 @@ export class SandustryBadge extends LitElement {
       align-items: center;
       border-width: 1px;
       border-style: solid;
-      background-color: #000000;
+      background-color: var(--sd-color-bg, #000000);
       padding: 0.125rem 0.5rem;
       font-size: 0.75rem;
       line-height: 1rem;
@@ -46,40 +46,40 @@ export class SandustryBadge extends LitElement {
 
     :host([tone="default"]),
     :host(:not([tone])) {
-      border-color: rgba(226, 232, 240, 0.25);
-      color: #ffffff;
+      border-color: var(--sd-color-border-subtle, rgba(226, 232, 240, 0.25));
+      color: var(--sd-color-text, #ffffff);
     }
 
     :host([tone="accent"]) {
-      border-color: rgba(255, 231, 0, 0.5);
-      background-color: rgba(255, 231, 0, 0.1);
-      color: #ffe700;
+      border-color: var(--sd-color-primary-glow, rgba(255, 231, 0, 0.5));
+      background-color: var(--sd-color-primary-soft, rgba(255, 231, 0, 0.1));
+      color: var(--sd-color-primary, #ffe700);
     }
 
     :host([tone="success"]) {
-      border-color: rgba(52, 211, 153, 0.5);
-      color: #34d399;
+      border-color: var(--sd-color-success-border, rgba(52, 211, 153, 0.5));
+      color: var(--sd-color-success, #34d399);
     }
 
     :host([tone="warning"]) {
-      border-color: rgba(252, 211, 77, 0.5);
-      color: #fde68a;
+      border-color: var(--sd-color-warning-border, rgba(252, 211, 77, 0.5));
+      color: var(--sd-color-warning, #fde68a);
     }
 
     :host([tone="danger"]) {
-      border-color: rgba(248, 113, 113, 0.5);
-      color: #fca5a5;
+      border-color: var(--sd-color-danger-border, rgba(248, 113, 113, 0.5));
+      color: var(--sd-color-danger, #fca5a5);
     }
 
     :host([tone="info"]) {
-      border-color: rgba(103, 232, 249, 0.5);
-      color: #67e8f9;
+      border-color: var(--sd-color-info-border, rgba(103, 232, 249, 0.5));
+      color: var(--sd-color-info, #67e8f9);
     }
 
     :host([tone="neutral"]) {
-      border-color: #1e293b;
-      background-color: #0f172a;
-      color: #94a3b8;
+      border-color: var(--sd-color-border-subtle, #1e293b);
+      background-color: var(--sd-color-surface-elevated, #0f172a);
+      color: var(--sd-color-text-muted, #94a3b8);
     }
 
     :host([tone="amber"]) {

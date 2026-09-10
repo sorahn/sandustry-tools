@@ -20,7 +20,7 @@ export class SandustryKeycap extends LitElement {
     :host([variant="bracket"]) {
       font-weight: 700;
       letter-spacing: 0.05em;
-      color: #ffe700;
+      color: var(--sd-color-primary, #ffe700);
       filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
     }
     :host([variant="bracket"][size="sm"]) {
@@ -38,10 +38,10 @@ export class SandustryKeycap extends LitElement {
       align-items: center;
       justify-content: center;
       border-radius: 0.25rem;
-      border: 1px solid rgba(253, 224, 71, 0.4);
-      background-color: rgba(253, 224, 71, 0.1);
+      border: 1px solid var(--sd-color-primary-glow, rgba(253, 224, 71, 0.4));
+      background-color: var(--sd-color-primary-soft, rgba(253, 224, 71, 0.1));
       font-weight: 700;
-      color: #ffe700;
+      color: var(--sd-color-primary, #ffe700);
     }
     :host([variant="outline"][size="sm"]) {
       height: 1.25rem;
@@ -68,9 +68,9 @@ export class SandustryKeycap extends LitElement {
       align-items: center;
       justify-content: center;
       border-radius: 0.25rem;
-      border: 1px solid #444444;
+      border: 1px solid var(--sd-color-border-hover, #444444);
       font-weight: 700;
-      color: #ffe700;
+      color: var(--sd-color-primary, #ffe700);
       background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
       box-shadow:
         0 2px 0 #111,

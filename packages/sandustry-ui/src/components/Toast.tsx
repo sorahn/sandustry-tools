@@ -35,7 +35,7 @@ export function Toast({
       ℹ
     </span>
   ) : (
-    <span className="text-[#ffe700] font-bold" aria-hidden="true">
+    <span className="text-[var(--sd-color-primary,#ffe700)] font-bold" aria-hidden="true">
       ✦
     </span>
   );

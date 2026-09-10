@@ -24,8 +24,8 @@ export class SandustryItemCard extends LitElement {
       border-radius: 0.25rem;
       border-width: 1px;
       border-style: solid;
-      border-color: #334155;
-      background-color: rgba(0, 0, 0, 0.4);
+      border-color: var(--sd-color-border, #334155);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.4));
       padding: 0.375rem 0.5rem;
       text-align: left;
       transition: all 200ms ease-in-out;
@@ -36,13 +36,13 @@ export class SandustryItemCard extends LitElement {
     }
 
     :host([selected]) .card {
-      border-color: #ffe700;
-      background-color: rgba(255, 231, 0, 0.1);
+      border-color: var(--sd-color-primary, #ffe700);
+      background-color: var(--sd-color-primary-soft, rgba(255, 231, 0, 0.1));
     }
 
     :host(:not([selected])) .card:hover {
-      border-color: #64748b;
-      background-color: rgba(0, 0, 0, 0.6);
+      border-color: var(--sd-color-border-strong, #64748b);
+      background-color: var(--sd-color-surface, rgba(0, 0, 0, 0.6));
     }
 
     :host([disabled]) .card {

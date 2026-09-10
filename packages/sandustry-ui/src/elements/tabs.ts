@@ -10,7 +10,7 @@ export class SandustryTabs extends LitElement {
       display: flex;
       align-items: center;
       gap: 1rem;
-      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      border-bottom: 1px solid var(--sd-color-border, rgba(51, 65, 85, 0.6));
       box-sizing: border-box;
       font-family: var(--sd-font-family, inherit);
     }
@@ -52,7 +52,7 @@ export class SandustryTab extends LitElement {
       font-size: 0.875rem;
       font-weight: 500;
       letter-spacing: 0.05em;
-      color: #cbd5e1;
+      color: var(--sd-color-text, #cbd5e1);
       cursor: pointer;
       outline: none;
       transition:
@@ -62,19 +62,19 @@ export class SandustryTab extends LitElement {
     }
 
     button:hover:not(:disabled) {
-      border-color: #64748b;
-      color: #ffffff;
+      border-color: var(--sd-color-border-strong, #64748b);
+      color: var(--sd-color-text, #ffffff);
     }
 
     :host([selected]) button {
-      border-color: #ffe700;
-      color: #ffe700;
+      border-color: var(--sd-color-primary, #ffe700);
+      color: var(--sd-color-primary, #ffe700);
     }
 
     :host([disabled]) button {
       cursor: not-allowed;
       opacity: 0.4;
-      color: #cbd5e1;
+      color: var(--sd-color-text-subtle, #cbd5e1);
       border-color: transparent;
     }
   `;

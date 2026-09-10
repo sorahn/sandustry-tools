@@ -17,7 +17,7 @@ export class SandustryCategoryList extends LitElement {
     }
 
     :host([bordered]) {
-      border-right: 1px solid #1e293b;
+      border-right: 1px solid var(--sd-color-border-subtle, #1e293b);
     }
   `;
 

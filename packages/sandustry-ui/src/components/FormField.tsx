@@ -24,7 +24,7 @@ export function FormField({
         <span className="mb-1.5 block text-xs uppercase tracking-wide text-slate-300">
           {label}
           {required ? (
-            <span className="ml-1 text-[#ffe700]" aria-hidden="true">
+            <span className="ml-1 text-[var(--sd-color-primary,#ffe700)]" aria-hidden="true">
               *
             </span>
           ) : null}

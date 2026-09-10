@@ -35,7 +35,7 @@ export function Hotbar({ slots, selectedId, onSelect, className = "" }: HotbarPr
           className={cx(
             "relative flex h-16 w-16 items-center justify-center border text-white shadow-md ring-2 ring-inset ring-black transition-colors active:brightness-125 cursor-pointer",
             slot.id === selectedId
-              ? "border-[#ffe700] bg-[#ffe700]/10"
+              ? "border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))]"
               : "border-slate-200/25 hover:border-slate-200/50",
             slot.disabled && "cursor-not-allowed opacity-40",
           )}

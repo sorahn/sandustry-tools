@@ -23,33 +23,33 @@ export class SandustryAlert extends LitElement {
 
     :host([tone="warning"]),
     :host(:not([tone])) {
-      border-color: rgba(180, 83, 9, 0.6);
-      background-color: rgba(69, 26, 3, 0.3);
-      color: #fde68a;
+      border-color: var(--sd-color-warning-border, rgba(180, 83, 9, 0.6));
+      background-color: var(--sd-color-warning-soft, rgba(69, 26, 3, 0.3));
+      color: var(--sd-color-warning, #fde68a);
     }
 
     :host([tone="danger"]) {
-      border-color: rgba(185, 28, 28, 0.6);
-      background-color: rgba(69, 10, 10, 0.3);
-      color: #fecaca;
+      border-color: var(--sd-color-danger-border, rgba(185, 28, 28, 0.6));
+      background-color: var(--sd-color-danger-soft, rgba(69, 10, 10, 0.3));
+      color: var(--sd-color-danger, #fecaca);
     }
 
     :host([tone="info"]) {
-      border-color: rgba(29, 78, 216, 0.6);
-      background-color: rgba(23, 37, 84, 0.3);
-      color: #bfdbfe;
+      border-color: var(--sd-color-info-border, rgba(29, 78, 216, 0.6));
+      background-color: var(--sd-color-info-soft, rgba(23, 37, 84, 0.3));
+      color: var(--sd-color-info, #bfdbfe);
     }
 
     :host([tone="accent"]) {
-      border-color: rgba(234, 179, 8, 0.6);
-      background-color: rgba(113, 63, 18, 0.3);
-      color: #fef08a;
+      border-color: var(--sd-color-primary-glow, rgba(234, 179, 8, 0.6));
+      background-color: var(--sd-color-primary-soft, rgba(113, 63, 18, 0.3));
+      color: var(--sd-color-primary, #fef08a);
     }
 
     :host([tone="neutral"]) {
-      border-color: #1e293b;
-      background-color: rgba(15, 23, 42, 0.6);
-      color: #cbd5e1;
+      border-color: var(--sd-color-border-subtle, #1e293b);
+      background-color: var(--sd-color-surface-elevated, rgba(15, 23, 42, 0.6));
+      color: var(--sd-color-text, #cbd5e1);
     }
 
     .title-row {
