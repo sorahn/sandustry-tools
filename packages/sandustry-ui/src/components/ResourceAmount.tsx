@@ -88,14 +88,18 @@ export function ResourceAmount({
       amount={typeof amount === "number" ? String(amount) : amount}
       size={size}
       class={cx(
-        "inline-flex items-center gap-1 select-none font-mono tabular-nums text-slate-300",
+        "inline-flex items-center gap-1 select-none font-mono tabular-nums text-[var(--sd-color-text,#ffffff)]",
         isMd ? "text-xs" : "text-[11px]",
         className,
       )}
     >
       {icon ?? defaultIcon}
       <span>{formatAmount(amount)}</span>
-      {label ? <span className="font-sans text-[10px] text-slate-500">{label}</span> : null}
+      {label ? (
+        <span className="font-sans text-[10px] text-[var(--sd-color-text-subtle,#8295ab)]">
+          {label}
+        </span>
+      ) : null}
     </sandustry-resource-amount>
   );
 }

@@ -71,7 +71,7 @@ export function SaveSlotCard({
             {title}
           </span>
           {tag ? (
-            <span className="shrink-0 rounded bg-[var(--sd-color-surface-hover,#333333)] px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[var(--sd-color-text-muted,#b6bcc1)]">
+            <span className="shrink-0 rounded bg-[var(--sd-color-surface-hover,#333333)] px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[var(--sd-color-text,#ffffff)]">
               {tag}
             </span>
           ) : null}

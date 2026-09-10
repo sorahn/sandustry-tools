@@ -27,14 +27,16 @@ export function MetadataRow({ items, wrap = true, className = "", ...props }: Me
           className={cx(
             "inline-flex items-center gap-1",
             item.tone === "accent" && "text-[var(--sd-color-primary,#ffe700)]",
-            item.tone === "muted" && "text-slate-400",
-            item.tone === "success" && "text-emerald-400/70",
-            item.tone === "warning" && "text-amber-300",
-            (!item.tone || item.tone === "default") && "text-slate-300",
+            item.tone === "muted" && "text-[var(--sd-color-text-muted,#94a3b8)]",
+            item.tone === "success" && "text-[var(--sd-color-success,#34d399)]",
+            item.tone === "warning" && "text-[var(--sd-color-warning,#ffa500)]",
+            (!item.tone || item.tone === "default") && "text-[var(--sd-color-text,#ffffff)]",
           )}
         >
           {item.icon ? <span className="h-3 w-3 shrink-0">{item.icon}</span> : null}
-          {item.label ? <span className="text-slate-400">{item.label}</span> : null}
+          {item.label ? (
+            <span className="text-[var(--sd-color-text-muted,#94a3b8)]">{item.label}</span>
+          ) : null}
           <span className="tabular-nums">{item.value}</span>
         </span>
       ))}

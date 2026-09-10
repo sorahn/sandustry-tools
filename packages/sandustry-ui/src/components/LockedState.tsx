@@ -39,7 +39,7 @@ export function LockedState({
     <div
       aria-disabled="true"
       className={cx(
-        "flex items-center justify-center gap-2 py-2 text-slate-300",
+        "flex items-center justify-center gap-2 py-2 text-[var(--sd-color-text-muted,#94a3b8)]",
         !isBoxed && className,
       )}
     >

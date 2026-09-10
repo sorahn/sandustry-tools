@@ -31,16 +31,19 @@ export function ProgressBar({
       aria-valuemax={max}
       aria-valuenow={value}
       aria-label={label}
-      class={cx("relative block h-2 overflow-hidden rounded-full bg-gray-800", className)}
+      class={cx(
+        "relative block h-2 overflow-hidden rounded-full bg-[var(--sd-color-surface-muted,#070a0f)]",
+        className,
+      )}
     >
       <div
         className={cx(
           "h-full rounded-full transition-all duration-300",
           tone === "accent" && "bg-[var(--sd-color-primary,#ffe700)]",
-          tone === "success" && "bg-emerald-400",
-          tone === "info" && "bg-cyan-300",
-          tone === "warning" && "bg-amber-300",
-          tone === "danger" && "bg-red-400",
+          tone === "success" && "bg-[var(--sd-color-success,#34d399)]",
+          tone === "info" && "bg-[var(--sd-color-info,#38bdf8)]",
+          tone === "warning" && "bg-[var(--sd-color-warning,#ffa500)]",
+          tone === "danger" && "bg-[var(--sd-color-danger,#ff3300)]",
         )}
         style={{ width: `${percentage}%` }}
       />

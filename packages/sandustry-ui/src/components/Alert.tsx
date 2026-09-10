@@ -14,12 +14,15 @@ export type AlertProps = PropsWithChildren<
 >;
 
 const toneClasses: Record<AlertTone, string> = {
-  warning: "border-amber-700/60 bg-amber-950/30 text-amber-200",
-  danger: "border-red-700/60 bg-red-950/30 text-red-200",
-  info: "border-blue-700/60 bg-blue-950/30 text-blue-200",
-  accent: "border-yellow-500/60 bg-yellow-950/30 text-yellow-200",
+  warning:
+    "border-[var(--sd-color-warning-border,rgba(180,83,9,0.6))] bg-[var(--sd-color-warning-soft,rgba(69,26,3,0.3))] text-[var(--sd-color-warning,#ffa500)]",
+  danger:
+    "border-[var(--sd-color-danger-border,rgba(185,28,28,0.6))] bg-[var(--sd-color-danger-soft,rgba(69,10,10,0.3))] text-[var(--sd-color-danger,#ff3300)]",
+  info: "border-[var(--sd-color-info-border,rgba(29,78,216,0.6))] bg-[var(--sd-color-info-soft,rgba(23,37,84,0.3))] text-[var(--sd-color-info,#38bdf8)]",
+  accent:
+    "border-[var(--sd-color-primary-glow,rgba(234,179,8,0.6))] bg-[var(--sd-color-primary-soft,rgba(113,63,18,0.3))] text-[var(--sd-color-primary,#ffe700)]",
   neutral:
-    "border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] text-[var(--sd-color-text-muted,#b6bcc1)]",
+    "border-[var(--sd-color-border-subtle,#1e293b)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] text-[var(--sd-color-text-muted,#94a3b8)]",
 };
 
 export function Alert({

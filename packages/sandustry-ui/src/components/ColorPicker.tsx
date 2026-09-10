@@ -21,6 +21,15 @@ export const DEFAULT_PRESET_COLORS: readonly string[] = [
   "#000000",
 ];
 
+function getContrastColor(hex: string): string {
+  if (!hex || hex.length < 7) return "#ffffff";
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "#141414" : "#ffffff";
+}
+
 export type ColorPickerProps = Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
   value?: string | null;
   onChange?: (color: string | null) => void;
@@ -158,7 +167,10 @@ export function ColorPicker({
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               aria-label="Custom color picker"
             />
-            <span className="pointer-events-none font-mono text-[10px] text-white opacity-90 sd-drop-shadow">
+            <span
+              className="pointer-events-none font-mono text-[10px] font-medium sd-drop-shadow"
+              style={{ color: getContrastColor(customColor) }}
+            >
               {value && !isDefaultSelected ? value.toUpperCase() : "None"}
             </span>
           </div>

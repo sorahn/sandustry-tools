@@ -24,14 +24,18 @@ export function Toast({
   const isHint = variant === "hint";
   const isDanger = variant === "danger";
 
-  const accentColor = isDanger ? "#f87171" : isHint ? "#8fd3ff" : "#ffe700";
+  const accentColor = isDanger
+    ? "var(--sd-color-danger, #ff3300)"
+    : isHint
+      ? "var(--sd-color-info, #38bdf8)"
+      : "var(--sd-color-primary, #ffe700)";
 
   const defaultIcon = isDanger ? (
-    <span className="text-red-400 font-bold" aria-hidden="true">
+    <span className="text-[var(--sd-color-danger,#ff3300)] font-bold" aria-hidden="true">
       ✕
     </span>
   ) : isHint ? (
-    <span className="text-[#8fd3ff] font-bold" aria-hidden="true">
+    <span className="text-[var(--sd-color-info,#38bdf8)] font-bold" aria-hidden="true">
       ℹ
     </span>
   ) : (
@@ -46,14 +50,14 @@ export function Toast({
       variant={variant}
       class={cx(
         "relative flex items-center justify-between gap-3 overflow-hidden backdrop-blur-md transition-all duration-200",
-        "rounded-tr-md rounded-br-md text-white select-none",
+        "rounded-tr-md rounded-br-md text-[var(--sd-color-text,#ffffff)] select-none",
         isHint
-          ? "bg-black/65 px-4 py-2 text-sm tracking-wide"
-          : "bg-black/75 px-5 py-2.5 text-base tracking-wider",
+          ? "bg-[var(--sd-color-surface-elevated,#1e293b)]/95 px-4 py-2 text-sm tracking-wide"
+          : "bg-[var(--sd-color-surface-elevated,#1e293b)]/95 px-5 py-2.5 text-base tracking-wider",
         className,
       )}
       style={{
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+        border: "1px solid var(--sd-color-border-subtle, rgba(255, 255, 255, 0.08))",
         borderLeft: `${isHint ? 1 : 2}px solid ${accentColor}`,
         boxShadow: isDanger
           ? "0 4px 20px rgba(0, 0, 0, 0.4), 0 0 8px rgba(248, 113, 113, 0.08)"
@@ -82,11 +86,13 @@ export function Toast({
         <span className="shrink-0 flex items-center justify-center">{icon ?? defaultIcon}</span>
         <div className="flex flex-col min-w-0">
           {title ? (
-            <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--sd-color-text,#ffffff)]">
               {title}
             </span>
           ) : null}
-          <span className="truncate text-slate-100 font-medium">{message}</span>
+          <span className="truncate text-[var(--sd-color-text,#ffffff)] font-medium">
+            {message}
+          </span>
         </div>
       </div>
 
@@ -95,7 +101,7 @@ export function Toast({
           type="button"
           onClick={onClose}
           aria-label="Dismiss toast"
-          className="relative ml-2 p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="relative ml-2 p-1 text-[var(--sd-color-text-muted,#94a3b8)] hover:text-[var(--sd-color-text,#ffffff)] transition-colors cursor-pointer"
         >
           <svg
             width="10"

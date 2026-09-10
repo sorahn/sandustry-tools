@@ -88,7 +88,7 @@ describe("@sandustry/ui component suite", () => {
 
     const successBadge = renderToStaticMarkup(<Badge tone="success">Active</Badge>);
     expect(successBadge).toContain("Active");
-    expect(successBadge).toContain("emerald");
+    expect(successBadge).toContain("var(--sd-color-success");
   });
 
   test("Keycap renders shortcut label", () => {
@@ -284,16 +284,16 @@ describe("@sandustry/ui component suite", () => {
     expect(roundedBadge).not.toContain("rounded-tr-lg rounded-bl-lg");
 
     const amberBadge = renderToStaticMarkup(<Badge tone="amber">Solid</Badge>);
-    expect(amberBadge).toContain("amber-300");
+    expect(amberBadge).toContain("var(--sd-badge-amber-text");
 
     const blueBadge = renderToStaticMarkup(<Badge tone="blue">Liquid</Badge>);
-    expect(blueBadge).toContain("blue-300");
+    expect(blueBadge).toContain("var(--sd-badge-blue-text");
 
     const purpleBadge = renderToStaticMarkup(<Badge tone="purple">Gas</Badge>);
-    expect(purpleBadge).toContain("purple-300");
+    expect(purpleBadge).toContain("var(--sd-badge-purple-text");
 
     const neutralBadge = renderToStaticMarkup(<Badge tone="neutral">None</Badge>);
-    expect(neutralBadge).toContain("border-[var(--sd-color-border-subtle,#242424)]");
+    expect(neutralBadge).toContain("var(--sd-color-border-subtle");
   });
 
   test("Spinner renders sizes, tones, and accessibility attributes", () => {
@@ -476,8 +476,8 @@ describe("@sandustry/ui component suite", () => {
   test("Alert renders tones, titles, and accessibility roles", () => {
     const warningAlert = renderToStaticMarkup(<Alert tone="warning">Caution message</Alert>);
     expect(warningAlert).toContain('role="alert"');
-    expect(warningAlert).toContain("border-amber-700/60");
-    expect(warningAlert).toContain("text-amber-200");
+    expect(warningAlert).toContain("var(--sd-color-warning-border");
+    expect(warningAlert).toContain("var(--sd-color-warning");
     expect(warningAlert).toContain("Caution message");
 
     const infoAlert = renderToStaticMarkup(
@@ -486,13 +486,13 @@ describe("@sandustry/ui component suite", () => {
       </Alert>,
     );
     expect(infoAlert).toContain('role="status"');
-    expect(infoAlert).toContain("border-blue-700/60");
+    expect(infoAlert).toContain("var(--sd-color-info-border");
     expect(infoAlert).toContain("Note");
     expect(infoAlert).toContain("Informational text");
 
     const dangerAlert = renderToStaticMarkup(<Alert tone="danger">Error occurred</Alert>);
     expect(dangerAlert).toContain('role="alert"');
-    expect(dangerAlert).toContain("border-red-700/60");
+    expect(dangerAlert).toContain("var(--sd-color-danger-border");
   });
 
   test("PropertyTile renders label, value, and subValue", () => {

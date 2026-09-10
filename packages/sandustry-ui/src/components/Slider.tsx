@@ -40,7 +40,7 @@ export function Slider({
         <div
           slot="header"
           className={cx(
-            "flex items-center justify-between text-slate-300",
+            "flex items-center justify-between text-[var(--sd-color-text,#ffffff)]",
             size === "small" && "text-[11px]",
             size === "default" && "text-xs",
             size === "large" && "text-sm",
@@ -50,7 +50,7 @@ export function Slider({
           {showValue ? (
             <span
               className={cx(
-                "font-mono tabular-nums text-slate-400",
+                "font-mono tabular-nums text-[var(--sd-color-text-muted,#94a3b8)]",
                 size === "small" && "text-[10px]",
                 size === "default" && "text-[11px]",
                 size === "large" && "text-xs",

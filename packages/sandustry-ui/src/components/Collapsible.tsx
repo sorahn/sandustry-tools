@@ -84,7 +84,7 @@ export function Collapsible({
     >
       <div
         className={cx(
-          "flex flex-row items-center justify-between font-mono text-xs uppercase tracking-[0.18em] text-slate-500",
+          "flex flex-row items-center justify-between font-mono text-xs uppercase tracking-[0.18em] text-[var(--sd-color-text-subtle,#8295ab)]",
           headerClassName,
         )}
       >
@@ -95,7 +95,7 @@ export function Collapsible({
             aria-controls={contentId}
             onClick={toggle}
             className={cx(
-              "inline-flex items-center gap-2 border-0 bg-transparent p-0 font-inherit text-slate-500 transition-colors hover:text-slate-400 focus-visible:outline-2 focus-visible:outline-yellow-300 focus-visible:outline-offset-3 cursor-pointer",
+              "inline-flex items-center gap-2 border-0 bg-transparent p-0 font-inherit text-[var(--sd-color-text-subtle,#8295ab)] transition-colors hover:text-[var(--sd-color-text-muted,#94a3b8)] focus-visible:outline-2 focus-visible:outline-[var(--sd-color-primary,#ffe700)] focus-visible:outline-offset-3 cursor-pointer",
               buttonClassName,
             )}
           >

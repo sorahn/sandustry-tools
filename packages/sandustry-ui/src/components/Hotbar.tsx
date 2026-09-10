@@ -33,14 +33,14 @@ export function Hotbar({ slots, selectedId, onSelect, className = "" }: HotbarPr
           aria-pressed={slot.id === selectedId}
           onClick={() => onSelect?.(slot)}
           className={cx(
-            "relative flex h-16 w-16 items-center justify-center border text-white shadow-md ring-2 ring-inset ring-black transition-colors active:brightness-125 cursor-pointer",
+            "relative flex h-16 w-16 items-center justify-center border text-[var(--sd-color-text,#ffffff)] shadow-md ring-2 ring-inset ring-[var(--sd-color-border,#334155)] transition-colors active:brightness-125 cursor-pointer",
             slot.id === selectedId
               ? "border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))]"
-              : "border-[var(--sd-color-border,#2e2e2e)] hover:border-[var(--sd-color-border-hover,#4a4a4a)]",
+              : "border-[var(--sd-color-border,#334155)] hover:border-[var(--sd-color-border-hover,#64748b)]",
             slot.disabled && "cursor-not-allowed opacity-40",
           )}
         >
-          <span className="absolute left-0 top-0 z-10 rounded-br bg-black/50 px-1 text-xs text-white">
+          <span className="absolute left-0 top-0 z-10 rounded-br bg-[var(--sd-color-surface-muted,#070a0f)]/80 px-1 text-xs text-[var(--sd-color-text,#ffffff)]">
             {index + 1}
           </span>
           {slot.icon}
@@ -58,14 +58,14 @@ export function HotbarStepper({ onChange, className = "", ...props }: HotbarStep
   return (
     <sandustry-hotbar-stepper
       class={cx(
-        "flex h-16 w-5 flex-col overflow-hidden rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-elevated,#2b2b2b)]/95 shadow-lg",
+        "flex h-16 w-5 flex-col overflow-hidden rounded border border-[var(--sd-color-border,#334155)] bg-[var(--sd-color-surface-elevated,#1e293b)]/95 shadow-lg",
         className,
       )}
     >
       <button
         {...props}
         type="button"
-        className="flex-1 text-[8px] text-white/70 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+        className="flex-1 text-[8px] text-[var(--sd-color-text-muted,#94a3b8)] transition-colors hover:bg-[var(--sd-color-surface-hover,#334155)] hover:text-[var(--sd-color-text,#ffffff)] cursor-pointer"
         onClick={() => onChange?.("previous")}
       >
         ▲
@@ -73,7 +73,7 @@ export function HotbarStepper({ onChange, className = "", ...props }: HotbarStep
       <button
         {...props}
         type="button"
-        className="flex-1 border-t border-[var(--sd-color-border-subtle,#242424)] text-[8px] text-white/70 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+        className="flex-1 border-t border-[var(--sd-color-border-subtle,#1e293b)] text-[8px] text-[var(--sd-color-text-muted,#94a3b8)] transition-colors hover:bg-[var(--sd-color-surface-hover,#334155)] hover:text-[var(--sd-color-text,#ffffff)] cursor-pointer"
         onClick={() => onChange?.("next")}
       >
         ▼

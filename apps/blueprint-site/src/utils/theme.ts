@@ -27,7 +27,7 @@ const THEME_CLASSES: Record<SiteTheme, string> = {
 };
 
 export function getSavedTheme(): SiteTheme {
-  if (typeof window === "undefined") return "unified";
+  if (typeof window === "undefined") return "sandustry";
   try {
     const saved = window.localStorage.getItem(SITE_THEME_KEY);
     if (saved && saved in THEME_CLASSES) {
@@ -36,7 +36,7 @@ export function getSavedTheme(): SiteTheme {
   } catch {
     // Ignore storage read errors
   }
-  return "unified";
+  return "sandustry";
 }
 
 export function applyTheme(theme: SiteTheme): void {
@@ -93,7 +93,7 @@ export function useTheme(): [SiteTheme, (theme: SiteTheme) => void, () => void] 
   };
 
   const toggleMode = () => {
-    const next: SiteTheme = theme === "terrain-light" ? "unified" : "terrain-light";
+    const next: SiteTheme = theme === "terrain-light" ? "sandustry" : "terrain-light";
     setTheme(next);
   };
 

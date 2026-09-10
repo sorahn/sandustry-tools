@@ -10,27 +10,27 @@
   --color-sd-primary-hover: var(--sd-color-primary-hover, #fde047);
   --color-sd-primary-foreground: var(--sd-color-primary-foreground, #141414);
 
-  --color-sd-bg: var(--sd-color-bg, #181c20);
-  --color-sd-surface: var(--sd-color-surface, #222222);
-  --color-sd-surface-elevated: var(--sd-color-surface-elevated, #2b2b2b);
-  --color-sd-surface-hover: var(--sd-color-surface-hover, #333333);
-  --color-sd-surface-active: var(--sd-color-surface-active, #3a3a3a);
-  --color-sd-surface-muted: var(--sd-color-surface-muted, #141414);
+  --color-sd-bg: var(--sd-color-bg, #090b0f);
+  --color-sd-surface: var(--sd-color-surface, #0f172a);
+  --color-sd-surface-elevated: var(--sd-color-surface-elevated, #1e293b);
+  --color-sd-surface-hover: var(--sd-color-surface-hover, #334155);
+  --color-sd-surface-active: var(--sd-color-surface-active, #475569);
+  --color-sd-surface-muted: var(--sd-color-surface-muted, #070a0f);
 
-  --color-sd-border: var(--sd-color-border, #2e2e2e);
-  --color-sd-border-subtle: var(--sd-color-border-subtle, #242424);
-  --color-sd-border-strong: var(--sd-color-border-strong, #3d3d3d);
-  --color-sd-border-hover: var(--sd-color-border-hover, #4a4a4a);
+  --color-sd-border: var(--sd-color-border, #334155);
+  --color-sd-border-subtle: var(--sd-color-border-subtle, #1e293b);
+  --color-sd-border-strong: var(--sd-color-border-strong, #475569);
+  --color-sd-border-hover: var(--sd-color-border-hover, #64748b);
 
-  --color-sd-text: var(--sd-color-text, #e8eef5);
-  --color-sd-text-muted: var(--sd-color-text-muted, #b6bcc1);
-  --color-sd-text-subtle: var(--sd-color-text-subtle, #808080);
-  --color-sd-text-inverse: var(--sd-color-text-inverse, #181c20);
+  --color-sd-text: var(--sd-color-text, #ffffff);
+  --color-sd-text-muted: var(--sd-color-text-muted, #94a3b8);
+  --color-sd-text-subtle: var(--sd-color-text-subtle, #8295ab);
+  --color-sd-text-inverse: var(--sd-color-text-inverse, #090b0f);
 
   --color-sd-success: var(--sd-color-success, #34d399);
   --color-sd-danger: var(--sd-color-danger, #ff3300);
   --color-sd-warning: var(--sd-color-warning, #ffa500);
-  --color-sd-info: var(--sd-color-info, #1e90ff);
+  --color-sd-info: var(--sd-color-info, #38bdf8);
 
   --color-sd-yellow: var(--sd-color-primary, #ffe700);
   --color-sd-yellow-soft: var(--sd-color-primary-soft, rgb(255 231 0 / 0.1));
@@ -51,42 +51,55 @@
   --sd-color-primary-hover: #fde047;
   --sd-color-primary-foreground: #141414;
 
-  /* Surfaces & Backgrounds (Blackrock / Bedrock) */
-  --sd-color-bg: #181c20;
-  --sd-color-surface: #222222;
-  --sd-color-surface-elevated: #2b2b2b;
-  --sd-color-surface-hover: #333333;
-  --sd-color-surface-active: #3a3a3a;
-  --sd-color-surface-muted: #141414;
+  /* Surfaces & Backgrounds (Slate Industrial) */
+  --sd-color-bg: #090b0f;
+  --sd-color-surface: #0f172a;
+  --sd-color-surface-elevated: #1e293b;
+  --sd-color-surface-hover: #334155;
+  --sd-color-surface-active: #475569;
+  --sd-color-surface-muted: #070a0f;
 
   /* Borders & Dividers */
-  --sd-color-border: #2e2e2e;
-  --sd-color-border-subtle: #242424;
-  --sd-color-border-strong: #3d3d3d;
-  --sd-color-border-hover: #4a4a4a;
+  --sd-color-border: #334155;
+  --sd-color-border-subtle: #1e293b;
+  --sd-color-border-strong: #475569;
+  --sd-color-border-hover: #64748b;
 
-  /* Text & Typographic Tones (Cloud / Shatterstone / Stone) */
-  --sd-color-text: #e8eef5;
-  --sd-color-text-muted: #b6bcc1;
-  --sd-color-text-subtle: #808080;
-  --sd-color-text-inverse: #181c20;
+  /* Text & Typographic Tones */
+  --sd-color-text: #ffffff;
+  --sd-color-text-muted: #94a3b8;
+  --sd-color-text-subtle: #8295ab;
+  --sd-color-text-inverse: #090b0f;
 
   /* Feedback & Status Tones (Seed, Lava, Flame, Water) */
   --sd-color-success: #34d399;
   --sd-color-success-soft: rgb(52 211 153 / 0.1);
   --sd-color-success-border: rgb(52 211 153 / 0.5);
 
-  --sd-color-danger: #ff3300;
-  --sd-color-danger-soft: rgb(255 51 0 / 0.12);
-  --sd-color-danger-border: rgb(255 51 0 / 0.5);
+  --sd-color-danger: #ff5226;
+  --sd-color-danger-soft: rgb(255 82 38 / 0.12);
+  --sd-color-danger-border: rgb(255 82 38 / 0.5);
 
   --sd-color-warning: #ffa500;
   --sd-color-warning-soft: rgb(255 165 0 / 0.12);
   --sd-color-warning-border: rgb(255 165 0 / 0.5);
 
-  --sd-color-info: #1e90ff;
-  --sd-color-info-soft: rgb(30 144 255 / 0.12);
-  --sd-color-info-border: rgb(30 144 255 / 0.5);
+  --sd-color-info: #38bdf8;
+  --sd-color-info-soft: rgb(56 189 248 / 0.12);
+  --sd-color-info-border: rgb(56 189 248 / 0.5);
+
+  /* Matter State Badges (Solid, Liquid, Gas) */
+  --sd-badge-amber-bg: rgb(69 26 3 / 0.6);
+  --sd-badge-amber-border: rgb(146 64 14 / 0.4);
+  --sd-badge-amber-text: #fcd34d;
+
+  --sd-badge-blue-bg: rgb(23 37 84 / 0.6);
+  --sd-badge-blue-border: rgb(30 58 138 / 0.4);
+  --sd-badge-blue-text: #93c5fd;
+
+  --sd-badge-purple-bg: rgb(59 7 100 / 0.6);
+  --sd-badge-purple-border: rgb(88 28 135 / 0.4);
+  --sd-badge-purple-text: #d8b4fe;
 
   /* Backward Compatibility Aliases */
   --sd-yellow: var(--sd-color-primary);
@@ -452,6 +465,7 @@
 /* --- Full Theme Presets --- */
 
 .theme-sandustry,
+[data-theme="dark"],
 [data-theme="sandustry"] {
   color-scheme: dark;
   --sd-color-primary: #ffe700;
@@ -474,18 +488,17 @@
 
   --sd-color-text: #ffffff;
   --sd-color-text-muted: #94a3b8;
-  --sd-color-text-subtle: #64748b;
+  --sd-color-text-subtle: #8295ab;
   --sd-color-text-inverse: #090b0f;
 
   --sd-color-success: #34d399;
-  --sd-color-danger: #ff3300;
+  --sd-color-danger: #ff6640;
   --sd-color-warning: #ffa500;
   --sd-color-info: #38bdf8;
   --sd-panel-shadow: 0 8px 22px rgb(0 0 0 / 0.55);
 }
 
 .theme-unified,
-[data-theme="dark"],
 [data-theme="unified"] {
   color-scheme: dark;
   --sd-color-primary: #ffe700;
@@ -508,13 +521,13 @@
 
   --sd-color-text: #e8eef5;
   --sd-color-text-muted: #b6bcc1;
-  --sd-color-text-subtle: #808080;
+  --sd-color-text-subtle: #969ba1;
   --sd-color-text-inverse: #181c20;
 
   --sd-color-success: #34d399;
-  --sd-color-danger: #ff3300;
+  --sd-color-danger: #ff6640;
   --sd-color-warning: #ffa500;
-  --sd-color-info: #1e90ff;
+  --sd-color-info: #38bdf8;
   --sd-panel-shadow: 0 8px 22px rgb(0 0 0 / 0.45);
 }
 
@@ -524,51 +537,64 @@
 [data-theme="terrain-light"] {
   color-scheme: light;
 
-  /* Primary Brand / Accent (Divider Mineral Amber) */
-  --sd-color-primary: #8b5a2b;
-  --sd-color-primary-soft: rgb(139 90 43 / 0.12);
-  --sd-color-primary-glow: rgb(139 90 43 / 0.35);
-  --sd-color-primary-hover: #734921;
+  /* Primary Brand / Accent (Divider Mineral Ochre / Amber) */
+  --sd-color-primary: #854d0e;
+  --sd-color-primary-soft: rgb(133 77 14 / 0.12);
+  --sd-color-primary-glow: rgb(133 77 14 / 0.35);
+  --sd-color-primary-hover: #713f12;
   --sd-color-primary-foreground: #ffffff;
 
-  /* Surfaces & Backgrounds (Sandstone / Crackstone) */
-  --sd-color-bg: #fffab3;
-  --sd-color-surface: #f7f1a3;
-  --sd-color-surface-elevated: #ebe48f;
-  --sd-color-surface-hover: #f0ea99;
-  --sd-color-surface-active: #eed975;
-  --sd-color-surface-muted: #fbf6bd;
+  /* Surfaces & Backgrounds (Warm Sandstone & Clean Stone Surface) */
+  --sd-color-bg: #f5f0e6;
+  --sd-color-surface: #ffffff;
+  --sd-color-surface-elevated: #ede5d5;
+  --sd-color-surface-hover: #f0e8d8;
+  --sd-color-surface-active: #e5dcba;
+  --sd-color-surface-muted: #ede6d4;
 
-  /* Borders & Dividers */
-  --sd-color-border: #d8d17a;
-  --sd-color-border-subtle: #e5df8d;
-  --sd-color-border-strong: #c2b95b;
-  --sd-color-border-hover: #c9c063;
+  /* Borders & Dividers (High-contrast Architectural Outlines) */
+  --sd-color-border: #8c7d62;
+  --sd-color-border-subtle: #b8ab92;
+  --sd-color-border-strong: #6b5d44;
+  --sd-color-border-hover: #544833;
 
-  /* Text & Typographic Tones (Blackrock on Light) */
-  --sd-color-text: #181c20;
-  --sd-color-text-muted: #708090;
-  --sd-color-text-subtle: #8b7355;
+  /* Text & Typographic Tones (High-contrast Charcoal & Slate) */
+  --sd-color-text: #14171a;
+  --sd-color-text-muted: #475569;
+  --sd-color-text-subtle: #525b66;
   --sd-color-text-inverse: #ffffff;
 
   /* Feedback & Status Tones */
-  --sd-color-success: #1b5e20;
-  --sd-color-success-soft: rgb(27 94 32 / 0.12);
-  --sd-color-success-border: rgb(27 94 32 / 0.4);
+  --sd-color-success: #166534;
+  --sd-color-success-soft: rgb(22 101 52 / 0.12);
+  --sd-color-success-border: rgb(22 101 52 / 0.45);
 
-  --sd-color-danger: #8b0000;
-  --sd-color-danger-soft: rgb(139 0 0 / 0.12);
-  --sd-color-danger-border: rgb(139 0 0 / 0.4);
+  --sd-color-danger: #b91c1c;
+  --sd-color-danger-soft: rgb(185 28 28 / 0.12);
+  --sd-color-danger-border: rgb(185 28 28 / 0.45);
 
-  --sd-color-warning: #b8860b;
-  --sd-color-warning-soft: rgb(184 134 11 / 0.12);
-  --sd-color-warning-border: rgb(184 134 11 / 0.4);
+  --sd-color-warning: #9a3412;
+  --sd-color-warning-soft: rgb(154 52 18 / 0.12);
+  --sd-color-warning-border: rgb(154 52 18 / 0.45);
 
-  --sd-color-info: #0066aa;
-  --sd-color-info-soft: rgb(0 102 170 / 0.12);
-  --sd-color-info-border: rgb(0 102 170 / 0.4);
+  --sd-color-info: #0369a1;
+  --sd-color-info-soft: rgb(3 105 161 / 0.12);
+  --sd-color-info-border: rgb(3 105 161 / 0.45);
 
-  --sd-panel-shadow: 0 8px 22px rgb(139 90 43 / 0.15);
+  /* Matter State Badges (Solid, Liquid, Gas) */
+  --sd-badge-amber-bg: rgb(254 243 199 / 0.9);
+  --sd-badge-amber-border: #d97706;
+  --sd-badge-amber-text: #78350f;
+
+  --sd-badge-blue-bg: rgb(224 242 254 / 0.9);
+  --sd-badge-blue-border: #0284c7;
+  --sd-badge-blue-text: #0c4a6e;
+
+  --sd-badge-purple-bg: rgb(243 232 255 / 0.9);
+  --sd-badge-purple-border: #9333ea;
+  --sd-badge-purple-text: #581c87;
+
+  --sd-panel-shadow: 0 8px 24px rgb(100 85 60 / 0.12);
 }
 
 .theme-sandrun,
@@ -594,11 +620,11 @@
 
   --sd-color-text: #e8eef5;
   --sd-color-text-muted: #b6bcc1;
-  --sd-color-text-subtle: #708090;
+  --sd-color-text-subtle: #a0a6b8;
   --sd-color-text-inverse: #1a1a2e;
 
   --sd-color-success: #39ff14;
-  --sd-color-danger: #ff3300;
+  --sd-color-danger: #ff7597;
   --sd-color-warning: #ffa500;
   --sd-color-info: #00ffff;
   --sd-panel-shadow: 0 8px 22px rgb(0 0 0 / 0.6);
@@ -627,11 +653,11 @@
 
   --sd-color-text: #e8eef5;
   --sd-color-text-muted: #b6bcc1;
-  --sd-color-text-subtle: #808080;
+  --sd-color-text-subtle: #9b958f;
   --sd-color-text-inverse: #1a1410;
 
   --sd-color-success: #66cc66;
-  --sd-color-danger: #ff3300;
+  --sd-color-danger: #ff5226;
   --sd-color-warning: #ffa500;
   --sd-color-info: #00ced1;
   --sd-panel-shadow: 0 8px 22px rgb(0 0 0 / 0.55);

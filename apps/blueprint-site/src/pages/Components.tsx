@@ -107,7 +107,11 @@ const pickerItems = [
 const hotbarSlots = [
   { id: "select", label: "Select", icon: <span className="text-xl">⌁</span> },
   { id: "filter", label: "Filter", icon: <span className="text-xl">◇</span> },
-  { id: "light", label: "Light", icon: <span className="text-xl text-yellow-300">✦</span> },
+  {
+    id: "light",
+    label: "Light",
+    icon: <span className="text-xl text-[var(--sd-color-primary,#ffe700)]">✦</span>,
+  },
 ];
 
 type ColorEntry = { name: string; value: string; use: string };
@@ -254,10 +258,12 @@ function ShowcaseSubgroup({
   return (
     <div className="space-y-3.5">
       <div>
-        <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-300">
+        <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--sd-color-text,#ffffff)]">
           {title}
         </h3>
-        {description ? <p className="mt-0.5 text-xs text-slate-500">{description}</p> : null}
+        {description ? (
+          <p className="mt-0.5 text-xs text-[var(--sd-color-text-subtle,#8295ab)]">{description}</p>
+        ) : null}
       </div>
       {children}
     </div>
@@ -270,7 +276,7 @@ function TerrainTooltipContent() {
       <div>Grass</div>
       <div className="mt-1 flex flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="shrink-0 text-gray-400">Destroyed by:</span>
+          <span className="shrink-0 text-[var(--sd-color-text-muted,#94a3b8)]">Destroyed by:</span>
           <span className="flex flex-wrap items-center gap-1.5">
             <span
               aria-hidden="true"
@@ -290,7 +296,7 @@ function TerrainTooltipContent() {
             </span>
           </span>
         </div>
-        <div className="text-xs text-green-400">HP: 4 / 4</div>
+        <div className="text-xs text-[var(--sd-color-success,#22c55e)]">HP: 4 / 4</div>
       </div>
     </>
   );
@@ -537,13 +543,13 @@ export function ComponentsPage() {
               <IconButton
                 size="small"
                 label="Regenerate"
-                className="rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
+                className="rounded border border-[var(--sd-color-border,#334155)] bg-[var(--sd-color-surface-muted,#0f172a)] hover:border-[var(--sd-color-primary,#ffe700)] hover:text-[var(--sd-color-primary,#ffe700)]"
               >
                 ↻
               </IconButton>
               <IconButton
                 label="Settings"
-                className="h-9 w-9 rounded border border-slate-700 bg-black/60 hover:border-yellow-300 hover:text-yellow-300"
+                className="h-9 w-9 rounded border border-[var(--sd-color-border,#334155)] bg-[var(--sd-color-surface-muted,#0f172a)] hover:border-[var(--sd-color-primary,#ffe700)] hover:text-[var(--sd-color-primary,#ffe700)]"
               >
                 ⚙
               </IconButton>
@@ -558,7 +564,9 @@ export function ComponentsPage() {
           >
             <div className="space-y-3 pt-1">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs text-slate-500 font-mono w-24">Cut shape:</span>
+                <span className="text-xs text-[var(--sd-color-text-subtle,#8295ab)] font-mono w-24">
+                  Cut shape:
+                </span>
                 <Badge shape="cut">Default</Badge>
                 <Badge shape="cut" tone="accent">
                   Selected
@@ -589,7 +597,9 @@ export function ComponentsPage() {
                 </Badge>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs text-slate-500 font-mono w-24">Rounded:</span>
+                <span className="text-xs text-[var(--sd-color-text-subtle,#8295ab)] font-mono w-24">
+                  Rounded:
+                </span>
                 <Badge shape="rounded">Default</Badge>
                 <Badge shape="rounded" tone="accent">
                   Selected
@@ -630,35 +640,35 @@ export function ComponentsPage() {
           >
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5 pt-1">
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] text-slate-400">
+                <div className="flex justify-between text-[11px] text-[var(--sd-color-text-muted,#94a3b8)]">
                   <span>Accent</span>
                   <span>75%</span>
                 </div>
                 <ProgressBar value={75} tone="accent" label="Accent progress" />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] text-slate-400">
+                <div className="flex justify-between text-[11px] text-[var(--sd-color-text-muted,#94a3b8)]">
                   <span>Success</span>
                   <span>100%</span>
                 </div>
                 <ProgressBar value={100} tone="success" label="Success progress" />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] text-slate-400">
+                <div className="flex justify-between text-[11px] text-[var(--sd-color-text-muted,#94a3b8)]">
                   <span>Info</span>
                   <span>50%</span>
                 </div>
                 <ProgressBar value={50} tone="info" label="Info progress" />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] text-slate-400">
+                <div className="flex justify-between text-[11px] text-[var(--sd-color-text-muted,#94a3b8)]">
                   <span>Warning</span>
                   <span>60%</span>
                 </div>
                 <ProgressBar value={60} tone="warning" label="Warning progress" />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-[11px] text-slate-400">
+                <div className="flex justify-between text-[11px] text-[var(--sd-color-text-muted,#94a3b8)]">
                   <span>Danger</span>
                   <span>25%</span>
                 </div>
@@ -920,7 +930,9 @@ export function ComponentsPage() {
           >
             <div className="space-y-6 pt-1">
               <div className="space-y-2">
-                <span className="font-mono text-xs text-yellow-300">size=&quot;small&quot;</span>
+                <span className="font-mono text-xs text-[var(--sd-color-primary,#ffe700)]">
+                  size=&quot;small&quot;
+                </span>
                 <div className="flex flex-wrap items-center gap-3">
                   <TextInput size="small" defaultValue="Compact input" className="w-48" />
                   <SearchInput size="small" placeholder="Search…" className="w-48" />
@@ -940,7 +952,9 @@ export function ComponentsPage() {
               </div>
 
               <div className="space-y-2">
-                <span className="font-mono text-xs text-yellow-300">size=&quot;default&quot;</span>
+                <span className="font-mono text-xs text-[var(--sd-color-primary,#ffe700)]">
+                  size=&quot;default&quot;
+                </span>
                 <div className="flex flex-wrap items-center gap-3">
                   <TextInput size="default" defaultValue="Default input" className="w-48" />
                   <SearchInput size="default" placeholder="Search…" className="w-48" />
@@ -960,7 +974,9 @@ export function ComponentsPage() {
               </div>
 
               <div className="space-y-2">
-                <span className="font-mono text-xs text-yellow-300">size=&quot;large&quot;</span>
+                <span className="font-mono text-xs text-[var(--sd-color-primary,#ffe700)]">
+                  size=&quot;large&quot;
+                </span>
                 <div className="flex flex-wrap items-center gap-3">
                   <TextInput size="large" defaultValue="Large input" className="w-48" />
                   <SearchInput size="large" placeholder="Search…" className="w-48" />
@@ -1228,13 +1244,15 @@ export function ComponentsPage() {
                 >
                   <div className="flex flex-col items-center pt-2 sm:items-start">
                     <ColorPicker value={pickedColor} onChange={setPickedColor} />
-                    <div className="mt-3 flex items-center gap-2 font-mono text-xs text-slate-400">
+                    <div className="mt-3 flex items-center gap-2 font-mono text-xs text-[var(--sd-color-text-muted,#94a3b8)]">
                       <span>Selected color:</span>
                       <span
                         className="inline-block h-3.5 w-3.5 rounded-sm border border-white/20"
                         style={{ backgroundColor: pickedColor ?? "transparent" }}
                       />
-                      <span className="text-yellow-300">{pickedColor ?? "Default"}</span>
+                      <span className="text-[var(--sd-color-primary,#ffe700)]">
+                        {pickedColor ?? "Default"}
+                      </span>
                     </div>
                   </div>
                 </ShowcaseSubgroup>
@@ -1281,7 +1299,7 @@ export function ComponentsPage() {
                       <Keycap variant="bracket" size="lg">
                         Space
                       </Keycap>
-                      <span className="text-slate-600">|</span>
+                      <span className="text-[var(--sd-color-text-subtle,#8295ab)]">|</span>
                       <Keycap variant="outline" size="sm">
                         1
                       </Keycap>
@@ -1308,13 +1326,15 @@ export function ComponentsPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Panel title="Padded collapsible panel" collapsible padded>
             <div className="space-y-2">
-              <p className="text-sm leading-6 text-slate-300">
+              <p className="text-sm leading-6 text-[var(--sd-color-text,#ffffff)]">
                 Panel content can be collapsed without leaving the surrounding layout. The padded
                 prop applies standard p-4 padding inside the card container.
               </p>
               <div className="flex items-center gap-2 pt-2">
                 <Badge tone="accent">Feature preview</Badge>
-                <span className="text-xs text-slate-500">Smooth state toggle</span>
+                <span className="text-xs text-[var(--sd-color-text-subtle,#8295ab)]">
+                  Smooth state toggle
+                </span>
               </div>
             </div>
           </Panel>
@@ -1449,7 +1469,7 @@ export function ComponentsPage() {
         <div className="mt-6">
           <Panel className="p-5">
             <ShowcaseSubgroup title="Save Slot Cards & Telemetry">
-              <p className="mb-4 text-xs text-slate-400">
+              <p className="mb-4 text-xs text-[var(--sd-color-text-subtle,#8295ab)]">
                 Multi-metric summary cards extracted from the native save game loader with levels,
                 playtimes, structures, and resource breakdown.
               </p>
@@ -1496,7 +1516,7 @@ export function ComponentsPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-6">
                 <div className="space-y-1">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-[var(--sd-color-text-muted,#94a3b8)]">
                     Standalone Currency Counters
                   </div>
                   <div className="flex flex-wrap items-center gap-6 pt-1">
@@ -1507,7 +1527,7 @@ export function ComponentsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-[var(--sd-color-text-muted,#94a3b8)]">
                     Currency Row Layout
                   </div>
                   <div className="pt-1">
@@ -1569,19 +1589,23 @@ export function ComponentsPage() {
               <div className="flex flex-wrap items-center gap-5 pt-1">
                 <div className="flex items-center gap-2">
                   <Spinner size="small" tone="accent" />
-                  <span className="text-xs text-slate-400">Small accent</span>
+                  <span className="text-xs text-[var(--sd-color-text-muted,#94a3b8)]">
+                    Small accent
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Spinner size="default" tone="accent" />
-                  <span className="text-xs text-slate-400">Default</span>
+                  <span className="text-xs text-[var(--sd-color-text-muted,#94a3b8)]">Default</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Spinner size="large" tone="neutral" />
-                  <span className="text-xs text-slate-400">Large neutral</span>
+                  <span className="text-xs text-[var(--sd-color-text-muted,#94a3b8)]">
+                    Large neutral
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Spinner size="small" tone="white" />
-                  <span className="text-xs text-slate-400">White</span>
+                  <span className="text-xs text-[var(--sd-color-text-muted,#94a3b8)]">White</span>
                 </div>
               </div>
             </ShowcaseSubgroup>
@@ -1650,12 +1674,12 @@ export function ComponentsPage() {
                   <PropertyTile
                     label="Bounds"
                     value="X: 128..131, Y: 64..67"
-                    valueClassName="text-[11px] text-slate-400"
+                    valueClassName="text-[11px] text-[var(--sd-color-text-muted,#94a3b8)]"
                   />
                   <PropertyTile
                     label="Asset"
                     value="kinetic_press.png"
-                    valueClassName="text-[11px] text-slate-400 truncate"
+                    valueClassName="text-[11px] text-[var(--sd-color-text-muted,#94a3b8)] truncate"
                     subValue="32×32px"
                   />
                 </div>
@@ -1676,8 +1700,12 @@ export function ComponentsPage() {
                     </TableHead>
                     <TableBody>
                       <TableRow>
-                        <TableCell className="text-slate-600">1</TableCell>
-                        <TableCell className="text-yellow-200">ConveyorBelt</TableCell>
+                        <TableCell className="text-[var(--sd-color-text-subtle,#8295ab)]">
+                          1
+                        </TableCell>
+                        <TableCell className="text-[var(--sd-color-primary,#ffe700)]">
+                          ConveyorBelt
+                        </TableCell>
                         <TableCell>10, 20</TableCell>
                         <TableCell>
                           <Badge tone="success" shape="rounded">
@@ -1686,8 +1714,12 @@ export function ComponentsPage() {
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="text-slate-600">2</TableCell>
-                        <TableCell className="text-yellow-200">MatterFilter</TableCell>
+                        <TableCell className="text-[var(--sd-color-text-subtle,#8295ab)]">
+                          2
+                        </TableCell>
+                        <TableCell className="text-[var(--sd-color-primary,#ffe700)]">
+                          MatterFilter
+                        </TableCell>
                         <TableCell>12, 20</TableCell>
                         <TableCell>
                           <Badge tone="amber" shape="rounded">
@@ -1696,8 +1728,12 @@ export function ComponentsPage() {
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="text-slate-600">3</TableCell>
-                        <TableCell className="text-yellow-200">InfiniteSource</TableCell>
+                        <TableCell className="text-[var(--sd-color-text-subtle,#8295ab)]">
+                          3
+                        </TableCell>
+                        <TableCell className="text-[var(--sd-color-primary,#ffe700)]">
+                          InfiniteSource
+                        </TableCell>
                         <TableCell>14, 20</TableCell>
                         <TableCell>
                           <Badge tone="blue" shape="rounded">
@@ -1722,7 +1758,7 @@ export function ComponentsPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Panel className="space-y-4 p-5">
             <ShowcaseSubgroup title="Interactive Triggers">
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--sd-color-text-subtle,#8295ab)]">
                 Click or hover below to inspect modal and floating popover behavior.
               </p>
               <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -1736,8 +1772,10 @@ export function ComponentsPage() {
                   open={popoverOpen}
                   onClose={() => setPopoverOpen(false)}
                   content={
-                    <div className="space-y-2 p-1 text-xs text-slate-300">
-                      <div className="font-bold text-white">Quick actions</div>
+                    <div className="space-y-2 p-1 text-xs text-[var(--sd-color-text,#ffffff)]">
+                      <div className="font-bold text-[var(--sd-color-text,#ffffff)]">
+                        Quick actions
+                      </div>
                       <div>Configured filter targets for route #4</div>
                       <Button
                         variant="accent"
@@ -1757,10 +1795,10 @@ export function ComponentsPage() {
 
           <Panel className="space-y-3 p-5">
             <ShowcaseSubgroup title="Tooltip Surface (Static Preview)">
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--sd-color-text-subtle,#8295ab)]">
                 Direct rendering of the game's terrain inspector card over a blueprint canvas grid.
               </p>
-              <div className="flex items-center justify-center rounded border border-slate-800 bg-sd-950 p-6 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px]">
+              <div className="flex items-center justify-center rounded border border-[var(--sd-color-border,#334155)] bg-[var(--sd-color-bg,#090b0f)] p-6 bg-[radial-gradient(var(--sd-color-border,#334155)_1px,transparent_1px)] [background-size:16px_16px]">
                 <TooltipSurface>
                   <TerrainTooltipContent />
                 </TooltipSurface>
@@ -1771,7 +1809,7 @@ export function ComponentsPage() {
 
         <Panel className="mt-6 space-y-4 p-5">
           <ShowcaseSubgroup title="HUD Toast Notifications">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[var(--sd-color-text-subtle,#8295ab)]">
               HUD notifications extracted from native bundle runtime with asymmetric corners,
               glowing accent borders, and dismiss triggers.
             </p>
@@ -1794,7 +1832,9 @@ export function ComponentsPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <span className="text-xs text-slate-400">Trigger live toast:</span>
+              <span className="text-xs text-[var(--sd-color-text-muted,#94a3b8)]">
+                Trigger live toast:
+              </span>
               <Button
                 variant="quiet"
                 className="text-xs"
@@ -1863,8 +1903,9 @@ export function ComponentsPage() {
                       }}
                     />
                   </div>
-                  <span className="font-mono text-xs text-slate-400">
-                    Active slot: <span className="text-yellow-300">{selectedItem}</span>
+                  <span className="font-mono text-xs text-[var(--sd-color-text-muted,#94a3b8)]">
+                    Active slot:{" "}
+                    <span className="text-[var(--sd-color-primary,#ffe700)]">{selectedItem}</span>
                   </span>
                 </div>
               </ShowcaseSubgroup>
@@ -1969,7 +2010,7 @@ export function ComponentsPage() {
                           {color.value}
                         </div>
                       </div>
-                      <span className="shrink-0 rounded bg-[var(--sd-color-surface-hover,#333333)] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[var(--sd-color-text-muted,#b6bcc1)]">
+                      <span className="shrink-0 rounded bg-[var(--sd-color-surface-hover,#333333)] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[var(--sd-color-text,#ffffff)]">
                         {color.use}
                       </span>
                     </div>
@@ -1996,7 +2037,7 @@ export function ComponentsPage() {
           </ActionBar>
         }
       >
-        <div className="space-y-4 p-5 text-sm text-slate-300">
+        <div className="space-y-4 p-5 text-sm text-[var(--sd-color-text,#ffffff)]">
           <p>
             This exercises the modal shell, scrollable body, close action, and footer action bar.
           </p>
