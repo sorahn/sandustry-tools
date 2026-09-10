@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/hotbar";
 
 export type HotbarSlot = {
   id: string;
@@ -17,7 +18,12 @@ export type HotbarProps = {
 
 export function Hotbar({ slots, selectedId, onSelect, className = "" }: HotbarProps) {
   return (
-    <div className={cx("flex gap-2", className)} role="toolbar" aria-label="Hotbar">
+    <sandustry-hotbar
+      role="toolbar"
+      aria-label="Hotbar"
+      selected-id={selectedId}
+      class={cx("flex gap-2", className)}
+    >
       {slots.map((slot, index) => (
         <button
           key={slot.id}
@@ -27,7 +33,7 @@ export function Hotbar({ slots, selectedId, onSelect, className = "" }: HotbarPr
           aria-pressed={slot.id === selectedId}
           onClick={() => onSelect?.(slot)}
           className={cx(
-            "relative flex h-16 w-16 items-center justify-center border text-white shadow-md ring-2 ring-inset ring-black transition-colors active:brightness-125",
+            "relative flex h-16 w-16 items-center justify-center border text-white shadow-md ring-2 ring-inset ring-black transition-colors active:brightness-125 cursor-pointer",
             slot.id === selectedId
               ? "border-[#ffe700] bg-[#ffe700]/10"
               : "border-slate-200/25 hover:border-slate-200/50",
@@ -40,7 +46,7 @@ export function Hotbar({ slots, selectedId, onSelect, className = "" }: HotbarPr
           {slot.icon}
         </button>
       ))}
-    </div>
+    </sandustry-hotbar>
   );
 }
 
@@ -50,8 +56,8 @@ export type HotbarStepperProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "
 
 export function HotbarStepper({ onChange, className = "", ...props }: HotbarStepperProps) {
   return (
-    <div
-      className={cx(
+    <sandustry-hotbar-stepper
+      class={cx(
         "flex h-16 w-5 flex-col overflow-hidden rounded border border-slate-700/50 bg-slate-900/90 shadow-lg",
         className,
       )}
@@ -59,7 +65,7 @@ export function HotbarStepper({ onChange, className = "", ...props }: HotbarStep
       <button
         {...props}
         type="button"
-        className="flex-1 text-[8px] text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+        className="flex-1 text-[8px] text-white/70 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
         onClick={() => onChange?.("previous")}
       >
         ▲
@@ -67,11 +73,11 @@ export function HotbarStepper({ onChange, className = "", ...props }: HotbarStep
       <button
         {...props}
         type="button"
-        className="flex-1 border-t border-slate-700/50 text-[8px] text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+        className="flex-1 border-t border-slate-700/50 text-[8px] text-white/70 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
         onClick={() => onChange?.("next")}
       >
         ▼
       </button>
-    </div>
+    </sandustry-hotbar-stepper>
   );
 }

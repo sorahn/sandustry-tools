@@ -2,6 +2,7 @@ import { useEffect, useState, type HTMLAttributes, type ReactNode } from "react"
 import cx from "clsx";
 import { Spinner } from "./Spinner";
 import type { ControlSize } from "../types";
+import "../elements/loading-overlay";
 
 export type LoadingOverlayProps = HTMLAttributes<HTMLDivElement> & {
   busy: boolean;
@@ -66,12 +67,14 @@ export function LoadingOverlay({
     ((props as Record<string, unknown>)["data-testid"] as string | undefined) ?? dataTestId;
 
   return (
-    <div
+    <sandustry-loading-overlay
+      busy={busy ? "" : undefined}
+      visible={visible ? "" : undefined}
       data-testid={testId}
       aria-live={ariaLive}
-      aria-busy={busy}
+      aria-busy={busy ? "true" : "false"}
       {...props}
-      className={cx(
+      class={cx(
         "absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity ease-out motion-reduce:transition-none",
         visible ? "opacity-100" : "pointer-events-none opacity-0",
         className,
@@ -92,6 +95,6 @@ export function LoadingOverlay({
           <span className="font-mono text-xs font-medium text-slate-200">{displayMessage}</span>
         ) : null}
       </div>
-    </div>
+    </sandustry-loading-overlay>
   );
 }

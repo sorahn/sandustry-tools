@@ -3,6 +3,7 @@ import cx from "clsx";
 import { ItemCard } from "./ItemCard";
 import { SearchInput } from "./SearchInput";
 import { SegmentedControl, type Segment } from "./SegmentedControl";
+import "../elements/element-picker";
 
 export type ElementPickerItem = {
   id: string;
@@ -42,8 +43,11 @@ export function ElementPicker({
   });
 
   return (
-    <div
-      className={cx(
+    <sandustry-element-picker
+      value={value}
+      query={query}
+      matter={matter}
+      class={cx(
         "flex min-w-72 flex-col gap-2 rounded border border-slate-700 bg-black/75 p-2",
         className,
       )}
@@ -77,6 +81,6 @@ export function ElementPicker({
           </p>
         ) : null}
       </div>
-    </div>
+    </sandustry-element-picker>
   );
 }

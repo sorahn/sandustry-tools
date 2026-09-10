@@ -1,5 +1,6 @@
 import { useState, type HTMLAttributes, type ReactNode } from "react";
 import cx from "clsx";
+import "../elements/color-picker";
 
 export const DEFAULT_PRESET_COLORS: readonly string[] = [
   "#ff0000",
@@ -50,11 +51,12 @@ export function ColorPicker({
   };
 
   return (
-    <div
+    <sandustry-color-picker
       role="dialog"
       aria-label={typeof title === "string" ? title : "Color picker"}
-      className={cx(
-        "w-[242px] rounded border border-slate-700 bg-black/90 p-2 shadow-xl backdrop-blur-sm",
+      value={value}
+      class={cx(
+        "block w-[242px] rounded border border-slate-700 bg-black/90 p-2 shadow-xl backdrop-blur-sm",
         "flex flex-col gap-2 select-none",
         className,
       )}
@@ -160,6 +162,6 @@ export function ColorPicker({
           </div>
         </div>
       ) : null}
-    </div>
+    </sandustry-color-picker>
   );
 }

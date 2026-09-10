@@ -1,7 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
-
-export type ToastVariant = "default" | "hint" | "danger";
+import type { ToastVariant } from "../elements/toast";
+import "../elements/toast";
+export type { ToastVariant };
 
 export type ToastProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   message: ReactNode;
@@ -40,9 +41,10 @@ export function Toast({
   );
 
   return (
-    <div
+    <sandustry-toast
       role="status"
-      className={cx(
+      variant={variant}
+      class={cx(
         "relative flex items-center justify-between gap-3 overflow-hidden backdrop-blur-md transition-all duration-200",
         "rounded-tr-md rounded-br-md text-white select-none",
         isHint
@@ -58,6 +60,7 @@ export function Toast({
           : isHint
             ? "0 3px 14px rgba(0, 0, 0, 0.32), 0 0 6px rgba(143, 211, 255, 0.04)"
             : "0 4px 20px rgba(0, 0, 0, 0.4), 0 0 8px rgba(255, 231, 0, 0.06)",
+        ...props.style,
       }}
       {...props}
     >
@@ -92,7 +95,7 @@ export function Toast({
           type="button"
           onClick={onClose}
           aria-label="Dismiss toast"
-          className="relative ml-2 p-1 text-slate-400 hover:text-white transition-colors"
+          className="relative ml-2 p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
         >
           <svg
             width="10"
@@ -107,7 +110,7 @@ export function Toast({
           </svg>
         </button>
       ) : null}
-    </div>
+    </sandustry-toast>
   );
 }
 
@@ -119,10 +122,10 @@ export function ToastContainer({
   className?: string;
 }) {
   return (
-    <div
+    <sandustry-toast-container
       aria-live="polite"
       aria-atomic="true"
-      className={cx(
+      class={cx(
         "pointer-events-none fixed top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2",
         className,
       )}
@@ -130,6 +133,6 @@ export function ToastContainer({
       <div className="pointer-events-auto flex flex-col items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
         {children}
       </div>
-    </div>
+    </sandustry-toast-container>
   );
 }

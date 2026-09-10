@@ -50,6 +50,16 @@ import {
   BuildingTile,
   ItemDetailPanel,
   ModalFooterTip,
+  Dialog,
+  Popover,
+  Tooltip,
+  TooltipSurface,
+  ColorPicker,
+  ElementPicker,
+  FilterOverlay,
+  ProgressBar,
+  Hotbar,
+  HotbarStepper,
 } from "../index";
 
 describe("@sandustry/ui component suite", () => {
@@ -123,10 +133,12 @@ describe("@sandustry/ui component suite", () => {
 
   test("Batch 3 telemetry components render accurately", () => {
     const resourceHtml = renderToStaticMarkup(<ResourceAmount label="Iron" amount={1250} />);
+    expect(resourceHtml).toContain("<sandustry-resource-amount");
     expect(resourceHtml).toContain("Iron");
     expect(resourceHtml).toContain("1,250");
 
     const currencyHtml = renderToStaticMarkup(<CurrencyRow credits={50000} />);
+    expect(currencyHtml).toContain("<sandustry-currency-row");
     expect(currencyHtml).toContain("50,000");
 
     const saveSlotHtml = renderToStaticMarkup(
@@ -140,6 +152,7 @@ describe("@sandustry/ui component suite", () => {
 
   test("Toast and ToastContainer render alerts", () => {
     const toastHtml = renderToStaticMarkup(<Toast message="Operation succeeded" variant="hint" />);
+    expect(toastHtml).toContain("<sandustry-toast");
     expect(toastHtml).toContain("Operation succeeded");
 
     const containerHtml = renderToStaticMarkup(
@@ -147,6 +160,7 @@ describe("@sandustry/ui component suite", () => {
         <div>Toast Item</div>
       </ToastContainer>,
     );
+    expect(containerHtml).toContain("<sandustry-toast-container");
     expect(containerHtml).toContain("Toast Item");
     expect(containerHtml).toContain("top-4 right-4");
   });
@@ -174,6 +188,7 @@ describe("@sandustry/ui component suite", () => {
         <option value="1">1</option>
       </Select>,
     );
+    expect(smallHtml).toContain("<sandustry-select");
     expect(smallHtml).toContain("h-[var(--sd-form-control-small-height)]");
     expect(smallHtml).toContain("py-1");
     expect(smallHtml).not.toContain('size="');
@@ -306,6 +321,7 @@ describe("@sandustry/ui component suite", () => {
     const busyOverlay = renderToStaticMarkup(
       <LoadingOverlay busy={true} message="Loading blueprint data…" dataTestId="test-overlay" />,
     );
+    expect(busyOverlay).toContain("<sandustry-loading-overlay");
     expect(busyOverlay).toContain('data-testid="test-overlay"');
     expect(busyOverlay).toContain('aria-live="polite"');
     expect(busyOverlay).toContain('aria-busy="true"');
@@ -386,6 +402,7 @@ describe("@sandustry/ui component suite", () => {
       </FileDropZone>,
     );
 
+    expect(dropzoneHtml).toContain("<sandustry-file-dropzone");
     expect(dropzoneHtml).toContain('accept=".save"');
     expect(dropzoneHtml).toContain('type="file"');
     expect(dropzoneHtml).toContain("Drop file here");
@@ -601,6 +618,7 @@ describe("@sandustry/ui component suite", () => {
         action={<button type="button">Disable Drag</button>}
       />,
     );
+    expect(footerHtml).toContain("<sandustry-modal-footer-tip");
     expect(footerHtml).toContain("<footer");
     expect(footerHtml).toContain("Tip: Drag and drop items");
     expect(footerHtml).toContain("Disable Drag");
@@ -689,5 +707,118 @@ describe("@sandustry/ui component suite", () => {
     expect(splitHtml).toContain("<main");
     expect(splitHtml).toContain("Sidebar Content");
     expect(splitHtml).toContain("Main Content");
+  });
+
+  test("Dialog renders custom element when open and null when closed", () => {
+    const closedHtml = renderToStaticMarkup(
+      <Dialog open={false} title="Modal">
+        Content
+      </Dialog>,
+    );
+    expect(closedHtml).toBe("");
+
+    const openHtml = renderToStaticMarkup(
+      <Dialog open={true} title="Modal Title" footer={<button>Save</button>}>
+        <div>Dialog Body</div>
+      </Dialog>,
+    );
+    expect(openHtml).toContain("<sandustry-dialog");
+    expect(openHtml).toContain('role="dialog"');
+    expect(openHtml).toContain("Modal Title");
+    expect(openHtml).toContain("Dialog Body");
+    expect(openHtml).toContain("Save");
+  });
+
+  test("Popover renders custom element and trigger", () => {
+    const popoverHtml = renderToStaticMarkup(
+      <Popover content={<div>Popup Menu</div>} open={false}>
+        <button>Open Menu</button>
+      </Popover>,
+    );
+    expect(popoverHtml).toContain("<sandustry-popover");
+    expect(popoverHtml).toContain("Open Menu");
+  });
+
+  test("Tooltip and TooltipSurface render custom elements", () => {
+    const tooltipHtml = renderToStaticMarkup(
+      <Tooltip content="Help info">
+        <button>Hover me</button>
+      </Tooltip>,
+    );
+    expect(tooltipHtml).toContain("<sandustry-tooltip");
+    expect(tooltipHtml).toContain("Hover me");
+
+    const surfaceHtml = renderToStaticMarkup(<TooltipSurface>Direct surface</TooltipSurface>);
+    expect(surfaceHtml).toContain("<sandustry-tooltip-surface");
+    expect(surfaceHtml).toContain("Direct surface");
+    expect(surfaceHtml).toContain('role="tooltip"');
+  });
+
+  test("ColorPicker renders custom element with swatches and header", () => {
+    const pickerHtml = renderToStaticMarkup(<ColorPicker value="#ff0000" title="Custom Tone" />);
+    expect(pickerHtml).toContain("<sandustry-color-picker");
+    expect(pickerHtml).toContain('role="dialog"');
+    expect(pickerHtml).toContain("Custom Tone");
+    expect(pickerHtml).toContain("Default");
+  });
+
+  test("ElementPicker renders custom element and search input", () => {
+    const pickerHtml = renderToStaticMarkup(
+      <ElementPicker
+        items={[
+          { id: "iron", label: "Iron Ore", matter: "solid" },
+          { id: "water", label: "Water", matter: "liquid" },
+        ]}
+        value="iron"
+      />,
+    );
+    expect(pickerHtml).toContain("<sandustry-element-picker");
+    expect(pickerHtml).toContain("Iron Ore");
+    expect(pickerHtml).toContain("Water");
+  });
+
+  test("FilterOverlay renders custom element with directional endpoints", () => {
+    const filterHtml = renderToStaticMarkup(
+      <FilterOverlay
+        from={{ items: [{ label: "Sand" }], direction: "right" }}
+        to={{ items: [{ label: "Glass" }], direction: "right" }}
+        status="pass"
+      />,
+    );
+    expect(filterHtml).toContain("<sandustry-filter-overlay");
+    expect(filterHtml).toContain("Sand");
+    expect(filterHtml).toContain("Glass");
+    expect(filterHtml).toContain("border-[#00ff47]");
+  });
+
+  test("ProgressBar renders custom element, accessibility attributes, and tones", () => {
+    const progressHtml = renderToStaticMarkup(
+      <ProgressBar value={75} max={100} tone="accent" label="Power" />,
+    );
+    expect(progressHtml).toContain("<sandustry-progress-bar");
+    expect(progressHtml).toContain('role="progressbar"');
+    expect(progressHtml).toContain('aria-valuenow="75"');
+    expect(progressHtml).toContain('aria-valuemax="100"');
+    expect(progressHtml).toContain("bg-[#ffe700]");
+  });
+
+  test("Hotbar and HotbarStepper render custom elements with key shortcuts", () => {
+    const hotbarHtml = renderToStaticMarkup(
+      <Hotbar
+        slots={[
+          { id: "slot1", label: "Conveyor" },
+          { id: "slot2", label: "Drill" },
+        ]}
+        selectedId="slot1"
+      />,
+    );
+    expect(hotbarHtml).toContain("<sandustry-hotbar");
+    expect(hotbarHtml).toContain('role="toolbar"');
+    expect(hotbarHtml).toContain("border-[#ffe700]");
+
+    const stepperHtml = renderToStaticMarkup(<HotbarStepper />);
+    expect(stepperHtml).toContain("<sandustry-hotbar-stepper");
+    expect(stepperHtml).toContain("▲");
+    expect(stepperHtml).toContain("▼");
   });
 });

@@ -1,6 +1,7 @@
 import type { PropsWithChildren, SelectHTMLAttributes } from "react";
 import cx from "clsx";
 import type { ControlSize } from "../types";
+import "../elements/select";
 
 export type SelectProps = PropsWithChildren<
   Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> & {
@@ -13,7 +14,7 @@ export function Select({ size, compact = false, className = "", children, ...pro
   const effectiveSize: ControlSize = size ?? (compact ? "small" : "default");
 
   return (
-    <span className="sd-select-caret">
+    <sandustry-select scale={effectiveSize} class="sd-select-caret inline-block">
       <select
         className={cx(
           "appearance-none rounded-[var(--sd-radius)_0_var(--sd-radius)_0] border border-slate-700 bg-black/70 font-mono text-slate-200 focus:border-slate-500 focus:outline-2 focus:outline-yellow-300 focus:outline-offset-2",
@@ -29,6 +30,6 @@ export function Select({ size, compact = false, className = "", children, ...pro
       >
         {children}
       </select>
-    </span>
+    </sandustry-select>
   );
 }

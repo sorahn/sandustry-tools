@@ -11,6 +11,7 @@ import {
   type Ref,
 } from "react";
 import cx from "clsx";
+import "../elements/file-dropzone";
 
 export type FileRejection = {
   file?: File;
@@ -289,19 +290,23 @@ export function FileDropZone({
   const effectiveRole = role !== undefined ? role : clickable ? "button" : undefined;
 
   return (
-    <div
+    <sandustry-file-dropzone
       {...props}
+      dragging={isDragging ? "" : undefined}
+      disabled={disabled ? true : undefined}
+      accept={accept}
+      multiple={multiple ? true : undefined}
       role={effectiveRole}
       tabIndex={effectiveTabIndex}
-      aria-disabled={disabled || undefined}
+      aria-disabled={disabled ? "true" : undefined}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={cx(
-        "relative",
+      class={cx(
+        "relative block",
         className,
         isDragging && activeClassName,
         disabled && disabledClassName,
@@ -321,6 +326,6 @@ export function FileDropZone({
         }}
       />
       {typeof children === "function" ? children(renderState) : children}
-    </div>
+    </sandustry-file-dropzone>
   );
 }

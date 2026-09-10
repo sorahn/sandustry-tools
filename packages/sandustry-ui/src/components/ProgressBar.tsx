@@ -1,10 +1,13 @@
 import type { HTMLAttributes } from "react";
 import cx from "clsx";
+import type { ProgressBarTone } from "../elements/progress-bar";
+import "../elements/progress-bar";
+export type { ProgressBarTone };
 
 export type ProgressBarProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   value: number;
   max?: number;
-  tone?: "accent" | "success" | "info" | "warning" | "danger";
+  tone?: ProgressBarTone;
   label?: string;
 };
 
@@ -18,14 +21,17 @@ export function ProgressBar({
 }: ProgressBarProps) {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
   return (
-    <div
+    <sandustry-progress-bar
       {...props}
-      className={cx("relative h-2 overflow-hidden rounded-full bg-gray-800", className)}
+      value={value}
+      max={max}
+      tone={tone}
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={max}
       aria-valuenow={value}
       aria-label={label}
+      class={cx("relative block h-2 overflow-hidden rounded-full bg-gray-800", className)}
     >
       <div
         className={cx(
@@ -38,6 +44,6 @@ export function ProgressBar({
         )}
         style={{ width: `${percentage}%` }}
       />
-    </div>
+    </sandustry-progress-bar>
   );
 }

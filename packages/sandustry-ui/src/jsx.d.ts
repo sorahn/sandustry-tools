@@ -347,6 +347,139 @@ declare global {
         title?: string;
         class?: string;
       };
+      "sandustry-dialog": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        open?: boolean | string;
+        title?: string;
+        class?: string;
+      };
+      "sandustry-popover": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        open?: boolean | string;
+        side?: string;
+        class?: string;
+      };
+      "sandustry-tooltip": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        side?: string;
+        class?: string;
+      };
+      "sandustry-tooltip-surface": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        class?: string;
+      };
+      "sandustry-toast": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        variant?: string;
+        title?: string;
+        class?: string;
+      };
+      "sandustry-toast-container": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        class?: string;
+      };
+      "sandustry-loading-overlay": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        busy?: boolean | string;
+        visible?: boolean | string;
+        class?: string;
+      };
+      "sandustry-file-dropzone": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        dragging?: boolean | string;
+        disabled?: boolean | string;
+        accept?: string;
+        multiple?: boolean | string;
+        class?: string;
+      };
+      "sandustry-color-picker": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        value?: string | null;
+        class?: string;
+      };
+      "sandustry-element-picker": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        value?: string;
+        query?: string;
+        matter?: string;
+        class?: string;
+      };
+      "sandustry-filter-overlay": React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        status?: string;
+        class?: string;
+      };
+      "sandustry-modal-footer-tip": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        class?: string;
+      };
+      "sandustry-progress-bar": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        value?: number;
+        max?: number;
+        tone?: string;
+        class?: string;
+      };
+      "sandustry-select": React.DetailedHTMLProps<
+        React.SelectHTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        scale?: string;
+        class?: string;
+      };
+      "sandustry-resource-amount": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        type?: string;
+        amount?: string | number;
+        size?: string;
+        class?: string;
+      };
+      "sandustry-currency-row": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        size?: string;
+        class?: string;
+      };
+      "sandustry-hotbar": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        selectedId?: string;
+        "selected-id"?: string;
+        class?: string;
+      };
+      "sandustry-hotbar-stepper": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        class?: string;
+      };
     }
   }
 }
