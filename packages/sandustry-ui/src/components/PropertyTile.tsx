@@ -1,8 +1,9 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/property-tile";
 
 export type PropertyTileProps = PropsWithChildren<
-  Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
+  Omit<HTMLAttributes<HTMLElement>, "title"> & {
     label: ReactNode;
     value?: ReactNode;
     subValue?: ReactNode;
@@ -21,11 +22,18 @@ export function PropertyTile({
   children,
   ...props
 }: PropertyTileProps) {
+  const isStringLabel = typeof label === "string";
+  const isStringValue = typeof value === "string" || typeof value === "number";
+  const isStringSubValue = typeof subValue === "string";
+
   return (
-    <div
+    <sandustry-property-tile
       title={title}
+      label={isStringLabel ? label : undefined}
+      value={isStringValue ? String(value) : undefined}
+      subValue={isStringSubValue ? subValue : undefined}
       {...props}
-      className={cx("rounded border border-slate-800/60 bg-slate-950/50 p-2", className)}
+      class={cx("block rounded border border-slate-800/60 bg-slate-950/50 p-2", className)}
     >
       <span className="block text-[10px] uppercase font-mono tracking-wider text-slate-500">
         {label}
@@ -40,6 +48,6 @@ export function PropertyTile({
       {subValue ? (
         <span className="block text-slate-600 text-[10px] mt-0.5">{subValue}</span>
       ) : null}
-    </div>
+    </sandustry-property-tile>
   );
 }

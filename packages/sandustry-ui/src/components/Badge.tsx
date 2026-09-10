@@ -1,21 +1,11 @@
 import type { HTMLAttributes, PropsWithChildren } from "react";
 import cx from "clsx";
+import "../elements/badge";
 
-export type BadgeTone =
-  | "default"
-  | "accent"
-  | "success"
-  | "warning"
-  | "danger"
-  | "info"
-  | "neutral"
-  | "amber"
-  | "blue"
-  | "purple";
+export type { BadgeTone, BadgeShape } from "../elements/badge";
+import type { BadgeTone, BadgeShape } from "../elements/badge";
 
-export type BadgeShape = "cut" | "rounded";
-
-export type BadgeProps = PropsWithChildren<HTMLAttributes<HTMLSpanElement>> & {
+export type BadgeProps = PropsWithChildren<HTMLAttributes<HTMLElement>> & {
   tone?: BadgeTone;
   shape?: BadgeShape;
 };
@@ -28,9 +18,11 @@ export function Badge({
   ...props
 }: BadgeProps) {
   return (
-    <span
+    <sandustry-badge
       {...props}
-      className={cx(
+      tone={tone}
+      shape={shape}
+      class={cx(
         "inline-flex items-center border bg-black px-2 py-0.5 text-xs",
         shape === "cut" ? "rounded-tr-lg rounded-bl-lg" : "rounded",
         {
@@ -49,6 +41,6 @@ export function Badge({
       )}
     >
       {children}
-    </span>
+    </sandustry-badge>
   );
 }

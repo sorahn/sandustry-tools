@@ -1,10 +1,12 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/alert";
 
-export type AlertTone = "info" | "warning" | "danger" | "accent" | "neutral";
+export type { AlertTone } from "../elements/alert";
+import type { AlertTone } from "../elements/alert";
 
 export type AlertProps = PropsWithChildren<
-  Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
+  Omit<HTMLAttributes<HTMLElement>, "title"> & {
     tone?: AlertTone;
     title?: ReactNode;
     icon?: ReactNode;
@@ -29,12 +31,15 @@ export function Alert({
   ...props
 }: AlertProps) {
   const effectiveRole = role ?? (tone === "danger" || tone === "warning" ? "alert" : "status");
+  const isStringTitle = typeof title === "string";
 
   return (
-    <div
+    <sandustry-alert
       role={effectiveRole}
+      tone={tone}
+      title={isStringTitle ? title : undefined}
       {...props}
-      className={cx("rounded border p-2 text-xs leading-relaxed", toneClasses[tone], className)}
+      class={cx("block rounded border p-2 text-xs leading-relaxed", toneClasses[tone], className)}
     >
       {title ? (
         <div className="font-semibold mb-1 flex items-center gap-1.5">
@@ -43,6 +48,6 @@ export function Alert({
         </div>
       ) : null}
       <div>{children}</div>
-    </div>
+    </sandustry-alert>
   );
 }

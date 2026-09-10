@@ -1,10 +1,12 @@
 import type { HTMLAttributes } from "react";
 import cx from "clsx";
 import type { ControlSize } from "../types";
+import "../elements/spinner";
 
-export type SpinnerTone = "accent" | "yellow" | "neutral" | "white";
+export type { SpinnerTone } from "../elements/spinner";
+import type { SpinnerTone } from "../elements/spinner";
 
-export type SpinnerProps = HTMLAttributes<HTMLSpanElement> & {
+export type SpinnerProps = HTMLAttributes<HTMLElement> & {
   size?: ControlSize;
   tone?: SpinnerTone;
   label?: string;
@@ -31,11 +33,14 @@ export function Spinner({
   ...props
 }: SpinnerProps) {
   return (
-    <span
+    <sandustry-spinner
       role="status"
       aria-label={label}
+      size={size}
+      tone={tone}
+      label={label}
       {...props}
-      className={cx(
+      class={cx(
         "inline-block shrink-0 animate-spin rounded-full motion-reduce:animate-none",
         sizeClasses[size],
         toneClasses[tone],

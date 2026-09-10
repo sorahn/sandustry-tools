@@ -1,5 +1,6 @@
 import type { HTMLAttributes, SVGProps } from "react";
 import cx from "clsx";
+import "../elements/tier-pips";
 
 export function EnergyRequirementIcon({ className = "", ...props }: SVGProps<SVGSVGElement>) {
   return (
@@ -35,12 +36,14 @@ export function TierPips({ current, max = 5, className = "", ...props }: TierPip
   const pips = Array.from({ length: max }, (_, i) => i < clampedCurrent);
 
   return (
-    <div
+    <sandustry-tier-pips
       role="progressbar"
       aria-valuenow={clampedCurrent}
       aria-valuemin={0}
       aria-valuemax={max}
-      className={cx(
+      current={current}
+      max={max}
+      class={cx(
         "flex items-center bg-black/75 px-1.5 py-0.5 rounded-full border border-slate-800 relative overflow-hidden",
         className,
       )}
@@ -55,6 +58,6 @@ export function TierPips({ current, max = 5, className = "", ...props }: TierPip
           )}
         />
       ))}
-    </div>
+    </sandustry-tier-pips>
   );
 }
