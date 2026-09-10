@@ -22,7 +22,7 @@ export function SplitPane({
   const sidebarNode = (
     <aside
       className={cx(
-        "flex min-h-0 shrink-0 flex-col border-slate-700/40 bg-slate-900/20",
+        "flex min-h-0 shrink-0 flex-col border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.25))]",
         !hasWidth && "w-52",
         sidebarPosition === "start" ? "border-r" : "border-l",
         sidebarClassName,

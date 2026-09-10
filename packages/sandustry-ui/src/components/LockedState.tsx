@@ -54,12 +54,12 @@ export function LockedState({
         {...props}
         boxed=""
         class={cx(
-          "relative rounded-tr-lg rounded-bl-lg border border-dashed border-slate-600 p-4 block",
+          "relative rounded-tr-lg rounded-bl-lg border border-dashed border-[var(--sd-color-border-strong,#3d3d3d)] p-4 block",
           className,
         )}
       >
         {title ? (
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-slate-300">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-[var(--sd-color-text-muted,#b6bcc1)]">
             {title}
           </label>
         ) : null}

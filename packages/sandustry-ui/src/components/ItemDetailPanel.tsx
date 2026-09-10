@@ -33,19 +33,23 @@ export function ItemDetailPanel({
       {...props}
       is-empty={isActuallyEmpty ? "" : undefined}
       class={cx(
-        "flex w-64 flex-shrink-0 flex-col bg-black/75 p-4 text-white shadow-lg border border-slate-800 rounded",
+        "flex w-64 flex-shrink-0 flex-col bg-[var(--sd-color-surface,#222222)]/90 p-4 text-[var(--sd-color-text,#e8eef5)] shadow-lg border border-[var(--sd-color-border,#2e2e2e)] rounded",
         className,
       )}
     >
       <div className="flex-grow overflow-y-auto min-h-0">
         {category ? (
-          <p className="text-xs uppercase tracking-wider text-slate-400 mb-1">{category}</p>
+          <p className="text-xs uppercase tracking-wider text-[var(--sd-color-text-subtle,#808080)] mb-1">
+            {category}
+          </p>
         ) : null}
         {displayTitle ? (
-          <p className="mb-2 text-lg font-medium text-white">{displayTitle}</p>
+          <p className="mb-2 text-lg font-medium text-[var(--sd-color-text,#e8eef5)]">
+            {displayTitle}
+          </p>
         ) : null}
         {displayDescription ? (
-          <div className="text-sm text-slate-300 whitespace-pre-line leading-relaxed">
+          <div className="text-sm text-[var(--sd-color-text-muted,#b6bcc1)] whitespace-pre-line leading-relaxed">
             {displayDescription}
           </div>
         ) : null}
@@ -53,7 +57,9 @@ export function ItemDetailPanel({
       </div>
 
       {footer ? (
-        <div className="mt-auto pt-4 border-t border-slate-800 shrink-0">{footer}</div>
+        <div className="mt-auto pt-4 border-t border-[var(--sd-color-border-subtle,#242424)] shrink-0">
+          {footer}
+        </div>
       ) : null}
     </sandustry-item-detail-panel>
   );

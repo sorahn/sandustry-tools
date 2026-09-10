@@ -16,8 +16,9 @@ export function List({ variant = "default", className = "", children, ...props }
       class={cx(
         "flex flex-col",
         variant === "default" && "gap-1",
-        variant === "panel" && "gap-1 rounded border border-slate-700 bg-black/30 p-2",
-        variant === "flush" && "divide-y divide-slate-800",
+        variant === "panel" &&
+          "gap-1 rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-2",
+        variant === "flush" && "divide-y divide-[var(--sd-color-border-subtle,#242424)]",
         className,
       )}
     >

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTheme, THEME_OPTIONS } from "../utils/theme";
 import {
   ActionBar,
   Badge,
@@ -228,11 +229,13 @@ function ShowcaseSection({
 }) {
   return (
     <section id={id} className="scroll-mt-12 space-y-5">
-      <div className="flex flex-col gap-1.5 border-b border-slate-800/80 pb-3">
-        <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-yellow-300/90">
+      <div className="flex flex-col gap-1.5 border-b border-[var(--sd-color-border,#2a323d)]/80 pb-3">
+        <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sd-color-primary,#ffe700)]">
           {title}
         </h2>
-        {description ? <p className="text-xs text-slate-400">{description}</p> : null}
+        {description ? (
+          <p className="text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">{description}</p>
+        ) : null}
       </div>
       {children}
     </section>
@@ -391,30 +394,33 @@ export function ComponentsPage() {
     message: string;
     variant: "default" | "hint" | "danger";
   } | null>(null);
-  const [selectedTheme, setSelectedTheme] = useState<string>("default");
+  const [siteTheme, setSiteTheme] = useTheme();
+  const [accentTheme, setAccentTheme] = useState<string>("default");
 
-  const themes = [
-    { id: "default", label: "Default Gold", className: "" },
+  const accentThemes = [
+    { id: "default", label: "Default Accent", className: "" },
     { id: "cyber-cyan", label: "Cyber Cyan", className: "theme-cyber-cyan" },
     { id: "neon-emerald", label: "Neon Emerald", className: "theme-neon-emerald" },
     { id: "solar-amber", label: "Solar Amber", className: "theme-solar-amber" },
   ];
 
-  const currentThemeClass = themes.find((t) => t.id === selectedTheme)?.className ?? "";
+  const currentAccentClass = accentThemes.find((t) => t.id === accentTheme)?.className ?? "";
 
   return (
-    <div className={`mx-auto max-w-6xl space-y-20 pb-24 ${currentThemeClass}`}>
-      <header className="border-b border-slate-800 pb-6">
+    <div className={`mx-auto max-w-6xl space-y-20 pb-24 ${currentAccentClass}`}>
+      <header className="border-b border-[var(--sd-color-border,#2a323d)] pb-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.25em] text-yellow-300/80">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--sd-color-primary,#ffe700)]">
             UI kit reference - Development Sneak Peak
           </p>
-          <span className="rounded border border-yellow-300/30 bg-yellow-300/10 px-2 py-0.5 font-mono text-[10px] text-yellow-300">
+          <span className="rounded border border-[var(--sd-color-primary,#ffe700)]/30 bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))] px-2 py-0.5 font-mono text-[10px] text-[var(--sd-color-primary,#ffe700)]">
             @sandustry/ui
           </span>
         </div>
-        <h1 className="mt-2 text-3xl font-bold text-white">Component showcase</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+        <h1 className="mt-2 text-3xl font-bold text-[var(--sd-color-text,#e8eef5)]">
+          Component showcase
+        </h1>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--sd-color-text-muted,#b6bcc1)]">
           Interactive states and reference styling for the browser UI kit. This route is
           intentionally not linked from the public site navigation.
         </p>
@@ -423,28 +429,52 @@ export function ComponentsPage() {
             <a
               key={sec.id}
               href={`#${sec.id}`}
-              className="rounded border border-slate-800 bg-slate-900/60 px-2.5 py-1 font-mono text-[11px] text-slate-400 transition hover:border-yellow-300/40 hover:text-yellow-300"
+              className="rounded border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 px-2.5 py-1 font-mono text-[11px] text-[var(--sd-color-text-muted,#b6bcc1)] transition hover:border-[var(--sd-color-primary,#ffe700)]/40 hover:text-[var(--sd-color-primary,#ffe700)]"
             >
               {sec.label}
             </a>
           ))}
         </nav>
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-800/80 pt-4">
-          <span className="font-mono text-xs text-slate-400">Theme tokens:</span>
-          {themes.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setSelectedTheme(t.id)}
-              className={`rounded px-2.5 py-1 font-mono text-xs transition ${
-                selectedTheme === t.id
-                  ? "border border-yellow-400 bg-yellow-400/20 font-semibold text-yellow-300"
-                  : "border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="mt-4 flex flex-col gap-2.5 border-t border-[var(--sd-color-border,#2a323d)]/80 pt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+              Full Theme:
+            </span>
+            {THEME_OPTIONS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setSiteTheme(t.id)}
+                className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition ${
+                  siteTheme === t.id
+                    ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
+                    : "border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
+                }`}
+              >
+                <span>{t.icon}</span>
+                <span>{t.name}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+              Accent Overrides:
+            </span>
+            {accentThemes.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setAccentTheme(t.id)}
+                className={`rounded px-2.5 py-1 font-mono text-xs transition ${
+                  accentTheme === t.id
+                    ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
+                    : "border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -454,11 +484,11 @@ export function ComponentsPage() {
         description="High-attention announcement banner for welcome context, milestones, and primary community actions."
       >
         <Panel variant="hero" className="p-6 text-center">
-          <h2 className="text-2xl font-bold tracking-wider text-[#ffe700]">
+          <h2 className="text-2xl font-bold tracking-wider text-[var(--sd-color-primary,#ffe700)]">
             This library is still in development.
           </h2>
           <Divider variant="accent" className="my-3" />
-          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-white/90">
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-[var(--sd-color-text,#e8eef5)]/90">
             A high-attention surface for welcome messages, release notes, or important product
             context.
           </p>
@@ -686,14 +716,16 @@ export function ComponentsPage() {
                 </div>
 
                 {/* Breadcrumb & State Info */}
-                <div className="rounded border border-slate-800 bg-slate-950/60 p-5 font-mono text-xs text-slate-400">
+                <div className="rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-5 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
                   Active navigation hierarchy:{" "}
-                  <span className="font-semibold text-yellow-300 capitalize">{activeNavMode}</span>
-                  <span className="mx-2 text-slate-600">▸</span>
-                  <span className="font-semibold text-yellow-300 capitalize">
+                  <span className="font-semibold text-[var(--sd-color-primary,#ffe700)] capitalize">
+                    {activeNavMode}
+                  </span>
+                  <span className="mx-2 text-[var(--sd-color-text-subtle,#808080)]">▸</span>
+                  <span className="font-semibold text-[var(--sd-color-primary,#ffe700)] capitalize">
                     {activeNavSubTab}
                   </span>
-                  <p className="mt-2 text-[11px] text-slate-500">
+                  <p className="mt-2 text-[11px] text-[var(--sd-color-text-subtle,#808080)]">
                     Switching primary mode tabs dynamically updates the available secondary view
                     tabs beneath, mirroring the in-game Toolbox and Building modal headers.
                   </p>
@@ -722,9 +754,11 @@ export function ComponentsPage() {
                     { id: "mods", label: "Mods", disabled: true },
                   ]}
                 />
-                <div className="rounded border border-slate-800 bg-slate-950/40 px-4 py-3 font-mono text-xs text-slate-400">
+                <div className="rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] px-4 py-3 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
                   Active tab:{" "}
-                  <span className="font-semibold text-yellow-300">{activeBuildTab}</span>
+                  <span className="font-semibold text-[var(--sd-color-primary,#ffe700)]">
+                    {activeBuildTab}
+                  </span>
                 </div>
               </div>
             </ShowcaseSubgroup>
@@ -747,7 +781,7 @@ export function ComponentsPage() {
                       <TextInput defaultValue="Claybarren" maxLength={64} />
                       <IconButton
                         label="Regenerate name"
-                        className="h-[38px] w-[38px] rounded-sm border border-slate-600 bg-black/60 hover:border-[#ffe700] hover:text-[#ffe700]"
+                        className="h-[38px] w-[38px] rounded-sm border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 hover:border-[var(--sd-color-primary,#ffe700)] hover:text-[var(--sd-color-primary,#ffe700)]"
                       >
                         ↻
                       </IconButton>
@@ -762,7 +796,7 @@ export function ComponentsPage() {
                       <TextInput defaultValue="llcfshrd" monospace tone="accent" maxLength={32} />
                       <IconButton
                         label="Regenerate seed"
-                        className="h-[38px] w-[38px] rounded-sm border border-slate-600 bg-black/60 hover:border-[#ffe700] hover:text-[#ffe700]"
+                        className="h-[38px] w-[38px] rounded-sm border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 hover:border-[var(--sd-color-primary,#ffe700)] hover:text-[var(--sd-color-primary,#ffe700)]"
                       >
                         ↻
                       </IconButton>
@@ -806,15 +840,17 @@ export function ComponentsPage() {
 
                   <FormField label="Preferences">
                     <div className="space-y-3 pt-1">
-                      <div className="flex items-center justify-between rounded border border-slate-800 bg-black/30 px-3 py-2">
-                        <span className="text-xs text-slate-300">Show blueprint grid</span>
+                      <div className="flex items-center justify-between rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] px-3 py-2">
+                        <span className="text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+                          Show blueprint grid
+                        </span>
                         <div className="flex items-center gap-2">
                           <Switch
                             checked={switchOn}
                             onChange={(e) => setSwitchOn(e.target.checked)}
                             label="Show grid"
                           />
-                          <span className="font-mono text-[10px] text-slate-500">
+                          <span className="font-mono text-[10px] text-[var(--sd-color-text-subtle,#808080)]">
                             {switchOn ? "ON" : "OFF"}
                           </span>
                         </div>
@@ -837,7 +873,7 @@ export function ComponentsPage() {
                   </FormField>
 
                   <FormField label="Settings sliders">
-                    <div className="space-y-4 rounded border border-slate-800 bg-black/30 p-3">
+                    <div className="space-y-4 rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-3">
                       <Slider
                         label="Master volume"
                         showValue
@@ -1022,8 +1058,11 @@ export function ComponentsPage() {
                   </div>
 
                   <div className="min-w-0 flex-1 space-y-3">
-                    <div className="border-b border-slate-800 pb-1 font-mono text-xs text-slate-400">
-                      Category: <span className="capitalize text-yellow-300">{activeCategory}</span>
+                    <div className="border-b border-[var(--sd-color-border-subtle,#242424)] pb-1 font-mono text-xs text-[var(--sd-color-text-subtle,#808080)]">
+                      Category:{" "}
+                      <span className="capitalize text-[var(--sd-color-primary,#ffe700)]">
+                        {activeCategory}
+                      </span>
                     </div>
                     <div className="flex flex-wrap gap-3">
                       <BuildingTile
@@ -1031,7 +1070,11 @@ export function ComponentsPage() {
                         hotkey="1"
                         selected={selectedBuilding === "conveyor"}
                         onClick={() => setSelectedBuilding("conveyor")}
-                        icon={<span className="text-sm font-bold text-yellow-300">→</span>}
+                        icon={
+                          <span className="text-sm font-bold text-[var(--sd-color-primary,#ffe700)]">
+                            →
+                          </span>
+                        }
                       />
                       <BuildingTile
                         label="Conveyor Mk.2"
@@ -1039,7 +1082,11 @@ export function ComponentsPage() {
                         tier={2}
                         selected={selectedBuilding === "conveyor-mk2"}
                         onClick={() => setSelectedBuilding("conveyor-mk2")}
-                        icon={<span className="text-sm font-bold text-yellow-300">⇉</span>}
+                        icon={
+                          <span className="text-sm font-bold text-[var(--sd-color-primary,#ffe700)]">
+                            ⇉
+                          </span>
+                        }
                       />
                       <BuildingTile
                         label="Launcher"
@@ -1047,7 +1094,11 @@ export function ComponentsPage() {
                         tier={3}
                         selected={selectedBuilding === "launcher"}
                         onClick={() => setSelectedBuilding("launcher")}
-                        icon={<span className="text-sm font-bold text-yellow-300">▲</span>}
+                        icon={
+                          <span className="text-sm font-bold text-[var(--sd-color-primary,#ffe700)]">
+                            ▲
+                          </span>
+                        }
                       />
                       <BuildingTile
                         label="Drill"
@@ -1056,7 +1107,11 @@ export function ComponentsPage() {
                         tier={1}
                         selected={selectedBuilding === "drill"}
                         onClick={() => setSelectedBuilding("drill")}
-                        icon={<span className="text-sm font-bold text-yellow-300">▼</span>}
+                        icon={
+                          <span className="text-sm font-bold text-[var(--sd-color-primary,#ffe700)]">
+                            ▼
+                          </span>
+                        }
                       />
                       <BuildingTile
                         label="Rocket Launcher"
@@ -1065,7 +1120,11 @@ export function ComponentsPage() {
                         tier={3}
                         selected={selectedBuilding === "rocket"}
                         onClick={() => setSelectedBuilding("rocket")}
-                        icon={<span className="text-sm font-bold text-yellow-300">🚀</span>}
+                        icon={
+                          <span className="text-sm font-bold text-[var(--sd-color-primary,#ffe700)]">
+                            🚀
+                          </span>
+                        }
                       />
                       <BuildingTile
                         label="Synthesizer"
@@ -1074,13 +1133,21 @@ export function ComponentsPage() {
                         tier={4}
                         selected={selectedBuilding === "synthesizer"}
                         onClick={() => setSelectedBuilding("synthesizer")}
-                        icon={<span className="text-sm font-bold text-yellow-300">⌂</span>}
+                        icon={
+                          <span className="text-sm font-bold text-[var(--sd-color-primary,#ffe700)]">
+                            ⌂
+                          </span>
+                        }
                       />
                       <BuildingTile
                         label="Kinetic Press"
                         disabled
                         badge="lock"
-                        icon={<span className="text-sm font-bold text-slate-500">⚙</span>}
+                        icon={
+                          <span className="text-sm font-bold text-[var(--sd-color-text-subtle,#808080)]">
+                            ⚙
+                          </span>
+                        }
                       />
                     </div>
                   </div>
@@ -1091,7 +1158,7 @@ export function ComponentsPage() {
                     category={buildingDetails[selectedBuilding]?.category}
                     description={buildingDetails[selectedBuilding]?.description}
                     footer={
-                      <div className="flex items-center justify-between text-xs text-slate-400">
+                      <div className="flex items-center justify-between text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
                         <div className="flex items-center gap-2">
                           <span>Tier {buildingDetails[selectedBuilding]?.tier ?? 1}</span>
                           <TierPips
@@ -1100,7 +1167,7 @@ export function ComponentsPage() {
                           />
                         </div>
                         {buildingDetails[selectedBuilding]?.requirement === "energy" ? (
-                          <span className="flex items-center gap-1 text-yellow-300">
+                          <span className="flex items-center gap-1 text-[var(--sd-color-primary,#ffe700)]">
                             ⚡ Powered
                           </span>
                         ) : (
@@ -1116,24 +1183,33 @@ export function ComponentsPage() {
                   tip={
                     <span>
                       Tip: Drag and drop{" "}
-                      <em className="font-medium not-italic text-[#ffe700]">items</em> or{" "}
-                      <em className="font-medium not-italic text-[#ffe700]">blocks</em> to the
-                      hotbar for quick access.
+                      <em className="font-medium not-italic text-[var(--sd-color-primary,#ffe700)]">
+                        items
+                      </em>{" "}
+                      or{" "}
+                      <em className="font-medium not-italic text-[var(--sd-color-primary,#ffe700)]">
+                        blocks
+                      </em>{" "}
+                      to the hotbar for quick access.
                     </span>
                   }
                   action={
                     <div className="flex flex-col items-end">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-300">Disable Drag &amp; Drop</span>
+                        <span className="text-sm text-[var(--sd-color-text-muted,#b6bcc1)]">
+                          Disable Drag &amp; Drop
+                        </span>
                         <Checkbox
                           checked={disableDragDrop}
                           onChange={(e) => setDisableDragDrop(e.target.checked)}
                         />
                       </div>
-                      <div className="mt-1 text-xs text-slate-400">
+                      <div className="mt-1 text-xs text-[var(--sd-color-text-subtle,#808080)]">
                         If the buttons feel{" "}
-                        <strong className="text-slate-200">sticky and hard to click</strong>, use
-                        this!
+                        <strong className="text-[var(--sd-color-text,#e8eef5)]">
+                          sticky and hard to click
+                        </strong>
+                        , use this!
                       </div>
                     </div>
                   }
@@ -1249,13 +1325,13 @@ export function ComponentsPage() {
                 title="Sidebar disclosure section"
                 headerAction={<Badge tone="neutral">Auto</Badge>}
               >
-                <div className="rounded border border-slate-800/80 bg-black/40 p-3 text-xs text-slate-400">
+                <div className="rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-3 text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
                   Borderless, lightweight disclosure block with rotating chevron and optional header
                   action slot.
                 </div>
               </Collapsible>
               <Collapsible title="Default collapsed disclosure" defaultCollapsed>
-                <div className="rounded border border-slate-800/80 bg-black/40 p-3 text-xs text-slate-400">
+                <div className="rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-3 text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
                   Expanded content when toggled open.
                 </div>
               </Collapsible>
@@ -1309,11 +1385,11 @@ export function ComponentsPage() {
             <Panel className="h-full p-4">
               <ShowcaseSubgroup title="SplitPane Master-Detail View">
                 <SplitPane
-                  className="h-[360px] overflow-hidden rounded border border-slate-800 bg-black/50"
-                  sidebarClassName="w-48 bg-slate-950/80"
+                  className="h-[360px] overflow-hidden rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.5))]"
+                  sidebarClassName="w-48 bg-[var(--sd-color-surface,#222222)]/50"
                   sidebar={
                     <div className="flex flex-col">
-                      <div className="border-b border-slate-800 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                      <div className="border-b border-[var(--sd-color-border-subtle,#242424)] px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--sd-color-text-subtle,#808080)]">
                         Projects
                       </div>
                       <ListItem
@@ -1340,8 +1416,10 @@ export function ComponentsPage() {
                 >
                   <div className="flex h-full flex-col">
                     <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
-                      <div className="flex items-center justify-between border-b border-slate-800/60 pb-1.5">
-                        <span className="font-mono text-xs text-yellow-300">Active Selection</span>
+                      <div className="flex items-center justify-between border-b border-[var(--sd-color-border-subtle,#242424)] pb-1.5">
+                        <span className="font-mono text-xs text-[var(--sd-color-primary,#ffe700)]">
+                          Active Selection
+                        </span>
                         <Badge tone="success">Ready</Badge>
                       </div>
                       <ItemCard label="Factory starter" meta="v2" selected />
@@ -1355,7 +1433,7 @@ export function ComponentsPage() {
                         ]}
                       />
                     </div>
-                    <ActionBar className="justify-end gap-2 bg-slate-950/40">
+                    <ActionBar className="justify-end gap-2 bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.4))]">
                       <Button className="text-xs">Duplicate</Button>
                       <Button variant="accent" className="text-xs">
                         Inspect
@@ -1453,25 +1531,29 @@ export function ComponentsPage() {
               accept=".save,.blueprint,.png"
               clickable
               onFile={(file) => setDroppedFileName(file.name)}
-              className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded border border-dashed border-slate-700/80 bg-slate-950/40 p-6 text-center transition-colors hover:border-yellow-400/50"
-              activeClassName="border-yellow-400 bg-amber-950/25"
+              className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded border border-dashed border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-6 text-center transition-colors hover:border-[var(--sd-color-primary,#ffe700)]/60"
+              activeClassName="border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))]"
             >
               {({ dragging }) => (
                 <div className="space-y-2 pointer-events-none">
                   <div className="text-xl">{dragging ? "📥" : "📁"}</div>
-                  <div className="text-xs text-slate-300">
-                    <span className="font-semibold text-yellow-300">Click to browse</span> or drag a
-                    file here
+                  <div className="text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+                    <span className="font-semibold text-[var(--sd-color-primary,#ffe700)]">
+                      Click to browse
+                    </span>{" "}
+                    or drag a file here
                   </div>
-                  <div className="font-mono text-[10px] text-slate-500">
+                  <div className="font-mono text-[10px] text-[var(--sd-color-text-subtle,#808080)]">
                     Accepts .save, .blueprint, .png
                   </div>
                 </div>
               )}
             </FileDropZone>
             {droppedFileName ? (
-              <div className="flex items-center justify-between rounded border border-slate-800 bg-slate-900/50 px-3 py-2 text-xs">
-                <span className="text-slate-300 font-mono">Last selected: {droppedFileName}</span>
+              <div className="flex items-center justify-between rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] px-3 py-2 text-xs">
+                <span className="text-[var(--sd-color-text-muted,#b6bcc1)] font-mono">
+                  Last selected: {droppedFileName}
+                </span>
                 <Button size="small" variant="quiet" onClick={() => setDroppedFileName(null)}>
                   Clear
                 </Button>
@@ -1858,15 +1940,17 @@ export function ComponentsPage() {
             {colorGroups.map((group) => (
               <section
                 key={group.name}
-                className="flex flex-col overflow-hidden rounded border border-slate-800 bg-black/40"
+                className="flex flex-col overflow-hidden rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))]"
               >
-                <div className="border-b border-slate-800/80 bg-slate-950/50 px-3 py-2">
-                  <h3 className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-white">
+                <div className="border-b border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface,#222222)]/50 px-3 py-2">
+                  <h3 className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-[var(--sd-color-text,#e8eef5)]">
                     {group.name}
                   </h3>
-                  <p className="mt-0.5 text-[11px] leading-4 text-slate-400">{group.description}</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-[var(--sd-color-text-subtle,#808080)]">
+                    {group.description}
+                  </p>
                 </div>
-                <div className="flex-1 divide-y divide-slate-800/60">
+                <div className="flex-1 divide-y divide-[var(--sd-color-border-subtle,#242424)]">
                   {group.colors.map((color) => (
                     <div
                       key={`${group.name}-${color.name}`}
@@ -1878,12 +1962,14 @@ export function ComponentsPage() {
                         title={`${color.name}: ${color.value}`}
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs font-medium text-slate-200">
+                        <div className="truncate text-xs font-medium text-[var(--sd-color-text,#e8eef5)]">
                           {color.name}
                         </div>
-                        <div className="font-mono text-[10px] text-slate-400">{color.value}</div>
+                        <div className="font-mono text-[10px] text-[var(--sd-color-text-subtle,#808080)]">
+                          {color.value}
+                        </div>
                       </div>
-                      <span className="shrink-0 rounded bg-slate-800/80 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-slate-400">
+                      <span className="shrink-0 rounded bg-[var(--sd-color-surface-hover,#333333)] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[var(--sd-color-text-muted,#b6bcc1)]">
                         {color.use}
                       </span>
                     </div>

@@ -33,20 +33,30 @@ export function PropertyTile({
       value={isStringValue ? String(value) : undefined}
       subValue={isStringSubValue ? subValue : undefined}
       {...props}
-      class={cx("block rounded border border-slate-800/60 bg-slate-950/50 p-2", className)}
+      class={cx(
+        "block rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-2",
+        className,
+      )}
     >
-      <span className="block text-[10px] uppercase font-mono tracking-wider text-slate-500">
+      <span className="block text-[10px] uppercase font-mono tracking-wider text-[var(--sd-color-text-subtle,#808080)]">
         {label}
       </span>
       {children ? (
         children
       ) : value !== undefined ? (
-        <span className={cx("block font-mono text-slate-200 font-medium", valueClassName)}>
+        <span
+          className={cx(
+            "block font-mono text-[var(--sd-color-text,#e8eef5)] font-medium",
+            valueClassName,
+          )}
+        >
           {value}
         </span>
       ) : null}
       {subValue ? (
-        <span className="block text-slate-600 text-[10px] mt-0.5">{subValue}</span>
+        <span className="block text-[var(--sd-color-text-subtle,#808080)] text-[10px] mt-0.5">
+          {subValue}
+        </span>
       ) : null}
     </sandustry-property-tile>
   );

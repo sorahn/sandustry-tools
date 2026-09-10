@@ -30,7 +30,7 @@ export function ItemCard({
           "group flex w-full items-center gap-2 rounded border px-2 py-1.5 text-left transition-all duration-200",
           selected
             ? "border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))]"
-            : "border-slate-700 bg-black/40 hover:border-slate-500 hover:bg-black/60",
+            : "border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] hover:border-[var(--sd-color-border-hover,#4a4a4a)] hover:bg-[var(--sd-color-surface-hover,#333333)]",
           props.disabled && "cursor-not-allowed opacity-50",
           className,
         )}
@@ -43,12 +43,16 @@ export function ItemCard({
             "truncate text-xs transition-colors",
             selected
               ? "text-[var(--sd-color-primary,#ffe700)]"
-              : "text-slate-300 group-hover:text-white",
+              : "text-[var(--sd-color-text-muted,#b6bcc1)] group-hover:text-[var(--sd-color-text,#e8eef5)]",
           )}
         >
           {label}
         </span>
-        {meta ? <span className="ml-auto shrink-0 text-[10px] text-slate-500">{meta}</span> : null}
+        {meta ? (
+          <span className="ml-auto shrink-0 text-[10px] text-[var(--sd-color-text-subtle,#808080)]">
+            {meta}
+          </span>
+        ) : null}
       </button>
     </sandustry-item-card>
   );

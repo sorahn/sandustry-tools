@@ -86,13 +86,15 @@ export function LoadingOverlay({
     >
       <div
         className={cx(
-          "flex items-center gap-2.5 rounded-lg border border-slate-700/80 bg-slate-900/90 px-4 py-2.5 shadow-2xl backdrop-blur-md",
+          "flex items-center gap-2.5 rounded-lg border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-elevated,#2b2b2b)]/95 px-4 py-2.5 shadow-2xl backdrop-blur-md",
           cardClassName,
         )}
       >
         <Spinner size={spinnerSize} tone="accent" aria-hidden="true" />
         {displayMessage ? (
-          <span className="font-mono text-xs font-medium text-slate-200">{displayMessage}</span>
+          <span className="font-mono text-xs font-medium text-[var(--sd-color-text,#e8eef5)]">
+            {displayMessage}
+          </span>
         ) : null}
       </div>
     </sandustry-loading-overlay>

@@ -293,7 +293,7 @@ describe("@sandustry/ui component suite", () => {
     expect(purpleBadge).toContain("purple-300");
 
     const neutralBadge = renderToStaticMarkup(<Badge tone="neutral">None</Badge>);
-    expect(neutralBadge).toContain("border-slate-800 bg-slate-900 text-slate-400");
+    expect(neutralBadge).toContain("border-[var(--sd-color-border-subtle,#242424)]");
   });
 
   test("Spinner renders sizes, tones, and accessibility attributes", () => {
@@ -502,7 +502,7 @@ describe("@sandustry/ui component suite", () => {
     expect(tileHtml).toContain("Position");
     expect(tileHtml).toContain("12, 34");
     expect(tileHtml).toContain("Top-left");
-    expect(tileHtml).toContain("bg-slate-950/50");
+    expect(tileHtml).toContain("border-[var(--sd-color-border-subtle,#242424)]");
 
     const customTileHtml = renderToStaticMarkup(
       <PropertyTile label="Custom">
@@ -536,8 +536,7 @@ describe("@sandustry/ui component suite", () => {
     expect(tableHtml).toContain("<tbody");
     expect(tableHtml).toContain("<th");
     expect(tableHtml).toContain("<td");
-    expect(tableHtml).toContain("border-slate-800");
-    expect(tableHtml).toContain("border-slate-900");
+    expect(tableHtml).toContain("border-[var(--sd-color-border-subtle,#242424)]");
     expect(tableHtml).toContain("Conveyor");
   });
 
@@ -569,8 +568,8 @@ describe("@sandustry/ui component suite", () => {
     expect(pipsHtml).toContain('role="progressbar"');
     expect(pipsHtml).toContain('aria-valuenow="3"');
     expect(pipsHtml).toContain('aria-valuemax="5"');
-    expect(pipsHtml).toContain("bg-green-400");
-    expect(pipsHtml).toContain("bg-gray-700");
+    expect(pipsHtml).toContain("bg-[var(--sd-color-success,#34d399)]");
+    expect(pipsHtml).toContain("bg-[var(--sd-color-surface-hover,#333333)]");
   });
 
   test("EnergyRequirementIcon renders svg with accessible label", () => {
@@ -588,7 +587,7 @@ describe("@sandustry/ui component suite", () => {
     expect(tileHtml).toContain("<svg");
     expect(tileHtml).toContain("Requires Energy");
     expect(tileHtml).toContain('role="progressbar"');
-    expect(tileHtml).toContain("bg-green-400");
+    expect(tileHtml).toContain("bg-[var(--sd-color-success,#34d399)]");
   });
 
   test("ItemDetailPanel renders title, description, and footer", () => {
@@ -608,7 +607,7 @@ describe("@sandustry/ui component suite", () => {
     expect(activePanelHtml).toContain("Conveyor Belt");
     expect(activePanelHtml).toContain("Transports Sand.");
     expect(activePanelHtml).toContain("Upgrade");
-    expect(activePanelHtml).toContain("border-slate-800");
+    expect(activePanelHtml).toContain("border-[var(--sd-color-border-subtle,#242424)]");
   });
 
   test("ModalFooterTip renders tip and action slot", () => {

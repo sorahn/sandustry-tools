@@ -88,9 +88,9 @@ export function ModeTab({
           "sd-sheen",
           selected
             ? "border-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary,#ffe700)] bg-[linear-gradient(45deg,var(--sd-color-primary-soft,rgba(255,231,0,0.15)),transparent)]"
-            : "border-slate-500 bg-black/25 text-white hover:border-transparent hover:text-[var(--sd-color-primary,#ffe700)]",
+            : "border-[var(--sd-color-border-strong,#3d3d3d)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.25))] text-[var(--sd-color-text,#e8eef5)] hover:border-[var(--sd-color-primary,#ffe700)] hover:text-[var(--sd-color-primary,#ffe700)]",
           disabled &&
-            "cursor-not-allowed opacity-40 hover:border-slate-500 hover:text-white before:hidden active:scale-100",
+            "cursor-not-allowed opacity-40 hover:border-[var(--sd-color-border-strong,#3d3d3d)] hover:text-[var(--sd-color-text,#e8eef5)] before:hidden active:scale-100",
           className,
         )}
       >

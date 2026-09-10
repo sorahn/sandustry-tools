@@ -19,7 +19,7 @@ export function TooltipSurface({ children, className = "", ...props }: TooltipSu
       {...props}
       role="tooltip"
       class={cx(
-        "block w-max max-w-64 rounded border border-slate-600/80 bg-slate-950/95 px-2.5 py-1.5 text-base text-white shadow-2xl ring-1 ring-black/60 backdrop-blur-sm",
+        "block w-max max-w-64 rounded border border-[var(--sd-color-border-strong,#3d3d3d)] bg-[var(--sd-color-surface-elevated,#2b2b2b)] px-2.5 py-1.5 text-base text-[var(--sd-color-text,#e8eef5)] shadow-2xl ring-1 ring-black/60 backdrop-blur-sm",
         className,
       )}
     >

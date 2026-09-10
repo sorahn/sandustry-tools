@@ -44,7 +44,7 @@ export function TierPips({ current, max = 5, className = "", ...props }: TierPip
       current={current}
       max={max}
       class={cx(
-        "flex items-center bg-black/75 px-1.5 py-0.5 rounded-full border border-slate-800 relative overflow-hidden",
+        "flex items-center bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.75))] px-1.5 py-0.5 rounded-full border border-[var(--sd-color-border-subtle,#242424)] relative overflow-hidden",
         className,
       )}
       {...props}
@@ -54,7 +54,9 @@ export function TierPips({ current, max = 5, className = "", ...props }: TierPip
           key={idx}
           className={cx(
             "w-1.5 h-1.5 rounded-full mx-[1px] transition-colors",
-            active ? "bg-green-400 shadow-[0_0_4px_rgba(74,222,128,0.8)]" : "bg-gray-700",
+            active
+              ? "bg-[var(--sd-color-success,#34d399)] shadow-[0_0_4px_var(--sd-color-success,#34d399)]"
+              : "bg-[var(--sd-color-surface-hover,#333333)]",
           )}
         />
       ))}

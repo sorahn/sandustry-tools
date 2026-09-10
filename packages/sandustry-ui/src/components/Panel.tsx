@@ -46,12 +46,12 @@ export function Panel({
     header || (collapsible && title) ? (
       <div
         slot="header"
-        className="box-border flex min-h-[var(--sd-control-height)] items-center justify-between border-b border-slate-800 px-4 py-2"
+        className="box-border flex min-h-[var(--sd-control-height)] items-center justify-between border-b border-[var(--sd-color-border,#2a323d)] px-4 py-2"
       >
         {collapsible ? (
           <button
             type="button"
-            className="inline-flex items-center gap-2 border-0 bg-transparent p-0 font-inherit text-slate-400 focus-visible:outline-2 focus-visible:outline-yellow-300 focus-visible:outline-offset-3"
+            className="inline-flex items-center gap-2 border-0 bg-transparent p-0 font-inherit text-[var(--sd-color-text-muted,#b6bcc1)] focus-visible:outline-2 focus-visible:outline-[var(--sd-color-primary,#ffe700)] focus-visible:outline-offset-3"
             onClick={toggleCollapsed}
             aria-expanded={!collapsed}
           >
@@ -72,10 +72,10 @@ export function Panel({
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-[11px] text-white/70">{title}</span>
+            <span className="text-[11px] text-[var(--sd-color-text-muted,#b6bcc1)]">{title}</span>
           </button>
         ) : (
-          <span className="text-[11px] text-white/70">{title}</span>
+          <span className="text-[11px] text-[var(--sd-color-text-muted,#b6bcc1)]">{title}</span>
         )}
         {header}
       </div>
@@ -89,9 +89,9 @@ export function Panel({
       collapsed={collapsed ? "" : undefined}
       padded={padded ? "" : undefined}
       class={cx(
-        "overflow-hidden border border-slate-700 bg-black/75 shadow-xl",
+        "overflow-hidden border border-[var(--sd-color-border,#334155)] bg-[var(--sd-color-surface,rgba(0,0,0,0.75))] shadow-xl text-[var(--sd-color-text,#e8eef5)]",
         variant === "hero"
-          ? "rounded-[0_12px] border-slate-500/70 bg-black/[0.92] shadow-[0_28px_64px_rgba(0,0,0,0.56)] outline outline-1 outline-black"
+          ? "rounded-[0_12px] border-[var(--sd-color-border-strong,rgba(100,116,139,0.7))] bg-[var(--sd-color-surface,rgba(0,0,0,0.92))] shadow-[0_28px_64px_rgba(0,0,0,0.56)] outline outline-1 outline-[var(--sd-color-bg,#000000)]"
           : "rounded",
         className,
       )}

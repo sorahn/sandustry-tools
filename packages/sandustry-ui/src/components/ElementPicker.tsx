@@ -48,7 +48,7 @@ export function ElementPicker({
       query={query}
       matter={matter}
       class={cx(
-        "flex min-w-72 flex-col gap-2 rounded border border-slate-700 bg-black/75 p-2",
+        "flex min-w-72 flex-col gap-2 rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/95 p-2",
         className,
       )}
     >
@@ -76,7 +76,7 @@ export function ElementPicker({
           />
         ))}
         {filteredItems.length === 0 ? (
-          <p className="col-span-4 px-2 py-4 text-center text-xs text-slate-500">
+          <p className="col-span-4 px-2 py-4 text-center text-xs text-[var(--sd-color-text-subtle,#808080)]">
             No elements found
           </p>
         ) : null}

@@ -42,18 +42,18 @@ export function Dialog({
           aria-modal="true"
           aria-label={typeof title === "string" ? title : undefined}
           className={cx(
-            "flex max-h-[80vh] w-full max-w-3xl flex-col overflow-hidden rounded border border-slate-700 bg-black/90 text-white shadow-xl",
+            "flex max-h-[80vh] w-full max-w-3xl flex-col overflow-hidden rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/95 text-[var(--sd-color-text,#e8eef5)] shadow-xl",
             className,
           )}
         >
           {header || title || onClose ? (
-            <div className="flex shrink-0 items-center justify-between border-b border-slate-700/40 px-5 pb-3 pt-4">
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--sd-color-border-subtle,#242424)] px-5 pb-3 pt-4">
               {header ?? <h2 className="text-lg font-bold tracking-wide">{title}</h2>}
               {onClose ? (
                 <button
                   type="button"
                   aria-label="Close dialog"
-                  className="text-lg leading-none text-slate-500 transition-colors hover:text-white cursor-pointer"
+                  className="text-lg leading-none text-[var(--sd-color-text-subtle,#808080)] transition-colors hover:text-[var(--sd-color-text,#e8eef5)] cursor-pointer"
                   onClick={onClose}
                 >
                   ×
@@ -63,7 +63,9 @@ export function Dialog({
           ) : null}
           <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
           {footer ? (
-            <div className="flex shrink-0 border-t border-slate-700/40 px-4 py-3">{footer}</div>
+            <div className="flex shrink-0 border-t border-[var(--sd-color-border-subtle,#242424)] px-4 py-3">
+              {footer}
+            </div>
           ) : null}
         </div>
       </div>

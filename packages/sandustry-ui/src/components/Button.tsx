@@ -9,13 +9,15 @@ export const buttonStyles = {
     "sd-btn-effects relative left-0 inline-flex min-h-9 items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border px-3.5 py-2 text-xs font-medium transition-[border-color,left] duration-1000 ease-in-out",
   effects: "sd-btn-effects",
   default:
-    "border-slate-200 bg-black text-white hover:text-white hover:border-transparent hover:first-letter:text-[var(--sd-yellow)] focus-visible:text-white focus-visible:border-transparent focus-visible:first-letter:text-[var(--sd-yellow)]",
-  accent: "border-yellow-300/50 bg-yellow-300/10 text-yellow-300",
+    "border-[var(--sd-color-border-strong,rgb(226,232,240))] bg-[var(--sd-color-bg,#181c20)] text-[var(--sd-color-text,#ffffff)] hover:text-[var(--sd-color-text,#ffffff)] hover:border-transparent hover:first-letter:text-[var(--sd-color-primary,#ffe700)] focus-visible:text-[var(--sd-color-text,#ffffff)] focus-visible:border-transparent focus-visible:first-letter:text-[var(--sd-color-primary,#ffe700)]",
+  accent:
+    "border-[var(--sd-color-primary-hover,rgba(253,224,71,0.5))] bg-[var(--sd-color-primary-soft,rgba(253,224,71,0.1))] text-[var(--sd-color-primary-hover,#fde047)]",
   solid:
-    "border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary-foreground,#000)] font-bold hover:bg-black hover:text-[var(--sd-color-primary,#ffe700)] hover:border-[var(--sd-color-primary,#ffe700)] hover:shadow-[0_0_12px_var(--sd-color-primary-glow,rgba(255,231,0,0.35))] focus-visible:bg-black focus-visible:text-[var(--sd-color-primary,#ffe700)] focus-visible:border-[var(--sd-color-primary,#ffe700)]",
+    "border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary-foreground,#141414)] font-bold hover:bg-[var(--sd-color-bg,#181c20)] hover:text-[var(--sd-color-primary,#ffe700)] hover:border-[var(--sd-color-primary,#ffe700)] hover:shadow-[0_0_12px_var(--sd-color-primary-glow,rgba(255,231,0,0.35))] focus-visible:bg-[var(--sd-color-bg,#181c20)] focus-visible:text-[var(--sd-color-primary,#ffe700)] focus-visible:border-[var(--sd-color-primary,#ffe700)]",
   quiet:
-    "border-transparent bg-transparent text-slate-400 hover:bg-slate-800/50 hover:text-white hover:border-transparent focus-visible:bg-slate-800/50 focus-visible:text-white focus-visible:border-transparent hover:first-letter:text-white focus-visible:first-letter:text-white before:hidden",
-  danger: "border-red-400 bg-black text-white",
+    "border-transparent bg-transparent text-[var(--sd-color-text-muted,#94a3b8)] hover:bg-[var(--sd-color-surface-hover,rgba(51,65,85,0.5))] hover:text-[var(--sd-color-text,#ffffff)] hover:border-transparent focus-visible:bg-[var(--sd-color-surface-hover,rgba(51,65,85,0.5))] focus-visible:text-[var(--sd-color-text,#ffffff)] focus-visible:border-transparent hover:first-letter:text-[var(--sd-color-text,#ffffff)] focus-visible:first-letter:text-[var(--sd-color-text,#ffffff)] before:hidden",
+  danger:
+    "border-[var(--sd-color-danger,#ff3300)] bg-[var(--sd-color-bg,#181c20)] text-[var(--sd-color-text,#ffffff)]",
   compact: "h-[var(--sd-form-control-small-height)] px-2 py-0.5 text-[10px] leading-tight",
   small: "h-[var(--sd-form-control-small-height)] px-2 py-0.5 text-[10px] leading-tight",
   large: "h-[var(--sd-form-control-large-height)] px-5 py-2.5 text-sm leading-normal",

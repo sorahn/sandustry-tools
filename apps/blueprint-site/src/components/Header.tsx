@@ -14,6 +14,8 @@ import {
   type StoredSaveSummary,
 } from "../utils/save-db";
 
+import { ThemeToggle } from "./ThemeToggle";
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -86,18 +88,18 @@ function SaveManager() {
         setPendingDelete(null);
       }}
       side="bottom"
-      className="w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-slate-800 bg-slate-950/95 p-0 shadow-2xl backdrop-blur-md"
+      className="w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface-elevated,#262d37)]/95 p-0 shadow-2xl backdrop-blur-md text-[var(--sd-color-text,#e8eef5)]"
       content={
         <div className="flex flex-col text-xs">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-3 py-2">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-200">
+          <div className="flex items-center justify-between border-b border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/80 px-3 py-2">
+            <div className="flex items-center gap-1.5 font-semibold text-[var(--sd-color-text,#e8eef5)]">
               <span>Stored saves</span>
               <Badge tone="default" className="px-1 py-0 text-[10px]">
                 {saves.length}
               </Badge>
             </div>
-            <span className="font-mono text-[10px] text-slate-500">
+            <span className="font-mono text-[10px] text-[var(--sd-color-text-muted,#b6bcc1)]">
               {usage !== null ? `${formatBytes(usage)} used` : ""}
             </span>
           </div>
@@ -110,11 +112,14 @@ function SaveManager() {
 
           {/* Saves List */}
           {saves.length === 0 && !error ? (
-            <div className="px-4 py-8 text-center text-slate-500">
-              <p className="font-medium text-slate-400">No remembered saves yet</p>
+            <div className="px-4 py-8 text-center text-[var(--sd-color-text-muted,#b6bcc1)]">
+              <p className="font-medium text-[var(--sd-color-text,#e8eef5)]">
+                No remembered saves yet
+              </p>
               <p className="mt-1 text-[11px]">
-                Drop a <code className="font-mono text-slate-400">.save</code> file in Save Explorer
-                or Inspector.
+                Drop a{" "}
+                <code className="font-mono text-[var(--sd-color-primary,#ffe700)]">.save</code> file
+                in Save Explorer or Inspector.
               </p>
             </div>
           ) : (
@@ -195,13 +200,13 @@ function SaveManager() {
           )}
 
           {/* Footer Link */}
-          <div className="border-t border-slate-800 bg-slate-900/40 p-2">
+          <div className="border-t border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/40 p-2">
             <Button
               as={Link}
               to="/explorer"
               variant="quiet"
               size="small"
-              className="w-full justify-center text-xs text-slate-400 hover:text-yellow-300"
+              className="w-full justify-center text-xs text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-primary,#ffe700)]"
               onClick={() => setOpen(false)}
             >
               Open in Save Explorer →
@@ -213,12 +218,12 @@ function SaveManager() {
       <button
         type="button"
         aria-label={activeSave ? `Saved saves, active save ${activeSave.fileName}` : "Saved saves"}
-        className={`flex items-center gap-1.5 rounded border px-2.5 py-1 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300 ${
+        className={`flex items-center gap-1.5 rounded border px-2.5 py-1 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--sd-color-primary,#ffe700)] ${
           open
-            ? "border-yellow-400/80 bg-yellow-400/10 text-yellow-300"
+            ? "border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.1))] text-[var(--sd-color-primary,#ffe700)]"
             : activeSave
-              ? "border-slate-700 bg-slate-900/60 text-slate-300 hover:border-yellow-400/50 hover:text-yellow-300"
-              : "border-slate-800 bg-slate-950/40 text-slate-500 hover:border-slate-700 hover:text-slate-300"
+              ? "border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 text-[var(--sd-color-text,#e8eef5)] hover:border-[var(--sd-color-primary,#ffe700)]/50 hover:text-[var(--sd-color-primary,#ffe700)]"
+              : "border-[var(--sd-color-border-subtle,#20262d)] bg-[var(--sd-color-surface-muted,#141414)]/40 text-[var(--sd-color-text-muted,#b6bcc1)] hover:border-[var(--sd-color-border,#2a323d)] hover:text-[var(--sd-color-text,#e8eef5)]"
         }`}
         onClick={() => setOpen((prev) => !prev)}
       >
@@ -227,11 +232,11 @@ function SaveManager() {
           {activeSave ? activeSave.worldName || activeSave.fileName : "Saves"}
         </span>
         {saves.length > 0 ? (
-          <span className="rounded bg-slate-800 px-1 py-0.2 font-mono text-[10px] tabular-nums text-slate-400">
+          <span className="rounded bg-[var(--sd-color-surface-elevated,#262d37)] px-1 py-0.2 font-mono text-[10px] tabular-nums text-[var(--sd-color-text-muted,#b6bcc1)]">
             {saves.length}
           </span>
         ) : null}
-        <span className="text-[9px] text-slate-500">▾</span>
+        <span className="text-[9px] text-[var(--sd-color-text-subtle,#808080)]">▾</span>
       </button>
     </Popover>
   );
@@ -241,36 +246,49 @@ export function Header() {
   return (
     <header
       data-site-header
-      className="sticky top-0 z-40 border-b border-slate-800/80 bg-black/85 shadow-lg backdrop-blur-sm"
+      className="sticky top-0 z-40 border-b border-[var(--sd-color-border,#2a323d)]/80 bg-[var(--sd-color-bg,#181c20)]/85 shadow-lg backdrop-blur-sm transition-colors duration-200"
     >
       <div className="site-shell mx-auto flex w-full flex-wrap items-center justify-between gap-3 px-6 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <Link
             to="/"
-            className="shrink-0 font-mono text-sm font-bold tracking-[0.2em] text-yellow-300"
+            className="shrink-0 font-mono text-sm font-bold tracking-[0.2em] text-[var(--sd-color-primary,#ffe700)]"
           >
             SANDUSTRY / TOOLS
           </Link>
           <SaveManager />
         </div>
-        <nav className="flex flex-wrap justify-end gap-x-4 gap-y-1 font-mono text-xs text-slate-400">
-          <Link to="/inspect" activeProps={{ className: "text-yellow-300" }}>
-            Blueprint Inspector
-          </Link>
-          <Link to="/explorer" activeProps={{ className: "text-yellow-300" }}>
-            Save Explorer
-          </Link>
-          <Link to="/codec" activeProps={{ className: "text-yellow-300" }}>
-            Encoder / Decoder
-          </Link>
-          {import.meta.env.DEV ? (
-            <>
-              <Link to="/components" activeProps={{ className: "text-yellow-300" }}>
+        <div className="flex items-center gap-4">
+          <nav className="flex flex-wrap justify-end gap-x-4 gap-y-1 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+            <Link
+              to="/inspect"
+              activeProps={{ className: "text-[var(--sd-color-primary,#ffe700)] font-semibold" }}
+            >
+              Blueprint Inspector
+            </Link>
+            <Link
+              to="/explorer"
+              activeProps={{ className: "text-[var(--sd-color-primary,#ffe700)] font-semibold" }}
+            >
+              Save Explorer
+            </Link>
+            <Link
+              to="/codec"
+              activeProps={{ className: "text-[var(--sd-color-primary,#ffe700)] font-semibold" }}
+            >
+              Encoder / Decoder
+            </Link>
+            {import.meta.env.DEV ? (
+              <Link
+                to="/components"
+                activeProps={{ className: "text-[var(--sd-color-primary,#ffe700)] font-semibold" }}
+              >
                 Components
               </Link>
-            </>
-          ) : null}
-        </nav>
+            ) : null}
+          </nav>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

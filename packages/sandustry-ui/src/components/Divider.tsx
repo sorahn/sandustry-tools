@@ -21,7 +21,7 @@ export function Divider({ variant = "solid", className = "", ...props }: Divider
         className={cx(
           "h-px w-full",
           variant === "solid"
-            ? "bg-slate-700/60"
+            ? "bg-[var(--sd-color-border,#2e2e2e)]"
             : "bg-gradient-to-r from-transparent via-[var(--sd-color-primary,#ffe700)]/40 to-transparent",
         )}
       />

@@ -99,7 +99,7 @@ export function Popover({
                 id={popoverId}
                 role="dialog"
                 className={cx(
-                  "fixed z-50 min-w-48 rounded border border-slate-700 bg-black/90 p-2 text-white shadow-xl backdrop-blur-sm",
+                  "fixed z-50 min-w-48 rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/95 p-2 text-[var(--sd-color-text,#e8eef5)] shadow-xl backdrop-blur-sm",
                   side === "top" && "-translate-y-full",
                   side === "left" && "-translate-x-full",
                   className,

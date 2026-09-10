@@ -21,7 +21,9 @@ export function ModalFooterTip({
         {...props}
       >
         <div className="flex flex-col justify-end">
-          {tip ? <div className="text-slate-300 text-sm italic">{tip}</div> : null}
+          {tip ? (
+            <div className="text-[var(--sd-color-text-muted,#b6bcc1)] text-sm italic">{tip}</div>
+          ) : null}
         </div>
 
         <div className="flex flex-col items-end">{action || children}</div>

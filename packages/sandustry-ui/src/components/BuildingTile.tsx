@@ -59,7 +59,7 @@ export function BuildingTile({
               isSm ? "h-14 w-14" : "h-16 w-16",
               selected
                 ? "border-[var(--sd-color-primary,#ffe700)] sd-glow-primary"
-                : "border-slate-200/25 hover:border-slate-200/60",
+                : "border-[var(--sd-color-border,#2e2e2e)] hover:border-[var(--sd-color-border-hover,#4a4a4a)]",
             )}
             style={{
               background:
@@ -78,13 +78,13 @@ export function BuildingTile({
 
             {/* Optional corner hotkey or badge */}
             {hotkey ? (
-              <span className="absolute left-1 top-0.5 font-mono text-[9px] font-bold text-yellow-300 sd-drop-shadow">
+              <span className="absolute left-1 top-0.5 font-mono text-[9px] font-bold text-[var(--sd-color-primary,#ffe700)] sd-drop-shadow">
                 {hotkey}
               </span>
             ) : null}
 
             {badge ? (
-              <span className="absolute right-1 top-0.5 font-mono text-[9px] text-slate-300 sd-drop-shadow">
+              <span className="absolute right-1 top-0.5 font-mono text-[9px] text-[var(--sd-color-text-subtle,#808080)] sd-drop-shadow">
                 {badge}
               </span>
             ) : null}
@@ -115,7 +115,9 @@ export function BuildingTile({
             className={cx(
               "mt-1.5 w-full leading-tight line-clamp-2 text-ellipsis",
               isSm ? "text-[11px]" : "text-xs",
-              selected ? "text-yellow-300 font-medium" : "text-slate-200 group-hover:text-white",
+              selected
+                ? "text-[var(--sd-color-primary,#ffe700)] font-medium"
+                : "text-[var(--sd-color-text-muted,#b6bcc1)] group-hover:text-[var(--sd-color-text,#e8eef5)]",
             )}
           >
             {label}

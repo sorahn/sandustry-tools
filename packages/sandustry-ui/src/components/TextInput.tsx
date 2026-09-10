@@ -27,7 +27,7 @@ export function TextInput({
         {...props}
         type="text"
         className={cx(
-          "min-w-0 flex-1 rounded-sm border border-slate-600 bg-black/60 tracking-wide text-white outline-none transition-colors focus:border-[var(--sd-color-primary,#ffe700)]",
+          "min-w-0 flex-1 rounded-sm border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface-elevated,#181c20)] tracking-wide text-[var(--sd-color-text,#e8eef5)] outline-none transition-colors focus:border-[var(--sd-color-primary,#ffe700)]",
           size === "small" && "h-[var(--sd-form-control-small-height)] px-2 text-xs",
           size === "default" && "h-[var(--sd-form-control-height)] px-3 text-sm",
           size === "large" && "h-[var(--sd-form-control-large-height)] px-4 text-base",

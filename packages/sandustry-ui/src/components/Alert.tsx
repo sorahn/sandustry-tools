@@ -18,7 +18,8 @@ const toneClasses: Record<AlertTone, string> = {
   danger: "border-red-700/60 bg-red-950/30 text-red-200",
   info: "border-blue-700/60 bg-blue-950/30 text-blue-200",
   accent: "border-yellow-500/60 bg-yellow-950/30 text-yellow-200",
-  neutral: "border-slate-800 bg-slate-900/60 text-slate-300",
+  neutral:
+    "border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] text-[var(--sd-color-text-muted,#b6bcc1)]",
 };
 
 export function Alert({

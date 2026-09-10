@@ -37,19 +37,23 @@ export function ListItem({
           "flex w-full items-center gap-2 border-l-2 text-left transition-all duration-150 cursor-pointer",
           variant === "default" && "px-3 py-3",
           variant === "compact" && "px-2 py-1.5",
-          variant === "subtle" && "px-3 py-2 text-slate-400",
+          variant === "subtle" && "px-3 py-2 text-[var(--sd-color-text-subtle,#808080)]",
           selected
-            ? "border-l-[var(--sd-color-primary,#ffe700)] bg-slate-800/60"
-            : "border-l-transparent hover:border-l-slate-600 hover:bg-slate-800/30",
+            ? "border-l-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-surface-elevated,#2b2b2b)]"
+            : "border-l-transparent hover:border-l-[var(--sd-color-border-strong,#3d3d3d)] hover:bg-[var(--sd-color-surface-hover,#333333)]",
           props.disabled && "cursor-not-allowed opacity-50",
           className,
         )}
       >
         {leading ? <span className="shrink-0">{leading}</span> : null}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-white">{label}</span>
+          <span className="block truncate text-sm font-semibold text-[var(--sd-color-text,#e8eef5)]">
+            {label}
+          </span>
           {description ? (
-            <span className="mt-1 block text-[11px] text-slate-300">{description}</span>
+            <span className="mt-1 block text-[11px] text-[var(--sd-color-text-muted,#b6bcc1)]">
+              {description}
+            </span>
           ) : null}
         </span>
         {trailing ? <span className="shrink-0">{trailing}</span> : null}

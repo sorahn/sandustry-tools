@@ -56,15 +56,15 @@ export function ColorPicker({
       aria-label={typeof title === "string" ? title : "Color picker"}
       value={value}
       class={cx(
-        "block w-[242px] rounded border border-slate-700 bg-black/90 p-2 shadow-xl backdrop-blur-sm",
+        "block w-[242px] rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/95 p-2 shadow-xl backdrop-blur-sm",
         "flex flex-col gap-2 select-none",
         className,
       )}
       {...props}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-700 pb-2">
-        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
+      <div className="flex items-center justify-between border-b border-[var(--sd-color-border-subtle,#242424)] pb-2">
+        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--sd-color-text-subtle,#808080)]">
           {title}
         </span>
         {onClose ? (
@@ -72,7 +72,7 @@ export function ColorPicker({
             type="button"
             onClick={onClose}
             aria-label="Close color picker"
-            className="p-1 text-slate-500 transition-colors hover:text-white"
+            className="p-1 text-[var(--sd-color-text-subtle,#808080)] transition-colors hover:text-[var(--sd-color-text,#e8eef5)]"
           >
             <svg
               width="10"
@@ -95,20 +95,22 @@ export function ColorPicker({
           type="button"
           onClick={() => handleSelect(null)}
           className={cx(
-            "-mx-1 flex items-center gap-2 rounded p-1 text-left transition-colors hover:bg-slate-800",
-            isDefaultSelected && "bg-slate-800/80",
+            "-mx-1 flex items-center gap-2 rounded p-1 text-left transition-colors hover:bg-[var(--sd-color-surface-hover,#333333)]",
+            isDefaultSelected && "bg-[var(--sd-color-surface-elevated,#2b2b2b)]",
           )}
         >
           <div
             className={cx(
               "h-5 w-5 rounded-sm border transition-all sd-checkerboard",
-              isDefaultSelected ? "border-white shadow-[0_0_4px_#ffffff]" : "border-slate-500",
+              isDefaultSelected
+                ? "border-[var(--sd-color-primary,#ffe700)] shadow-[0_0_4px_var(--sd-color-primary,#ffe700)]"
+                : "border-[var(--sd-color-border,#2e2e2e)]",
             )}
           />
           <span
             className={cx(
-              "text-[10px] text-slate-300",
-              isDefaultSelected ? "font-bold text-white" : "font-normal",
+              "text-[10px] text-[var(--sd-color-text-muted,#b6bcc1)]",
+              isDefaultSelected ? "font-bold text-[var(--sd-color-text,#e8eef5)]" : "font-normal",
             )}
           >
             Default
@@ -116,7 +118,7 @@ export function ColorPicker({
         </button>
       ) : null}
 
-      {/* 8-Column Swatches Grid */}
+      {/* Preset Swatches Grid */}
       <div className="grid grid-cols-8 gap-1">
         {swatches.map((color) => {
           const isSelected = value?.toLowerCase() === color.toLowerCase();
@@ -127,10 +129,10 @@ export function ColorPicker({
               onClick={() => handleSelect(color)}
               aria-label={color}
               className={cx(
-                "aspect-square w-full rounded-sm border transition-transform",
+                "aspect-square w-full rounded-sm border transition-transform hover:scale-110",
                 isSelected
-                  ? "z-10 scale-105 border-white shadow-[0_0_5px_#ffffff]"
-                  : "border-white/10 hover:scale-110 hover:border-white/50",
+                  ? "border-[var(--sd-color-primary,#ffe700)] scale-105 shadow-[0_0_4px_var(--sd-color-primary,#ffe700)]"
+                  : "border-black/40 hover:border-[var(--sd-color-border-hover,#4a4a4a)]",
               )}
               style={{ backgroundColor: color }}
             />
@@ -140,10 +142,10 @@ export function ColorPicker({
 
       {/* Custom Color Input */}
       {showCustom ? (
-        <div className="flex items-center gap-2 border-t border-slate-700 pt-2">
-          <span className="text-[10px] text-slate-400">Custom:</span>
+        <div className="flex items-center gap-2 border-t border-[var(--sd-color-border-subtle,#242424)] pt-2">
+          <span className="text-[10px] text-[var(--sd-color-text-subtle,#808080)]">Custom:</span>
           <div
-            className="relative flex h-6 flex-grow items-center justify-center overflow-hidden rounded border border-slate-600 transition-colors hover:border-slate-500"
+            className="relative flex h-6 flex-grow items-center justify-center overflow-hidden rounded border border-[var(--sd-color-border,#2e2e2e)] transition-colors hover:border-[var(--sd-color-border-hover,#4a4a4a)]"
             style={{ backgroundColor: customColor }}
           >
             <input

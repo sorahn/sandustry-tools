@@ -21,7 +21,10 @@ export function Tabs({ value, onChange, items, className = "", children, ...prop
       {...props}
       role="tablist"
       value={value}
-      class={cx("flex items-center gap-4 border-b border-slate-700/60", className)}
+      class={cx(
+        "flex items-center gap-4 border-b border-[var(--sd-color-border,#2e2e2e)]",
+        className,
+      )}
     >
       {items
         ? items.map((item) => (
@@ -60,9 +63,9 @@ export function Tab({ selected = false, className = "", children, ...props }: Ta
           "cursor-pointer border-b-2 px-2 pb-2 text-sm font-medium tracking-wider outline-none transition-colors",
           selected
             ? "border-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary,#ffe700)]"
-            : "border-transparent text-slate-300 hover:border-slate-500 hover:text-white",
+            : "border-transparent text-[var(--sd-color-text-muted,#b6bcc1)] hover:border-[var(--sd-color-border-hover,#4a4a4a)] hover:text-[var(--sd-color-text,#e8eef5)]",
           props.disabled &&
-            "cursor-not-allowed opacity-40 hover:border-transparent hover:text-slate-300",
+            "cursor-not-allowed opacity-40 hover:border-transparent hover:text-[var(--sd-color-text-subtle,#808080)]",
           className,
         )}
       >
