@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { SITE_THEME_KEY } from "./storage-keys";
 
-export type SiteTheme = "unified" | "terrain-light" | "sandrun" | "elements";
+export type SiteTheme = "sandustry" | "unified" | "terrain-light" | "sandrun" | "elements";
 
 export interface ThemeOption {
   id: SiteTheme;
@@ -11,6 +11,7 @@ export interface ThemeOption {
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
+  { id: "sandustry", name: "Sandustry (Classic)", mode: "dark", icon: "⚙️" },
   { id: "unified", name: "Unified (Dark)", mode: "dark", icon: "🌙" },
   { id: "terrain-light", name: "Terrain (Light)", mode: "light", icon: "☀️" },
   { id: "sandrun", name: "Sandrun (Outrun)", mode: "dark", icon: "🌆" },
@@ -18,6 +19,7 @@ export const THEME_OPTIONS: ThemeOption[] = [
 ];
 
 const THEME_CLASSES: Record<SiteTheme, string> = {
+  sandustry: "theme-sandustry",
   unified: "theme-unified",
   "terrain-light": "theme-terrain-light",
   sandrun: "theme-sandrun",

@@ -13,10 +13,10 @@ export function ThemeToggle() {
       open={open}
       onClose={() => setOpen(false)}
       side="bottom"
-      className="w-48 overflow-hidden rounded-lg border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface-elevated,#262d37)]/95 p-1 shadow-2xl backdrop-blur-md"
+      className="w-52 overflow-hidden rounded-lg border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-elevated,#2b2b2b)]/95 p-1 shadow-2xl backdrop-blur-md"
       content={
         <div className="flex flex-col gap-0.5 text-xs">
-          <div className="border-b border-[var(--sd-color-border,#2a323d)] px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--sd-color-text-muted,#b6bcc1)]">
+          <div className="border-b border-[var(--sd-color-border-subtle,#242424)] px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--sd-color-text-muted,#b6bcc1)]">
             Themes
           </div>
           {THEME_OPTIONS.map((opt) => {
@@ -28,7 +28,7 @@ export function ThemeToggle() {
                 className={`flex items-center gap-2 rounded px-2 py-1.5 text-left font-mono text-xs transition-colors ${
                   isSelected
                     ? "bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.12))] text-[var(--sd-color-primary,#ffe700)] font-bold"
-                    : "text-[var(--sd-color-text,#e8eef5)] hover:bg-[var(--sd-color-surface-hover,#2f3742)] hover:text-[var(--sd-color-primary,#ffe700)]"
+                    : "text-[var(--sd-color-text,#e8eef5)] hover:bg-[var(--sd-color-surface-hover,#333333)] hover:text-[var(--sd-color-primary,#ffe700)]"
                 }`}
                 onClick={() => {
                   setTheme(opt.id);
@@ -44,7 +44,7 @@ export function ThemeToggle() {
         </div>
       }
     >
-      <div className="flex items-center rounded border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 text-xs transition-colors hover:border-[var(--sd-color-primary,#ffe700)]/60">
+      <div className="flex items-center rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-xs transition-colors hover:border-[var(--sd-color-primary,#ffe700)]/60">
         <button
           type="button"
           aria-label={`Toggle theme, current is ${currentOption.name}`}
@@ -60,7 +60,7 @@ export function ThemeToggle() {
         <button
           type="button"
           aria-label="Select theme"
-          className="border-l border-[var(--sd-color-border,#2a323d)] px-1.5 py-1 text-[9px] text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-primary,#ffe700)]"
+          className="border-l border-[var(--sd-color-border,#2e2e2e)] px-1.5 py-1 text-[9px] text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-primary,#ffe700)]"
           onClick={() => setOpen((prev) => !prev)}
           title="Open theme menu"
         >

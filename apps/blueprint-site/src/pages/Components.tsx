@@ -408,7 +408,7 @@ export function ComponentsPage() {
 
   return (
     <div className={`mx-auto max-w-6xl space-y-20 pb-24 ${currentAccentClass}`}>
-      <header className="border-b border-[var(--sd-color-border,#2a323d)] pb-6">
+      <header className="border-b border-[var(--sd-color-border,#2e2e2e)] pb-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--sd-color-primary,#ffe700)]">
             UI kit reference - Development Sneak Peak
@@ -429,13 +429,13 @@ export function ComponentsPage() {
             <a
               key={sec.id}
               href={`#${sec.id}`}
-              className="rounded border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 px-2.5 py-1 font-mono text-[11px] text-[var(--sd-color-text-muted,#b6bcc1)] transition hover:border-[var(--sd-color-primary,#ffe700)]/40 hover:text-[var(--sd-color-primary,#ffe700)]"
+              className="rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 px-2.5 py-1 font-mono text-[11px] text-[var(--sd-color-text-muted,#b6bcc1)] transition hover:border-[var(--sd-color-primary,#ffe700)]/40 hover:text-[var(--sd-color-primary,#ffe700)]"
             >
               {sec.label}
             </a>
           ))}
         </nav>
-        <div className="mt-4 flex flex-col gap-2.5 border-t border-[var(--sd-color-border,#2a323d)]/80 pt-4">
+        <div className="mt-4 flex flex-col gap-2.5 border-t border-[var(--sd-color-border,#2e2e2e)]/80 pt-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
               Full Theme:
@@ -448,7 +448,7 @@ export function ComponentsPage() {
                 className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition ${
                   siteTheme === t.id
                     ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
-                    : "border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
+                    : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
                 }`}
               >
                 <span>{t.icon}</span>
@@ -468,7 +468,7 @@ export function ComponentsPage() {
                 className={`rounded px-2.5 py-1 font-mono text-xs transition ${
                   accentTheme === t.id
                     ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
-                    : "border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
+                    : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
                 }`}
               >
                 {t.label}

@@ -451,6 +451,39 @@
 
 /* --- Full Theme Presets --- */
 
+.theme-sandustry,
+[data-theme="sandustry"] {
+  color-scheme: dark;
+  --sd-color-primary: #ffe700;
+  --sd-color-primary-soft: rgb(255 231 0 / 0.1);
+  --sd-color-primary-glow: rgb(255 231 0 / 0.35);
+  --sd-color-primary-hover: #fde047;
+  --sd-color-primary-foreground: #141414;
+
+  --sd-color-bg: #090b0f;
+  --sd-color-surface: #0f172a;
+  --sd-color-surface-elevated: #1e293b;
+  --sd-color-surface-hover: #334155;
+  --sd-color-surface-active: #475569;
+  --sd-color-surface-muted: #070a0f;
+
+  --sd-color-border: #334155;
+  --sd-color-border-subtle: #1e293b;
+  --sd-color-border-strong: #475569;
+  --sd-color-border-hover: #64748b;
+
+  --sd-color-text: #ffffff;
+  --sd-color-text-muted: #94a3b8;
+  --sd-color-text-subtle: #64748b;
+  --sd-color-text-inverse: #090b0f;
+
+  --sd-color-success: #34d399;
+  --sd-color-danger: #ff3300;
+  --sd-color-warning: #ffa500;
+  --sd-color-info: #38bdf8;
+  --sd-panel-shadow: 0 8px 22px rgb(0 0 0 / 0.55);
+}
+
 .theme-unified,
 [data-theme="dark"],
 [data-theme="unified"] {
