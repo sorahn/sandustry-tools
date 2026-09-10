@@ -2,26 +2,29 @@ import { useId, useLayoutEffect, useRef, useState } from "react";
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import cx from "clsx";
+import type { TooltipSide } from "../elements/tooltip";
+import "../elements/tooltip";
+export type { TooltipSide };
 
 export type TooltipProps = PropsWithChildren<Omit<HTMLAttributes<HTMLDivElement>, "content">> & {
   content: ReactNode;
-  side?: "top" | "bottom";
+  side?: TooltipSide;
 };
 
 export type TooltipSurfaceProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
 
 export function TooltipSurface({ children, className = "", ...props }: TooltipSurfaceProps) {
   return (
-    <div
+    <sandustry-tooltip-surface
       {...props}
       role="tooltip"
-      className={cx(
-        "w-max max-w-64 rounded border border-slate-600/80 bg-slate-950/95 px-2.5 py-1.5 text-base text-white shadow-2xl ring-1 ring-black/60 backdrop-blur-sm",
+      class={cx(
+        "block w-max max-w-64 rounded border border-[var(--sd-color-border-strong,#3d3d3d)] bg-[var(--sd-color-surface-elevated,#2b2b2b)] px-2.5 py-1.5 text-base text-[var(--sd-color-text,#e8eef5)] shadow-2xl ring-1 ring-black/60 backdrop-blur-sm",
         className,
       )}
     >
       {children}
-    </div>
+    </sandustry-tooltip-surface>
   );
 }
 
@@ -60,33 +63,35 @@ export function Tooltip({
   }, [open, side]);
 
   return (
-    <span
-      ref={triggerRef}
-      aria-describedby={open ? tooltipId : undefined}
-      className="inline-flex"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => setOpen(true)}
-      onBlur={() => setOpen(false)}
-    >
-      {children}
-      {open && typeof document !== "undefined"
-        ? createPortal(
-            <TooltipSurface
-              {...props}
-              id={tooltipId}
-              className={cx(
-                "pointer-events-none fixed z-50 -translate-x-1/2",
-                side === "top" && "-translate-y-full",
-                className,
-              )}
-              style={{ left: position.left, top: position.top, ...props.style }}
-            >
-              {content}
-            </TooltipSurface>,
-            document.body,
-          )
-        : null}
-    </span>
+    <sandustry-tooltip side={side} class="inline-flex">
+      <span
+        ref={triggerRef}
+        aria-describedby={open ? tooltipId : undefined}
+        className="inline-flex"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+      >
+        {children}
+        {open && typeof document !== "undefined"
+          ? createPortal(
+              <TooltipSurface
+                {...props}
+                id={tooltipId}
+                className={cx(
+                  "pointer-events-none fixed z-50 -translate-x-1/2",
+                  side === "top" && "-translate-y-full",
+                  className,
+                )}
+                style={{ left: position.left, top: position.top, ...props.style }}
+              >
+                {content}
+              </TooltipSurface>,
+              document.body,
+            )
+          : null}
+      </span>
+    </sandustry-tooltip>
   );
 }

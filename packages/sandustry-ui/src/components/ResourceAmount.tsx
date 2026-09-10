@@ -1,7 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import cx from "clsx";
-
-export type ResourceType = "credits" | "fluxite" | "artifact" | "custom";
+import type { ResourceType } from "../elements/resource-amount";
+import "../elements/resource-amount";
+export type { ResourceType };
 
 export type ResourceAmountProps = HTMLAttributes<HTMLSpanElement> & {
   type?: ResourceType;
@@ -81,18 +82,25 @@ export function ResourceAmount({
     ) : null;
 
   return (
-    <span
-      className={cx(
-        "inline-flex items-center gap-1 select-none font-mono tabular-nums text-slate-300",
+    <sandustry-resource-amount
+      {...props}
+      type={type}
+      amount={typeof amount === "number" ? String(amount) : amount}
+      size={size}
+      class={cx(
+        "inline-flex items-center gap-1 select-none font-mono tabular-nums text-[var(--sd-color-text,#ffffff)]",
         isMd ? "text-xs" : "text-[11px]",
         className,
       )}
-      {...props}
     >
       {icon ?? defaultIcon}
       <span>{formatAmount(amount)}</span>
-      {label ? <span className="font-sans text-[10px] text-slate-500">{label}</span> : null}
-    </span>
+      {label ? (
+        <span className="font-sans text-[10px] text-[var(--sd-color-text-subtle,#8295ab)]">
+          {label}
+        </span>
+      ) : null}
+    </sandustry-resource-amount>
   );
 }
 
@@ -112,7 +120,11 @@ export function CurrencyRow({
   ...props
 }: CurrencyRowProps) {
   return (
-    <div className={cx("flex flex-wrap items-center gap-3", className)} {...props}>
+    <sandustry-currency-row
+      {...props}
+      size={size}
+      class={cx("flex flex-wrap items-center gap-3", className)}
+    >
       {credits !== undefined ? (
         <ResourceAmount type="credits" amount={credits} size={size} />
       ) : null}
@@ -122,6 +134,6 @@ export function CurrencyRow({
       {artifact !== undefined ? (
         <ResourceAmount type="artifact" amount={artifact} size={size} />
       ) : null}
-    </div>
+    </sandustry-currency-row>
   );
 }

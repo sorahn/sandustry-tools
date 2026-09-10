@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import cx from "clsx";
+import "../elements/tabs";
 
 export type TabItem = {
   id: string;
@@ -16,10 +17,14 @@ export type TabsProps = PropsWithChildren<Omit<HTMLAttributes<HTMLDivElement>, "
 
 export function Tabs({ value, onChange, items, className = "", children, ...props }: TabsProps) {
   return (
-    <div
-      role="tablist"
-      className={cx("flex items-center gap-4 border-b border-slate-700/60", className)}
+    <sandustry-tabs
       {...props}
+      role="tablist"
+      value={value}
+      class={cx(
+        "flex items-center gap-4 border-b border-[var(--sd-color-border,#2e2e2e)]",
+        className,
+      )}
     >
       {items
         ? items.map((item) => (
@@ -34,7 +39,7 @@ export function Tabs({ value, onChange, items, className = "", children, ...prop
             </Tab>
           ))
         : children}
-    </div>
+    </sandustry-tabs>
   );
 }
 
@@ -44,22 +49,28 @@ export type TabProps = PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement>
 
 export function Tab({ selected = false, className = "", children, ...props }: TabProps) {
   return (
-    <button
-      {...props}
-      type="button"
-      role="tab"
-      aria-selected={selected}
-      className={cx(
-        "cursor-pointer border-b-2 px-2 pb-2 text-sm font-medium tracking-wider outline-none transition-colors",
-        selected
-          ? "border-[#ffe700] text-[#ffe700]"
-          : "border-transparent text-slate-300 hover:border-slate-500 hover:text-white",
-        props.disabled &&
-          "cursor-not-allowed opacity-40 hover:border-transparent hover:text-slate-300",
-        className,
-      )}
+    <sandustry-tab
+      selected={selected ? "" : undefined}
+      disabled={props.disabled ? true : undefined}
+      class="inline-flex items-center"
     >
-      {children}
-    </button>
+      <button
+        {...props}
+        type="button"
+        role="tab"
+        aria-selected={selected}
+        className={cx(
+          "cursor-pointer border-b-2 px-2 pb-2 text-sm font-medium tracking-wider outline-none transition-colors",
+          selected
+            ? "border-[var(--sd-color-primary,#ffe700)] text-[var(--sd-color-primary,#ffe700)]"
+            : "border-transparent text-[var(--sd-color-text-muted,#b6bcc1)] hover:border-[var(--sd-color-border-hover,#4a4a4a)] hover:text-[var(--sd-color-text,#e8eef5)]",
+          props.disabled &&
+            "cursor-not-allowed opacity-40 hover:border-transparent hover:text-[var(--sd-color-text-subtle,#808080)]",
+          className,
+        )}
+      >
+        {children}
+      </button>
+    </sandustry-tab>
   );
 }

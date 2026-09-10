@@ -1,10 +1,13 @@
 import type { HTMLAttributes } from "react";
 import cx from "clsx";
+import type { ProgressBarTone } from "../elements/progress-bar";
+import "../elements/progress-bar";
+export type { ProgressBarTone };
 
 export type ProgressBarProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   value: number;
   max?: number;
-  tone?: "accent" | "success" | "info" | "warning" | "danger";
+  tone?: ProgressBarTone;
   label?: string;
 };
 
@@ -18,26 +21,32 @@ export function ProgressBar({
 }: ProgressBarProps) {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
   return (
-    <div
+    <sandustry-progress-bar
       {...props}
-      className={cx("relative h-2 overflow-hidden rounded-full bg-gray-800", className)}
+      value={value}
+      max={max}
+      tone={tone}
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={max}
       aria-valuenow={value}
       aria-label={label}
+      class={cx(
+        "relative block h-2 overflow-hidden rounded-full bg-[var(--sd-color-surface-muted,#070a0f)]",
+        className,
+      )}
     >
       <div
         className={cx(
           "h-full rounded-full transition-all duration-300",
-          tone === "accent" && "bg-[#ffe700]",
-          tone === "success" && "bg-emerald-400",
-          tone === "info" && "bg-cyan-300",
-          tone === "warning" && "bg-amber-300",
-          tone === "danger" && "bg-red-400",
+          tone === "accent" && "bg-[var(--sd-color-primary,#ffe700)]",
+          tone === "success" && "bg-[var(--sd-color-success,#34d399)]",
+          tone === "info" && "bg-[var(--sd-color-info,#38bdf8)]",
+          tone === "warning" && "bg-[var(--sd-color-warning,#ffa500)]",
+          tone === "danger" && "bg-[var(--sd-color-danger,#ff3300)]",
         )}
         style={{ width: `${percentage}%` }}
       />
-    </div>
+    </sandustry-progress-bar>
   );
 }

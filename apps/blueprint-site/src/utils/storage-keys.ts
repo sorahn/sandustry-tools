@@ -25,3 +25,5 @@ export const POLICY_TESTER_SELECTION_KEY = "sandustry.blueprintInspector.policyT
 export const REMEMBER_SAVE_EXPLORER_KEY = "sandustry.saveExplorer.remember";
 export const SAVED_SAVE_EXPLORER_KEY = "sandustry.saveExplorer.save";
 export const SAVED_SAVE_EXPLORER_NAME_KEY = "sandustry.saveExplorer.name";
+
+export const SITE_THEME_KEY = "sandustry.site.theme";
