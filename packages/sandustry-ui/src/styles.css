@@ -49,15 +49,15 @@
   --sd-color-primary-soft: rgb(255 231 0 / 0.1);
   --sd-color-primary-glow: rgb(255 231 0 / 0.35);
   --sd-color-primary-hover: #fde047;
-  --sd-color-primary-foreground: #141414;
+  --sd-color-primary-foreground: #000000;
 
-  /* Surfaces & Backgrounds (Slate Industrial) */
+  /* Surfaces & Backgrounds (Sandustry Classic - Black Industrial with Slate Accents) */
   --sd-color-bg: #090b0f;
-  --sd-color-surface: #0f172a;
-  --sd-color-surface-elevated: #1e293b;
-  --sd-color-surface-hover: #334155;
-  --sd-color-surface-active: #475569;
-  --sd-color-surface-muted: #070a0f;
+  --sd-color-surface: rgba(0, 0, 0, 0.75);
+  --sd-color-surface-elevated: rgba(2, 6, 23, 0.6);
+  --sd-color-surface-hover: #1e293b;
+  --sd-color-surface-active: #253346;
+  --sd-color-surface-muted: #000000;
 
   /* Borders & Dividers */
   --sd-color-border: #334155;
@@ -76,9 +76,9 @@
   --sd-color-success-soft: rgb(52 211 153 / 0.1);
   --sd-color-success-border: rgb(52 211 153 / 0.5);
 
-  --sd-color-danger: #ff5226;
-  --sd-color-danger-soft: rgb(255 82 38 / 0.12);
-  --sd-color-danger-border: rgb(255 82 38 / 0.5);
+  --sd-color-danger: #ff6640;
+  --sd-color-danger-soft: rgb(255 102 64 / 0.12);
+  --sd-color-danger-border: rgb(255 102 64 / 0.5);
 
   --sd-color-warning: #ffa500;
   --sd-color-warning-soft: rgb(255 165 0 / 0.12);
@@ -472,14 +472,14 @@
   --sd-color-primary-soft: rgb(255 231 0 / 0.1);
   --sd-color-primary-glow: rgb(255 231 0 / 0.35);
   --sd-color-primary-hover: #fde047;
-  --sd-color-primary-foreground: #141414;
+  --sd-color-primary-foreground: #000000;
 
   --sd-color-bg: #090b0f;
-  --sd-color-surface: #0f172a;
-  --sd-color-surface-elevated: #1e293b;
-  --sd-color-surface-hover: #334155;
-  --sd-color-surface-active: #475569;
-  --sd-color-surface-muted: #070a0f;
+  --sd-color-surface: rgba(0, 0, 0, 0.75);
+  --sd-color-surface-elevated: rgba(2, 6, 23, 0.6);
+  --sd-color-surface-hover: #1e293b;
+  --sd-color-surface-active: #253346;
+  --sd-color-surface-muted: #000000;
 
   --sd-color-border: #334155;
   --sd-color-border-subtle: #1e293b;
@@ -495,7 +495,7 @@
   --sd-color-danger: #ff6640;
   --sd-color-warning: #ffa500;
   --sd-color-info: #38bdf8;
-  --sd-panel-shadow: 0 8px 22px rgb(0 0 0 / 0.55);
+  --sd-panel-shadow: 0 8px 22px rgb(0 0 0 / 0.45);
 }
 
 .theme-unified,
