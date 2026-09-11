@@ -1,6 +1,6 @@
 import { PersistentCheckbox } from "./PersistentCheckbox";
 import { BlueprintMapSidebarSection } from "./BlueprintMapSidebarSection";
-import { type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   SHOW_CUSTOM_SHAPES_KEY,
   SHOW_DEBUG_CELLS_KEY,
@@ -127,7 +127,6 @@ export function MapDebugOptions({
       storageKey={SHOW_DEBUG_CELLS_KEY}
       defaultChecked={showDebugCells}
       onCheckedChange={onShowDebugCellsChange}
-      onInitialCheckedChange={onShowDebugCellsChange}
       resetVersion={resetVersion}
     />,
     <PersistentCheckbox
@@ -137,7 +136,6 @@ export function MapDebugOptions({
       storageKey={SHOW_NAMES_KEY}
       defaultChecked={showNames}
       onCheckedChange={onShowNamesChange}
-      onInitialCheckedChange={onShowNamesChange}
       resetVersion={resetVersion}
     />,
     <PersistentCheckbox
@@ -147,7 +145,6 @@ export function MapDebugOptions({
       storageKey={SHOW_SPRITES_KEY}
       defaultChecked={showSprites}
       onCheckedChange={onShowSpritesChange}
-      onInitialCheckedChange={onShowSpritesChange}
       resetVersion={resetVersion}
     />,
     <PersistentCheckbox
@@ -157,7 +154,6 @@ export function MapDebugOptions({
       storageKey={SHOW_CUSTOM_SHAPES_KEY}
       defaultChecked={showCustomShapes}
       onCheckedChange={onShowCustomShapesChange}
-      onInitialCheckedChange={onShowCustomShapesChange}
       resetVersion={resetVersion}
     />,
     <PersistentCheckbox
@@ -167,7 +163,6 @@ export function MapDebugOptions({
       storageKey={SHOW_SIGNAL_LINKS_KEY}
       defaultChecked={showSignalLinks}
       onCheckedChange={onShowSignalLinksChange}
-      onInitialCheckedChange={onShowSignalLinksChange}
       resetVersion={resetVersion}
     />,
     <PersistentCheckbox
@@ -177,7 +172,6 @@ export function MapDebugOptions({
       storageKey={SHOW_FOUNDATION_OUTLINES_KEY}
       defaultChecked={showFoundationOutlines}
       onCheckedChange={onShowFoundationOutlinesChange}
-      onInitialCheckedChange={onShowFoundationOutlinesChange}
       resetVersion={resetVersion}
     />,
     <PersistentCheckbox
@@ -187,10 +181,16 @@ export function MapDebugOptions({
       storageKey={SHOW_RAW_STRUCTURES_KEY}
       defaultChecked={showRawStructures}
       onCheckedChange={onShowRawStructuresChange}
-      onInitialCheckedChange={onShowRawStructuresChange}
       resetVersion={resetVersion}
     />,
   ];
+
+  const policyContent = useMemo(() => {
+    if (policySelection === "legacy") {
+      return JSON.stringify({ mode: "legacy fallback" }, null, 2);
+    }
+    return renderPolicyValue(FIT_POLICY_PRESETS[policySelection], DEFAULT_FIT_POLICY, 0);
+  }, [policySelection]);
 
   return (
     <>
@@ -234,9 +234,7 @@ export function MapDebugOptions({
           </Select>
         </label>
         <pre className="mt-3 overflow-auto text-[11px] leading-5 text-slate-500">
-          {policySelection !== "legacy"
-            ? renderPolicyValue(FIT_POLICY_PRESETS[policySelection], DEFAULT_FIT_POLICY, 0)
-            : JSON.stringify({ mode: "legacy fallback" }, null, 2)}
+          {policyContent}
         </pre>
         {policySelection !== "legacy" ? (
           <p className="mt-2 text-[10px] text-slate-500">

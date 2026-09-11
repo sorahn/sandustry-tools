@@ -12,7 +12,7 @@ import {
   POLICY_TESTER_SELECTION_KEY,
 } from "../utils/storage-keys";
 import { FIT_POLICY_PRESETS, type FitPolicyPreset } from "../utils/blueprint-fit";
-import { readStorageValue, writeStorageValue } from "../utils/storage";
+import { readStorageValue, readStoredBoolean, writeStorageValue } from "../utils/storage";
 
 type BlueprintMapPanelProps = {
   blueprint: Blueprint;
@@ -52,7 +52,9 @@ export function BlueprintMapPanel({
   showFilters = false,
   onShowFiltersChange,
 }: BlueprintMapPanelProps) {
-  const [useLegacyFit, setUseLegacyFit] = useState(false);
+  const [useLegacyFit, setUseLegacyFit] = useState(() =>
+    readStoredBoolean(USE_LEGACY_FIT_KEY, false),
+  );
   const [policySelection, setPolicySelection] =
     useState<PolicyTesterSelection>(readPolicyTesterSelection);
   return (
@@ -67,8 +69,7 @@ export function BlueprintMapPanel({
               size="small"
               label="old fit"
               storageKey={USE_LEGACY_FIT_KEY}
-              defaultChecked={false}
-              onInitialCheckedChange={setUseLegacyFit}
+              defaultChecked={useLegacyFit}
               onCheckedChange={setUseLegacyFit}
             />
           ) : null}

@@ -97,13 +97,23 @@ export function BlueprintMap({
   onExportPng?: (png: ArrayBuffer, filename: string) => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [showDebugCells, setShowDebugCells] = useState(false);
-  const [showNames, setShowNames] = useState(false);
-  const [showSprites, setShowSprites] = useState(true);
-  const [showCustomShapes, setShowCustomShapes] = useState(false);
-  const [showFoundationOutlines, setShowFoundationOutlines] = useState(true);
-  const [showSignalLinks, setShowSignalLinks] = useState(true);
-  const [showRawStructures, setShowRawStructures] = useState(false);
+  const [showDebugCells, setShowDebugCells] = useState(() =>
+    readStoredBoolean(SHOW_DEBUG_CELLS_KEY, false),
+  );
+  const [showNames, setShowNames] = useState(() => readStoredBoolean(SHOW_NAMES_KEY, false));
+  const [showSprites, setShowSprites] = useState(() => readStoredBoolean(SHOW_SPRITES_KEY, true));
+  const [showCustomShapes, setShowCustomShapes] = useState(() =>
+    readStoredBoolean(SHOW_CUSTOM_SHAPES_KEY, false),
+  );
+  const [showFoundationOutlines, setShowFoundationOutlines] = useState(() =>
+    readStoredBoolean(SHOW_FOUNDATION_OUTLINES_KEY, true),
+  );
+  const [showSignalLinks, setShowSignalLinks] = useState(() =>
+    readStoredBoolean(SHOW_SIGNAL_LINKS_KEY, true),
+  );
+  const [showRawStructures, setShowRawStructures] = useState(() =>
+    readStoredBoolean(SHOW_RAW_STRUCTURES_KEY, false),
+  );
   const exportScale = 1;
   const [siteHeaderHeight, setSiteHeaderHeight] = useState(() => {
     if (typeof document === "undefined") return 0;

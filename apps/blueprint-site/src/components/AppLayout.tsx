@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "@tanstack/react-router";
+import { Outlet, ScrollRestoration, useLocation } from "@tanstack/react-router";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
@@ -13,6 +13,7 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--sd-color-bg,#181c20)] text-[var(--sd-color-text,#e8eef5)] transition-colors duration-200">
+      <ScrollRestoration />
       <Header />
       <main className="site-shell mx-auto w-full flex-1 px-6 py-10">
         <Outlet />

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useParams } from "@tanstack/react-router";
+import { startTransition, useEffect, useRef, useState, type ReactNode } from "react";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { structureLabel } from "@daryl.roberts/sandustry-blueprint-core";
 import {
   decodeBlueprint,
@@ -15,7 +15,7 @@ import {
   type BlueprintSummary,
 } from "../components/BlueprintSubmissionPanel";
 import { BlueprintStructuresPanel } from "../components/BlueprintStructuresPanel";
-import { FileDropZone, Panel, Select, StatusIndicator } from "@sandustry/ui";
+import { FileDropZone, Panel, Select, Spinner, StatusIndicator } from "@sandustry/ui";
 import { PageHeader } from "../components/PageHeader";
 import {
   readStorageValue,
@@ -233,8 +233,22 @@ export function BlueprintInspectorPage({
     fileName: string;
     blueprints: SaveBlueprintRecord[];
   } | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const mapPanelRef = useRef<HTMLDivElement>(null);
-  const inspectValue = (input: string) => {
+  const userInitiatedRef = useRef(false);
+
+  useEffect(() => {
+    // On mount / route arrival, defer heavy blueprint map rendering
+    // until the header navigation transition completes (~200ms).
+    const timer = setTimeout(() => {
+      setMapReady(true);
+    }, 220);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const inspectValue = (input: string, userInitiated = false) => {
+    userInitiatedRef.current = userInitiated;
+    if (userInitiated) setMapReady(true);
     const value = input.trim();
     if (value.startsWith("SAND:BP:v1:") || value.startsWith("SAND:BACKUP:v1:")) {
       setBlueprint(null);
@@ -256,8 +270,10 @@ export function BlueprintInspectorPage({
       setMessage(error instanceof Error ? error.message : "Unable to inspect blueprint.");
     }
   };
-  const inspect = () => inspectValue(encoded);
+  const inspect = () => inspectValue(encoded, true);
   const loadTestBlueprint = (nextBlueprint: Blueprint) => {
+    userInitiatedRef.current = true;
+    setMapReady(true);
     const nextEncoded = encodeBlueprint(nextBlueprint);
     setDroppedSave(null);
     setEncoded(nextEncoded);
@@ -269,6 +285,8 @@ export function BlueprintInspectorPage({
   };
   const loadSavedBlueprint = (record: SaveBlueprintRecord, fileName: string) => {
     try {
+      userInitiatedRef.current = true;
+      setMapReady(true);
       const nextEncoded = encodeSavedBlueprint(record);
       const nextBlueprint = decodeBlueprint(nextEncoded);
       setDroppedSave(null);
@@ -313,15 +331,21 @@ export function BlueprintInspectorPage({
   useEffect(() => {
     if (initialEncoded !== undefined) {
       setEncoded(initialEncoded);
-      inspectValue(initialEncoded);
+      startTransition(() => {
+        inspectValue(initialEncoded, false);
+      });
     } else if (encoded.trim() && remember) {
-      inspectValue(encoded);
+      startTransition(() => {
+        inspectValue(encoded, false);
+      });
     }
     // The initial or remembered value should be inspected after the page mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEncoded]);
   useEffect(() => {
     if (!blueprint || !summary || !mapPanelRef.current) return;
+    if (!userInitiatedRef.current) return;
+    userInitiatedRef.current = false;
     const frame = window.requestAnimationFrame(() => {
       const panel = mapPanelRef.current;
       if (!panel) return;
@@ -345,10 +369,21 @@ export function BlueprintInspectorPage({
       }
     },
   });
+  const navigate = useNavigate();
   return (
     <section className="space-y-6">
       <PageHeader title={title}>{description}</PageHeader>
-      {initialEncoded === undefined ? <FromSavedGame onSelectFixture={loadTestBlueprint} /> : null}
+      {initialEncoded === undefined ? (
+        <FromSavedGame
+          onSelectFixture={loadTestBlueprint}
+          onSelectSavedBlueprint={(saveId, blueprintId) =>
+            navigate({
+              to: "/save/$saveId/blueprint/$blueprintId",
+              params: { saveId, blueprintId },
+            })
+          }
+        />
+      ) : null}
       <SaveFileDropzone
         onFile={handleSaveFile}
         selection={droppedSave}
@@ -371,24 +406,39 @@ export function BlueprintInspectorPage({
         onInspect={inspect}
       />
       {blueprint && summary ? (
-        <>
+        mapReady ? (
+          <>
+            <div ref={mapPanelRef} className="scroll-mt-4">
+              <BlueprintMapPanel
+                blueprint={blueprint}
+                remember={remember}
+                blueprintKey={inspectedBlueprintKey}
+                showSidebar={showMapSidebar}
+                onShowSidebarChange={setShowMapSidebar}
+                showGrid={showGrid}
+                onShowGridChange={setShowGrid}
+                showPngBackground={showPngBackground}
+                onShowPngBackgroundChange={setShowPngBackground}
+                showFilters={showFilters}
+                onShowFiltersChange={setShowFilters}
+              />
+            </div>
+            <BlueprintStructuresPanel blueprint={blueprint} structureLabel={structureLabel} />
+          </>
+        ) : (
           <div ref={mapPanelRef} className="scroll-mt-4">
-            <BlueprintMapPanel
-              blueprint={blueprint}
-              remember={remember}
-              blueprintKey={inspectedBlueprintKey}
-              showSidebar={showMapSidebar}
-              onShowSidebarChange={setShowMapSidebar}
-              showGrid={showGrid}
-              onShowGridChange={setShowGrid}
-              showPngBackground={showPngBackground}
-              onShowPngBackgroundChange={setShowPngBackground}
-              showFilters={showFilters}
-              onShowFiltersChange={setShowFilters}
-            />
+            <Panel
+              title="Blueprint map"
+              padded
+              className="flex min-h-80 items-center justify-center"
+            >
+              <div className="flex items-center gap-2.5 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+                <Spinner size="small" />
+                <span>Rendering blueprint map…</span>
+              </div>
+            </Panel>
           </div>
-          <BlueprintStructuresPanel blueprint={blueprint} structureLabel={structureLabel} />
-        </>
+        )
       ) : null}
     </section>
   );
@@ -454,8 +504,10 @@ function SaveFileDropzone({
 
 export function FromSavedGame({
   onSelectFixture,
+  onSelectSavedBlueprint,
 }: {
   onSelectFixture?: (blueprint: Blueprint) => void;
+  onSelectSavedBlueprint?: (saveId: string, blueprintId: string) => void;
 }) {
   const [saved, setSaved] = useState<StoredSaveSummary[] | null>(null);
   const [message, setMessage] = useState("Loading saved blueprints…");
@@ -498,6 +550,10 @@ export function FromSavedGame({
               }
               const [saveId, blueprintId] = value.split("/");
               if (!saveId || !blueprintId) return;
+              if (onSelectSavedBlueprint) {
+                onSelectSavedBlueprint(saveId, blueprintId);
+                return;
+              }
               window.location.assign(
                 `${import.meta.env.BASE_URL}save/${encodeURIComponent(saveId)}/blueprint/${encodeURIComponent(blueprintId)}`,
               );

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "motion/react";
 import { Popover } from "@sandustry/ui";
 import { THEME_OPTIONS, useTheme } from "../utils/theme";
 
@@ -15,7 +16,12 @@ export function ThemeToggle() {
       side="bottom"
       className="w-52 overflow-hidden rounded-lg border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface-elevated,#2b2b2b)]/95 p-1 shadow-2xl backdrop-blur-md"
       content={
-        <div className="flex flex-col gap-0.5 text-xs">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97, y: -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col gap-0.5 text-xs"
+        >
           <div className="border-b border-[var(--sd-color-border-subtle,#242424)] px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--sd-color-text-muted,#b6bcc1)]">
             Themes
           </div>
@@ -41,7 +47,7 @@ export function ThemeToggle() {
               </button>
             );
           })}
-        </div>
+        </motion.div>
       }
     >
       <div className="flex items-center rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-xs transition-colors hover:border-[var(--sd-color-primary,#ffe700)]/60">

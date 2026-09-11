@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { Badge, Button, IconButton, Popover, SaveSlotCard, StatusIndicator } from "@sandustry/ui";
 import {
   deleteSavedGame,
@@ -90,7 +91,12 @@ function SaveManager() {
       side="bottom"
       className="w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface-elevated,#262d37)]/95 p-0 shadow-2xl backdrop-blur-md text-[var(--sd-color-text,#e8eef5)]"
       content={
-        <div className="flex flex-col text-xs">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97, y: -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col text-xs"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface,#1c2127)]/80 px-3 py-2">
             <div className="flex items-center gap-1.5 font-semibold text-[var(--sd-color-text,#e8eef5)]">
@@ -212,7 +218,7 @@ function SaveManager() {
               Open in Save Explorer →
             </Button>
           </div>
-        </div>
+        </motion.div>
       }
     >
       <button
@@ -243,6 +249,8 @@ function SaveManager() {
 }
 
 export function Header() {
+  const location = useLocation();
+
   return (
     <header
       data-site-header
@@ -259,33 +267,50 @@ export function Header() {
           <SaveManager />
         </div>
         <div className="flex items-center gap-4">
-          <nav className="flex flex-wrap justify-end gap-x-4 gap-y-1 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
-            <Link
-              to="/inspect"
-              activeProps={{ className: "text-[var(--sd-color-primary,#ffe700)] font-semibold" }}
-            >
-              Blueprint Inspector
-            </Link>
-            <Link
-              to="/explorer"
-              activeProps={{ className: "text-[var(--sd-color-primary,#ffe700)] font-semibold" }}
-            >
-              Save Explorer
-            </Link>
-            <Link
-              to="/codec"
-              activeProps={{ className: "text-[var(--sd-color-primary,#ffe700)] font-semibold" }}
-            >
-              Encoder / Decoder
-            </Link>
-            {import.meta.env.DEV ? (
-              <Link
-                to="/components"
-                activeProps={{ className: "text-[var(--sd-color-primary,#ffe700)] font-semibold" }}
-              >
-                Components
-              </Link>
-            ) : null}
+          <nav className="flex flex-wrap items-center justify-end gap-1 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+            {[
+              { to: "/inspect", label: "Blueprint Inspector" },
+              { to: "/explorer", label: "Save Explorer" },
+              { to: "/codec", label: "Encoder / Decoder" },
+              ...(import.meta.env.DEV ? [{ to: "/components", label: "Components" }] : []),
+            ].map((link) => {
+              const isInspectActive =
+                link.to === "/inspect" &&
+                (location.pathname.startsWith("/inspect") ||
+                  location.pathname.startsWith("/save/"));
+
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="relative rounded px-2.5 py-1 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--sd-color-primary,#ffe700)]"
+                >
+                  {({ isActive }) => {
+                    const active = isActive || isInspectActive;
+                    return (
+                      <>
+                        {active && (
+                          <motion.div
+                            layoutId="active-site-nav-indicator"
+                            className="pointer-events-none absolute inset-0 rounded border border-[var(--sd-color-primary,#ffe700)]/30 bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.12))] shadow-sm"
+                            transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                          />
+                        )}
+                        <span
+                          className={`relative z-10 transition-colors ${
+                            active
+                              ? "font-semibold text-[var(--sd-color-primary,#ffe700)]"
+                              : "text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-primary,#ffe700)]"
+                          }`}
+                        >
+                          {link.label}
+                        </span>
+                      </>
+                    );
+                  }}
+                </Link>
+              );
+            })}
           </nav>
           <ThemeToggle />
         </div>

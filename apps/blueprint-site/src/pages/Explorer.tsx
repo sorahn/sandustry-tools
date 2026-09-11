@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import type {
   MinimapRenderOptions,
   SaveExplorerCellInspection,
@@ -50,6 +51,7 @@ function storedSummary(document: SaveExplorerClientDocument, fileName: string): 
 }
 
 export function SaveExplorerPage() {
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mapFrameRef = useRef<HTMLDivElement>(null);
@@ -643,9 +645,12 @@ export function SaveExplorerPage() {
             onRemember={() => void toggleRemember()}
             onCustomCursorChange={setCustomCursor}
             onInspectBlueprint={(blueprintId) => {
-              const saveId = encodeURIComponent(document?.metadata.saveId || "");
-              const bpId = encodeURIComponent(blueprintId);
-              window.location.assign(`${import.meta.env.BASE_URL}save/${saveId}/blueprint/${bpId}`);
+              const saveId = document?.metadata.saveId || "";
+              if (!saveId) return;
+              navigate({
+                to: "/save/$saveId/blueprint/$blueprintId",
+                params: { saveId, blueprintId },
+              });
             }}
             onCopyBlueprint={(blueprintId) => {
               const reqId = nextRequestIdRef.current++;
