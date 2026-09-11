@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme, THEME_OPTIONS } from "../utils/theme";
 import {
   ActionBar,
@@ -400,8 +400,25 @@ export function ComponentsPage() {
     message: string;
     variant: "default" | "hint" | "danger";
   } | null>(null);
+  const [siteHeaderHeight, setSiteHeaderHeight] = useState(() => {
+    if (typeof document === "undefined") return 0;
+    return (
+      document.querySelector<HTMLElement>("[data-site-header]")?.getBoundingClientRect().height ?? 0
+    );
+  });
   const [siteTheme, setSiteTheme] = useTheme();
   const [accentTheme, setAccentTheme] = useState<string>("default");
+
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>("[data-site-header]");
+    if (!header) return;
+
+    const updateHeaderHeight = () => setSiteHeaderHeight(header.getBoundingClientRect().height);
+    updateHeaderHeight();
+    const observer = new ResizeObserver(updateHeaderHeight);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   const accentThemes = [
     { id: "default", label: "Default Accent", className: "" },
@@ -413,7 +430,7 @@ export function ComponentsPage() {
   const currentAccentClass = accentThemes.find((t) => t.id === accentTheme)?.className ?? "";
 
   return (
-    <div className={`mx-auto max-w-6xl space-y-20 pb-24 ${currentAccentClass}`}>
+    <div className={`mx-auto flex max-w-6xl flex-col gap-20 pb-24 ${currentAccentClass}`}>
       <header className="border-b border-[var(--sd-color-border,#2e2e2e)] pb-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--sd-color-primary,#ffe700)]">
@@ -441,48 +458,52 @@ export function ComponentsPage() {
             </a>
           ))}
         </nav>
-        <div className="mt-4 flex flex-col gap-2.5 border-t border-[var(--sd-color-border,#2e2e2e)]/80 pt-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
-              Full Theme:
-            </span>
-            {THEME_OPTIONS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setSiteTheme(t.id)}
-                className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition ${
-                  siteTheme === t.id
-                    ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
-                    : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
-                }`}
-              >
-                <span>{t.icon}</span>
-                <span>{t.name}</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
-              Accent Overrides:
-            </span>
-            {accentThemes.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setAccentTheme(t.id)}
-                className={`rounded px-2.5 py-1 font-mono text-xs transition ${
-                  accentTheme === t.id
-                    ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
-                    : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </header>
+
+      <div
+        className="sticky z-30 -mx-3 -my-16 flex flex-col gap-2.5 border-y border-[var(--sd-color-border,#2e2e2e)]/80 bg-[var(--sd-color-bg,#181c20)]/90 px-3 py-3 shadow-lg backdrop-blur-md sm:-mx-4 sm:px-4"
+        style={{ top: siteHeaderHeight }}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+            Full Theme:
+          </span>
+          {THEME_OPTIONS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSiteTheme(t.id)}
+              className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition ${
+                siteTheme === t.id
+                  ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
+                  : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
+              }`}
+            >
+              <span>{t.icon}</span>
+              <span>{t.name}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+            Accent Overrides:
+          </span>
+          {accentThemes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setAccentTheme(t.id)}
+              className={`rounded px-2.5 py-1 font-mono text-xs transition ${
+                accentTheme === t.id
+                  ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
+                  : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <ShowcaseSection
         id="hero"
