@@ -9,7 +9,7 @@ export type GlobalFileDropOverlayProps = {
 
 export function GlobalFileDropOverlay({
   onFileDrop,
-  label = "Drop Sandustry .save file or blueprint here",
+  label = "Drop a Sandustry .save file here",
 }: GlobalFileDropOverlayProps) {
   const [isDragging, setIsDragging] = useState(false);
 

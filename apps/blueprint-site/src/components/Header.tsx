@@ -261,7 +261,7 @@ export function Header({ fullWidth = false }: { fullWidth?: boolean } = {}) {
       <div
         className={
           fullWidth
-            ? "flex w-full items-center justify-between gap-3 px-4 py-2"
+            ? "flex w-full flex-wrap items-center justify-between gap-3 px-4 py-2"
             : "site-shell mx-auto flex w-full flex-wrap items-center justify-between gap-3 px-6 py-3"
         }
       >

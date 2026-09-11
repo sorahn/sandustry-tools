@@ -542,6 +542,10 @@ export function BlueprintInspectorPage({
     return (
       <AppWorkspaceShell
         sidebarTitle={blueprint.name}
+        defaultSidebarCollapsed={!showMapSidebar}
+        onSidebarCollapsedChange={(collapsed) =>
+          writeStoredBoolean(SHOW_MAP_SIDEBAR_KEY, !collapsed)
+        }
         sidebar={
           <BlueprintInspectorSidebar
             blueprint={blueprint}

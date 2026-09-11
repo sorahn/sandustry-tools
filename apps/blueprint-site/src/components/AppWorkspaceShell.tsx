@@ -24,7 +24,7 @@ export function AppWorkspaceShell({
   sidebarHeader,
   sidebarFooter,
   sidebarTitle = "Inspector",
-  sidebarWidth = "w-80 lg:w-96",
+  sidebarWidth = "xl:w-80 2xl:w-96",
   sidebarCollapsed: controlledCollapsed,
   defaultSidebarCollapsed = false,
   onSidebarCollapsedChange,
@@ -53,10 +53,10 @@ export function AppWorkspaceShell({
       )}
     >
       {/* Workspace Body: Canvas + Right Sidebar */}
-      <div className="relative flex flex-1 min-h-0 min-w-0 overflow-hidden">
+      <div className="relative flex flex-1 min-h-0 min-w-0 flex-col overflow-auto xl:flex-row xl:overflow-hidden">
         {/* Main Canvas Landmark */}
         <main
-          className="relative flex h-full flex-1 min-h-0 min-w-0 flex-col overflow-hidden"
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden xl:h-full"
           aria-label="Workspace canvas"
         >
           {children}
@@ -81,8 +81,9 @@ export function AppWorkspaceShell({
           <aside
             aria-label={sidebarTitle}
             className={cx(
-              "relative flex flex-col shrink-0 border-l border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.35))] transition-[width,margin] duration-150 ease-out z-20",
-              isCollapsed ? "w-0 overflow-hidden border-l-0" : sidebarWidth,
+              "relative flex w-full shrink-0 flex-col border-t border-[var(--sd-color-border,#2a323d)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.35))] transition-[width,margin] duration-150 ease-out z-20 xl:border-l xl:border-t-0",
+              "max-xl:w-full xl:w-80 2xl:w-96",
+              isCollapsed ? "w-0 overflow-hidden border-0" : sidebarWidth,
             )}
           >
             {/* Sidebar Header */}
