@@ -766,21 +766,23 @@ export function BlueprintMap({
         }
       >
         <div
-          className="sticky z-20 h-0"
-          style={{ top: stickyTop ?? (fullHeight ? "0px" : `${siteHeaderHeight}px`) }}
+          className={fullHeight ? "pointer-events-none absolute inset-0 z-20" : "sticky z-20 h-0"}
+          style={fullHeight ? undefined : { top: stickyTop ?? `${siteHeaderHeight}px` }}
         >
-          <BlueprintMapViewportControls
-            zoom={zoom}
-            minZoom={minZoom}
-            maxZoom={maxZoom}
-            measuredFitZoom={measuredFitZoom}
-            fitMode={fitModeRef.current}
-            pan={pan}
-            onExport={exportPng}
-            onZoomOut={() => setMapZoom(stepZoomOut(zoom, { min: minZoom }))}
-            onFit={fitToViewport}
-            onZoomIn={() => setMapZoom(stepZoomIn(zoom, { max: maxZoom }))}
-          />
+          <div className={fullHeight ? "pointer-events-auto" : undefined}>
+            <BlueprintMapViewportControls
+              zoom={zoom}
+              minZoom={minZoom}
+              maxZoom={maxZoom}
+              measuredFitZoom={measuredFitZoom}
+              fitMode={fitModeRef.current}
+              pan={pan}
+              onExport={exportPng}
+              onZoomOut={() => setMapZoom(stepZoomOut(zoom, { min: minZoom }))}
+              onFit={fitToViewport}
+              onZoomIn={() => setMapZoom(stepZoomIn(zoom, { max: maxZoom }))}
+            />
+          </div>
         </div>
         <div
           ref={viewportRef}
