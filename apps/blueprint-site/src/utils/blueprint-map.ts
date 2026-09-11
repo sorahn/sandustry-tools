@@ -19,6 +19,26 @@ export const MAP_VIEWPORT_ASPECT_HEIGHT = 10;
 export const MAP_FIT_ZOOM_MIN = 0.25;
 export const MAP_FIT_ZOOM_MAX = 2;
 export const PAN_COMMIT_DEBOUNCE_MS = 80;
+export const MAP_MIN_VISIBLE_PX = 48;
+
+/**
+ * Calculates the maximum pan offset in unzoomed blueprint units in a given dimension.
+ *
+ * Allows the blueprint content to be panned/scrolled until only `minVisiblePx`
+ * (or a fraction of the content if smaller) remains visible inside the viewport bounds,
+ * ensuring the canvas can be scrolled even at initial fit zoom.
+ */
+export function calculateMaxPan(
+  contentDimension: number,
+  viewportDimension: number,
+  zoom: number,
+  minVisiblePx = MAP_MIN_VISIBLE_PX,
+): number {
+  if (zoom <= 0) return 0;
+  const renderedSize = contentDimension * zoom;
+  const minVisible = Math.min(minVisiblePx, renderedSize * 0.25);
+  return Math.max(0, (viewportDimension + renderedSize - 2 * minVisible) / (2 * zoom));
+}
 export const MAP_LAYER_ORDER = [
   "background",
   "grid",

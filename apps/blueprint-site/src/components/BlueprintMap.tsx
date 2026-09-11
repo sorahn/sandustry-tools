@@ -35,6 +35,7 @@ import {
   readStoredMapView,
   snapMapZoom,
   createBlueprintMapModel,
+  calculateMaxPan,
 } from "../utils/blueprint-map";
 import { stepZoomIn, stepZoomOut, wheelZoom, roundZoom } from "../utils/zoom";
 import { readStoredBoolean, writeStorageValue, writeStoredBoolean } from "../utils/storage";
@@ -324,7 +325,7 @@ export function BlueprintMap({
     setSelectedIndex(hit ?? null);
   };
   const { viewportRef, viewportSize, hoverMarkerRef, updateHoverBlock, clearHoverBlock } =
-    useBlueprintMapViewport({ cell, minX, minY, padding });
+    useBlueprintMapViewport({ cell, minX, minY, padding, width, height });
   const viewportWidth = viewportRef.current?.clientWidth || viewportSize.width || width;
   const defaultViewportHeight = viewportHeightForWidth(viewportWidth);
   const legacyFitWidth = width + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
@@ -495,8 +496,12 @@ export function BlueprintMap({
     activeFilterCluster,
   ]);
 
-  const maxPanX = Math.max(0, (width * zoom - (viewportSize.width || width)) / (2 * zoom));
-  const maxPanY = Math.max(0, (height * zoom - (viewportSize.height || height)) / (2 * zoom));
+  const currentViewWidth = viewportRef.current?.clientWidth || viewportSize.width || width;
+  const currentViewHeight =
+    (fullHeight ? viewportRef.current?.clientHeight || viewportSize.height : 0) ||
+    defaultViewportHeight;
+  const maxPanX = calculateMaxPan(width, currentViewWidth, zoom);
+  const maxPanY = calculateMaxPan(height, currentViewHeight, zoom);
   const applyLivePan = (nextPan: { x: number; y: number }) => {
     const svg = svgRef.current;
     if (!svg) return;
@@ -538,14 +543,12 @@ export function BlueprintMap({
     const stored = remember && !captureOnly ? readStoredMapView(blueprintKey, zoomLevels) : null;
     fitModeRef.current = stored?.fit ?? true;
     const restoredZoom = captureOnly ? 1 : Math.max(minZoom, Math.min(maxZoom, stored?.zoom ?? 1));
-    const restoredMaxPanX = Math.max(
-      0,
-      (width * restoredZoom - (viewportSize.width || width)) / (2 * restoredZoom),
-    );
-    const restoredMaxPanY = Math.max(
-      0,
-      (height * restoredZoom - (viewportSize.height || height)) / (2 * restoredZoom),
-    );
+    const restoreViewWidth = viewportSize.width || width;
+    const restoreViewHeight =
+      (fullHeight ? viewportRef.current?.clientHeight || viewportSize.height : 0) ||
+      defaultViewportHeight;
+    const restoredMaxPanX = calculateMaxPan(width, restoreViewWidth, restoredZoom);
+    const restoredMaxPanY = calculateMaxPan(height, restoreViewHeight, restoredZoom);
     setZoom(restoredZoom);
     setPan(
       captureOnly
@@ -648,16 +651,10 @@ export function BlueprintMap({
     const nextViewHeight = height / clampedZoom;
     const nextCenteredViewX = (width - nextViewWidth) / 2;
     const nextCenteredViewY = (height - nextViewHeight) / 2;
-    const nextMaxPanX = Math.max(
-      0,
-      (width * clampedZoom - (viewportSize.width || width)) / (2 * clampedZoom),
-    );
-    const nextMaxPanY = Math.max(
-      0,
-      (height * clampedZoom - (viewportSize.height || height)) / (2 * clampedZoom),
-    );
     const viewportWidth = viewportSize.width || width;
     const viewportHeight = viewportSize.height || height;
+    const nextMaxPanX = calculateMaxPan(width, viewportWidth, clampedZoom);
+    const nextMaxPanY = calculateMaxPan(height, viewportHeight, clampedZoom);
     const centerX = pointer
       ? width / 2 + pan.x + (pointer.x - viewportWidth / 2) / zoom
       : width / 2 + pan.x;
@@ -911,15 +908,11 @@ export function BlueprintMap({
                   }
                 }
                 const rect = event.currentTarget.getBoundingClientRect();
+                const dragScaleX = rect.width ? width / rect.width : 1 / zoom;
+                const dragScaleY = rect.height ? height / rect.height : 1 / zoom;
                 const nextPan = {
-                  x: Math.max(
-                    -maxPanX,
-                    Math.min(maxPanX, livePanRef.current.x - (dx / rect.width) * width),
-                  ),
-                  y: Math.max(
-                    -maxPanY,
-                    Math.min(maxPanY, livePanRef.current.y - (dy / rect.height) * height),
-                  ),
+                  x: Math.max(-maxPanX, Math.min(maxPanX, livePanRef.current.x - dx * dragScaleX)),
+                  y: Math.max(-maxPanY, Math.min(maxPanY, livePanRef.current.y - dy * dragScaleY)),
                 };
                 livePanRef.current = nextPan;
                 applyLivePan(nextPan);

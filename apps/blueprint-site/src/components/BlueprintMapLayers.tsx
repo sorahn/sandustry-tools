@@ -65,7 +65,7 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
   viewportHeight?: number;
 }) {
   const bleed = extendToViewport
-    ? Math.max(viewportWidth, viewportHeight) / 0.25 + Math.max(width, height)
+    ? Math.max(viewportWidth, viewportHeight) / 0.125 + Math.max(width, height) * 2
     : 0;
   const gridX = extendToViewport ? -bleed : 0;
   const gridY = extendToViewport ? -bleed : 0;
@@ -105,8 +105,15 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
           />
         </pattern>
       </defs>
-      {showBackground ? (
-        <rect width={width} height={height} fill="#33a8ff" style={mapLayerStyle("background")} />
+      {showBackground || extendToViewport ? (
+        <rect
+          x={gridX}
+          y={gridY}
+          width={gridWidth}
+          height={gridHeight}
+          fill="#33a8ff"
+          style={mapLayerStyle("background")}
+        />
       ) : null}
       {showGrid ? (
         <g opacity="0.25" style={mapLayerStyle("grid")}>

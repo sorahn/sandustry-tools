@@ -6,11 +6,15 @@ export function useBlueprintMapViewport({
   minX,
   minY,
   padding,
+  width,
+  height,
 }: {
   cell: number;
   minX: number;
   minY: number;
   padding: number;
+  width?: number;
+  height?: number;
 }) {
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -37,6 +41,14 @@ export function useBlueprintMapViewport({
     pointer.x = event.clientX;
     pointer.y = event.clientY;
     const local = pointer.matrixTransform(transform.inverse());
+    if (
+      width !== undefined &&
+      height !== undefined &&
+      (local.x < 0 || local.x > width || local.y < 0 || local.y > height)
+    ) {
+      clearHoverBlock();
+      return;
+    }
     const blueprintX = local.x / cell + minX - padding - 0.5;
     const blueprintY = local.y / cell + minY - padding - 0.5;
     const nextBlock = {
