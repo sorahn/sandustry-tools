@@ -1,6 +1,6 @@
 import type { SDButtonProps, SDElementProps, SDSelectProps } from "./shared";
 
-declare global {
+declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
       "sandustry-button": SDButtonProps<{

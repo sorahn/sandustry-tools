@@ -815,7 +815,7 @@ function ShowcaseThemeControls({
   accentTheme: string;
   onAccentThemeChange: (theme: string) => void;
   siteHeaderHeight: number;
-  themeSelectorRef: React.RefObject<HTMLDivElement>;
+  themeSelectorRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const [siteTheme, setSiteTheme] = useTheme();
 

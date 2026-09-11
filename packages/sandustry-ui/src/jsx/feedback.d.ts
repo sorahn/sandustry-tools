@@ -1,6 +1,6 @@
 import type { SDElementProps } from "./shared";
 
-declare global {
+declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
       "sandustry-status-indicator": SDElementProps<{
