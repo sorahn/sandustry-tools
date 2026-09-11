@@ -52,6 +52,7 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
   extendToViewport = false,
   viewportWidth = width,
   viewportHeight = height,
+  zoom = 1,
 }: {
   width: number;
   height: number;
@@ -63,9 +64,11 @@ export const BlueprintMapGridLayer = memo(function BlueprintMapGridLayer({
   extendToViewport?: boolean;
   viewportWidth?: number;
   viewportHeight?: number;
+  zoom?: number;
 }) {
+  const effectiveZoom = Math.max(0.125, zoom);
   const bleed = extendToViewport
-    ? Math.max(viewportWidth, viewportHeight) / 0.125 + Math.max(width, height) * 2
+    ? Math.ceil(Math.max(viewportWidth, viewportHeight) / effectiveZoom + Math.max(width, height))
     : 0;
   const gridX = extendToViewport ? -bleed : 0;
   const gridY = extendToViewport ? -bleed : 0;

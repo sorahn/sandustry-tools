@@ -211,6 +211,8 @@ export function BlueprintMap({
   const suppressClickRef = useRef(false);
   const panCommitTimerRef = useRef<number | null>(null);
   const livePanRef = useRef(pan);
+  const rafIdRef = useRef<number | null>(null);
+  const pendingPanRef = useRef<{ x: number; y: number } | null>(null);
   const previousSidebarVisibilityRef = useRef(showSidebar);
   const fitModeRef = useRef(
     captureOnly ? true : (readStoredMapView(blueprintKey, zoomLevels)?.fit ?? true),
@@ -503,9 +505,16 @@ export function BlueprintMap({
   const maxPanX = calculateMaxPan(width, currentViewWidth, zoom);
   const maxPanY = calculateMaxPan(height, currentViewHeight, zoom);
   const applyLivePan = (nextPan: { x: number; y: number }) => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    svg.style.transform = `translate(-50%, -50%) translate(${-nextPan.x * zoom}px, ${-nextPan.y * zoom}px)`;
+    pendingPanRef.current = nextPan;
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        const svg = svgRef.current;
+        const pending = pendingPanRef.current;
+        if (!svg || !pending) return;
+        svg.style.transform = `translate3d(-50%, -50%, 0) translate3d(${-pending.x * zoom}px, ${-pending.y * zoom}px, 0)`;
+      });
+    }
   };
   const schedulePanCommit = () => {
     if (panCommitTimerRef.current !== null) {
@@ -641,6 +650,10 @@ export function BlueprintMap({
     return () => {
       if (panCommitTimerRef.current !== null) {
         window.clearTimeout(panCommitTimerRef.current);
+      }
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
       }
     };
   }, [pan]);
@@ -869,7 +882,8 @@ export function BlueprintMap({
               height: `${height * zoom}px`,
               left: "50%",
               top: "50%",
-              transform: `translate(-50%, -50%) translate(${-pan.x * zoom}px, ${-pan.y * zoom}px)`,
+              transform: `translate3d(-50%, -50%, 0) translate3d(${-pan.x * zoom}px, ${-pan.y * zoom}px, 0)`,
+              willChange: "transform",
               zIndex: viewportGridEnabled ? 1 : undefined,
               overflow: viewportGridEnabled ? "visible" : undefined,
               cursor: dragRef.current ? "grabbing" : "grab",
@@ -878,6 +892,7 @@ export function BlueprintMap({
             }}
             onPointerDown={(event) => {
               if (event.pointerType === "mouse" && event.button !== 0) return;
+              clearHoverBlock();
               if (panCommitTimerRef.current !== null) {
                 window.clearTimeout(panCommitTimerRef.current);
                 panCommitTimerRef.current = null;
@@ -907,12 +922,10 @@ export function BlueprintMap({
                     event.currentTarget.setPointerCapture(event.pointerId);
                   }
                 }
-                const rect = event.currentTarget.getBoundingClientRect();
-                const dragScaleX = rect.width ? width / rect.width : 1 / zoom;
-                const dragScaleY = rect.height ? height / rect.height : 1 / zoom;
+                const dragScale = 1 / zoom;
                 const nextPan = {
-                  x: Math.max(-maxPanX, Math.min(maxPanX, livePanRef.current.x - dx * dragScaleX)),
-                  y: Math.max(-maxPanY, Math.min(maxPanY, livePanRef.current.y - dy * dragScaleY)),
+                  x: Math.max(-maxPanX, Math.min(maxPanX, livePanRef.current.x - dx * dragScale)),
+                  y: Math.max(-maxPanY, Math.min(maxPanY, livePanRef.current.y - dy * dragScale)),
                 };
                 livePanRef.current = nextPan;
                 applyLivePan(nextPan);
@@ -926,6 +939,14 @@ export function BlueprintMap({
             onPointerUp={(event) => {
               const drag = dragRef.current;
               if (!drag || drag.pointerId !== event.pointerId) return;
+              if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+              }
+              const svg = svgRef.current;
+              if (svg) {
+                svg.style.transform = `translate3d(-50%, -50%, 0) translate3d(${-livePanRef.current.x * zoom}px, ${-livePanRef.current.y * zoom}px, 0)`;
+              }
               suppressClickRef.current = drag.moved;
               dragRef.current = null;
               event.currentTarget.style.cursor = "grab";
@@ -933,6 +954,10 @@ export function BlueprintMap({
               event.currentTarget.releasePointerCapture(event.pointerId);
             }}
             onPointerCancel={(event) => {
+              if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+              }
               dragRef.current = null;
               event.currentTarget.style.cursor = "grab";
               schedulePanCommit();
@@ -952,6 +977,7 @@ export function BlueprintMap({
               extendToViewport={viewportGridEnabled}
               viewportWidth={viewportSize.width || width}
               viewportHeight={viewportSize.height || defaultViewportHeight}
+              zoom={zoom}
             />
             {showDebugCells ? (
               <g opacity="0.8" pointerEvents="none" style={mapLayerStyle("debugCells")}>
