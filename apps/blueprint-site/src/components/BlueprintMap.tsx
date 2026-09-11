@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import cx from "clsx";
 import {
   prepareSvgForPng,
@@ -86,6 +86,7 @@ export function BlueprintMap({
   externalSidebar = false,
   highlightMatchingFilters: controlledHighlightMatchingFilters,
   onHighlightMatchingFiltersChange: controlledOnHighlightMatchingFiltersChange,
+  viewportControlsExtra,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -109,6 +110,7 @@ export function BlueprintMap({
   externalSidebar?: boolean;
   highlightMatchingFilters?: boolean;
   onHighlightMatchingFiltersChange?: (value: boolean) => void;
+  viewportControlsExtra?: ReactNode;
 }) {
   const [uncontrolledIndex, setUncontrolledIndex] = useState<number | null>(null);
   const selectedIndex =
@@ -799,6 +801,7 @@ export function BlueprintMap({
               measuredFitZoom={measuredFitZoom}
               fitMode={fitModeRef.current}
               pan={pan}
+              extraActions={viewportControlsExtra}
               onExport={exportPng}
               onZoomOut={() => setMapZoom(stepZoomOut(zoom, { min: minZoom }))}
               onFit={fitToViewport}

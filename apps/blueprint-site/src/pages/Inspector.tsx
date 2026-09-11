@@ -618,31 +618,6 @@ export function BlueprintInspectorPage({
           >
             Change blueprint
           </Button>
-          <span className="text-slate-700">|</span>
-          <PersistentCheckbox
-            boxed
-            size="small"
-            label="grid"
-            storageKey={SHOW_GRID_KEY}
-            defaultChecked={showGrid}
-            onCheckedChange={setShowGrid}
-          />
-          <PersistentCheckbox
-            boxed
-            size="small"
-            label="PNG: blue"
-            storageKey={SHOW_PNG_BACKGROUND_KEY}
-            defaultChecked={showPngBackground}
-            onCheckedChange={setShowPngBackground}
-          />
-          <PersistentCheckbox
-            boxed
-            size="small"
-            label="filters"
-            storageKey={SHOW_FILTERS_KEY}
-            defaultChecked={showFilters}
-            onCheckedChange={setShowFilters}
-          />
         </div>
 
         {mapReady ? (
@@ -666,6 +641,34 @@ export function BlueprintInspectorPage({
             onSelectedIndexChange={setSelectedIndex}
             highlightMatchingFilters={highlightMatchingFilters}
             onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
+            viewportControlsExtra={
+              <>
+                <PersistentCheckbox
+                  boxed
+                  size="small"
+                  label="filters"
+                  storageKey={SHOW_FILTERS_KEY}
+                  defaultChecked={showFilters}
+                  onCheckedChange={setShowFilters}
+                />
+                <PersistentCheckbox
+                  boxed
+                  size="small"
+                  label="grid"
+                  storageKey={SHOW_GRID_KEY}
+                  defaultChecked={showGrid}
+                  onCheckedChange={setShowGrid}
+                />
+                <PersistentCheckbox
+                  boxed
+                  size="small"
+                  label="PNG: blue"
+                  storageKey={SHOW_PNG_BACKGROUND_KEY}
+                  defaultChecked={showPngBackground}
+                  onCheckedChange={setShowPngBackground}
+                />
+              </>
+            }
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-black">
