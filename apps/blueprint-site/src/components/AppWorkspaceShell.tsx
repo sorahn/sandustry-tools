@@ -63,7 +63,7 @@ export function AppWorkspaceShell({
 
           {/* Floating Expand Sidebar Button (when sidebar is collapsed) */}
           {sidebar && isCollapsed ? (
-            <div className="absolute right-3 top-3 z-30">
+            <div className="absolute right-3 top-16 z-30">
               <IconButton
                 size="small"
                 label="Show inspector sidebar"

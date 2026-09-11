@@ -69,8 +69,13 @@ p a {
   outline: 2px solid var(--sd-color-primary, #ffe700);
   outline-offset: 3px;
 }
-.blueprint-map__viewport {
+.blueprint-map__viewport:not(.blueprint-map__viewport--full-height) {
   height: min(70vh, 40rem);
+}
+.blueprint-map__viewport--full-height {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
 }
 .blueprint-map__canvas {
   display: block;

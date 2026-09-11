@@ -359,6 +359,9 @@ export function BlueprintMap({
         defaultViewportHeight,
         height * legacyMeasuredFitZoom + legacyHorizontalCanvasGap * 2 + MAP_VIEWPORT_BORDER_SIZE,
       );
+  const currentViewportHeight =
+    (fullHeight ? viewportRef.current?.clientHeight || viewportSize.height : 0) ||
+    defaultViewportHeight;
   const measuredFitZoom = fitPolicy
     ? snapMapZoom(
         solveInitialFit(
@@ -366,7 +369,7 @@ export function BlueprintMap({
             contentWidth: width,
             contentHeight: height,
             viewportWidth,
-            viewportHeight: defaultViewportHeight,
+            viewportHeight: currentViewportHeight,
             marginPx,
           },
           fitPolicy,
@@ -380,7 +383,7 @@ export function BlueprintMap({
           contentWidth: width,
           contentHeight: height,
           viewportWidth,
-          viewportHeight: defaultViewportHeight,
+          viewportHeight: currentViewportHeight,
           marginPx,
         },
         fitPolicy,
@@ -761,7 +764,10 @@ export function BlueprintMap({
           fullHeight ? "relative flex flex-1 h-full min-h-0 w-full overflow-hidden" : "min-w-0"
         }
       >
-        <div className="sticky z-20 h-0" style={{ top: stickyTop ?? `${siteHeaderHeight}px` }}>
+        <div
+          className="sticky z-20 h-0"
+          style={{ top: stickyTop ?? (fullHeight ? "0px" : `${siteHeaderHeight}px`) }}
+        >
           <BlueprintMapViewportControls
             zoom={zoom}
             minZoom={zoomLevels[0]}
@@ -793,7 +799,7 @@ export function BlueprintMap({
           className={cx(
             "blueprint-map__viewport relative overflow-hidden bg-[#33a8ff] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
             fullHeight
-              ? "h-full w-full flex-1 min-h-0 min-w-0"
+              ? "blueprint-map__viewport--full-height h-full w-full flex-1 min-h-0 min-w-0"
               : "min-h-[32rem] rounded border border-slate-800",
           )}
           translate="no"
@@ -857,7 +863,7 @@ export function BlueprintMap({
             captureOnly
               ? { width: `${Math.ceil(width)}px`, height: `${Math.ceil(height)}px` }
               : fullHeight
-                ? undefined
+                ? { height: "100%", width: "100%" }
                 : {
                     height: `${Math.max(512, Math.ceil(aspectRatioViewportHeight))}px`,
                   }

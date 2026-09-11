@@ -38,6 +38,7 @@ import {
   writeStorageValue,
 } from "../utils/storage";
 import {
+  POLICY_TESTER_SELECTION_KEY,
   REMEMBER_BLUEPRINT_KEY,
   SAVED_BLUEPRINT_KEY,
   SAVED_MAP_VIEW_KEY,
@@ -46,6 +47,7 @@ import {
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
 } from "../utils/storage-keys";
+import { FIT_POLICY_PRESETS, type FitPolicyPreset } from "../utils/blueprint-fit";
 import { type SaveBlueprintRecord } from "@sandustry/save-core";
 import { encodeSavedBlueprint } from "../utils/save-blueprint";
 import { extractSaveBlueprintsInWorker } from "../utils/save-blueprint-worker";
@@ -246,6 +248,14 @@ export function BlueprintInspectorPage({
     readStoredBoolean(SHOW_PNG_BACKGROUND_KEY, false),
   );
   const [showFilters, setShowFilters] = useState(() => readStoredBoolean(SHOW_FILTERS_KEY, false));
+  const [policySelection, setPolicySelection] = useState<"legacy" | FitPolicyPreset>(() => {
+    const stored = readStorageValue(POLICY_TESTER_SELECTION_KEY);
+    if (stored && Object.prototype.hasOwnProperty.call(FIT_POLICY_PRESETS, stored)) {
+      return stored as FitPolicyPreset;
+    }
+    return "vault";
+  });
+  const fitPolicy = policySelection === "legacy" ? undefined : FIT_POLICY_PRESETS[policySelection];
   const [inspectedBlueprintKey, setInspectedBlueprintKey] = useState("");
   const [summary, setSummary] = useState<BlueprintSummary | null>(null);
   const [message, setMessage] = useState(
@@ -608,6 +618,12 @@ export function BlueprintInspectorPage({
             showGrid={showGrid}
             showPngBackground={showPngBackground}
             showFilters={showFilters}
+            fitPolicy={fitPolicy}
+            policySelection={policySelection}
+            onPolicySelectionChange={(selection) => {
+              setPolicySelection(selection);
+              writeStorageValue(POLICY_TESTER_SELECTION_KEY, selection);
+            }}
             fullHeight
             externalSidebar
             selectedIndex={selectedIndex}

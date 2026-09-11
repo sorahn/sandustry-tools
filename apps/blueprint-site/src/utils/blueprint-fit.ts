@@ -139,9 +139,10 @@ export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): F
   const fitWidth = input.contentWidth + input.marginPx * 2;
   const fitHeight = input.contentHeight + input.marginPx * 2;
   const defaultHeight = aspectViewportHeight(input.viewportWidth, policy, input);
+  const availableHeight = policy.viewport.allowHeightGrowth ? defaultHeight : input.viewportHeight;
   const widthLimit =
     policy.fit.width === "required" ? input.viewportWidth / fitWidth : Number.POSITIVE_INFINITY;
-  const heightLimit = defaultHeight / fitHeight;
+  const heightLimit = availableHeight / fitHeight;
   const useHeightConstraint =
     policy.zoom.selection !== "largest-width-fitting" &&
     policy.fit.height === "required" &&
