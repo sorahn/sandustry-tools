@@ -78,6 +78,10 @@ export function BlueprintMap({
   stickyTop,
   embedMode = false,
   onExportPng,
+  fullHeight = false,
+  selectedIndex: controlledSelectedIndex,
+  onSelectedIndexChange,
+  externalSidebar = false,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -95,8 +99,23 @@ export function BlueprintMap({
   stickyTop?: string;
   embedMode?: boolean;
   onExportPng?: (png: ArrayBuffer, filename: string) => void;
+  fullHeight?: boolean;
+  selectedIndex?: number | null;
+  onSelectedIndexChange?: (index: number | null) => void;
+  externalSidebar?: boolean;
 }) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [uncontrolledIndex, setUncontrolledIndex] = useState<number | null>(null);
+  const selectedIndex =
+    controlledSelectedIndex !== undefined ? controlledSelectedIndex : uncontrolledIndex;
+  const setSelectedIndex = (
+    indexOrFn: number | null | ((prev: number | null) => number | null),
+  ) => {
+    const next = typeof indexOrFn === "function" ? indexOrFn(selectedIndex) : indexOrFn;
+    if (controlledSelectedIndex === undefined) {
+      setUncontrolledIndex(next);
+    }
+    onSelectedIndexChange?.(next);
+  };
   const [showDebugCells, setShowDebugCells] = useState(() =>
     readStoredBoolean(SHOW_DEBUG_CELLS_KEY, false),
   );
@@ -730,12 +749,18 @@ export function BlueprintMap({
   return (
     <div
       className={
-        showSidebar
-          ? cx("grid items-stretch lg:grid-cols-[minmax(0,1fr)_18rem]", !embedMode && "gap-4")
-          : "grid items-stretch"
+        fullHeight
+          ? "relative flex flex-1 h-full min-h-0 w-full overflow-hidden"
+          : showSidebar && !externalSidebar
+            ? cx("grid items-stretch lg:grid-cols-[minmax(0,1fr)_18rem]", !embedMode && "gap-4")
+            : "grid items-stretch"
       }
     >
-      <div className="min-w-0">
+      <div
+        className={
+          fullHeight ? "relative flex flex-1 h-full min-h-0 w-full overflow-hidden" : "min-w-0"
+        }
+      >
         <div className="sticky z-20 h-0" style={{ top: stickyTop ?? `${siteHeaderHeight}px` }}>
           <BlueprintMapViewportControls
             zoom={zoom}
@@ -765,7 +790,12 @@ export function BlueprintMap({
               ? `: selected ${structureLabel(selected.type)} at ${selected.x}, ${selected.y} (${(selectedIndex ?? 0) + 1} of ${blueprint.data.length})`
               : ""
           }`}
-          className="blueprint-map__viewport relative min-h-[32rem] overflow-hidden rounded border border-slate-800 bg-[#33a8ff] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
+          className={cx(
+            "blueprint-map__viewport relative overflow-hidden bg-[#33a8ff] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
+            fullHeight
+              ? "h-full w-full flex-1 min-h-0 min-w-0"
+              : "min-h-[32rem] rounded border border-slate-800",
+          )}
           translate="no"
           onKeyDown={(event) => {
             if (event.target !== event.currentTarget) return;
@@ -826,9 +856,11 @@ export function BlueprintMap({
           style={
             captureOnly
               ? { width: `${Math.ceil(width)}px`, height: `${Math.ceil(height)}px` }
-              : {
-                  height: `${Math.max(512, Math.ceil(aspectRatioViewportHeight))}px`,
-                }
+              : fullHeight
+                ? undefined
+                : {
+                    height: `${Math.max(512, Math.ceil(aspectRatioViewportHeight))}px`,
+                  }
           }
         >
           <svg
@@ -1012,7 +1044,7 @@ export function BlueprintMap({
           </svg>
         </div>
       </div>
-      {showSidebar ? (
+      {showSidebar && !externalSidebar ? (
         <BlueprintMapSidebar
           selected={selected}
           selectedIndex={selectedIndex}

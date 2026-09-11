@@ -5,8 +5,7 @@ import type {
   SaveExplorerCellInspection,
   SaveExplorerClientDocument,
 } from "@sandustry/save-core";
-import { PageHeader } from "../components/PageHeader";
-import { SplitPane } from "@sandustry/ui";
+import { AppWorkspaceShell } from "../components/AppWorkspaceShell";
 import {
   SaveExplorerMapPanel,
   type ExplorerDrag,
@@ -665,83 +664,97 @@ export function SaveExplorerPage() {
   };
 
   return (
-    <section className="space-y-6">
-      <PageHeader title="Save Explorer">
-        Work in progress: preview the save parser and native-style minimap renderer. This is an
-        early read-only explorer, so some game layers, colors, and bundled content are still being
-        resolved. Files are processed locally and are stored only when you choose to remember them.
-      </PageHeader>
-      <SplitPane
-        sidebarPosition="end"
-        className="flex-col overflow-hidden rounded border border-slate-700 bg-black/75 shadow-xl xl:flex-row"
-        contentClassName="min-h-0 min-w-0 flex-1 flex flex-col"
-        sidebarClassName="w-full shrink-0 border-t border-l-0 border-slate-800/80 bg-slate-950/40 overflow-y-auto xl:w-80 xl:border-t-0 xl:border-l"
-        sidebar={
-          <SaveExplorerSidebar
-            document={document}
-            busy={busy}
-            message={message}
-            remember={remember}
-            layers={layers}
-            customCursor={customCursor}
-            onLayerChange={updateLayer}
-            onRemember={() => void toggleRemember()}
-            onCustomCursorChange={setCustomCursor}
-            onInspectBlueprint={(blueprintId) => {
-              const saveId = document?.metadata.saveId || "";
-              if (!saveId) return;
-              if (settleTimerRef.current !== null) {
-                clearTimeout(settleTimerRef.current);
-                settleTimerRef.current = null;
-              }
-              cancelQueuedInspect();
-              navigate({
-                to: "/save/$saveId/blueprint/$blueprintId",
-                params: { saveId, blueprintId },
-                startTransition: true,
-              });
-            }}
-            onCopyBlueprint={(blueprintId) => {
-              const reqId = nextRequestIdRef.current++;
-              latestEncodeIdRef.current = reqId;
-              workerRef.current?.postMessage({ id: reqId, type: "encode", blueprintId });
-              setMessage("Encoding blueprint string…");
-            }}
-          />
-        }
-      >
-        <SaveExplorerMapPanel
-          inputRef={inputRef}
-          canvasRef={canvasRef}
-          mapFrameRef={mapFrameRef}
-          dragRef={dragRef}
-          raster={raster}
-          inspection={inspection}
-          hoverCell={hoverCell}
-          hoverCellRef={hoverCellRef}
-          view={view}
-          customCursor={customCursor}
-          dragging={dragging}
+    <AppWorkspaceShell
+      sidebarTitle="Save Explorer"
+      sidebar={
+        <SaveExplorerSidebar
+          document={document}
           busy={busy}
-          documentLoaded={Boolean(document)}
           message={message}
-          onChooseFile={() => inputRef.current?.click()}
-          onFile={decodeFile}
-          onViewChange={handleViewChange}
-          onHover={(cell) => {
-            setHoverCell(cell);
-            setInspection(null);
-          }}
-          onClearHover={() => {
+          remember={remember}
+          layers={layers}
+          customCursor={customCursor}
+          onLayerChange={updateLayer}
+          onRemember={() => void toggleRemember()}
+          onCustomCursorChange={setCustomCursor}
+          onInspectBlueprint={(blueprintId) => {
+            const saveId = document?.metadata.saveId || "";
+            if (!saveId) return;
+            if (settleTimerRef.current !== null) {
+              clearTimeout(settleTimerRef.current);
+              settleTimerRef.current = null;
+            }
             cancelQueuedInspect();
-            setHoverCell(null);
-            setInspection(null);
+            navigate({
+              to: "/save/$saveId/blueprint/$blueprintId",
+              params: { saveId, blueprintId },
+              startTransition: true,
+            });
           }}
-          onDraggingChange={setDragging}
-          fitMap={fitMap}
-          onInspect={queueInspect}
+          onCopyBlueprint={(blueprintId) => {
+            const reqId = nextRequestIdRef.current++;
+            latestEncodeIdRef.current = reqId;
+            workerRef.current?.postMessage({ id: reqId, type: "encode", blueprintId });
+            setMessage("Encoding blueprint string…");
+          }}
         />
-      </SplitPane>
-    </section>
+      }
+      statusBarProps={{
+        left: document ? (
+          <span className="flex items-center gap-2">
+            <span className="font-semibold text-[var(--sd-color-primary,#ffe700)]">
+              {document.metadata.worldName || document.metadata.saveName || "Saved World"}
+            </span>
+            <span className="text-[var(--sd-color-text-subtle,#808080)]">·</span>
+            <span>
+              {document.world.width}×{document.world.height}
+            </span>
+            <span className="text-[var(--sd-color-text-subtle,#808080)]">·</span>
+            <span>{document.structureCount.toLocaleString()} structures</span>
+          </span>
+        ) : (
+          <span>{message}</span>
+        ),
+        center: hoverCell ? (
+          <span>
+            X: {hoverCell.mapX} Y: {hoverCell.mapY} | Zoom: {Math.round(view.scale * 100)}%
+          </span>
+        ) : (
+          <span>Zoom: {Math.round(view.scale * 100)}%</span>
+        ),
+      }}
+    >
+      <SaveExplorerMapPanel
+        inputRef={inputRef}
+        canvasRef={canvasRef}
+        mapFrameRef={mapFrameRef}
+        dragRef={dragRef}
+        raster={raster}
+        inspection={inspection}
+        hoverCell={hoverCell}
+        hoverCellRef={hoverCellRef}
+        view={view}
+        customCursor={customCursor}
+        dragging={dragging}
+        busy={busy}
+        documentLoaded={Boolean(document)}
+        message={message}
+        onChooseFile={() => inputRef.current?.click()}
+        onFile={decodeFile}
+        onViewChange={handleViewChange}
+        onHover={(cell) => {
+          setHoverCell(cell);
+          setInspection(null);
+        }}
+        onClearHover={() => {
+          cancelQueuedInspect();
+          setHoverCell(null);
+          setInspection(null);
+        }}
+        onDraggingChange={setDragging}
+        fitMap={fitMap}
+        onInspect={queueInspect}
+      />
+    </AppWorkspaceShell>
   );
 }

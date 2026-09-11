@@ -75,30 +75,62 @@ export function SaveExplorerMapPanel({
   onInspect,
 }: SaveExplorerMapPanelProps) {
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <FileDropZone
-        accept=".save"
-        dragging={dragging}
-        onDraggingChange={onDraggingChange}
-        onFile={(file) => void onFile(file)}
-        inputRef={inputRef}
-        inputProps={{ className: "hidden" }}
-        className="flex min-h-20 items-center justify-center gap-4 border-b border-slate-800/90 bg-slate-900/45 p-4 transition-colors duration-150"
-        activeClassName="border-yellow-400/70 bg-amber-900/30"
-      >
-        <div className={`flex items-center gap-4 ${dragging ? "pointer-events-none" : ""}`}>
-          <Button type="button" variant="solid" onClick={onChooseFile} disabled={busy}>
-            {busy ? "Decoding…" : documentLoaded ? "Open another save" : "Choose save file"}
-          </Button>
-          <span className="text-xs text-slate-500">or drop a `.save` file</span>
+    <div className="relative flex flex-1 h-full min-h-0 w-full flex-col overflow-hidden bg-black">
+      {!documentLoaded ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-6">
+          <FileDropZone
+            accept=".save"
+            dragging={dragging}
+            onDraggingChange={onDraggingChange}
+            onFile={(file) => void onFile(file)}
+            inputRef={inputRef}
+            inputProps={{ className: "hidden" }}
+            className="flex w-full max-w-md flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-slate-800/90 bg-slate-950/70 p-8 text-center backdrop-blur transition-colors duration-150"
+            activeClassName="border-yellow-400/70 bg-amber-900/30"
+          >
+            <div
+              className={`flex flex-col items-center gap-3 ${dragging ? "pointer-events-none" : ""}`}
+            >
+              <div className="text-3xl">💾</div>
+              <div className="font-semibold text-slate-200">No save loaded</div>
+              <Button type="button" variant="solid" onClick={onChooseFile} disabled={busy}>
+                {busy ? "Decoding…" : "Choose save file"}
+              </Button>
+              <span className="text-xs text-slate-400">or drop a `.save` file to begin</span>
+            </div>
+          </FileDropZone>
         </div>
-      </FileDropZone>
+      ) : (
+        <FileDropZone
+          accept=".save"
+          dragging={dragging}
+          onDraggingChange={onDraggingChange}
+          onFile={(file) => void onFile(file)}
+          inputRef={inputRef}
+          inputProps={{ className: "hidden" }}
+          className="absolute top-3 left-3 z-20 flex items-center gap-3 rounded border border-slate-800/90 bg-slate-950/80 p-1.5 font-mono text-xs text-slate-300 backdrop-blur-sm transition-colors duration-150"
+          activeClassName="border-yellow-400/70 bg-amber-900/30"
+        >
+          <div className={`flex items-center gap-3 ${dragging ? "pointer-events-none" : ""}`}>
+            <Button
+              type="button"
+              variant="solid"
+              size="small"
+              onClick={onChooseFile}
+              disabled={busy}
+            >
+              {busy ? "Decoding…" : "Open another save"}
+            </Button>
+            <span className="hidden text-xs text-slate-400 sm:inline">or drop `.save`</span>
+          </div>
+        </FileDropZone>
+      )}
       <div
         ref={mapFrameRef}
         tabIndex={0}
         role="region"
         aria-label="Save minimap viewport"
-        className="relative flex flex-1 min-h-[min(65vh,42rem)] items-center justify-center overflow-hidden bg-black p-4 [touch-action:none] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
+        className="relative flex flex-1 h-full min-h-0 w-full items-center justify-center overflow-hidden bg-black [touch-action:none] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
         onKeyDown={(event) => {
           if (!raster) return;
           if (event.key === "+" || event.key === "=") {

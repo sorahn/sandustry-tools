@@ -250,15 +250,21 @@ function SaveManager() {
   );
 }
 
-export function Header() {
+export function Header({ fullWidth = false }: { fullWidth?: boolean } = {}) {
   const location = useLocation();
 
   return (
     <header
       data-site-header
-      className="sticky top-0 z-40 border-b border-[var(--sd-color-border,#2a323d)]/80 bg-[var(--sd-color-bg,#181c20)]/85 shadow-lg backdrop-blur-sm transition-colors duration-200"
+      className="sticky top-0 z-40 shrink-0 border-b border-[var(--sd-color-border,#2a323d)]/80 bg-[var(--sd-color-bg,#181c20)]/85 shadow-lg backdrop-blur-sm transition-colors duration-200"
     >
-      <div className="site-shell mx-auto flex w-full flex-wrap items-center justify-between gap-3 px-6 py-3">
+      <div
+        className={
+          fullWidth
+            ? "flex w-full items-center justify-between gap-3 px-4 py-2"
+            : "site-shell mx-auto flex w-full flex-wrap items-center justify-between gap-3 px-6 py-3"
+        }
+      >
         <div className="flex min-w-0 items-center gap-3">
           <Link
             to="/"

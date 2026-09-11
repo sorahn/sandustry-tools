@@ -1,6 +1,10 @@
-import { startTransition, useEffect, useRef, useState, type ReactNode } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams, useRouter } from "@tanstack/react-router";
-import { structureLabel } from "@daryl.roberts/sandustry-blueprint-core";
+import {
+  clusterFilterStructures,
+  prepareBlueprint,
+  structureLabel,
+} from "@daryl.roberts/sandustry-blueprint-core";
 import {
   decodeBlueprint,
   encodeBlueprint,
@@ -8,14 +12,24 @@ import {
   type BlueprintType,
 } from "../utils/blueprint";
 import { debugComponent } from "../components/DebugComponentWrapper";
-import { BlueprintMapPanel } from "../components/BlueprintMapPanel";
+import { BlueprintMap } from "../components/BlueprintMap";
+import { BlueprintInspectorSidebar } from "../components/BlueprintInspectorSidebar";
+import { AppWorkspaceShell } from "../components/AppWorkspaceShell";
+import { GlobalFileDropOverlay } from "../components/GlobalFileDropOverlay";
 import { PersistentCheckbox } from "../components/PersistentCheckbox";
 import {
   BlueprintSubmissionPanel,
   type BlueprintSummary,
 } from "../components/BlueprintSubmissionPanel";
-import { BlueprintStructuresPanel } from "../components/BlueprintStructuresPanel";
-import { FileDropZone, Panel, Select, Spinner, StatusIndicator } from "@sandustry/ui";
+import {
+  Button,
+  Dialog,
+  FileDropZone,
+  Panel,
+  Select,
+  Spinner,
+  StatusIndicator,
+} from "@sandustry/ui";
 import { PageHeader } from "../components/PageHeader";
 import {
   readStorageValue,
@@ -226,9 +240,7 @@ export function BlueprintInspectorPage({
     return readStorageValue(SAVED_BLUEPRINT_KEY) ?? "";
   });
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
-  const [showMapSidebar, setShowMapSidebar] = useState(() =>
-    readStoredBoolean(SHOW_MAP_SIDEBAR_KEY, true),
-  );
+  const showMapSidebar = readStoredBoolean(SHOW_MAP_SIDEBAR_KEY, true);
   const [showGrid, setShowGrid] = useState(() => readStoredBoolean(SHOW_GRID_KEY, true));
   const [showPngBackground, setShowPngBackground] = useState(() =>
     readStoredBoolean(SHOW_PNG_BACKGROUND_KEY, false),
@@ -391,6 +403,42 @@ export function BlueprintInspectorPage({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [blueprint, inspectedBlueprintKey, summary]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const preparedBlueprint = useMemo(
+    () => (blueprint ? prepareBlueprint(blueprint) : null),
+    [blueprint],
+  );
+  const preparedStructure =
+    blueprint && selectedIndex !== null && preparedBlueprint
+      ? preparedBlueprint.preparedStructures[selectedIndex]
+      : null;
+  const activeFilterCluster = useMemo(() => {
+    if (!preparedBlueprint || selectedIndex === null) return null;
+    const clusters = clusterFilterStructures(preparedBlueprint.preparedStructures);
+    for (const cluster of clusters) {
+      for (const member of cluster.members) {
+        if (member.index === selectedIndex) return cluster;
+      }
+    }
+    return null;
+  }, [preparedBlueprint, selectedIndex]);
+  const selectedStructure =
+    blueprint && selectedIndex !== null ? blueprint.data[selectedIndex] : null;
+
+  const copyString = async () => {
+    if (!encoded) return;
+    try {
+      await navigator.clipboard.writeText(encoded);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
   const rememberHeader = debugComponent(PersistentCheckbox, {
     boxed: true,
     defaultChecked: remember,
@@ -407,77 +455,220 @@ export function BlueprintInspectorPage({
     },
   });
   const navigate = useNavigate();
-  return (
-    <section className="space-y-6">
-      <PageHeader title={title}>{description}</PageHeader>
-      {initialEncoded === undefined ? (
-        <FromSavedGame
-          onSelectFixture={loadTestBlueprint}
-          onSelectSavedBlueprint={(saveId, blueprintId) =>
-            navigate({
-              to: "/save/$saveId/blueprint/$blueprintId",
-              params: { saveId, blueprintId },
-            })
-          }
-        />
-      ) : null}
-      <SaveFileDropzone
-        onFile={handleSaveFile}
-        selection={droppedSave}
-        onSelect={(record) => droppedSave && loadSavedBlueprint(record, droppedSave.fileName)}
-      />
-      <BlueprintSubmissionPanel
-        encoded={encoded}
-        message={message}
-        rememberHeader={rememberHeader}
-        summary={summary}
-        blueprint={blueprint}
-        onEncodedChange={(value) => {
-          setEncoded(value);
-          if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, value);
+
+  if (blueprint && summary) {
+    return (
+      <AppWorkspaceShell
+        sidebarTitle={blueprint.name}
+        sidebar={
+          <BlueprintInspectorSidebar
+            blueprint={blueprint}
+            summary={summary}
+            encoded={encoded}
+            selected={selectedStructure}
+            selectedIndex={selectedIndex}
+            preparedStructure={preparedStructure}
+            activeFilterCluster={activeFilterCluster}
+            highlightMatchingFilters={false}
+            onClearSelection={() => setSelectedIndex(null)}
+            debugOptions={null}
+            onOpenImport={() => setImportOpen(true)}
+            onCopyString={() => void copyString()}
+            copied={copied}
+          />
+        }
+        statusBarProps={{
+          left: (
+            <span className="flex items-center gap-2 truncate">
+              <span className="font-semibold text-[var(--sd-color-primary,#ffe700)] truncate max-w-xs">
+                {blueprint.name}
+              </span>
+              <span className="text-[var(--sd-color-text-subtle,#808080)]">·</span>
+              <span>{blueprint.data.length} structures</span>
+              <span className="text-[var(--sd-color-text-subtle,#808080)]">·</span>
+              <span>
+                {summary.maxX - summary.minX + 1}×{summary.maxY - summary.minY + 1}
+              </span>
+              <span className="text-[var(--sd-color-text-subtle,#808080)]">·</span>
+              <span className="font-semibold text-yellow-400">{summary.format}</span>
+            </span>
+          ),
+          center: selectedStructure ? (
+            <span>
+              Selected: {structureLabel(selectedStructure.type)} ({selectedStructure.x},{" "}
+              {selectedStructure.y})
+            </span>
+          ) : (
+            <span>{message}</span>
+          ),
         }}
-        onClear={() => {
-          setEncoded("");
-          if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, "");
-        }}
-        onInspect={inspect}
-      />
-      {blueprint && summary ? (
-        mapReady ? (
+        overlays={
           <>
-            <div ref={mapPanelRef} className="scroll-mt-4">
-              <BlueprintMapPanel
-                blueprint={blueprint}
-                remember={remember}
-                blueprintKey={inspectedBlueprintKey}
-                showSidebar={showMapSidebar}
-                onShowSidebarChange={setShowMapSidebar}
-                showGrid={showGrid}
-                onShowGridChange={setShowGrid}
-                showPngBackground={showPngBackground}
-                onShowPngBackgroundChange={setShowPngBackground}
-                showFilters={showFilters}
-                onShowFiltersChange={setShowFilters}
-              />
-            </div>
-            <BlueprintStructuresPanel blueprint={blueprint} structureLabel={structureLabel} />
-          </>
-        ) : (
-          <div ref={mapPanelRef} className="scroll-mt-4">
-            <Panel
-              title="Blueprint map"
-              padded
-              className="flex min-h-80 items-center justify-center"
+            <GlobalFileDropOverlay onFileDrop={(file) => void handleSaveFile(file)} />
+            <Dialog
+              open={importOpen}
+              onClose={() => setImportOpen(false)}
+              title="Import Blueprint or Save"
             >
-              <div className="flex items-center gap-2.5 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
-                <Spinner size="small" />
-                <span>Rendering blueprint map…</span>
+              <div className="space-y-4 p-4">
+                {initialEncoded === undefined ? (
+                  <FromSavedGame
+                    onSelectFixture={(fixture) => {
+                      loadTestBlueprint(fixture);
+                      setImportOpen(false);
+                    }}
+                    onSelectSavedBlueprint={(saveId, blueprintId) => {
+                      setImportOpen(false);
+                      navigate({
+                        to: "/save/$saveId/blueprint/$blueprintId",
+                        params: { saveId, blueprintId },
+                      });
+                    }}
+                  />
+                ) : null}
+                <SaveFileDropzone
+                  onFile={(file) => {
+                    void handleSaveFile(file);
+                  }}
+                  selection={droppedSave}
+                  onSelect={(record) => {
+                    if (droppedSave) {
+                      loadSavedBlueprint(record, droppedSave.fileName);
+                      setImportOpen(false);
+                    }
+                  }}
+                />
+                <BlueprintSubmissionPanel
+                  encoded={encoded}
+                  message={message}
+                  rememberHeader={rememberHeader}
+                  summary={summary}
+                  blueprint={blueprint}
+                  onEncodedChange={(value) => {
+                    setEncoded(value);
+                    if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, value);
+                  }}
+                  onClear={() => {
+                    setEncoded("");
+                    if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, "");
+                  }}
+                  onInspect={() => {
+                    inspect();
+                    setImportOpen(false);
+                  }}
+                />
               </div>
-            </Panel>
+            </Dialog>
+          </>
+        }
+      >
+        {/* Floating Canvas View Controls */}
+        <div className="absolute top-3 left-3 z-30 flex items-center gap-2 rounded border border-slate-700/80 bg-slate-950/80 p-1.5 backdrop-blur shadow-md">
+          <Button
+            size="small"
+            variant="quiet"
+            onClick={() => setImportOpen(true)}
+            className="text-xs"
+          >
+            Change blueprint
+          </Button>
+          <span className="text-slate-700">|</span>
+          <PersistentCheckbox
+            boxed
+            size="small"
+            label="grid"
+            storageKey={SHOW_GRID_KEY}
+            defaultChecked={showGrid}
+            onCheckedChange={setShowGrid}
+          />
+          <PersistentCheckbox
+            boxed
+            size="small"
+            label="PNG: blue"
+            storageKey={SHOW_PNG_BACKGROUND_KEY}
+            defaultChecked={showPngBackground}
+            onCheckedChange={setShowPngBackground}
+          />
+          <PersistentCheckbox
+            boxed
+            size="small"
+            label="filters"
+            storageKey={SHOW_FILTERS_KEY}
+            defaultChecked={showFilters}
+            onCheckedChange={setShowFilters}
+          />
+        </div>
+
+        {mapReady ? (
+          <BlueprintMap
+            blueprint={blueprint}
+            remember={remember}
+            blueprintKey={inspectedBlueprintKey}
+            showSidebar={showMapSidebar}
+            showGrid={showGrid}
+            showPngBackground={showPngBackground}
+            showFilters={showFilters}
+            fullHeight
+            externalSidebar
+            selectedIndex={selectedIndex}
+            onSelectedIndexChange={setSelectedIndex}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-black">
+            <div className="flex items-center gap-2.5 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+              <Spinner size="small" />
+              <span>Rendering blueprint map…</span>
+            </div>
           </div>
-        )
-      ) : null}
-    </section>
+        )}
+      </AppWorkspaceShell>
+    );
+  }
+
+  return (
+    <AppWorkspaceShell
+      sidebarTitle="Blueprint Inspector"
+      statusBarProps={{ left: <span>{message}</span> }}
+      overlays={<GlobalFileDropOverlay onFileDrop={(file) => void handleSaveFile(file)} />}
+    >
+      <div className="flex h-full w-full overflow-y-auto p-6 md:p-10 justify-center">
+        <div className="w-full max-w-3xl space-y-6">
+          <PageHeader title={title}>{description}</PageHeader>
+          {initialEncoded === undefined ? (
+            <FromSavedGame
+              onSelectFixture={loadTestBlueprint}
+              onSelectSavedBlueprint={(saveId, blueprintId) =>
+                navigate({
+                  to: "/save/$saveId/blueprint/$blueprintId",
+                  params: { saveId, blueprintId },
+                })
+              }
+            />
+          ) : null}
+          <SaveFileDropzone
+            onFile={handleSaveFile}
+            selection={droppedSave}
+            onSelect={(record) => droppedSave && loadSavedBlueprint(record, droppedSave.fileName)}
+          />
+          <BlueprintSubmissionPanel
+            encoded={encoded}
+            message={message}
+            rememberHeader={rememberHeader}
+            summary={summary}
+            blueprint={blueprint}
+            onEncodedChange={(value) => {
+              setEncoded(value);
+              if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, value);
+            }}
+            onClear={() => {
+              setEncoded("");
+              if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, "");
+            }}
+            onInspect={inspect}
+          />
+        </div>
+      </div>
+    </AppWorkspaceShell>
   );
 }
 
