@@ -1157,6 +1157,7 @@ export function ComponentsPage() {
 
                   {/* 4. Modal Footer Tip */}
                   <ModalFooterTip
+                    spaced
                     tip={
                       <span>
                         Tip: Drag and drop{" "}

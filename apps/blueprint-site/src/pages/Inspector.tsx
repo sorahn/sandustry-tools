@@ -26,8 +26,11 @@ import {
   Button,
   Dialog,
   FileDropZone,
+  Keycap,
   Panel,
   Select,
+  ShortcutHelper,
+  ShortcutHelperItem,
   Spinner,
   StatusIndicator,
 } from "@sandustry/ui";
@@ -51,6 +54,7 @@ import {
   SHOW_PNG_BACKGROUND_KEY,
 } from "../utils/storage-keys";
 import { FIT_POLICY_PRESETS, type FitPolicyPreset } from "../utils/blueprint-fit";
+import { primaryModifierKey } from "../utils/platform";
 import { type SaveBlueprintRecord } from "@sandustry/save-core";
 import { encodeSavedBlueprint } from "../utils/save-blueprint";
 import { extractSaveBlueprintsInWorker } from "../utils/save-blueprint-worker";
@@ -325,6 +329,40 @@ export function BlueprintInspectorPage({
       setMessage(error instanceof Error ? error.message : "Unable to inspect blueprint.");
     }
   };
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const value = event.clipboardData?.getData("text/plain")?.trim();
+      if (!value) return;
+      try {
+        decodeBlueprint(value);
+      } catch {
+        return;
+      }
+
+      event.preventDefault();
+      setDroppedSave(null);
+      setEncoded(value);
+      if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, value);
+      inspectValue(value, true);
+      setImportOpen(false);
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+    // inspectValue is intentionally kept local to this page's state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remember]);
+
   const inspect = () => inspectValue(encoded, true);
   const loadTestBlueprint = (nextBlueprint: Blueprint) => {
     userInitiatedRef.current = true;
@@ -618,6 +656,21 @@ export function BlueprintInspectorPage({
           >
             Change blueprint
           </Button>
+        </div>
+
+        <div className="absolute bottom-1 left-3 z-30">
+          <ShortcutHelper>
+            <ShortcutHelperItem
+              hotkey={
+                <>
+                  <Keycap size="sm">{primaryModifierKey()}</Keycap>
+                  <span className="text-white/50">+</span>
+                  <Keycap size="sm">V</Keycap>
+                </>
+              }
+              label="Paste blueprint"
+            />
+          </ShortcutHelper>
         </div>
 
         {mapReady ? (

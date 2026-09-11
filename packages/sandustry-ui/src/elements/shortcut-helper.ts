@@ -8,7 +8,6 @@ export class SandustryShortcutHelper extends LitElement {
     }
 
     .surface {
-      margin-bottom: 0.5rem;
       padding: 0.5rem;
       border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 0.25rem;

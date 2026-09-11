@@ -5,11 +5,13 @@ import "../elements/modal-footer-tip";
 export type ModalFooterTipProps = HTMLAttributes<HTMLDivElement> & {
   tip?: ReactNode;
   action?: ReactNode;
+  spaced?: boolean;
 };
 
 export function ModalFooterTip({
   tip,
   action,
+  spaced = false,
   className = "",
   children,
   ...props
@@ -17,7 +19,11 @@ export function ModalFooterTip({
   return (
     <sandustry-modal-footer-tip class="block">
       <footer
-        className={cx("flex items-end justify-between gap-8 mt-4 shrink-0 select-none", className)}
+        className={cx(
+          "flex items-end justify-between gap-8 shrink-0 select-none",
+          spaced && "mt-4",
+          className,
+        )}
         {...props}
       >
         <div className="flex flex-col justify-end">

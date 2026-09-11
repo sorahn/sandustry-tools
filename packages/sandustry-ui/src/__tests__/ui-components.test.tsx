@@ -115,6 +115,13 @@ describe("@sandustry/ui component suite", () => {
     expect(helperHtml).toContain("Place");
   });
 
+  test("ModalFooterTip only adds external spacing when requested", () => {
+    const compactHtml = renderToStaticMarkup(<ModalFooterTip tip="Tip" />);
+    const spacedHtml = renderToStaticMarkup(<ModalFooterTip spaced tip="Tip" />);
+    expect(compactHtml).not.toContain("mt-4");
+    expect(spacedHtml).toContain("mt-4");
+  });
+
   test("Panel and Divider render structural markup", () => {
     const dividerHtml = renderToStaticMarkup(<Divider variant="accent" />);
     expect(dividerHtml).toContain('role="separator"');
