@@ -26,9 +26,14 @@ export function Popover({
   const popoverRef = useRef<HTMLDivElement>(null);
   const popoverId = useId();
   const [position, setPosition] = useState({ left: 0, top: 0 });
+  const positionedRef = useRef(false);
+  const positionFrameRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open) {
+      positionedRef.current = false;
+      return;
+    }
 
     const updatePosition = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
@@ -54,12 +59,27 @@ export function Popover({
         left = Math.min(Math.max(8, left), Math.max(8, window.innerWidth - 220));
       }
 
-      setPosition({ left, top });
+      const nextPosition = { left, top };
+      if (!positionedRef.current) {
+        positionedRef.current = true;
+        setPosition(nextPosition);
+      } else if (popoverRef.current) {
+        popoverRef.current.style.left = `${left}px`;
+        popoverRef.current.style.top = `${top}px`;
+      }
+    };
+
+    const schedulePositionUpdate = () => {
+      if (positionFrameRef.current !== null) return;
+      positionFrameRef.current = window.requestAnimationFrame(() => {
+        positionFrameRef.current = null;
+        updatePosition();
+      });
     };
 
     updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", schedulePositionUpdate);
+    window.addEventListener("scroll", schedulePositionUpdate, true);
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
@@ -80,8 +100,12 @@ export function Popover({
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", schedulePositionUpdate);
+      window.removeEventListener("scroll", schedulePositionUpdate, true);
+      if (positionFrameRef.current !== null) {
+        window.cancelAnimationFrame(positionFrameRef.current);
+        positionFrameRef.current = null;
+      }
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };

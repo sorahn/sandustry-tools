@@ -10,6 +10,14 @@
   background: var(--sd-color-bg, #181c20);
   color: var(--sd-color-text, #e8eef5);
 }
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
 body {
   margin: 0;
   min-width: 320px;
@@ -27,6 +35,24 @@ body {
 @media (min-width: 140rem) {
   .site-shell {
     max-width: 120rem;
+  }
+}
+.showcase-layout {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 4rem 2rem;
+}
+@media (min-width: 64rem) {
+  .showcase-layout {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+  .showcase-layout > aside {
+    align-self: start;
+  }
+  .showcase-layout > :not(aside) {
+    grid-column: 2;
   }
 }
 button,
@@ -86,7 +112,6 @@ p a {
   image-rendering: pixelated;
   max-width: 100%;
 }
-
 
 .blueprint-visual-test--capture .blueprint-core-png {
   max-width: none;

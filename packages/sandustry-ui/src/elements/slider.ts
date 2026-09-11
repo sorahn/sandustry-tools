@@ -94,6 +94,9 @@ export class SandustrySlider extends LitElement {
   declare value: number;
   declare disabled: boolean;
 
+  private _pendingValue: number | null = null;
+  private _inputFrame: number | null = null;
+
   constructor() {
     super();
     this.label = "";
@@ -108,7 +111,35 @@ export class SandustrySlider extends LitElement {
 
   private _handleInput(e: Event) {
     const target = e.target as HTMLInputElement;
+    this._pendingValue = Number(target.value);
+    if (this._inputFrame !== null) return;
+
+    this._inputFrame = requestAnimationFrame(() => {
+      this._inputFrame = null;
+      if (this._pendingValue !== null) {
+        this.value = this._pendingValue;
+        this._pendingValue = null;
+      }
+    });
+  }
+
+  private _handleChange(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (this._inputFrame !== null) {
+      cancelAnimationFrame(this._inputFrame);
+      this._inputFrame = null;
+    }
     this.value = Number(target.value);
+    this._pendingValue = null;
+  }
+
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._inputFrame !== null) {
+      cancelAnimationFrame(this._inputFrame);
+      this._inputFrame = null;
+    }
+    this._pendingValue = null;
   }
 
   override render() {
@@ -135,6 +166,7 @@ export class SandustrySlider extends LitElement {
           class="sd-slider"
           ?disabled="${this.disabled}"
           @input="${this._handleInput}"
+          @change="${this._handleChange}"
         />
       </slot>
     `;

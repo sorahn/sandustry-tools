@@ -199,6 +199,51 @@
   }
 }
 
+/* Shell layout recipes: use these on flex/grid children inside AppShell and panels. */
+@utility sd-shell-stack {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+@utility sd-shell-cluster {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sd-shell-gap, 0.75rem);
+}
+
+@utility sd-shell-grid {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+
+@utility sd-scroll-region {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@utility sd-scroll-region-y {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@utility sd-scroll-region-x {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+}
+
 @utility sd-slider {
   appearance: none;
   -webkit-appearance: none;
@@ -382,7 +427,11 @@
     linear-gradient(45deg, transparent 75%, rgb(68 68 68) 75%),
     linear-gradient(-45deg, transparent 75%, rgb(68 68 68) 75%);
   background-size: 8px 8px;
-  background-position: 0px 0px, 0px 4px, 4px -4px, -4px 0px;
+  background-position:
+    0px 0px,
+    0px 4px,
+    4px -4px,
+    -4px 0px;
 }
 
 @utility sd-select-caret {
@@ -688,4 +737,3 @@
   --sd-color-primary-hover: #fbbf24;
   --sd-color-primary-foreground: #141414;
 }
-
