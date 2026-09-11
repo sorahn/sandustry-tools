@@ -30,9 +30,7 @@ export class SandustryButton extends LitElement {
       font-weight: 500;
       box-sizing: border-box;
       user-select: none;
-      transition:
-        border-color 1s ease-in-out,
-        left 1s ease-in-out;
+      transition: left 150ms ease-in-out;
     }
 
     :host(:hover:not([no-shift]):not([disabled])) {

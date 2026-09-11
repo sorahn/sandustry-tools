@@ -153,7 +153,7 @@
 }
 
 @utility sd-btn-effects {
-  transition-duration: 1s, 250ms;
+  transition-duration: 150ms;
   transition-timing-function: ease-in-out;
 
   &::before {

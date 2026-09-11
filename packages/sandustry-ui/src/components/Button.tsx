@@ -6,7 +6,7 @@ export type { ButtonVariant, ButtonSize } from "../elements/button";
 
 export const buttonStyles = {
   button:
-    "sd-btn-effects relative left-0 inline-flex min-h-9 items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border px-3.5 py-2 text-xs font-medium transition-[border-color,left] duration-1000 ease-in-out",
+    "sd-btn-effects relative left-0 inline-flex min-h-9 items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border px-3.5 py-2 text-xs font-medium transition-[left] duration-150 ease-in-out",
   effects: "sd-btn-effects",
   default:
     "border-[var(--sd-color-border-strong,rgb(226,232,240))] bg-[var(--sd-color-bg,#181c20)] text-[var(--sd-color-text,#ffffff)] hover:text-[var(--sd-color-text,#ffffff)] hover:border-transparent hover:first-letter:text-[var(--sd-color-primary,#ffe700)] focus-visible:text-[var(--sd-color-text,#ffffff)] focus-visible:border-transparent focus-visible:first-letter:text-[var(--sd-color-primary,#ffe700)]",
@@ -73,7 +73,7 @@ export function Button<T extends ElementType = "button">({
 
   const fullClassName = cx(
     "sd-btn-effects",
-    "relative left-0 inline-flex items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border font-medium transition-[border-color,left] duration-1000 ease-in-out",
+    "relative left-0 inline-flex items-center justify-center overflow-hidden rounded-[0_var(--sd-button-radius)_0_var(--sd-button-radius)] border font-medium transition-[left] duration-150 ease-in-out",
     sizeClassName,
     variantClassName,
     noShift && buttonStyles.noShift,

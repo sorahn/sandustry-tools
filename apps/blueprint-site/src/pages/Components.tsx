@@ -799,6 +799,79 @@ const navSubTabsByMode: Record<
   ],
 };
 
+const showcaseAccentThemes = [
+  { id: "default", label: "Default Accent", className: "" },
+  { id: "cyber-cyan", label: "Cyber Cyan", className: "theme-cyber-cyan" },
+  { id: "neon-emerald", label: "Neon Emerald", className: "theme-neon-emerald" },
+  { id: "solar-amber", label: "Solar Amber", className: "theme-solar-amber" },
+];
+
+function ShowcaseThemeControls({
+  accentTheme,
+  onAccentThemeChange,
+  siteHeaderHeight,
+  themeSelectorRef,
+}: {
+  accentTheme: string;
+  onAccentThemeChange: (theme: string) => void;
+  siteHeaderHeight: number;
+  themeSelectorRef: React.RefObject<HTMLDivElement>;
+}) {
+  const [siteTheme, setSiteTheme] = useTheme();
+
+  return (
+    <div
+      ref={themeSelectorRef}
+      className="sticky z-30 flex min-w-0 flex-col gap-2.5 border-y border-[var(--sd-color-border,#2e2e2e)]/80 bg-[var(--sd-color-bg,#181c20)]/90 px-3 py-3 shadow-lg backdrop-blur-md sm:px-4"
+      style={{ top: siteHeaderHeight + 16 }}
+    >
+      <div
+        className="pointer-events-none absolute -top-6 inset-x-0 h-6 bg-[var(--sd-color-bg,#181c20)]"
+        aria-hidden="true"
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+          Full Theme:
+        </span>
+        {THEME_OPTIONS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setSiteTheme(t.id)}
+            className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition-colors ${
+              siteTheme === t.id
+                ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
+                : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
+            }`}
+          >
+            <span>{t.icon}</span>
+            <span>{t.name}</span>
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+          Accent Overrides:
+        </span>
+        {showcaseAccentThemes.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => onAccentThemeChange(t.id)}
+            className={`rounded px-2.5 py-1 font-mono text-xs transition-colors ${
+              accentTheme === t.id
+                ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
+                : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ComponentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -826,7 +899,6 @@ export function ComponentsPage() {
     variant: "default" | "hint" | "danger";
   } | null>(null);
   const [siteHeaderHeight, setSiteHeaderHeight] = useState(57);
-  const [siteTheme, setSiteTheme] = useTheme();
   const [accentTheme, setAccentTheme] = useState<string>("default");
   const themeSelectorRef = useRef<HTMLDivElement>(null);
   const [themeSelectorHeight, setThemeSelectorHeight] = useState(0);
@@ -859,14 +931,8 @@ export function ComponentsPage() {
     return () => observer.disconnect();
   }, []);
 
-  const accentThemes = [
-    { id: "default", label: "Default Accent", className: "" },
-    { id: "cyber-cyan", label: "Cyber Cyan", className: "theme-cyber-cyan" },
-    { id: "neon-emerald", label: "Neon Emerald", className: "theme-neon-emerald" },
-    { id: "solar-amber", label: "Solar Amber", className: "theme-solar-amber" },
-  ];
-
-  const currentAccentClass = accentThemes.find((t) => t.id === accentTheme)?.className ?? "";
+  const currentAccentClass =
+    showcaseAccentThemes.find((t) => t.id === accentTheme)?.className ?? "";
 
   return (
     <div className={`showcase-layout w-full pb-24 ${currentAccentClass}`}>
@@ -884,55 +950,12 @@ export function ComponentsPage() {
           } as React.CSSProperties
         }
       >
-        <div
-          ref={themeSelectorRef}
-          className="sticky z-30 flex min-w-0 flex-col gap-2.5 border-y border-[var(--sd-color-border,#2e2e2e)]/80 bg-[var(--sd-color-bg,#181c20)]/90 px-3 py-3 shadow-lg backdrop-blur-md sm:px-4"
-          style={{ top: siteHeaderHeight + 16 }}
-        >
-          <div
-            className="pointer-events-none absolute -top-6 inset-x-0 h-6 bg-[var(--sd-color-bg,#181c20)]"
-            aria-hidden="true"
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
-              Full Theme:
-            </span>
-            {THEME_OPTIONS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setSiteTheme(t.id)}
-                className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs transition ${
-                  siteTheme === t.id
-                    ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
-                    : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
-                }`}
-              >
-                <span>{t.icon}</span>
-                <span>{t.name}</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
-              Accent Overrides:
-            </span>
-            {accentThemes.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setAccentTheme(t.id)}
-                className={`rounded px-2.5 py-1 font-mono text-xs transition ${
-                  accentTheme === t.id
-                    ? "border border-[var(--sd-color-primary,#ffe700)] bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.2))] font-semibold text-[var(--sd-color-primary,#ffe700)]"
-                    : "border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/60 text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-text,#e8eef5)]"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ShowcaseThemeControls
+          accentTheme={accentTheme}
+          onAccentThemeChange={setAccentTheme}
+          siteHeaderHeight={siteHeaderHeight}
+          themeSelectorRef={themeSelectorRef}
+        />
 
         <ShowcaseSection
           id="tools"
