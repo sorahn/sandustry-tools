@@ -45,6 +45,8 @@ import {
   ProgressList,
   ProgressListItem,
   SplitPane,
+  ResizablePanel,
+  AppShell,
   TierPips,
   EnergyRequirementIcon,
   BuildingTile,
@@ -706,6 +708,55 @@ describe("@sandustry/ui component suite", () => {
     expect(splitHtml).toContain("<main");
     expect(splitHtml).toContain("Sidebar Content");
     expect(splitHtml).toContain("Main Content");
+  });
+
+  test("ResizablePanel renders a resizable sidebar and content slot", () => {
+    const panelHtml = renderToStaticMarkup(
+      <ResizablePanel
+        sidebar={<div>Parts</div>}
+        size={320}
+        minSize={220}
+        maxSize={420}
+        collapsible
+        sidebarPosition="end"
+      >
+        <div>Canvas</div>
+      </ResizablePanel>,
+    );
+    expect(panelHtml).toContain("<sandustry-resizable-panel");
+    expect(panelHtml).toContain('sidebar-position="end"');
+    expect(panelHtml).toContain('size="320"');
+    expect(panelHtml).toContain('min-size="220"');
+    expect(panelHtml).toContain('max-size="420"');
+    expect(panelHtml).toContain('collapsible=""');
+    expect(panelHtml).toContain('slot="sidebar"');
+    expect(panelHtml).toContain("Parts");
+    expect(panelHtml).toContain("Canvas");
+  });
+
+  test("AppShell renders named shell slots and accessible labels", () => {
+    const shellHtml = renderToStaticMarkup(
+      <AppShell
+        topBar={<div>Toolbar</div>}
+        sidebar={<div>Navigation</div>}
+        footer={<div>Status bar</div>}
+        overlays={<div>Toast layer</div>}
+        sidebarPosition="end"
+        sidebarLabel="Project navigation"
+        mainLabel="Modeling canvas"
+      >
+        <div>Workspace</div>
+      </AppShell>,
+    );
+    expect(shellHtml).toContain("<sandustry-app-shell");
+    expect(shellHtml).toContain('sidebar-position="end"');
+    expect(shellHtml).toContain('sidebar-label="Project navigation"');
+    expect(shellHtml).toContain('main-label="Modeling canvas"');
+    expect(shellHtml).toContain('slot="topbar"');
+    expect(shellHtml).toContain('slot="sidebar"');
+    expect(shellHtml).toContain('slot="footer"');
+    expect(shellHtml).toContain('slot="overlays"');
+    expect(shellHtml).toContain("Workspace");
   });
 
   test("Dialog renders custom element when open and null when closed", () => {

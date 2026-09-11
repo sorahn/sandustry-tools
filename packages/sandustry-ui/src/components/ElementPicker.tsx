@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useDeferredValue, useMemo, type ReactNode } from "react";
 import cx from "clsx";
 import { ItemCard } from "./ItemCard";
 import { SearchInput } from "./SearchInput";
@@ -35,12 +35,15 @@ export function ElementPicker({
   onSelect,
   className = "",
 }: ElementPickerProps) {
-  const normalizedQuery = query.trim().toLowerCase();
-  const filteredItems = items.filter((item) => {
-    const matchesQuery = !normalizedQuery || item.label.toLowerCase().includes(normalizedQuery);
-    const matchesMatter = matter === "all" || item.matter === matter;
-    return matchesQuery && matchesMatter;
-  });
+  const deferredQuery = useDeferredValue(query);
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    return items.filter((item) => {
+      const matchesQuery = !normalizedQuery || item.label.toLowerCase().includes(normalizedQuery);
+      const matchesMatter = matter === "all" || item.matter === matter;
+      return matchesQuery && matchesMatter;
+    });
+  }, [deferredQuery, items, matter]);
 
   return (
     <sandustry-element-picker

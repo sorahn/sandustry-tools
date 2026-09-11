@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTheme, THEME_OPTIONS } from "../utils/theme";
 import {
   ActionBar,
+  AppShell,
   Badge,
   BuildingTile,
   Button,
@@ -30,6 +31,7 @@ import {
   ProgressBar,
   ProgressList,
   ProgressListItem,
+  ResizablePanel,
   ResourceAmount,
   SaveSlotCard,
   SearchInput,
@@ -302,6 +304,92 @@ function TerrainTooltipContent() {
   );
 }
 
+function SearchInputShowcase() {
+  const [value, setValue] = useState("");
+
+  return (
+    <FormField label="Search filter">
+      <SearchInput
+        placeholder="Search resources, tags, blueprints..."
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+      />
+    </FormField>
+  );
+}
+
+function SliderShowcase() {
+  const [volume, setVolume] = useState(75);
+  const [fov, setFov] = useState(90);
+
+  return (
+    <div className="space-y-4 rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-3">
+      <Slider
+        label="Master volume"
+        showValue
+        min={0}
+        max={100}
+        value={volume}
+        onChange={(event) => setVolume(Number(event.target.value))}
+        valueFormat={(value) => `${value}%`}
+      />
+      <Slider
+        label="Field of view"
+        showValue
+        min={60}
+        max={120}
+        value={fov}
+        onChange={(event) => setFov(Number(event.target.value))}
+        valueFormat={(value) => `${value}°`}
+      />
+    </div>
+  );
+}
+
+function ColorPickerShowcase() {
+  const [color, setColor] = useState<string | null>("#ff8000");
+
+  return (
+    <div className="flex flex-col items-center pt-2 sm:items-start">
+      <ColorPicker value={color} onChange={setColor} />
+      <div className="mt-3 flex items-center gap-2 font-mono text-xs text-[var(--sd-color-text-muted,#94a3b8)]">
+        <span>Selected color:</span>
+        <span
+          className="inline-block h-3.5 w-3.5 rounded-sm border border-white/20"
+          style={{ backgroundColor: color ?? "transparent" }}
+        />
+        <span className="text-[var(--sd-color-primary,#ffe700)]">{color ?? "Default"}</span>
+      </div>
+    </div>
+  );
+}
+
+function ElementPickerShowcase({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (value: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [matter, setMatter] = useState("all");
+
+  return (
+    <div className="max-w-md">
+      <ElementPicker
+        items={pickerItems}
+        value={value}
+        query={query}
+        matter={matter}
+        matterOptions={matterOptions}
+        onQueryChange={setQuery}
+        onMatterChange={setMatter}
+        onSelect={(item) => onSelect(item.id)}
+      />
+    </div>
+  );
+}
+
 const buildingDetails: Record<
   string,
   { title: string; category: string; description: string; tier?: number; requirement?: "energy" }
@@ -377,22 +465,18 @@ export function ComponentsPage() {
   const [checkboxA, setCheckboxA] = useState(true);
   const [checkboxB, setCheckboxB] = useState(false);
   const [selectValue, setSelectValue] = useState("normal");
-  const [searchDemo, setSearchDemo] = useState("");
   const [mode, setMode] = useState<(typeof modeOptions)[number]["value"]>("overview");
   const [selectedItem, setSelectedItem] = useState("sand");
   const [activeTab, setActiveTab] = useState("blueprints");
+  const [resizablePanelSize, setResizablePanelSize] = useState(220);
+  const [resizablePanelCollapsed, setResizablePanelCollapsed] = useState(false);
   const [activeBuildTab, setActiveBuildTab] = useState("structures");
   const [activeNavMode, setActiveNavMode] = useState("building");
   const [activeNavSubTab, setActiveNavSubTab] = useState("structures");
-  const [sliderVolume, setSliderVolume] = useState(75);
-  const [sliderFov, setSliderFov] = useState(90);
-  const [query, setQuery] = useState("");
-  const [matter, setMatter] = useState("all");
   const [activeCategory, setActiveCategory] = useState("logistics");
   const [selectedBuilding, setSelectedBuilding] = useState("conveyor");
   const [activeModeTab, setActiveModeTab] = useState("building");
   const [disableDragDrop, setDisableDragDrop] = useState(false);
-  const [pickedColor, setPickedColor] = useState<string | null>("#ff8000");
   const [selectedSave, setSelectedSave] = useState("exit");
   const [loadingOverlayBusy, setLoadingOverlayBusy] = useState(false);
   const [droppedFileName, setDroppedFileName] = useState<string | null>(null);
@@ -834,13 +918,7 @@ export function ComponentsPage() {
                     </InputGroup>
                   </FormField>
 
-                  <FormField label="Search filter">
-                    <SearchInput
-                      placeholder="Search resources, tags, blueprints..."
-                      value={searchDemo}
-                      onChange={(e) => setSearchDemo(e.target.value)}
-                    />
-                  </FormField>
+                  <SearchInputShowcase />
 
                   <FormField label="Invalid field" error="This value is required.">
                     <TextInput aria-invalid="true" className="border-red-400" defaultValue="" />
@@ -904,26 +982,7 @@ export function ComponentsPage() {
                   </FormField>
 
                   <FormField label="Settings sliders">
-                    <div className="space-y-4 rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.3))] p-3">
-                      <Slider
-                        label="Master volume"
-                        showValue
-                        min={0}
-                        max={100}
-                        value={sliderVolume}
-                        onChange={(e) => setSliderVolume(Number(e.target.value))}
-                        valueFormat={(v) => `${v}%`}
-                      />
-                      <Slider
-                        label="Field of view"
-                        showValue
-                        min={60}
-                        max={120}
-                        value={sliderFov}
-                        onChange={(e) => setSliderFov(Number(e.target.value))}
-                        valueFormat={(v) => `${v}°`}
-                      />
-                    </div>
+                    <SliderShowcase />
                   </FormField>
                 </div>
               </ShowcaseSubgroup>
@@ -1263,19 +1322,7 @@ export function ComponentsPage() {
                   title="Color Picker (Native 242px)"
                   description="8-column preset palette swatches with default checkerboard and custom color picker."
                 >
-                  <div className="flex flex-col items-center pt-2 sm:items-start">
-                    <ColorPicker value={pickedColor} onChange={setPickedColor} />
-                    <div className="mt-3 flex items-center gap-2 font-mono text-xs text-[var(--sd-color-text-muted,#94a3b8)]">
-                      <span>Selected color:</span>
-                      <span
-                        className="inline-block h-3.5 w-3.5 rounded-sm border border-white/20"
-                        style={{ backgroundColor: pickedColor ?? "transparent" }}
-                      />
-                      <span className="text-[var(--sd-color-primary,#ffe700)]">
-                        {pickedColor ?? "Default"}
-                      </span>
-                    </div>
-                  </div>
+                  <ColorPickerShowcase />
                 </ShowcaseSubgroup>
               </Panel>
             </div>
@@ -1485,6 +1532,98 @@ export function ComponentsPage() {
               </ShowcaseSubgroup>
             </Panel>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <Panel className="p-5">
+            <ShowcaseSubgroup title="ResizablePanel Workspace">
+              <p className="mb-3 text-xs text-[var(--sd-color-text-subtle,#808080)]">
+                Drag the divider, focus it and use the arrow keys, or double-click it to collapse
+                and restore the navigation pane.
+              </p>
+              <ResizablePanel
+                className="h-[380px] overflow-hidden rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.5))]"
+                sidebarClassName="bg-[var(--sd-color-surface,#222222)]/60"
+                defaultSize={220}
+                minSize={180}
+                maxSize={420}
+                collapsible
+                onSizeChange={(size, detail) => {
+                  if (!detail.collapsed) setResizablePanelSize(size);
+                }}
+                onCollapsedChange={setResizablePanelCollapsed}
+                sidebar={
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <div className="border-b border-[var(--sd-color-border-subtle,#242424)] px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--sd-color-text-subtle,#808080)]">
+                      Workspace
+                    </div>
+                    <ListItem label="Scene" selected />
+                    <ListItem label="Materials" description="18 items" />
+                    <ListItem label="Settings" />
+                  </div>
+                }
+              >
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <div className="flex items-center justify-between border-b border-[var(--sd-color-border-subtle,#242424)] px-3 py-2">
+                    <span className="font-mono text-xs text-[var(--sd-color-primary,#ffe700)]">
+                      Canvas
+                    </span>
+                    <Badge tone={resizablePanelCollapsed ? "warning" : "success"}>
+                      {resizablePanelCollapsed ? "Pane collapsed" : `${resizablePanelSize}px pane`}
+                    </Badge>
+                  </div>
+                  <div className="flex min-h-0 flex-1 items-center justify-center p-4 text-center text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+                    Full-width dense tool workspace content
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ShowcaseSubgroup>
+          </Panel>
+        </div>
+
+        <div className="mt-6">
+          <Panel className="p-5">
+            <ShowcaseSubgroup title="AppShell Slot Contract">
+              <p className="mb-3 text-xs text-[var(--sd-color-text-subtle,#808080)]">
+                A landmark-first shell for browser applications. Routing, persistence, and product
+                state stay outside the shell.
+              </p>
+              <AppShell
+                className="h-[360px] overflow-hidden rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.5))]"
+                topBar={
+                  <div className="flex items-center justify-between border-b border-[var(--sd-color-border-subtle,#242424)] px-3 py-2 text-xs">
+                    <span className="font-semibold text-[var(--sd-color-text,#e8eef5)]">
+                      Sandustry workspace
+                    </span>
+                    <Badge tone="info">Local</Badge>
+                  </div>
+                }
+                sidebar={
+                  <div className="flex min-h-0 flex-1 flex-col border-r border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface,#222222)]/50">
+                    <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--sd-color-text-subtle,#808080)]">
+                      Navigation
+                    </div>
+                    <ListItem label="Overview" selected />
+                    <ListItem label="Projects" />
+                  </div>
+                }
+                footer={
+                  <div className="border-t border-[var(--sd-color-border-subtle,#242424)] px-3 py-1.5 text-[10px] text-[var(--sd-color-text-subtle,#808080)]">
+                    Ready
+                  </div>
+                }
+                overlays={
+                  <div className="pointer-events-none absolute bottom-3 right-3">
+                    <Badge tone="success">Overlay layer</Badge>
+                  </div>
+                }
+              >
+                <div className="flex min-h-0 flex-1 items-center justify-center p-4 text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+                  Main content landmark
+                </div>
+              </AppShell>
+            </ShowcaseSubgroup>
+          </Panel>
         </div>
 
         <div className="mt-6">
@@ -1976,18 +2115,7 @@ export function ComponentsPage() {
           </Panel>
 
           <ShowcaseSubgroup title="Element Picker">
-            <div className="max-w-md">
-              <ElementPicker
-                items={pickerItems}
-                value={selectedItem}
-                query={query}
-                matter={matter}
-                matterOptions={matterOptions}
-                onQueryChange={setQuery}
-                onMatterChange={setMatter}
-                onSelect={(item) => setSelectedItem(item.id)}
-              />
-            </div>
+            <ElementPickerShowcase value={selectedItem} onSelect={setSelectedItem} />
           </ShowcaseSubgroup>
         </div>
       </ShowcaseSection>

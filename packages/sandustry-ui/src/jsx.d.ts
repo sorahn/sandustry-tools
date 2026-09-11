@@ -338,6 +338,39 @@ declare global {
         "sidebar-position"?: string;
         class?: string;
       };
+      "sandustry-resizable-panel": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        sidebarPosition?: string;
+        "sidebar-position"?: string;
+        size?: number;
+        "min-size"?: number;
+        "max-size"?: number;
+        step?: number;
+        collapsible?: boolean | string;
+        collapsed?: boolean | string;
+        "collapse-size"?: number;
+        responsive?: boolean | string;
+        "stack-breakpoint"?: number;
+        class?: string;
+      };
+      "sandustry-app-shell": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        sidebarPosition?: string;
+        "sidebar-position"?: string;
+        responsive?: boolean | string;
+        "stack-breakpoint"?: number;
+        "sidebar-label"?: string;
+        "main-label"?: string;
+        "has-topbar"?: boolean | string;
+        "has-sidebar"?: boolean | string;
+        "has-footer"?: boolean | string;
+        "has-overlays"?: boolean | string;
+        class?: string;
+      };
       "sandustry-collapsible": React.DetailedHTMLProps<
         React.HTMLAttributes<HTMLElement>,
         HTMLElement

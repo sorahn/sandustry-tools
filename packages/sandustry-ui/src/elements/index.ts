@@ -38,6 +38,13 @@ export {
 } from "./progress-list";
 export { SandustryTable } from "./table";
 export { SandustrySplitPane } from "./split-pane";
+export { SandustryAppShell, type AppShellSidebarPosition } from "./app-shell";
+export {
+  SandustryResizablePanel,
+  type ResizablePanelCollapseChangeDetail,
+  type ResizablePanelPosition,
+  type ResizablePanelSizeChangeDetail,
+} from "./resizable-panel";
 export { SandustryCollapsible } from "./collapsible";
 export { SandustryDialog } from "./dialog";
 export { SandustryPopover, type PopoverSide } from "./popover";
