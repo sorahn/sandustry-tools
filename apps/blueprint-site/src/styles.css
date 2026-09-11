@@ -10,6 +10,14 @@
   background: var(--sd-color-bg, #181c20);
   color: var(--sd-color-text, #e8eef5);
 }
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
 body {
   margin: 0;
   min-width: 320px;

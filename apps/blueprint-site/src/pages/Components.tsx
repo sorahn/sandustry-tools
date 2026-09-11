@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { animate, motion } from "motion/react";
 import { useTheme, THEME_OPTIONS } from "../utils/theme";
 import {
   ActionBar,
@@ -40,12 +41,10 @@ import {
   Select,
   Slider,
   SplitPane,
-  StatusIndicator,
   Switch,
   Tabs,
   TextArea,
   TextInput,
-  TextAction,
   Alert,
   Collapsible,
   FileDropZone,
@@ -245,7 +244,7 @@ function ShowcaseSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-52 space-y-5">
+    <section id={id} className="scroll-mt-[var(--sd-showcase-header-offset,13rem)] space-y-5">
       <div className="flex flex-col gap-1.5 border-b border-[var(--sd-color-border,#2a323d)]/80 pb-3">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sd-color-primary,#ffe700)]">
           {title}
@@ -283,9 +282,197 @@ function ShowcaseSubgroup({
   );
 }
 
-function ShowcaseIntro({ siteHeaderHeight }: { siteHeaderHeight: number }) {
+function ShowcaseIntro({
+  siteHeaderHeight,
+  themeSelectorHeight,
+  themeSelectorRef,
+}: {
+  siteHeaderHeight: number;
+  themeSelectorHeight: number;
+  themeSelectorRef?: React.RefObject<HTMLDivElement | null>;
+}) {
+  const asideRef = useRef<HTMLElement>(null);
+  const [activeSection, setActiveSection] = useState<string>("tools");
+  const isClickScrollingRef = useRef(false);
+  const scrollAnimationRef = useRef<{ stop: () => void } | null>(null);
+
+  const allSectionIds = useMemo(
+    () => navGroups.flatMap((group) => group.sections.map((s) => s.id)),
+    [],
+  );
+
+  const smoothScrollToTarget = useCallback((targetY: number) => {
+    scrollAnimationRef.current?.stop();
+
+    const startY = window.scrollY;
+    const distance = Math.abs(targetY - startY);
+    if (distance < 4) {
+      window.scrollTo({ top: targetY, behavior: "instant" });
+      return;
+    }
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) {
+      window.scrollTo({ top: targetY, behavior: "instant" });
+      return;
+    }
+
+    // Dynamic duration: snappy for short distances (~0.28s), smooth and rapid for long full-page jumps (~0.62s)
+    const duration = Math.min(0.65, Math.max(0.28, 0.22 + (distance / 8000) * 0.4));
+
+    isClickScrollingRef.current = true;
+
+    scrollAnimationRef.current = animate(startY, targetY, {
+      duration,
+      ease: [0.32, 0, 0.18, 1], // Smooth ease-in-out: starts gently, cruises swiftly, decelerates into place
+      onUpdate: (latest) => {
+        window.scrollTo({ top: Math.round(latest), behavior: "instant" });
+      },
+      onComplete: () => {
+        isClickScrollingRef.current = false;
+        scrollAnimationRef.current = null;
+      },
+    });
+  }, []);
+
+  const handleSectionClick = useCallback(
+    (id: string, e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      setActiveSection(id);
+
+      const currentThemeHeight =
+        themeSelectorRef?.current?.getBoundingClientRect().height || themeSelectorHeight;
+      const stickyBottom = siteHeaderHeight + 16 + currentThemeHeight;
+      const targetOffset = stickyBottom + 32;
+      const elTop = el.getBoundingClientRect().top + window.scrollY;
+      const targetY = Math.max(0, Math.round(elTop - targetOffset));
+
+      smoothScrollToTarget(targetY);
+      history.pushState(null, "", `#${id}`);
+    },
+    [siteHeaderHeight, themeSelectorHeight, themeSelectorRef, smoothScrollToTarget],
+  );
+
+  useEffect(() => {
+    const handleUserInterrupt = () => {
+      if (scrollAnimationRef.current) {
+        scrollAnimationRef.current.stop();
+        scrollAnimationRef.current = null;
+        isClickScrollingRef.current = false;
+      }
+    };
+
+    window.addEventListener("wheel", handleUserInterrupt, { passive: true });
+    window.addEventListener("touchmove", handleUserInterrupt, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", handleUserInterrupt);
+      window.removeEventListener("touchmove", handleUserInterrupt);
+      scrollAnimationRef.current?.stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    const scrollToHash = (hashId: string) => {
+      const el = document.getElementById(hashId);
+      if (!el) return;
+      const currentThemeHeight =
+        themeSelectorRef?.current?.getBoundingClientRect().height || themeSelectorHeight;
+      const stickyBottom = siteHeaderHeight + 16 + currentThemeHeight;
+      const targetOffset = stickyBottom + 32;
+      const elTop = el.getBoundingClientRect().top + window.scrollY;
+      const targetY = Math.max(0, Math.round(elTop - targetOffset));
+      smoothScrollToTarget(targetY);
+    };
+
+    const hash = window.location.hash.replace(/^#/, "");
+    if (hash && allSectionIds.includes(hash)) {
+      setActiveSection(hash);
+    }
+
+    let rafId = 0;
+    const onScroll = () => {
+      if (isClickScrollingRef.current) return;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        if (window.scrollY < 60) {
+          setActiveSection(allSectionIds[0]);
+          return;
+        }
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50) {
+          setActiveSection(allSectionIds[allSectionIds.length - 1]);
+          return;
+        }
+        const currentThemeHeight =
+          themeSelectorRef?.current?.getBoundingClientRect().height || themeSelectorHeight;
+        const stickyBottom = siteHeaderHeight + 16 + currentThemeHeight;
+        const threshold = Math.max(
+          stickyBottom + 60,
+          Math.min(window.innerHeight * 0.45, stickyBottom + 200),
+        );
+        let current = allSectionIds[0];
+        for (const id of allSectionIds) {
+          const el = document.getElementById(id);
+          if (!el) continue;
+          if (el.getBoundingClientRect().top <= threshold) {
+            current = id;
+          } else {
+            break;
+          }
+        }
+        setActiveSection(current);
+      });
+    };
+
+    const onHashChange = () => {
+      const h = window.location.hash.replace(/^#/, "");
+      if (h && allSectionIds.includes(h)) {
+        setActiveSection(h);
+        scrollToHash(h);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("hashchange", onHashChange);
+    onScroll();
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("hashchange", onHashChange);
+      cancelAnimationFrame(rafId);
+      scrollAnimationRef.current?.stop();
+    };
+  }, [
+    allSectionIds,
+    siteHeaderHeight,
+    themeSelectorHeight,
+    themeSelectorRef,
+    smoothScrollToTarget,
+  ]);
+
+  useEffect(() => {
+    if (!asideRef.current) return;
+    const activeEl = asideRef.current.querySelector<HTMLElement>('[aria-current="true"]');
+    if (activeEl) {
+      const aside = asideRef.current;
+      if (aside.scrollHeight > aside.clientHeight) {
+        const activeRect = activeEl.getBoundingClientRect();
+        const asideRect = aside.getBoundingClientRect();
+        if (activeRect.top < asideRect.top || activeRect.bottom > asideRect.bottom) {
+          activeEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+    }
+  }, [activeSection]);
+
   return (
     <aside
+      ref={asideRef}
       className="min-w-0 lg:sticky lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-2"
       style={{ top: siteHeaderHeight + 16 }}
     >
@@ -316,15 +503,31 @@ function ShowcaseIntro({ siteHeaderHeight }: { siteHeaderHeight: number }) {
                 {group.label}
               </h2>
               <div className="space-y-1">
-                {group.sections.map((section) => (
-                  <a
-                    key={section.id}
-                    href={`#${section.id}`}
-                    className="block rounded px-2.5 py-1.5 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)] transition hover:bg-[var(--sd-color-surface-hover,#1e293b)] hover:text-[var(--sd-color-primary,#ffe700)]"
-                  >
-                    {section.label}
-                  </a>
-                ))}
+                {group.sections.map((section) => {
+                  const isActive = activeSection === section.id;
+                  return (
+                    <a
+                      key={section.id}
+                      href={`#${section.id}`}
+                      onClick={(e) => handleSectionClick(section.id, e)}
+                      aria-current={isActive ? "true" : undefined}
+                      className={`relative block rounded px-2.5 py-1.5 font-mono text-xs transition-colors ${
+                        isActive
+                          ? "font-semibold text-[var(--sd-color-primary,#ffe700)]"
+                          : "text-[var(--sd-color-text-muted,#b6bcc1)] hover:bg-[var(--sd-color-surface-hover,#1e293b)]/60 hover:text-[var(--sd-color-primary,#ffe700)]"
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="active-showcase-indicator"
+                          className="pointer-events-none absolute inset-0 rounded border border-[var(--sd-color-primary,#ffe700)]/30 bg-[var(--sd-color-primary-soft,rgba(255,231,0,0.12))] shadow-sm"
+                          transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                        />
+                      )}
+                      <span className="relative z-10">{section.label}</span>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -618,6 +821,8 @@ export function ComponentsPage() {
   });
   const [siteTheme, setSiteTheme] = useTheme();
   const [accentTheme, setAccentTheme] = useState<string>("default");
+  const themeSelectorRef = useRef<HTMLDivElement>(null);
+  const [themeSelectorHeight, setThemeSelectorHeight] = useState(0);
 
   useEffect(() => {
     const header = document.querySelector<HTMLElement>("[data-site-header]");
@@ -627,6 +832,17 @@ export function ComponentsPage() {
     updateHeaderHeight();
     const observer = new ResizeObserver(updateHeaderHeight);
     observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = themeSelectorRef.current;
+    if (!el) return;
+
+    const updateHeight = () => setThemeSelectorHeight(el.getBoundingClientRect().height);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
@@ -641,10 +857,22 @@ export function ComponentsPage() {
 
   return (
     <div className={`showcase-layout w-full pb-24 ${currentAccentClass}`}>
-      <ShowcaseIntro siteHeaderHeight={siteHeaderHeight} />
+      <ShowcaseIntro
+        siteHeaderHeight={siteHeaderHeight}
+        themeSelectorHeight={themeSelectorHeight}
+        themeSelectorRef={themeSelectorRef}
+      />
 
-      <div className="showcase-content min-w-0 flex flex-col gap-20">
+      <div
+        className="showcase-content min-w-0 flex flex-col gap-20"
+        style={
+          {
+            "--sd-showcase-header-offset": `${siteHeaderHeight + 16 + themeSelectorHeight + 32}px`,
+          } as React.CSSProperties
+        }
+      >
         <div
+          ref={themeSelectorRef}
           className="sticky z-30 flex min-w-0 flex-col gap-2.5 border-y border-[var(--sd-color-border,#2e2e2e)]/80 bg-[var(--sd-color-bg,#181c20)]/90 px-3 py-3 shadow-lg backdrop-blur-md sm:px-4"
           style={{ top: siteHeaderHeight + 16 }}
         >
