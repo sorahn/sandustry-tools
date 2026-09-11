@@ -71,8 +71,9 @@ export function BlueprintInspectorSidebar({
 
       {/* Tab 1: Selected Structure Inspector */}
       {tab === "structure" ? (
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4">
           <BlueprintMapSidebar
+            className="w-full"
             selected={selected}
             selectedIndex={selectedIndex}
             preparedStructure={preparedStructure}

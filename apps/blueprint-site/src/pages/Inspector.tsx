@@ -4,6 +4,7 @@ import {
   clusterFilterStructures,
   prepareBlueprint,
   structureLabel,
+  type FilterOverlayCluster,
 } from "@daryl.roberts/sandustry-blueprint-core";
 import {
   decodeBlueprint,
@@ -36,8 +37,10 @@ import {
   readStoredBoolean,
   removeStorageValue,
   writeStorageValue,
+  writeStoredBoolean,
 } from "../utils/storage";
 import {
+  HIGHLIGHT_MATCHING_FILTERS_KEY,
   POLICY_TESTER_SELECTION_KEY,
   REMEMBER_BLUEPRINT_KEY,
   SAVED_BLUEPRINT_KEY,
@@ -417,6 +420,14 @@ export function BlueprintInspectorPage({
   const [importOpen, setImportOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const [highlightMatchingFilters, setHighlightMatchingFilters] = useState(() =>
+    readStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, false),
+  );
+  const handleHighlightMatchingFiltersChange = (value: boolean) => {
+    setHighlightMatchingFilters(value);
+    writeStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, value);
+  };
+
   const preparedBlueprint = useMemo(
     () => (blueprint ? prepareBlueprint(blueprint) : null),
     [blueprint],
@@ -425,16 +436,39 @@ export function BlueprintInspectorPage({
     blueprint && selectedIndex !== null && preparedBlueprint
       ? preparedBlueprint.preparedStructures[selectedIndex]
       : null;
-  const activeFilterCluster = useMemo(() => {
-    if (!preparedBlueprint || selectedIndex === null) return null;
+
+  const { filterClusters, filterClusterByStructureIndex } = useMemo(() => {
+    if (!preparedBlueprint) {
+      return {
+        filterClusters: [] as FilterOverlayCluster[],
+        filterClusterByStructureIndex: new Map<number, FilterOverlayCluster>(),
+      };
+    }
     const clusters = clusterFilterStructures(preparedBlueprint.preparedStructures);
+    const byIndex = new Map<number, FilterOverlayCluster>();
     for (const cluster of clusters) {
       for (const member of cluster.members) {
-        if (member.index === selectedIndex) return cluster;
+        byIndex.set(member.index, cluster);
       }
     }
-    return null;
-  }, [preparedBlueprint, selectedIndex]);
+    return { filterClusters: clusters, filterClusterByStructureIndex: byIndex };
+  }, [preparedBlueprint]);
+
+  const activeFilterCluster = useMemo(() => {
+    if (selectedIndex === null) return null;
+    return filterClusterByStructureIndex.get(selectedIndex) ?? null;
+  }, [filterClusterByStructureIndex, selectedIndex]);
+
+  const matchingFilterClusters = useMemo(() => {
+    if (!activeFilterCluster) return [];
+    return filterClusters.filter(
+      (cluster) => cluster.filterConfigKey === activeFilterCluster.filterConfigKey,
+    );
+  }, [filterClusters, activeFilterCluster]);
+
+  const matchingFiltersCount = useMemo(() => {
+    return matchingFilterClusters.reduce((sum, cluster) => sum + cluster.members.length, 0);
+  }, [matchingFilterClusters]);
   const selectedStructure =
     blueprint && selectedIndex !== null ? blueprint.data[selectedIndex] : null;
 
@@ -479,7 +513,9 @@ export function BlueprintInspectorPage({
             selectedIndex={selectedIndex}
             preparedStructure={preparedStructure}
             activeFilterCluster={activeFilterCluster}
-            highlightMatchingFilters={false}
+            matchingFiltersCount={activeFilterCluster ? matchingFiltersCount : undefined}
+            highlightMatchingFilters={highlightMatchingFilters}
+            onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
             onClearSelection={() => setSelectedIndex(null)}
             debugOptions={null}
             onOpenImport={() => setImportOpen(true)}
@@ -628,6 +664,8 @@ export function BlueprintInspectorPage({
             externalSidebar
             selectedIndex={selectedIndex}
             onSelectedIndexChange={setSelectedIndex}
+            highlightMatchingFilters={highlightMatchingFilters}
+            onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-black">

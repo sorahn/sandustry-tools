@@ -84,6 +84,8 @@ export function BlueprintMap({
   selectedIndex: controlledSelectedIndex,
   onSelectedIndexChange,
   externalSidebar = false,
+  highlightMatchingFilters: controlledHighlightMatchingFilters,
+  onHighlightMatchingFiltersChange: controlledOnHighlightMatchingFiltersChange,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -105,6 +107,8 @@ export function BlueprintMap({
   selectedIndex?: number | null;
   onSelectedIndexChange?: (index: number | null) => void;
   externalSidebar?: boolean;
+  highlightMatchingFilters?: boolean;
+  onHighlightMatchingFiltersChange?: (value: boolean) => void;
 }) {
   const [uncontrolledIndex, setUncontrolledIndex] = useState<number | null>(null);
   const selectedIndex =
@@ -405,12 +409,20 @@ export function BlueprintMap({
     return { filterClusters: clusters, filterClusterByStructureIndex: byIndex };
   }, [preparedBlueprint]);
 
-  const [highlightMatchingFilters, setHighlightMatchingFilters] = useState(() =>
-    readStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, false),
+  const [uncontrolledHighlightMatchingFilters, setUncontrolledHighlightMatchingFilters] = useState(
+    () => readStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, false),
   );
+  const highlightMatchingFilters =
+    controlledHighlightMatchingFilters !== undefined
+      ? controlledHighlightMatchingFilters
+      : uncontrolledHighlightMatchingFilters;
   const handleHighlightMatchingFiltersChange = (value: boolean) => {
-    setHighlightMatchingFilters(value);
-    writeStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, value);
+    if (controlledOnHighlightMatchingFiltersChange) {
+      controlledOnHighlightMatchingFiltersChange(value);
+    } else {
+      setUncontrolledHighlightMatchingFilters(value);
+      writeStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, value);
+    }
   };
 
   const activeFilterCluster = useMemo(() => {
