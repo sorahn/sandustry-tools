@@ -11,6 +11,7 @@ export class SandustryDialog extends LitElement {
       display: block;
       box-sizing: border-box;
       font-family: var(--sd-font-family, inherit);
+      pointer-events: auto;
     }
   `;
 

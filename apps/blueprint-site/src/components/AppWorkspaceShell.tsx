@@ -114,7 +114,9 @@ export function AppWorkspaceShell({
 
         {/* Overlays (drag scrims, modals) */}
         {overlays ? (
-          <div className="pointer-events-none absolute inset-0 z-40">{overlays}</div>
+          <div className="pointer-events-none absolute inset-0 z-40 [&>*]:pointer-events-auto">
+            {overlays}
+          </div>
         ) : null}
       </div>
 
