@@ -64,6 +64,8 @@ import {
   ProgressBar,
   Hotbar,
   HotbarStepper,
+  ShortcutHelper,
+  ShortcutHelperItem,
 } from "../index";
 
 describe("@sandustry/ui component suite", () => {
@@ -99,6 +101,18 @@ describe("@sandustry/ui component suite", () => {
     const keycapHtml = renderToStaticMarkup(<Keycap>⌘K</Keycap>);
     expect(keycapHtml).toContain("⌘K");
     expect(keycapHtml).toContain("border-[#444]");
+  });
+
+  test("ShortcutHelper renders contextual key instructions", () => {
+    const helperHtml = renderToStaticMarkup(
+      <ShortcutHelper aria-label="Build controls">
+        <ShortcutHelperItem hotkey={<Keycap size="sm">LMB</Keycap>} label="Place" />
+      </ShortcutHelper>,
+    );
+    expect(helperHtml).toContain("<sandustry-shortcut-helper");
+    expect(helperHtml).toContain("<sandustry-shortcut-helper-item");
+    expect(helperHtml).toContain("LMB");
+    expect(helperHtml).toContain("Place");
   });
 
   test("Panel and Divider render structural markup", () => {

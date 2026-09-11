@@ -23,6 +23,8 @@ import {
   InputGroup,
   ItemCard,
   Keycap,
+  ShortcutHelper,
+  ShortcutHelperItem,
   List,
   ListItem,
   LockedState,
@@ -1258,6 +1260,26 @@ export function ComponentsPage() {
                         </Keycap>
                       </div>
                     </div>
+                  </ShowcaseSubgroup>
+
+                  <Divider className="py-2" />
+
+                  <ShowcaseSubgroup
+                    title="Contextual Shortcut Helper"
+                    description="Vertical contextual instructions with keycaps and action labels."
+                  >
+                    <ShortcutHelper>
+                      <ShortcutHelperItem
+                        hotkey={<Keycap size="sm">Ctrl</Keycap>}
+                        label="Replace"
+                        hint="hold"
+                      />
+                      <ShortcutHelperItem
+                        hotkey={<Keycap size="sm">Alt</Keycap>}
+                        label="Alternative"
+                        hint="hold"
+                      />
+                    </ShortcutHelper>
                   </ShowcaseSubgroup>
                 </Panel>
               </div>

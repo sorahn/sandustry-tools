@@ -247,7 +247,9 @@ async function launchGame() {
   await refreshDevLaunchConfig();
 
   const gameArgs = ["--no-sandbox"];
-  if (debug) gameArgs.push("--inspect=9230", "--remote-debugging-port=9222");
+  if (debug) {
+    gameArgs.push("--inspect=9230", "--remote-debugging-port=9222", "--remote-allow-origins=*");
+  }
   const launchedChild = spawn(gameBinary, gameArgs, {
     cwd: dirname(gameBinary),
     detached: false,

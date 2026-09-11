@@ -19,6 +19,8 @@ declare module "react" {
         variant?: string;
         size?: string;
       }>;
+      "sandustry-shortcut-helper": SDElementProps;
+      "sandustry-shortcut-helper-item": SDElementProps;
       "sandustry-tier-pips": SDElementProps<{
         current?: number;
         max?: number;

@@ -4,6 +4,7 @@ export { SandustryStatusIndicator, type StatusIndicatorTone } from "./status-ind
 export { SandustryBadge, type BadgeTone, type BadgeShape } from "./badge";
 export { SandustryDivider, type DividerVariant } from "./divider";
 export { SandustryKeycap, type KeycapVariant, type KeycapSize } from "./keycap";
+export { SandustryShortcutHelper, SandustryShortcutHelperItem } from "./shortcut-helper";
 export { SandustryTierPips } from "./tier-pips";
 export { SandustrySpinner, type SpinnerTone } from "./spinner";
 export { SandustryPropertyTile } from "./property-tile";
