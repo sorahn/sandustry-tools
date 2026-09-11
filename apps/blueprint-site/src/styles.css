@@ -48,6 +48,10 @@ body {
     grid-column: 2;
   }
 }
+.showcase-section-deferred {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 320px;
+}
 button,
 a {
   -webkit-tap-highlight-color: transparent;

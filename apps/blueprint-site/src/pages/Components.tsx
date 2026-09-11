@@ -237,14 +237,21 @@ function ShowcaseSection({
   title,
   description,
   children,
+  deferred = true,
 }: {
   id?: string;
   title: string;
   description?: string;
   children: React.ReactNode;
+  deferred?: boolean;
 }) {
   return (
-    <section id={id} className="scroll-mt-[var(--sd-showcase-header-offset,13rem)] space-y-5">
+    <section
+      id={id}
+      className={`scroll-mt-[var(--sd-showcase-header-offset,13rem)] space-y-5 ${
+        deferred ? "showcase-section-deferred" : ""
+      }`}
+    >
       <div className="flex flex-col gap-1.5 border-b border-[var(--sd-color-border,#2a323d)]/80 pb-3">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sd-color-primary,#ffe700)]">
           {title}
@@ -401,11 +408,12 @@ function ShowcaseIntro({
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         if (window.scrollY < 60) {
-          setActiveSection(allSectionIds[0]);
+          setActiveSection((prev) => (prev !== allSectionIds[0] ? allSectionIds[0] : prev));
           return;
         }
         if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50) {
-          setActiveSection(allSectionIds[allSectionIds.length - 1]);
+          const lastId = allSectionIds[allSectionIds.length - 1];
+          setActiveSection((prev) => (prev !== lastId ? lastId : prev));
           return;
         }
         const currentThemeHeight =
@@ -425,7 +433,7 @@ function ShowcaseIntro({
             break;
           }
         }
-        setActiveSection(current);
+        setActiveSection((prev) => (prev !== current ? current : prev));
       });
     };
 
@@ -439,7 +447,11 @@ function ShowcaseIntro({
 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("hashchange", onHashChange);
-    onScroll();
+    if (hash && allSectionIds.includes(hash)) {
+      scrollToHash(hash);
+    } else if (window.scrollY >= 60) {
+      onScroll();
+    }
 
     return () => {
       window.removeEventListener("scroll", onScroll);
@@ -813,12 +825,7 @@ export function ComponentsPage() {
     message: string;
     variant: "default" | "hint" | "danger";
   } | null>(null);
-  const [siteHeaderHeight, setSiteHeaderHeight] = useState(() => {
-    if (typeof document === "undefined") return 0;
-    return (
-      document.querySelector<HTMLElement>("[data-site-header]")?.getBoundingClientRect().height ?? 0
-    );
-  });
+  const [siteHeaderHeight, setSiteHeaderHeight] = useState(57);
   const [siteTheme, setSiteTheme] = useTheme();
   const [accentTheme, setAccentTheme] = useState<string>("default");
   const themeSelectorRef = useRef<HTMLDivElement>(null);
@@ -828,9 +835,12 @@ export function ComponentsPage() {
     const header = document.querySelector<HTMLElement>("[data-site-header]");
     if (!header) return;
 
-    const updateHeaderHeight = () => setSiteHeaderHeight(header.getBoundingClientRect().height);
-    updateHeaderHeight();
-    const observer = new ResizeObserver(updateHeaderHeight);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) {
+        const h = Math.round(entry.contentRect.height);
+        if (h > 0) setSiteHeaderHeight((prev) => (prev !== h ? h : prev));
+      }
+    });
     observer.observe(header);
     return () => observer.disconnect();
   }, []);
@@ -839,9 +849,12 @@ export function ComponentsPage() {
     const el = themeSelectorRef.current;
     if (!el) return;
 
-    const updateHeight = () => setThemeSelectorHeight(el.getBoundingClientRect().height);
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) {
+        const h = Math.round(entry.contentRect.height);
+        if (h > 0) setThemeSelectorHeight((prev) => (prev !== h ? h : prev));
+      }
+    });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
@@ -923,6 +936,7 @@ export function ComponentsPage() {
 
         <ShowcaseSection
           id="tools"
+          deferred={false}
           title="Game tools and building menu"
           description="Structure slots, category navigation with hover nudge, the floating color picker, and 3D hotkey badges."
         >

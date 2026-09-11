@@ -155,6 +155,7 @@ function SaveManager() {
                         <Button
                           as={Link}
                           to="/explorer"
+                          startTransition
                           variant={isActive ? "accent" : "quiet"}
                           size="small"
                           onClick={() => {
@@ -210,6 +211,7 @@ function SaveManager() {
             <Button
               as={Link}
               to="/explorer"
+              startTransition
               variant="quiet"
               size="small"
               className="w-full justify-center text-xs text-[var(--sd-color-text-muted,#b6bcc1)] hover:text-[var(--sd-color-primary,#ffe700)]"
@@ -260,6 +262,7 @@ export function Header() {
         <div className="flex min-w-0 items-center gap-3">
           <Link
             to="/"
+            startTransition
             className="shrink-0 font-mono text-sm font-bold tracking-[0.2em] text-[var(--sd-color-primary,#ffe700)]"
           >
             SANDUSTRY / TOOLS
@@ -272,7 +275,9 @@ export function Header() {
               { to: "/inspect", label: "Blueprint Inspector" },
               { to: "/explorer", label: "Save Explorer" },
               { to: "/codec", label: "Encoder / Decoder" },
-              ...(import.meta.env.DEV ? [{ to: "/components", label: "Components" }] : []),
+              ...(import.meta.env.DEV || import.meta.env.MODE === "preview"
+                ? [{ to: "/components", label: "Components" }]
+                : []),
             ].map((link) => {
               const isInspectActive =
                 link.to === "/inspect" &&
@@ -283,6 +288,7 @@ export function Header() {
                 <Link
                   key={link.to}
                   to={link.to}
+                  startTransition
                   className="relative rounded px-2.5 py-1 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--sd-color-primary,#ffe700)]"
                 >
                   {({ isActive }) => {
