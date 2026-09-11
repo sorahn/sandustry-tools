@@ -1,3 +1,5 @@
+import type {} from "./jsx";
+
 export type { ControlSize } from "./types";
 export * from "./elements/index";
 export { Button, buttonStyles, type ButtonProps } from "./components/Button";
