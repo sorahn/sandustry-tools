@@ -7,6 +7,7 @@ import {
 } from "@sandustry/ui";
 import type { SaveExplorerCellInspection } from "@sandustry/save-core";
 import { stepZoomIn, stepZoomOut, wheelZoom } from "../utils/zoom";
+import { MapViewportControls } from "./MapViewportControls";
 
 export { createDragDepthTracker };
 
@@ -227,48 +228,24 @@ export function SaveExplorerMapPanel({
           </div>
         )}
         {raster ? (
-          <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded border border-slate-600/85 bg-slate-950/80 p-2 font-mono text-[11px] text-slate-300 backdrop-blur-sm">
-            <Button
-              type="button"
-              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
-              onClick={() =>
-                onViewChange((current) => ({
-                  ...current,
-                  scale: stepZoomOut(current.scale, { min: 0.25 }),
-                }))
-              }
-              disabled={view.scale <= 0.25}
-              aria-label="Zoom out (-)"
-              title="Zoom out (-)"
-            >
-              −
-            </Button>
-            <span>{Math.round(view.scale * 100)}%</span>
-            <Button
-              type="button"
-              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
-              onClick={() =>
-                onViewChange((current) => ({
-                  ...current,
-                  scale: stepZoomIn(current.scale, { max: 8 }),
-                }))
-              }
-              disabled={view.scale >= 8}
-              aria-label="Zoom in (+)"
-              title="Zoom in (+)"
-            >
-              +
-            </Button>
-            <Button
-              type="button"
-              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
-              onClick={fitMap}
-              aria-label="Fit to viewport (0 or F)"
-              title="Fit to viewport (0 or F)"
-            >
-              Fit
-            </Button>
-          </div>
+          <MapViewportControls
+            zoom={view.scale}
+            minZoom={0.25}
+            maxZoom={8}
+            onZoomIn={() =>
+              onViewChange((current) => ({
+                ...current,
+                scale: stepZoomIn(current.scale, { max: 8 }),
+              }))
+            }
+            onZoomOut={() =>
+              onViewChange((current) => ({
+                ...current,
+                scale: stepZoomOut(current.scale, { min: 0.25 }),
+              }))
+            }
+            onFit={fitMap}
+          />
         ) : null}
         {customCursor && hoverCell ? (
           <div
