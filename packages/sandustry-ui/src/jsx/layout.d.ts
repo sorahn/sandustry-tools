@@ -125,6 +125,18 @@ declare global {
         "has-footer"?: boolean | string;
         "has-overlays"?: boolean | string;
       }>;
+      "sandustry-top-bar": SDElementProps<{
+        sticky?: boolean | string;
+        "has-leading"?: boolean | string;
+        "has-center"?: boolean | string;
+        "has-trailing"?: boolean | string;
+        "has-mobile-menu"?: boolean | string;
+      }>;
+      "sandustry-sidebar": SDElementProps<{
+        position?: string;
+        collapsed?: boolean | string;
+        label?: string;
+      }>;
     }
   }
 }

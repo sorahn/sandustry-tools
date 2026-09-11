@@ -47,6 +47,8 @@ import {
   SplitPane,
   ResizablePanel,
   AppShell,
+  TopBar,
+  Sidebar,
   TierPips,
   EnergyRequirementIcon,
   BuildingTile,
@@ -757,6 +759,38 @@ describe("@sandustry/ui component suite", () => {
     expect(shellHtml).toContain('slot="footer"');
     expect(shellHtml).toContain('slot="overlays"');
     expect(shellHtml).toContain("Workspace");
+  });
+
+  test("TopBar and Sidebar render shell slots and state", () => {
+    const topBarHtml = renderToStaticMarkup(
+      <TopBar
+        sticky
+        leading={<span>Project</span>}
+        trailing={<button type="button">Save</button>}
+        mobileMenu={<button type="button">Menu</button>}
+      >
+        Modeler
+      </TopBar>,
+    );
+    expect(topBarHtml).toContain("<sandustry-top-bar");
+    expect(topBarHtml).toContain('sticky=""');
+    expect(topBarHtml).toContain('slot="leading"');
+    expect(topBarHtml).toContain('slot="center"');
+    expect(topBarHtml).toContain('slot="trailing"');
+    expect(topBarHtml).toContain('slot="mobile-menu"');
+
+    const sidebarHtml = renderToStaticMarkup(
+      <Sidebar collapsed position="end" ariaLabel="Project navigation" header={<div>Header</div>}>
+        <div>Navigation</div>
+      </Sidebar>,
+    );
+    expect(sidebarHtml).toContain("<sandustry-sidebar");
+    expect(sidebarHtml).toContain('position="end"');
+    expect(sidebarHtml).toContain('collapsed=""');
+    expect(sidebarHtml).toContain('label="Project navigation"');
+    expect(sidebarHtml).toContain('aria-label="Project navigation"');
+    expect(sidebarHtml).toContain('slot="header"');
+    expect(sidebarHtml).toContain("Navigation");
   });
 
   test("Dialog renders custom element when open and null when closed", () => {

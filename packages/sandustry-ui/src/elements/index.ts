@@ -41,6 +41,8 @@ export {
 export { SandustryTable } from "./table";
 export { SandustrySplitPane } from "./split-pane";
 export { SandustryAppShell, type AppShellSidebarPosition } from "./app-shell";
+export { SandustryTopBar } from "./top-bar";
+export { SandustrySidebar, type SidebarPosition } from "./sidebar";
 export {
   SandustryResizablePanel,
   type ResizablePanelCollapseChangeDetail,

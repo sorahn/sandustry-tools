@@ -35,6 +35,7 @@ import {
   ResourceAmount,
   SaveSlotCard,
   SearchInput,
+  Sidebar,
   SegmentedControl,
   Select,
   Slider,
@@ -61,6 +62,7 @@ import {
   ToastContainer,
   Tooltip,
   TooltipSurface,
+  TopBar,
   ModeTabs,
   ModeTab,
   TierPips,
@@ -386,6 +388,70 @@ function ElementPickerShowcase({
         onMatterChange={setMatter}
         onSelect={(item) => onSelect(item.id)}
       />
+    </div>
+  );
+}
+
+function ShellPrimitivesShowcase() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  return (
+    <div className="sd-shell-stack h-[380px] overflow-hidden rounded border border-[var(--sd-color-border-subtle,#242424)] bg-[var(--sd-color-surface-muted,rgba(0,0,0,0.5))]">
+      <TopBar
+        sticky
+        leading={<span className="font-semibold">Knex Studio</span>}
+        center={
+          <span className="font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+            modeler.knex
+          </span>
+        }
+        trailing={
+          <Button
+            size="small"
+            variant="quiet"
+            onClick={() => setSidebarCollapsed((value) => !value)}
+          >
+            {sidebarCollapsed ? "Show navigator" : "Hide navigator"}
+          </Button>
+        }
+        mobileMenu={<IconButton label="Open navigation">☰</IconButton>}
+      />
+      <div className="flex min-h-0 flex-1">
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          header={
+            <div className="sd-shell-cluster justify-between border-b border-[var(--sd-color-border-subtle,#242424)] px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--sd-color-text-subtle,#808080)]">
+              <span>Navigator</span>
+              <span aria-hidden="true">⌘1</span>
+            </div>
+          }
+          footer={
+            <div className="px-3 py-2 text-[10px] text-[var(--sd-color-text-subtle,#808080)]">
+              3 objects
+            </div>
+          }
+        >
+          <div className="sd-scroll-region-y p-2">
+            <CategoryList bordered={false} className="pr-0">
+              <CategoryButton label="Scene" selected />
+              <CategoryButton label="Materials" badge="12" />
+              <CategoryButton label="Cameras" badge="2" />
+            </CategoryList>
+          </div>
+        </Sidebar>
+        <main className="sd-shell-stack min-w-0 flex-1">
+          <div className="sd-shell-cluster shrink-0 border-b border-[var(--sd-color-border-subtle,#242424)] px-3 py-2 text-xs">
+            <span className="text-[var(--sd-color-primary,#ffe700)]">Workspace</span>
+            <span className="text-[var(--sd-color-text-subtle,#808080)]">/</span>
+            <span className="text-[var(--sd-color-text-muted,#b6bcc1)]">Untitled scene</span>
+          </div>
+          <div className="sd-scroll-region flex-1 p-4">
+            <div className="grid min-h-full place-items-center rounded border border-dashed border-[var(--sd-color-border,#334155)] p-6 text-center text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+              Scrollable work area
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
@@ -1622,6 +1688,17 @@ export function ComponentsPage() {
                   Main content landmark
                 </div>
               </AppShell>
+            </ShowcaseSubgroup>
+          </Panel>
+        </div>
+
+        <div className="mt-6">
+          <Panel className="p-5">
+            <ShowcaseSubgroup
+              title="TopBar + Sidebar Recipes"
+              description="Composable application chrome with a sticky bar, collapsible navigation region, nested scroll area, and shell layout utilities."
+            >
+              <ShellPrimitivesShowcase />
             </ShowcaseSubgroup>
           </Panel>
         </div>
