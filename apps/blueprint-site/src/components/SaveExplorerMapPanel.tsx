@@ -6,6 +6,7 @@ import {
   createDragDepthTracker,
 } from "@sandustry/ui";
 import type { SaveExplorerCellInspection } from "@sandustry/save-core";
+import { stepZoomIn, stepZoomOut, wheelZoom } from "../utils/zoom";
 
 export { createDragDepthTracker };
 
@@ -137,13 +138,13 @@ export function SaveExplorerMapPanel({
             event.preventDefault();
             onViewChange((current) => ({
               ...current,
-              scale: Math.min(8, current.scale * 1.25),
+              scale: stepZoomIn(current.scale, { max: 8 }),
             }));
           } else if (event.key === "-" || event.key === "_") {
             event.preventDefault();
             onViewChange((current) => ({
               ...current,
-              scale: Math.max(0.25, current.scale * 0.8),
+              scale: stepZoomOut(current.scale, { min: 0.25 }),
             }));
           } else if (event.key === "0" || event.key.toLowerCase() === "f") {
             event.preventDefault();
@@ -155,10 +156,7 @@ export function SaveExplorerMapPanel({
           const rect = event.currentTarget.getBoundingClientRect();
           const pointX = event.clientX - rect.left;
           const pointY = event.clientY - rect.top;
-          const nextScale = Math.max(
-            0.25,
-            Math.min(8, view.scale * (event.deltaY < 0 ? 1.15 : 0.87)),
-          );
+          const nextScale = wheelZoom(view.scale, event.deltaY, { min: 0.25, max: 8 });
           const mapX = (pointX - view.offsetX) / view.scale;
           const mapY = (pointY - view.offsetY) / view.scale;
           onViewChange({
@@ -236,9 +234,10 @@ export function SaveExplorerMapPanel({
               onClick={() =>
                 onViewChange((current) => ({
                   ...current,
-                  scale: Math.max(0.25, current.scale * 0.8),
+                  scale: stepZoomOut(current.scale, { min: 0.25 }),
                 }))
               }
+              disabled={view.scale <= 0.25}
               aria-label="Zoom out (-)"
               title="Zoom out (-)"
             >
@@ -251,9 +250,10 @@ export function SaveExplorerMapPanel({
               onClick={() =>
                 onViewChange((current) => ({
                   ...current,
-                  scale: Math.min(8, current.scale * 1.25),
+                  scale: stepZoomIn(current.scale, { max: 8 }),
                 }))
               }
+              disabled={view.scale >= 8}
               aria-label="Zoom in (+)"
               title="Zoom in (+)"
             >

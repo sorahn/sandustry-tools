@@ -36,6 +36,7 @@ import {
   snapMapZoom,
   createBlueprintMapModel,
 } from "../utils/blueprint-map";
+import { stepZoomIn, stepZoomOut, wheelZoom, roundZoom } from "../utils/zoom";
 import { readStoredBoolean, writeStorageValue, writeStoredBoolean } from "../utils/storage";
 import {
   HIGHLIGHT_MATCHING_FILTERS_KEY,
@@ -186,10 +187,10 @@ export function BlueprintMap({
   const foundationOutlinesVisible = import.meta.env.PROD || showFoundationOutlines;
   const signalLinksVisible = import.meta.env.PROD || showSignalLinks;
   const zoomLevels = fitPolicy?.zoom.levels ?? MAP_ZOOM_LEVELS;
+  const minZoom = fitPolicy?.zoom.min ?? zoomLevels[0] ?? 0.125;
+  const maxZoom = Math.max(8, fitPolicy?.zoom.max ?? zoomLevels[zoomLevels.length - 1] ?? 8);
   const [zoom, setZoom] = useState(() =>
-    captureOnly
-      ? 1
-      : snapMapZoom(readStoredMapView(blueprintKey, zoomLevels)?.zoom ?? 1, zoomLevels),
+    captureOnly ? 1 : (readStoredMapView(blueprintKey, zoomLevels)?.zoom ?? 1),
   );
   const [pan, setPan] = useState(() =>
     captureOnly
@@ -536,7 +537,7 @@ export function BlueprintMap({
   useEffect(() => {
     const stored = remember && !captureOnly ? readStoredMapView(blueprintKey, zoomLevels) : null;
     fitModeRef.current = stored?.fit ?? true;
-    const restoredZoom = captureOnly ? 1 : snapMapZoom(stored?.zoom ?? 1, zoomLevels);
+    const restoredZoom = captureOnly ? 1 : Math.max(minZoom, Math.min(maxZoom, stored?.zoom ?? 1));
     const restoredMaxPanX = Math.max(
       0,
       (width * restoredZoom - (viewportSize.width || width)) / (2 * restoredZoom),
@@ -642,18 +643,18 @@ export function BlueprintMap({
   }, [pan]);
   const setMapZoom = (nextZoom: number, pointer?: { x: number; y: number }) => {
     fitModeRef.current = false;
-    const snappedZoom = snapMapZoom(nextZoom, zoomLevels);
-    const nextViewWidth = width / snappedZoom;
-    const nextViewHeight = height / snappedZoom;
+    const clampedZoom = Math.max(minZoom, Math.min(maxZoom, roundZoom(nextZoom)));
+    const nextViewWidth = width / clampedZoom;
+    const nextViewHeight = height / clampedZoom;
     const nextCenteredViewX = (width - nextViewWidth) / 2;
     const nextCenteredViewY = (height - nextViewHeight) / 2;
     const nextMaxPanX = Math.max(
       0,
-      (width * snappedZoom - (viewportSize.width || width)) / (2 * snappedZoom),
+      (width * clampedZoom - (viewportSize.width || width)) / (2 * clampedZoom),
     );
     const nextMaxPanY = Math.max(
       0,
-      (height * snappedZoom - (viewportSize.height || height)) / (2 * snappedZoom),
+      (height * clampedZoom - (viewportSize.height || height)) / (2 * clampedZoom),
     );
     const viewportWidth = viewportSize.width || width;
     const viewportHeight = viewportSize.height || height;
@@ -664,12 +665,12 @@ export function BlueprintMap({
       ? height / 2 + pan.y + (pointer.y - viewportHeight / 2) / zoom
       : height / 2 + pan.y;
     const nextPanX = pointer
-      ? centerX - width / 2 - (pointer.x - viewportWidth / 2) / snappedZoom
+      ? centerX - width / 2 - (pointer.x - viewportWidth / 2) / clampedZoom
       : centerX - nextViewWidth / 2 - nextCenteredViewX;
     const nextPanY = pointer
-      ? centerY - height / 2 - (pointer.y - viewportHeight / 2) / snappedZoom
+      ? centerY - height / 2 - (pointer.y - viewportHeight / 2) / clampedZoom
       : centerY - nextViewHeight / 2 - nextCenteredViewY;
-    setZoom(snappedZoom);
+    setZoom(clampedZoom);
     setPan({
       x: Math.max(-nextMaxPanX, Math.min(nextMaxPanX, nextPanX)),
       y: Math.max(-nextMaxPanY, Math.min(nextMaxPanY, nextPanY)),
@@ -770,21 +771,15 @@ export function BlueprintMap({
         >
           <BlueprintMapViewportControls
             zoom={zoom}
-            minZoom={zoomLevels[0]}
-            maxZoom={zoomLevels[zoomLevels.length - 1]}
+            minZoom={minZoom}
+            maxZoom={maxZoom}
             measuredFitZoom={measuredFitZoom}
             fitMode={fitModeRef.current}
             pan={pan}
             onExport={exportPng}
-            onZoomOut={() => {
-              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-              setMapZoom(zoomLevels[Math.max(0, index - 1)]);
-            }}
+            onZoomOut={() => setMapZoom(stepZoomOut(zoom, { min: minZoom }))}
             onFit={fitToViewport}
-            onZoomIn={() => {
-              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-              setMapZoom(zoomLevels[Math.min(zoomLevels.length - 1, index + 1)]);
-            }}
+            onZoomIn={() => setMapZoom(stepZoomIn(zoom, { max: maxZoom }))}
           />
         </div>
         <div
@@ -807,12 +802,10 @@ export function BlueprintMap({
             if (event.target !== event.currentTarget) return;
             if (event.key === "+" || event.key === "=") {
               event.preventDefault();
-              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-              setMapZoom(zoomLevels[Math.min(zoomLevels.length - 1, index + 1)]);
+              setMapZoom(stepZoomIn(zoom, { max: maxZoom }));
             } else if (event.key === "-" || event.key === "_") {
               event.preventDefault();
-              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-              setMapZoom(zoomLevels[Math.max(0, index - 1)]);
+              setMapZoom(stepZoomOut(zoom, { min: minZoom }));
             } else if (event.key === "0" || event.key.toLowerCase() === "f") {
               event.preventDefault();
               fitToViewport();
@@ -852,12 +845,8 @@ export function BlueprintMap({
               x: event.clientX - rect.left,
               y: event.clientY - rect.top,
             };
-            const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-            const nextIndex =
-              event.deltaY < 0
-                ? Math.min(zoomLevels.length - 1, index + 1)
-                : Math.max(0, index - 1);
-            setMapZoom(zoomLevels[nextIndex], point);
+            const nextZoom = wheelZoom(zoom, event.deltaY, { min: minZoom, max: maxZoom });
+            setMapZoom(nextZoom, point);
           }}
           style={
             captureOnly
