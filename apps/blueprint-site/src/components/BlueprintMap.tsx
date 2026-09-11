@@ -115,20 +115,18 @@ export function BlueprintMap({
     readStoredBoolean(SHOW_RAW_STRUCTURES_KEY, false),
   );
   const exportScale = 1;
-  const [siteHeaderHeight, setSiteHeaderHeight] = useState(() => {
-    if (typeof document === "undefined") return 0;
-    return (
-      document.querySelector<HTMLElement>("[data-site-header]")?.getBoundingClientRect().height ?? 0
-    );
-  });
+  const [siteHeaderHeight, setSiteHeaderHeight] = useState(57);
   useEffect(() => {
     if (stickyTop !== undefined) return;
     const header = document.querySelector<HTMLElement>("[data-site-header]");
     if (!header) return;
 
-    const updateHeaderHeight = () => setSiteHeaderHeight(header.getBoundingClientRect().height);
-    updateHeaderHeight();
-    const observer = new ResizeObserver(updateHeaderHeight);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) {
+        const h = Math.round(entry.contentRect.height);
+        if (h > 0) setSiteHeaderHeight((prev) => (prev !== h ? h : prev));
+      }
+    });
     observer.observe(header);
     return () => observer.disconnect();
   }, [stickyTop]);

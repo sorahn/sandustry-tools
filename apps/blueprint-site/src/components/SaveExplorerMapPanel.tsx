@@ -12,7 +12,6 @@ export { createDragDepthTracker };
 export type ExplorerRaster = {
   width: number;
   height: number;
-  pixels: Uint8ClampedArray;
 };
 
 export type ExplorerView = { scale: number; offsetX: number; offsetY: number };

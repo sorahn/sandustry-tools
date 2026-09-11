@@ -1,5 +1,5 @@
 import { startTransition, useEffect, useRef, useState, type ReactNode } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouter } from "@tanstack/react-router";
 import { structureLabel } from "@daryl.roberts/sandustry-blueprint-core";
 import {
   decodeBlueprint,
@@ -45,6 +45,7 @@ import {
 import { BLUEPRINT_VISUAL_FIXTURES } from "../visual-fixtures/catalog";
 
 export function SavedBlueprintInspectorPage() {
+  const router = useRouter();
   const { saveId, blueprintId } = useParams({ from: "/save/$saveId/blueprint/$blueprintId" });
   const [state, setState] = useState<
     | { status: "loading" }
@@ -53,16 +54,22 @@ export function SavedBlueprintInspectorPage() {
   >({ status: "loading" });
 
   useEffect(() => {
-    let disposed = false;
+    const controller = new AbortController();
+    const routePath = router.state.location.pathname;
+    const unsub = router.subscribe("onBeforeNavigate", (event) => {
+      if (event.toLocation.pathname !== routePath) {
+        controller.abort();
+      }
+    });
     const load = async () => {
       setState({ status: "loading" });
       if (!/^[A-Za-z0-9_-]{1,128}$/.test(saveId) || !/^[A-Za-z0-9_-]{1,128}$/.test(blueprintId)) {
-        if (!disposed)
+        if (!controller.signal.aborted)
           setState({ status: "error", message: "That saved blueprint link is not valid." });
         return;
       }
       const listed = await listSavedGames();
-      if (disposed) return;
+      if (controller.signal.aborted) return;
       if (!listed.ok) {
         setState({ status: "error", message: listed.error.message });
         return;
@@ -73,7 +80,7 @@ export function SavedBlueprintInspectorPage() {
         return;
       }
       const stored = await getSavedGameBytes(saveId);
-      if (disposed) return;
+      if (controller.signal.aborted) return;
       if (!stored.ok) {
         setState({
           status: "error",
@@ -82,8 +89,8 @@ export function SavedBlueprintInspectorPage() {
         return;
       }
       try {
-        const extracted = await extractSaveBlueprintsInWorker(stored.value);
-        if (disposed) return;
+        const extracted = await extractSaveBlueprintsInWorker(stored.value, controller.signal);
+        if (controller.signal.aborted) return;
         const record = extracted.blueprints.find((candidate) => candidate.id === blueprintId);
         if (!record) {
           setState({
@@ -93,9 +100,11 @@ export function SavedBlueprintInspectorPage() {
           return;
         }
         const encoded = encodeSavedBlueprint(record);
-        setState({ status: "ready", encoded, name: summary.worldName || summary.fileName });
+        startTransition(() => {
+          setState({ status: "ready", encoded, name: summary.worldName || summary.fileName });
+        });
       } catch (error) {
-        if (!disposed)
+        if (!controller.signal.aborted)
           setState({
             status: "error",
             message: `The saved blueprint is incompatible: ${error instanceof Error ? error.message : "unable to encode it"}`,
@@ -104,9 +113,10 @@ export function SavedBlueprintInspectorPage() {
     };
     void load();
     return () => {
-      disposed = true;
+      unsub();
+      controller.abort();
     };
-  }, [blueprintId, saveId]);
+  }, [blueprintId, router, saveId]);
 
   if (state.status === "loading")
     return <SavedBlueprintRouteState message="Loading the saved blueprint…" />;
@@ -237,14 +247,34 @@ export function BlueprintInspectorPage({
   const mapPanelRef = useRef<HTMLDivElement>(null);
   const userInitiatedRef = useRef(false);
 
+  const router = useRouter();
+  const fileDropAbortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     // On mount / route arrival, defer heavy blueprint map rendering
     // until the header navigation transition completes (~200ms).
-    const timer = setTimeout(() => {
-      setMapReady(true);
+    let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      timer = null;
+      startTransition(() => setMapReady(true));
     }, 220);
-    return () => clearTimeout(timer);
-  }, []);
+    const routePath = router.state.location.pathname;
+    const unsub = router.subscribe("onBeforeNavigate", (event) => {
+      if (event.toLocation.pathname !== routePath) {
+        if (timer !== null) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        fileDropAbortRef.current?.abort();
+      }
+    });
+    return () => {
+      unsub();
+      if (timer !== null) {
+        clearTimeout(timer);
+      }
+      fileDropAbortRef.current?.abort();
+    };
+  }, [router]);
 
   const inspectValue = (input: string, userInitiated = false) => {
     userInitiatedRef.current = userInitiated;
@@ -307,9 +337,15 @@ export function BlueprintInspectorPage({
       setMessage("Choose a Sandustry .save file.");
       return;
     }
+    fileDropAbortRef.current?.abort();
+    const controller = new AbortController();
+    fileDropAbortRef.current = controller;
     setMessage(`Reading ${file.name}…`);
     try {
-      const extracted = await extractSaveBlueprintsInWorker(await file.arrayBuffer());
+      const buffer = await file.arrayBuffer();
+      if (controller.signal.aborted) return;
+      const extracted = await extractSaveBlueprintsInWorker(buffer, controller.signal);
+      if (controller.signal.aborted) return;
       if (!extracted.blueprints.length) {
         setDroppedSave(null);
         setMessage("That save contains no valid saved blueprints.");
@@ -322,6 +358,7 @@ export function BlueprintInspectorPage({
       setDroppedSave({ fileName: file.name, blueprints: extracted.blueprints });
       setMessage(`Choose one of the ${extracted.blueprints.length} saved blueprints.`);
     } catch (error) {
+      if (controller.signal.aborted) return;
       setDroppedSave(null);
       setMessage(
         error instanceof Error ? `Unable to read save: ${error.message}` : "Unable to read save.",

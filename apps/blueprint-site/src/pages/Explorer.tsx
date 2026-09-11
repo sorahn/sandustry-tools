@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import type {
   MinimapRenderOptions,
   SaveExplorerCellInspection,
@@ -51,11 +51,17 @@ function storedSummary(document: SaveExplorerClientDocument, fileName: string): 
 }
 
 export function SaveExplorerPage() {
+  const router = useRouter();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mapFrameRef = useRef<HTMLDivElement>(null);
   const workerRef = useRef<Worker | null>(null);
+  const rasterPixelsRef = useRef<{
+    raster: ExplorerRaster;
+    pixels: Uint8ClampedArray<ArrayBuffer>;
+  } | null>(null);
+  const disposedRef = useRef(false);
   const dragRef = useRef<ExplorerDrag | null>(null);
   const fitNextRasterRef = useRef(true);
   const fitMapRef = useRef<() => void>(() => {});
@@ -157,14 +163,49 @@ export function SaveExplorerPage() {
     [],
   );
 
+  const stopAllWork = useCallback(() => {
+    disposedRef.current = true;
+    loadIntentRef.current += 1;
+    if (settleTimerRef.current !== null) {
+      clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+    if (inspectFrameRef.current !== null) {
+      cancelAnimationFrame(inspectFrameRef.current);
+      inspectFrameRef.current = null;
+    }
+    cancelQueuedInspect();
+    if (workerRef.current) {
+      workerRef.current.terminate();
+      workerRef.current = null;
+    }
+    rasterPixelsRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    disposedRef.current = false;
+    const routePath = router.state.location.pathname;
+    const unsub = router.subscribe("onBeforeNavigate", (event) => {
+      if (event.toLocation.pathname !== routePath) {
+        stopAllWork();
+      }
+    });
+    return () => {
+      unsub();
+      stopAllWork();
+    };
+  }, [router, stopAllWork]);
+
   useEffect(() => {
     fitMapRef.current = fitMap;
   }, [fitMap]);
 
   useEffect(() => {
+    disposedRef.current = false;
     const worker = new Worker(new URL("../save-worker.ts", import.meta.url), { type: "module" });
     workerRef.current = worker;
     worker.onmessage = (event: MessageEvent<SaveWorkerResponse>) => {
+      if (disposedRef.current) return;
       const response = event.data;
       const respId = response.id ?? 0;
 
@@ -219,11 +260,9 @@ export function SaveExplorerPage() {
 
       if (response.type === "rendered") {
         if (respId !== latestRenderIdRef.current || respId < activeDecodeIdRef.current) return;
-        setBusy(false);
       }
       if (response.type === "decoded") {
         if (respId !== activeDecodeIdRef.current) return;
-        setDocument(response.document);
         activeSaveIdRef.current = response.document.metadata.saveId;
         currentSaveIdRef.current = response.document.metadata.saveId;
         awaitingSettleRef.current = true;
@@ -235,20 +274,28 @@ export function SaveExplorerPage() {
           awaitingSettleRef.current = false;
           fitMapRef.current();
           requestAnimationFrame(() => {
-            setBusy(false);
+            startTransition(() => setBusy(false));
           });
         }, 200);
       }
-      setRaster({
+      const nextRaster = {
         width: response.raster.width,
         height: response.raster.height,
+      };
+      rasterPixelsRef.current = {
+        raster: nextRaster,
         pixels: new Uint8ClampedArray(response.raster.pixels),
+      };
+      startTransition(() => {
+        if (response.type === "decoded") setDocument(response.document);
+        setRaster(nextRaster);
+        if (response.type === "rendered") setBusy(false);
+        setMessage(
+          response.type === "decoded"
+            ? "Save decoded. This first view is a native-style minimap raster."
+            : "Minimap layer updated.",
+        );
       });
-      setMessage(
-        response.type === "decoded"
-          ? "Save decoded. This first view is a native-style minimap raster."
-          : "Minimap layer updated.",
-      );
       if (response.type === "decoded" && currentSaveRef.current) {
         const current = currentSaveRef.current;
         const summary = storedSummary(response.document, current.name);
@@ -270,10 +317,10 @@ export function SaveExplorerPage() {
       }
     };
     worker.onerror = () => {
+      if (disposedRef.current) return;
       setBusy(false);
       setMessage("The save worker stopped unexpectedly.");
     };
-    let disposed = false;
     void (async () => {
       const intent = ++loadIntentRef.current;
       let saved:
@@ -289,13 +336,13 @@ export function SaveExplorerPage() {
         saved = { bytes: legacy.bytes.slice(), name: legacy.name, source: "legacy" };
       } else {
         const listed = await listSavedGames();
-        if (disposed || intent !== loadIntentRef.current) return;
+        if (disposedRef.current || intent !== loadIntentRef.current) return;
         if (listed.ok && listed.value.length > 0) {
           const sorted = listed.value.slice().sort((a, b) => b.storedAt.localeCompare(a.storedAt));
           const activeId = readActiveSaveId();
           const summary = sorted.find((candidate) => candidate.id === activeId) ?? sorted[0];
           const bytes = await getSavedGameBytes(summary.id);
-          if (disposed || intent !== loadIntentRef.current) return;
+          if (disposedRef.current || intent !== loadIntentRef.current) return;
           if (bytes.ok)
             saved = {
               bytes: bytes.value,
@@ -308,7 +355,7 @@ export function SaveExplorerPage() {
           setMessage(listed.error.message);
         }
       }
-      if (disposed || intent !== loadIntentRef.current || !saved) return;
+      if (disposedRef.current || intent !== loadIntentRef.current || !saved) return;
       activeSaveIdRef.current = saved.saveId ?? null;
       currentSaveIdRef.current = saved.saveId ?? null;
       currentSaveRef.current = {
@@ -343,6 +390,7 @@ export function SaveExplorerPage() {
       activeSaveIdRef.current = null;
       currentSaveIdRef.current = null;
       currentSaveRef.current = null;
+      rasterPixelsRef.current = null;
       setDocument(null);
       setRaster(null);
       setInspection(null);
@@ -351,7 +399,7 @@ export function SaveExplorerPage() {
       setMessage("Choose a Sandustry .save file.");
     };
     const unsubscribe = subscribeToSaveDatabase(async (event) => {
-      if (disposed) return;
+      if (disposedRef.current) return;
       if (event.type === "active-save-changed") {
         if (!event.saveId) {
           clearExplorerState();
@@ -368,7 +416,7 @@ export function SaveExplorerPage() {
         cancelQueuedInspect();
         const bytes = await getSavedGameBytes(event.saveId);
         if (
-          disposed ||
+          disposedRef.current ||
           intent !== loadIntentRef.current ||
           event.saveId !== activeSaveIdRef.current
         )
@@ -380,7 +428,7 @@ export function SaveExplorerPage() {
         }
         const listed = await listSavedGames();
         if (
-          disposed ||
+          disposedRef.current ||
           intent !== loadIntentRef.current ||
           event.saveId !== activeSaveIdRef.current
         )
@@ -426,17 +474,16 @@ export function SaveExplorerPage() {
       }
     });
     return () => {
-      disposed = true;
       unsubscribe();
-      if (inspectFrameRef.current !== null) cancelAnimationFrame(inspectFrameRef.current);
-      worker.terminate();
-      workerRef.current = null;
+      stopAllWork();
     };
   }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !raster) return;
+    const pendingRaster = rasterPixelsRef.current;
+    if (!pendingRaster || pendingRaster.raster !== raster) return;
     canvas.width = raster.width;
     canvas.height = raster.height;
     const context = canvas.getContext("2d");
@@ -444,14 +491,10 @@ export function SaveExplorerPage() {
     context.imageSmoothingEnabled = false;
     let imageData: ImageData;
     try {
-      imageData = new ImageData(
-        raster.pixels as Uint8ClampedArray<ArrayBuffer>,
-        raster.width,
-        raster.height,
-      );
+      imageData = new ImageData(pendingRaster.pixels, raster.width, raster.height);
     } catch {
       imageData = context.createImageData(raster.width, raster.height);
-      imageData.data.set(raster.pixels);
+      imageData.data.set(pendingRaster.pixels);
     }
     context.putImageData(imageData, 0, 0);
     if (isFittedRef.current) {
@@ -528,13 +571,13 @@ export function SaveExplorerPage() {
     try {
       bytes = new Uint8Array(await file.arrayBuffer());
     } catch (error) {
-      if (intent !== loadIntentRef.current) return;
+      if (disposedRef.current || intent !== loadIntentRef.current) return;
       setBusy(false);
       awaitingSettleRef.current = false;
       setMessage(error instanceof Error ? error.message : `Unable to read ${file.name}.`);
       return;
     }
-    if (intent !== loadIntentRef.current) return;
+    if (disposedRef.current || intent !== loadIntentRef.current) return;
     const reqId = nextRequestIdRef.current++;
     activeDecodeIdRef.current = reqId;
     latestRenderIdRef.current = reqId;
@@ -647,9 +690,15 @@ export function SaveExplorerPage() {
             onInspectBlueprint={(blueprintId) => {
               const saveId = document?.metadata.saveId || "";
               if (!saveId) return;
+              if (settleTimerRef.current !== null) {
+                clearTimeout(settleTimerRef.current);
+                settleTimerRef.current = null;
+              }
+              cancelQueuedInspect();
               navigate({
                 to: "/save/$saveId/blueprint/$blueprintId",
                 params: { saveId, blueprintId },
+                startTransition: true,
               });
             }}
             onCopyBlueprint={(blueprintId) => {
