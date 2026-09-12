@@ -13,6 +13,7 @@ export type FitGrid = {
 export type FitPolicy = {
   geometry: FitGeometry;
   grid?: FitGrid;
+  initialZoom?: "continuous" | "levels";
   viewport: {
     orientation: "landscape" | "portrait" | "auto";
     aspect: { landscape: [number, number]; portrait: [number, number] };
@@ -54,6 +55,7 @@ export type FitResult = {
 export const DEFAULT_FIT_POLICY: FitPolicy = {
   geometry: { padding: 4, margin: 6 },
   grid: { extendToViewport: true },
+  initialZoom: "continuous",
   viewport: {
     orientation: "landscape",
     aspect: {
@@ -74,19 +76,33 @@ export const DEFAULT_FIT_POLICY: FitPolicy = {
   anchor: "center",
 };
 
+export const VAULT_FIT_POLICY: FitPolicy = {
+  geometry: { padding: 6, margin: 6 },
+  grid: { extendToViewport: true },
+  initialZoom: "levels",
+  viewport: {
+    orientation: "landscape",
+    aspect: {
+      landscape: [MAP_VIEWPORT_ASPECT_WIDTH, MAP_VIEWPORT_ASPECT_HEIGHT],
+      portrait: [MAP_VIEWPORT_ASPECT_HEIGHT, MAP_VIEWPORT_ASPECT_WIDTH],
+    },
+    allowHeightGrowth: true,
+    neverShrinkHeight: true,
+  },
+  zoom: {
+    levels: [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4],
+    min: 0.25,
+    max: 2,
+    fallbackMax: 1,
+    selection: "largest-fitting",
+  },
+  fit: { width: "required", height: "required" },
+  anchor: "center",
+};
+
 export const FIT_POLICY_PRESETS: Record<FitPolicyPreset, FitPolicy> = {
   default: DEFAULT_FIT_POLICY,
-  vault: {
-    ...DEFAULT_FIT_POLICY,
-    geometry: { padding: 6, margin: 6 },
-    grid: { extendToViewport: true },
-    viewport: { ...DEFAULT_FIT_POLICY.viewport, allowHeightGrowth: true },
-    zoom: {
-      ...DEFAULT_FIT_POLICY.zoom,
-      levels: [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4],
-      min: 0.25,
-    },
-  },
+  vault: VAULT_FIT_POLICY,
   test: {
     ...DEFAULT_FIT_POLICY,
   },
@@ -152,13 +168,16 @@ export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): F
     widthLimit,
     useHeightConstraint ? heightLimit : Number.POSITIVE_INFINITY,
   );
-  const zoom = largestFittingZoom(
-    policy.zoom.levels,
-    useHeightConstraint || policy.viewport.allowHeightGrowth
-      ? maxZoom
-      : Math.min(maxZoom, policy.zoom.fallbackMax),
-    policy.zoom.min,
-  );
+  const zoom =
+    policy.initialZoom === "continuous"
+      ? Math.max(policy.zoom.min, maxZoom)
+      : largestFittingZoom(
+          policy.zoom.levels,
+          useHeightConstraint || policy.viewport.allowHeightGrowth
+            ? maxZoom
+            : Math.min(maxZoom, policy.zoom.fallbackMax),
+          policy.zoom.min,
+        );
   // Height follows the fitted blueprint bounds and their minimum padding. Do
   // not reuse horizontal free space here: doing so makes the viewport height
   // track the blueprint's aspect ratio instead of its required footprint.
@@ -196,6 +215,7 @@ export function isFitPolicy(value: unknown): value is FitPolicy {
         (typeof spacing === "string" && spacing.trim().length > 0),
     ) &&
     (!grid || typeof grid.extendToViewport === "boolean") &&
+    (policy.initialZoom === undefined || ["continuous", "levels"].includes(policy.initialZoom)) &&
     viewport &&
     ["landscape", "portrait", "auto"].includes(viewport.orientation ?? "") &&
     Array.isArray(viewport.aspect?.landscape) &&

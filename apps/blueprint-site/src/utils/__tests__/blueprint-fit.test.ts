@@ -7,7 +7,7 @@ import {
 } from "../blueprint-fit";
 
 describe("blueprint initial-fit policies", () => {
-  test("preserves the standard width-first fallback for large blueprints", () => {
+  test("fits large blueprints continuously within the fixed viewport", () => {
     const result = solveInitialFit(
       {
         contentWidth: 1200,
@@ -16,17 +16,17 @@ describe("blueprint initial-fit policies", () => {
         viewportHeight: 502,
         marginPx: 96,
       },
-      FIT_POLICY_PRESETS.vault,
+      DEFAULT_FIT_POLICY,
     );
 
-    expect(result.zoom).toBe(0.5);
-    expect(result.viewportHeight).toBeGreaterThan(502);
+    expect(result.zoom).toBeCloseTo(0.3606321839);
+    expect(result.viewportHeight).toBe(502);
     expect(result.pan).toEqual({ x: 0, y: 0 });
   });
 
   test("allows a policy to choose a different initial zoom strategy", () => {
     const widthFirstPolicy: FitPolicy = {
-      ...FIT_POLICY_PRESETS.vault,
+      ...DEFAULT_FIT_POLICY,
       zoom: {
         ...DEFAULT_FIT_POLICY.zoom,
         max: 1,
@@ -46,10 +46,10 @@ describe("blueprint initial-fit policies", () => {
     );
 
     expect(result.zoom).toBe(1);
-    expect(result.viewportHeight).toBeGreaterThan(502);
+    expect(result.viewportHeight).toBe(502);
   });
 
-  test("allows the growing default viewport to use zoom above 100%", () => {
+  test("fits small blueprints to the fixed viewport", () => {
     const result = solveInitialFit(
       {
         contentWidth: 400,
@@ -58,20 +58,22 @@ describe("blueprint initial-fit policies", () => {
         viewportHeight: 502,
         marginPx: 48,
       },
-      FIT_POLICY_PRESETS.vault,
+      DEFAULT_FIT_POLICY,
     );
 
-    expect(result.zoom).toBe(1.5);
-    expect(result.viewportHeight).toBeGreaterThan(502);
+    expect(result.zoom).toBeCloseTo(1.0120967742);
+    expect(result.viewportHeight).toBe(502);
   });
 
   test("exposes the current policy as the default preset", () => {
     expect(FIT_POLICY_PRESETS.default).toBe(DEFAULT_FIT_POLICY);
+    expect(DEFAULT_FIT_POLICY.initialZoom).toBe("continuous");
     expect(DEFAULT_FIT_POLICY.geometry.padding).toBe(4);
     expect(DEFAULT_FIT_POLICY.grid?.extendToViewport).toBe(true);
   });
 
-  test("preserves the historical Vault policy", () => {
+  test("preserves level-based Vault fitting", () => {
+    expect(FIT_POLICY_PRESETS.vault.initialZoom).toBe("levels");
     expect(FIT_POLICY_PRESETS.vault.geometry.padding).toBe(6);
     expect(FIT_POLICY_PRESETS.vault.grid?.extendToViewport).toBe(true);
     expect(FIT_POLICY_PRESETS.vault.zoom.levels[0]).toBe(0.25);
@@ -83,7 +85,7 @@ describe("blueprint initial-fit policies", () => {
     expect(FIT_POLICY_PRESETS.test).toEqual(DEFAULT_FIT_POLICY);
   });
 
-  test("fits the Vault policy with a growing viewport", () => {
+  test("fits the Vault policy using its configured levels", () => {
     const result = solveInitialFit(
       {
         contentWidth: 1200,

@@ -373,8 +373,8 @@ export function BlueprintMap({
     (fullHeight ? viewportRef.current?.clientHeight || viewportSize.height : 0) ||
     defaultViewportHeight;
   const measuredFitZoom = fitPolicy
-    ? snapMapZoom(
-        solveInitialFit(
+    ? (() => {
+        const solvedZoom = solveInitialFit(
           {
             contentWidth: width,
             contentHeight: height,
@@ -383,9 +383,11 @@ export function BlueprintMap({
             marginPx,
           },
           fitPolicy,
-        ).zoom,
-        zoomLevels,
-      )
+        ).zoom;
+        return fitPolicy.initialZoom === "continuous"
+          ? solvedZoom
+          : snapMapZoom(solvedZoom, zoomLevels);
+      })()
     : legacyMeasuredFitZoom;
   const aspectRatioViewportHeight = fitPolicy
     ? solveInitialFit(
@@ -562,7 +564,7 @@ export function BlueprintMap({
     policySelection,
     onPolicySelectionChange,
   });
-  useEffect(() => {
+  useLayoutEffect(() => {
     const stored = remember && !captureOnly ? readStoredMapView(blueprintKey, zoomLevels) : null;
     fitModeRef.current = stored?.fit ?? true;
     const restoredZoom = captureOnly ? 1 : Math.max(minZoom, Math.min(maxZoom, stored?.zoom ?? 1));
@@ -605,20 +607,18 @@ export function BlueprintMap({
     }
     fitModeRef.current = true;
     const availableWidth = viewportRef.current?.clientWidth || viewportSize.width;
+    const solvedZoom = solveInitialFit(
+      {
+        contentWidth: width,
+        contentHeight: height,
+        viewportWidth: availableWidth || width,
+        viewportHeight: viewportRef.current?.clientHeight || defaultViewportHeight,
+        marginPx,
+      },
+      fitPolicy,
+    ).zoom;
     setZoom(
-      snapMapZoom(
-        solveInitialFit(
-          {
-            contentWidth: width,
-            contentHeight: height,
-            viewportWidth: availableWidth || width,
-            viewportHeight: viewportRef.current?.clientHeight || defaultViewportHeight,
-            marginPx,
-          },
-          fitPolicy,
-        ).zoom,
-        zoomLevels,
-      ),
+      fitPolicy.initialZoom === "continuous" ? solvedZoom : snapMapZoom(solvedZoom, zoomLevels),
     );
     setPan({ x: 0, y: 0 });
   };
