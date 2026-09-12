@@ -6,7 +6,9 @@ import {
   createDragDepthTracker,
 } from "@sandustry/ui";
 import type { SaveExplorerCellInspection } from "@sandustry/save-core";
+import { useRef } from "react";
 import { stepZoomIn, stepZoomOut, wheelZoom } from "../utils/zoom";
+import { GlobalFileDropOverlay } from "./GlobalFileDropOverlay";
 import { MapViewportControls } from "./MapViewportControls";
 
 export { createDragDepthTracker };
@@ -76,8 +78,14 @@ export function SaveExplorerMapPanel({
   fitMap,
   onInspect,
 }: SaveExplorerMapPanelProps) {
+  const mapPanelRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className="relative flex flex-1 h-full min-h-0 w-full flex-col overflow-hidden bg-black">
+    <div
+      ref={mapPanelRef}
+      className="relative flex flex-1 h-full min-h-0 w-full flex-col overflow-hidden bg-black"
+    >
+      <GlobalFileDropOverlay containerRef={mapPanelRef} onFileDrop={(file) => void onFile(file)} />
       {!documentLoaded ? (
         <div className="absolute inset-0 z-20 flex items-center justify-center p-6">
           <FileDropZone
@@ -102,31 +110,7 @@ export function SaveExplorerMapPanel({
             </div>
           </FileDropZone>
         </div>
-      ) : (
-        <FileDropZone
-          accept=".save"
-          dragging={dragging}
-          onDraggingChange={onDraggingChange}
-          onFile={(file) => void onFile(file)}
-          inputRef={inputRef}
-          inputProps={{ className: "hidden" }}
-          className="absolute top-3 left-3 z-20 flex items-center gap-3 rounded border border-slate-800/90 bg-slate-950/80 p-1.5 font-mono text-xs text-slate-300 backdrop-blur-sm transition-colors duration-150"
-          activeClassName="border-yellow-400/70 bg-amber-900/30"
-        >
-          <div className={`flex items-center gap-3 ${dragging ? "pointer-events-none" : ""}`}>
-            <Button
-              type="button"
-              variant="solid"
-              size="small"
-              onClick={onChooseFile}
-              disabled={busy}
-            >
-              {busy ? "Decoding…" : "Open another save"}
-            </Button>
-            <span className="hidden text-xs text-slate-400 sm:inline">or drop `.save`</span>
-          </div>
-        </FileDropZone>
-      )}
+      ) : null}
       <div
         ref={mapFrameRef}
         tabIndex={0}
