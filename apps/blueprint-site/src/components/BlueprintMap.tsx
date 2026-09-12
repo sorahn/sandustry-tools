@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import cx from "clsx";
 import {
   prepareSvgForPng,
@@ -35,7 +35,9 @@ import {
   readStoredMapView,
   snapMapZoom,
   createBlueprintMapModel,
+  calculateMaxPan,
 } from "../utils/blueprint-map";
+import { stepZoomIn, stepZoomOut, wheelZoom, roundZoom } from "../utils/zoom";
 import { readStoredBoolean, writeStorageValue, writeStoredBoolean } from "../utils/storage";
 import {
   HIGHLIGHT_MATCHING_FILTERS_KEY,
@@ -78,6 +80,13 @@ export function BlueprintMap({
   stickyTop,
   embedMode = false,
   onExportPng,
+  fullHeight = false,
+  selectedIndex: controlledSelectedIndex,
+  onSelectedIndexChange,
+  externalSidebar = false,
+  highlightMatchingFilters: controlledHighlightMatchingFilters,
+  onHighlightMatchingFiltersChange: controlledOnHighlightMatchingFiltersChange,
+  viewportControlsExtra,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -95,8 +104,26 @@ export function BlueprintMap({
   stickyTop?: string;
   embedMode?: boolean;
   onExportPng?: (png: ArrayBuffer, filename: string) => void;
+  fullHeight?: boolean;
+  selectedIndex?: number | null;
+  onSelectedIndexChange?: (index: number | null) => void;
+  externalSidebar?: boolean;
+  highlightMatchingFilters?: boolean;
+  onHighlightMatchingFiltersChange?: (value: boolean) => void;
+  viewportControlsExtra?: ReactNode;
 }) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [uncontrolledIndex, setUncontrolledIndex] = useState<number | null>(null);
+  const selectedIndex =
+    controlledSelectedIndex !== undefined ? controlledSelectedIndex : uncontrolledIndex;
+  const setSelectedIndex = (
+    indexOrFn: number | null | ((prev: number | null) => number | null),
+  ) => {
+    const next = typeof indexOrFn === "function" ? indexOrFn(selectedIndex) : indexOrFn;
+    if (controlledSelectedIndex === undefined) {
+      setUncontrolledIndex(next);
+    }
+    onSelectedIndexChange?.(next);
+  };
   const [showDebugCells, setShowDebugCells] = useState(() =>
     readStoredBoolean(SHOW_DEBUG_CELLS_KEY, false),
   );
@@ -167,10 +194,10 @@ export function BlueprintMap({
   const foundationOutlinesVisible = import.meta.env.PROD || showFoundationOutlines;
   const signalLinksVisible = import.meta.env.PROD || showSignalLinks;
   const zoomLevels = fitPolicy?.zoom.levels ?? MAP_ZOOM_LEVELS;
+  const minZoom = fitPolicy?.zoom.min ?? zoomLevels[0] ?? 0.125;
+  const maxZoom = Math.max(8, fitPolicy?.zoom.max ?? zoomLevels[zoomLevels.length - 1] ?? 8);
   const [zoom, setZoom] = useState(() =>
-    captureOnly
-      ? 1
-      : snapMapZoom(readStoredMapView(blueprintKey, zoomLevels)?.zoom ?? 1, zoomLevels),
+    captureOnly ? 1 : (readStoredMapView(blueprintKey, zoomLevels)?.zoom ?? 1),
   );
   const [pan, setPan] = useState(() =>
     captureOnly
@@ -190,6 +217,8 @@ export function BlueprintMap({
   const suppressClickRef = useRef(false);
   const panCommitTimerRef = useRef<number | null>(null);
   const livePanRef = useRef(pan);
+  const rafIdRef = useRef<number | null>(null);
+  const pendingPanRef = useRef<{ x: number; y: number } | null>(null);
   const previousSidebarVisibilityRef = useRef(showSidebar);
   const fitModeRef = useRef(
     captureOnly ? true : (readStoredMapView(blueprintKey, zoomLevels)?.fit ?? true),
@@ -304,7 +333,7 @@ export function BlueprintMap({
     setSelectedIndex(hit ?? null);
   };
   const { viewportRef, viewportSize, hoverMarkerRef, updateHoverBlock, clearHoverBlock } =
-    useBlueprintMapViewport({ cell, minX, minY, padding });
+    useBlueprintMapViewport({ cell, minX, minY, padding, width, height });
   const viewportWidth = viewportRef.current?.clientWidth || viewportSize.width || width;
   const defaultViewportHeight = viewportHeightForWidth(viewportWidth);
   const legacyFitWidth = width + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
@@ -340,6 +369,9 @@ export function BlueprintMap({
         defaultViewportHeight,
         height * legacyMeasuredFitZoom + legacyHorizontalCanvasGap * 2 + MAP_VIEWPORT_BORDER_SIZE,
       );
+  const currentViewportHeight =
+    (fullHeight ? viewportRef.current?.clientHeight || viewportSize.height : 0) ||
+    defaultViewportHeight;
   const measuredFitZoom = fitPolicy
     ? snapMapZoom(
         solveInitialFit(
@@ -347,7 +379,7 @@ export function BlueprintMap({
             contentWidth: width,
             contentHeight: height,
             viewportWidth,
-            viewportHeight: defaultViewportHeight,
+            viewportHeight: currentViewportHeight,
             marginPx,
           },
           fitPolicy,
@@ -361,7 +393,7 @@ export function BlueprintMap({
           contentWidth: width,
           contentHeight: height,
           viewportWidth,
-          viewportHeight: defaultViewportHeight,
+          viewportHeight: currentViewportHeight,
           marginPx,
         },
         fitPolicy,
@@ -379,12 +411,20 @@ export function BlueprintMap({
     return { filterClusters: clusters, filterClusterByStructureIndex: byIndex };
   }, [preparedBlueprint]);
 
-  const [highlightMatchingFilters, setHighlightMatchingFilters] = useState(() =>
-    readStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, false),
+  const [uncontrolledHighlightMatchingFilters, setUncontrolledHighlightMatchingFilters] = useState(
+    () => readStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, false),
   );
+  const highlightMatchingFilters =
+    controlledHighlightMatchingFilters !== undefined
+      ? controlledHighlightMatchingFilters
+      : uncontrolledHighlightMatchingFilters;
   const handleHighlightMatchingFiltersChange = (value: boolean) => {
-    setHighlightMatchingFilters(value);
-    writeStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, value);
+    if (controlledOnHighlightMatchingFiltersChange) {
+      controlledOnHighlightMatchingFiltersChange(value);
+    } else {
+      setUncontrolledHighlightMatchingFilters(value);
+      writeStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, value);
+    }
   };
 
   const activeFilterCluster = useMemo(() => {
@@ -472,12 +512,23 @@ export function BlueprintMap({
     activeFilterCluster,
   ]);
 
-  const maxPanX = Math.max(0, (width * zoom - (viewportSize.width || width)) / (2 * zoom));
-  const maxPanY = Math.max(0, (height * zoom - (viewportSize.height || height)) / (2 * zoom));
+  const currentViewWidth = viewportRef.current?.clientWidth || viewportSize.width || width;
+  const currentViewHeight =
+    (fullHeight ? viewportRef.current?.clientHeight || viewportSize.height : 0) ||
+    defaultViewportHeight;
+  const maxPanX = calculateMaxPan(width, currentViewWidth, zoom);
+  const maxPanY = calculateMaxPan(height, currentViewHeight, zoom);
   const applyLivePan = (nextPan: { x: number; y: number }) => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    svg.style.transform = `translate(-50%, -50%) translate(${-nextPan.x * zoom}px, ${-nextPan.y * zoom}px)`;
+    pendingPanRef.current = nextPan;
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        const svg = svgRef.current;
+        const pending = pendingPanRef.current;
+        if (!svg || !pending) return;
+        svg.style.transform = `translate3d(-50%, -50%, 0) translate3d(${-pending.x * zoom}px, ${-pending.y * zoom}px, 0)`;
+      });
+    }
   };
   const schedulePanCommit = () => {
     if (panCommitTimerRef.current !== null) {
@@ -514,15 +565,13 @@ export function BlueprintMap({
   useEffect(() => {
     const stored = remember && !captureOnly ? readStoredMapView(blueprintKey, zoomLevels) : null;
     fitModeRef.current = stored?.fit ?? true;
-    const restoredZoom = captureOnly ? 1 : snapMapZoom(stored?.zoom ?? 1, zoomLevels);
-    const restoredMaxPanX = Math.max(
-      0,
-      (width * restoredZoom - (viewportSize.width || width)) / (2 * restoredZoom),
-    );
-    const restoredMaxPanY = Math.max(
-      0,
-      (height * restoredZoom - (viewportSize.height || height)) / (2 * restoredZoom),
-    );
+    const restoredZoom = captureOnly ? 1 : Math.max(minZoom, Math.min(maxZoom, stored?.zoom ?? 1));
+    const restoreViewWidth = viewportSize.width || width;
+    const restoreViewHeight =
+      (fullHeight ? viewportRef.current?.clientHeight || viewportSize.height : 0) ||
+      defaultViewportHeight;
+    const restoredMaxPanX = calculateMaxPan(width, restoreViewWidth, restoredZoom);
+    const restoredMaxPanY = calculateMaxPan(height, restoreViewHeight, restoredZoom);
     setZoom(restoredZoom);
     setPan(
       captureOnly
@@ -616,25 +665,23 @@ export function BlueprintMap({
       if (panCommitTimerRef.current !== null) {
         window.clearTimeout(panCommitTimerRef.current);
       }
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     };
   }, [pan]);
   const setMapZoom = (nextZoom: number, pointer?: { x: number; y: number }) => {
     fitModeRef.current = false;
-    const snappedZoom = snapMapZoom(nextZoom, zoomLevels);
-    const nextViewWidth = width / snappedZoom;
-    const nextViewHeight = height / snappedZoom;
+    const clampedZoom = Math.max(minZoom, Math.min(maxZoom, roundZoom(nextZoom)));
+    const nextViewWidth = width / clampedZoom;
+    const nextViewHeight = height / clampedZoom;
     const nextCenteredViewX = (width - nextViewWidth) / 2;
     const nextCenteredViewY = (height - nextViewHeight) / 2;
-    const nextMaxPanX = Math.max(
-      0,
-      (width * snappedZoom - (viewportSize.width || width)) / (2 * snappedZoom),
-    );
-    const nextMaxPanY = Math.max(
-      0,
-      (height * snappedZoom - (viewportSize.height || height)) / (2 * snappedZoom),
-    );
     const viewportWidth = viewportSize.width || width;
     const viewportHeight = viewportSize.height || height;
+    const nextMaxPanX = calculateMaxPan(width, viewportWidth, clampedZoom);
+    const nextMaxPanY = calculateMaxPan(height, viewportHeight, clampedZoom);
     const centerX = pointer
       ? width / 2 + pan.x + (pointer.x - viewportWidth / 2) / zoom
       : width / 2 + pan.x;
@@ -642,12 +689,12 @@ export function BlueprintMap({
       ? height / 2 + pan.y + (pointer.y - viewportHeight / 2) / zoom
       : height / 2 + pan.y;
     const nextPanX = pointer
-      ? centerX - width / 2 - (pointer.x - viewportWidth / 2) / snappedZoom
+      ? centerX - width / 2 - (pointer.x - viewportWidth / 2) / clampedZoom
       : centerX - nextViewWidth / 2 - nextCenteredViewX;
     const nextPanY = pointer
-      ? centerY - height / 2 - (pointer.y - viewportHeight / 2) / snappedZoom
+      ? centerY - height / 2 - (pointer.y - viewportHeight / 2) / clampedZoom
       : centerY - nextViewHeight / 2 - nextCenteredViewY;
-    setZoom(snappedZoom);
+    setZoom(clampedZoom);
     setPan({
       x: Math.max(-nextMaxPanX, Math.min(nextMaxPanX, nextPanX)),
       y: Math.max(-nextMaxPanY, Math.min(nextMaxPanY, nextPanY)),
@@ -730,31 +777,37 @@ export function BlueprintMap({
   return (
     <div
       className={
-        showSidebar
-          ? cx("grid items-stretch lg:grid-cols-[minmax(0,1fr)_18rem]", !embedMode && "gap-4")
-          : "grid items-stretch"
+        fullHeight
+          ? "relative flex flex-1 h-full min-h-0 w-full overflow-hidden"
+          : showSidebar && !externalSidebar
+            ? cx("grid items-stretch lg:grid-cols-[minmax(0,1fr)_18rem]", !embedMode && "gap-4")
+            : "grid items-stretch"
       }
     >
-      <div className="min-w-0">
-        <div className="sticky z-20 h-0" style={{ top: stickyTop ?? `${siteHeaderHeight}px` }}>
-          <BlueprintMapViewportControls
-            zoom={zoom}
-            minZoom={zoomLevels[0]}
-            maxZoom={zoomLevels[zoomLevels.length - 1]}
-            measuredFitZoom={measuredFitZoom}
-            fitMode={fitModeRef.current}
-            pan={pan}
-            onExport={exportPng}
-            onZoomOut={() => {
-              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-              setMapZoom(zoomLevels[Math.max(0, index - 1)]);
-            }}
-            onFit={fitToViewport}
-            onZoomIn={() => {
-              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-              setMapZoom(zoomLevels[Math.min(zoomLevels.length - 1, index + 1)]);
-            }}
-          />
+      <div
+        className={
+          fullHeight ? "relative flex flex-1 h-full min-h-0 w-full overflow-hidden" : "min-w-0"
+        }
+      >
+        <div
+          className={fullHeight ? "pointer-events-none absolute inset-0 z-20" : "sticky z-20 h-0"}
+          style={fullHeight ? undefined : { top: stickyTop ?? `${siteHeaderHeight}px` }}
+        >
+          <div className={fullHeight ? "pointer-events-auto" : undefined}>
+            <BlueprintMapViewportControls
+              zoom={zoom}
+              minZoom={minZoom}
+              maxZoom={maxZoom}
+              measuredFitZoom={measuredFitZoom}
+              fitMode={fitModeRef.current}
+              pan={pan}
+              extraActions={viewportControlsExtra}
+              onExport={exportPng}
+              onZoomOut={() => setMapZoom(stepZoomOut(zoom, { min: minZoom }))}
+              onFit={fitToViewport}
+              onZoomIn={() => setMapZoom(stepZoomIn(zoom, { max: maxZoom }))}
+            />
+          </div>
         </div>
         <div
           ref={viewportRef}
@@ -765,18 +818,21 @@ export function BlueprintMap({
               ? `: selected ${structureLabel(selected.type)} at ${selected.x}, ${selected.y} (${(selectedIndex ?? 0) + 1} of ${blueprint.data.length})`
               : ""
           }`}
-          className="blueprint-map__viewport relative min-h-[32rem] overflow-hidden rounded border border-slate-800 bg-[#33a8ff] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
+          className={cx(
+            "blueprint-map__viewport relative overflow-hidden bg-[#33a8ff] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
+            fullHeight
+              ? "blueprint-map__viewport--full-height h-full w-full flex-1 min-h-0 min-w-0"
+              : "min-h-[32rem] rounded border border-slate-800",
+          )}
           translate="no"
           onKeyDown={(event) => {
             if (event.target !== event.currentTarget) return;
             if (event.key === "+" || event.key === "=") {
               event.preventDefault();
-              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-              setMapZoom(zoomLevels[Math.min(zoomLevels.length - 1, index + 1)]);
+              setMapZoom(stepZoomIn(zoom, { max: maxZoom }));
             } else if (event.key === "-" || event.key === "_") {
               event.preventDefault();
-              const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-              setMapZoom(zoomLevels[Math.max(0, index - 1)]);
+              setMapZoom(stepZoomOut(zoom, { min: minZoom }));
             } else if (event.key === "0" || event.key.toLowerCase() === "f") {
               event.preventDefault();
               fitToViewport();
@@ -816,19 +872,17 @@ export function BlueprintMap({
               x: event.clientX - rect.left,
               y: event.clientY - rect.top,
             };
-            const index = zoomLevels.indexOf(snapMapZoom(zoom, zoomLevels));
-            const nextIndex =
-              event.deltaY < 0
-                ? Math.min(zoomLevels.length - 1, index + 1)
-                : Math.max(0, index - 1);
-            setMapZoom(zoomLevels[nextIndex], point);
+            const nextZoom = wheelZoom(zoom, event.deltaY, { min: minZoom, max: maxZoom });
+            setMapZoom(nextZoom, point);
           }}
           style={
             captureOnly
               ? { width: `${Math.ceil(width)}px`, height: `${Math.ceil(height)}px` }
-              : {
-                  height: `${Math.max(512, Math.ceil(aspectRatioViewportHeight))}px`,
-                }
+              : fullHeight
+                ? { height: "100%", width: "100%" }
+                : {
+                    height: `${Math.max(512, Math.ceil(aspectRatioViewportHeight))}px`,
+                  }
           }
         >
           <svg
@@ -843,7 +897,8 @@ export function BlueprintMap({
               height: `${height * zoom}px`,
               left: "50%",
               top: "50%",
-              transform: `translate(-50%, -50%) translate(${-pan.x * zoom}px, ${-pan.y * zoom}px)`,
+              transform: `translate3d(-50%, -50%, 0) translate3d(${-pan.x * zoom}px, ${-pan.y * zoom}px, 0)`,
+              willChange: "transform",
               zIndex: viewportGridEnabled ? 1 : undefined,
               overflow: viewportGridEnabled ? "visible" : undefined,
               cursor: dragRef.current ? "grabbing" : "grab",
@@ -852,6 +907,7 @@ export function BlueprintMap({
             }}
             onPointerDown={(event) => {
               if (event.pointerType === "mouse" && event.button !== 0) return;
+              clearHoverBlock();
               if (panCommitTimerRef.current !== null) {
                 window.clearTimeout(panCommitTimerRef.current);
                 panCommitTimerRef.current = null;
@@ -881,16 +937,10 @@ export function BlueprintMap({
                     event.currentTarget.setPointerCapture(event.pointerId);
                   }
                 }
-                const rect = event.currentTarget.getBoundingClientRect();
+                const dragScale = 1 / zoom;
                 const nextPan = {
-                  x: Math.max(
-                    -maxPanX,
-                    Math.min(maxPanX, livePanRef.current.x - (dx / rect.width) * width),
-                  ),
-                  y: Math.max(
-                    -maxPanY,
-                    Math.min(maxPanY, livePanRef.current.y - (dy / rect.height) * height),
-                  ),
+                  x: Math.max(-maxPanX, Math.min(maxPanX, livePanRef.current.x - dx * dragScale)),
+                  y: Math.max(-maxPanY, Math.min(maxPanY, livePanRef.current.y - dy * dragScale)),
                 };
                 livePanRef.current = nextPan;
                 applyLivePan(nextPan);
@@ -904,6 +954,14 @@ export function BlueprintMap({
             onPointerUp={(event) => {
               const drag = dragRef.current;
               if (!drag || drag.pointerId !== event.pointerId) return;
+              if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+              }
+              const svg = svgRef.current;
+              if (svg) {
+                svg.style.transform = `translate3d(-50%, -50%, 0) translate3d(${-livePanRef.current.x * zoom}px, ${-livePanRef.current.y * zoom}px, 0)`;
+              }
               suppressClickRef.current = drag.moved;
               dragRef.current = null;
               event.currentTarget.style.cursor = "grab";
@@ -911,6 +969,10 @@ export function BlueprintMap({
               event.currentTarget.releasePointerCapture(event.pointerId);
             }}
             onPointerCancel={(event) => {
+              if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+              }
               dragRef.current = null;
               event.currentTarget.style.cursor = "grab";
               schedulePanCommit();
@@ -930,6 +992,7 @@ export function BlueprintMap({
               extendToViewport={viewportGridEnabled}
               viewportWidth={viewportSize.width || width}
               viewportHeight={viewportSize.height || defaultViewportHeight}
+              zoom={zoom}
             />
             {showDebugCells ? (
               <g opacity="0.8" pointerEvents="none" style={mapLayerStyle("debugCells")}>
@@ -1012,7 +1075,7 @@ export function BlueprintMap({
           </svg>
         </div>
       </div>
-      {showSidebar ? (
+      {showSidebar && !externalSidebar ? (
         <BlueprintMapSidebar
           selected={selected}
           selectedIndex={selectedIndex}

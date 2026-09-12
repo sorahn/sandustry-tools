@@ -1,6 +1,11 @@
-import { startTransition, useEffect, useRef, useState, type ReactNode } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams, useRouter } from "@tanstack/react-router";
-import { structureLabel } from "@daryl.roberts/sandustry-blueprint-core";
+import {
+  clusterFilterStructures,
+  prepareBlueprint,
+  structureLabel,
+  type FilterOverlayCluster,
+} from "@daryl.roberts/sandustry-blueprint-core";
 import {
   decodeBlueprint,
   encodeBlueprint,
@@ -8,22 +13,38 @@ import {
   type BlueprintType,
 } from "../utils/blueprint";
 import { debugComponent } from "../components/DebugComponentWrapper";
-import { BlueprintMapPanel } from "../components/BlueprintMapPanel";
+import { BlueprintMap } from "../components/BlueprintMap";
+import { BlueprintInspectorSidebar } from "../components/BlueprintInspectorSidebar";
+import { AppWorkspaceShell } from "../components/AppWorkspaceShell";
+import { GlobalFileDropOverlay } from "../components/GlobalFileDropOverlay";
 import { PersistentCheckbox } from "../components/PersistentCheckbox";
 import {
   BlueprintSubmissionPanel,
   type BlueprintSummary,
 } from "../components/BlueprintSubmissionPanel";
-import { BlueprintStructuresPanel } from "../components/BlueprintStructuresPanel";
-import { FileDropZone, Panel, Select, Spinner, StatusIndicator } from "@sandustry/ui";
+import {
+  Button,
+  Dialog,
+  FileDropZone,
+  Keycap,
+  Panel,
+  Select,
+  ShortcutHelper,
+  ShortcutHelperItem,
+  Spinner,
+  StatusIndicator,
+} from "@sandustry/ui";
 import { PageHeader } from "../components/PageHeader";
 import {
   readStorageValue,
   readStoredBoolean,
   removeStorageValue,
   writeStorageValue,
+  writeStoredBoolean,
 } from "../utils/storage";
 import {
+  HIGHLIGHT_MATCHING_FILTERS_KEY,
+  POLICY_TESTER_SELECTION_KEY,
   REMEMBER_BLUEPRINT_KEY,
   SAVED_BLUEPRINT_KEY,
   SAVED_MAP_VIEW_KEY,
@@ -32,6 +53,8 @@ import {
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
 } from "../utils/storage-keys";
+import { FIT_POLICY_PRESETS, type FitPolicyPreset } from "../utils/blueprint-fit";
+import { primaryModifierKey } from "../utils/platform";
 import { type SaveBlueprintRecord } from "@sandustry/save-core";
 import { encodeSavedBlueprint } from "../utils/save-blueprint";
 import { extractSaveBlueprintsInWorker } from "../utils/save-blueprint-worker";
@@ -226,14 +249,20 @@ export function BlueprintInspectorPage({
     return readStorageValue(SAVED_BLUEPRINT_KEY) ?? "";
   });
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
-  const [showMapSidebar, setShowMapSidebar] = useState(() =>
-    readStoredBoolean(SHOW_MAP_SIDEBAR_KEY, true),
-  );
+  const showMapSidebar = readStoredBoolean(SHOW_MAP_SIDEBAR_KEY, true);
   const [showGrid, setShowGrid] = useState(() => readStoredBoolean(SHOW_GRID_KEY, true));
   const [showPngBackground, setShowPngBackground] = useState(() =>
     readStoredBoolean(SHOW_PNG_BACKGROUND_KEY, false),
   );
   const [showFilters, setShowFilters] = useState(() => readStoredBoolean(SHOW_FILTERS_KEY, false));
+  const [policySelection, setPolicySelection] = useState<"legacy" | FitPolicyPreset>(() => {
+    const stored = readStorageValue(POLICY_TESTER_SELECTION_KEY);
+    if (stored && Object.prototype.hasOwnProperty.call(FIT_POLICY_PRESETS, stored)) {
+      return stored as FitPolicyPreset;
+    }
+    return "vault";
+  });
+  const fitPolicy = policySelection === "legacy" ? undefined : FIT_POLICY_PRESETS[policySelection];
   const [inspectedBlueprintKey, setInspectedBlueprintKey] = useState("");
   const [summary, setSummary] = useState<BlueprintSummary | null>(null);
   const [message, setMessage] = useState(
@@ -300,6 +329,40 @@ export function BlueprintInspectorPage({
       setMessage(error instanceof Error ? error.message : "Unable to inspect blueprint.");
     }
   };
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const value = event.clipboardData?.getData("text/plain")?.trim();
+      if (!value) return;
+      try {
+        decodeBlueprint(value);
+      } catch {
+        return;
+      }
+
+      event.preventDefault();
+      setDroppedSave(null);
+      setEncoded(value);
+      if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, value);
+      inspectValue(value, true);
+      setImportOpen(false);
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+    // inspectValue is intentionally kept local to this page's state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remember]);
+
   const inspect = () => inspectValue(encoded, true);
   const loadTestBlueprint = (nextBlueprint: Blueprint) => {
     userInitiatedRef.current = true;
@@ -391,6 +454,73 @@ export function BlueprintInspectorPage({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [blueprint, inspectedBlueprintKey, summary]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const [highlightMatchingFilters, setHighlightMatchingFilters] = useState(() =>
+    readStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, false),
+  );
+  const handleHighlightMatchingFiltersChange = (value: boolean) => {
+    setHighlightMatchingFilters(value);
+    writeStoredBoolean(HIGHLIGHT_MATCHING_FILTERS_KEY, value);
+  };
+
+  const preparedBlueprint = useMemo(
+    () => (blueprint ? prepareBlueprint(blueprint) : null),
+    [blueprint],
+  );
+  const preparedStructure =
+    blueprint && selectedIndex !== null && preparedBlueprint
+      ? preparedBlueprint.preparedStructures[selectedIndex]
+      : null;
+
+  const { filterClusters, filterClusterByStructureIndex } = useMemo(() => {
+    if (!preparedBlueprint) {
+      return {
+        filterClusters: [] as FilterOverlayCluster[],
+        filterClusterByStructureIndex: new Map<number, FilterOverlayCluster>(),
+      };
+    }
+    const clusters = clusterFilterStructures(preparedBlueprint.preparedStructures);
+    const byIndex = new Map<number, FilterOverlayCluster>();
+    for (const cluster of clusters) {
+      for (const member of cluster.members) {
+        byIndex.set(member.index, cluster);
+      }
+    }
+    return { filterClusters: clusters, filterClusterByStructureIndex: byIndex };
+  }, [preparedBlueprint]);
+
+  const activeFilterCluster = useMemo(() => {
+    if (selectedIndex === null) return null;
+    return filterClusterByStructureIndex.get(selectedIndex) ?? null;
+  }, [filterClusterByStructureIndex, selectedIndex]);
+
+  const matchingFilterClusters = useMemo(() => {
+    if (!activeFilterCluster) return [];
+    return filterClusters.filter(
+      (cluster) => cluster.filterConfigKey === activeFilterCluster.filterConfigKey,
+    );
+  }, [filterClusters, activeFilterCluster]);
+
+  const matchingFiltersCount = useMemo(() => {
+    return matchingFilterClusters.reduce((sum, cluster) => sum + cluster.members.length, 0);
+  }, [matchingFilterClusters]);
+  const selectedStructure =
+    blueprint && selectedIndex !== null ? blueprint.data[selectedIndex] : null;
+
+  const copyString = async () => {
+    if (!encoded) return;
+    try {
+      await navigator.clipboard.writeText(encoded);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
   const rememberHeader = debugComponent(PersistentCheckbox, {
     boxed: true,
     defaultChecked: remember,
@@ -407,77 +537,252 @@ export function BlueprintInspectorPage({
     },
   });
   const navigate = useNavigate();
-  return (
-    <section className="space-y-6">
-      <PageHeader title={title}>{description}</PageHeader>
-      {initialEncoded === undefined ? (
-        <FromSavedGame
-          onSelectFixture={loadTestBlueprint}
-          onSelectSavedBlueprint={(saveId, blueprintId) =>
-            navigate({
-              to: "/save/$saveId/blueprint/$blueprintId",
-              params: { saveId, blueprintId },
-            })
-          }
-        />
-      ) : null}
-      <SaveFileDropzone
-        onFile={handleSaveFile}
-        selection={droppedSave}
-        onSelect={(record) => droppedSave && loadSavedBlueprint(record, droppedSave.fileName)}
-      />
-      <BlueprintSubmissionPanel
-        encoded={encoded}
-        message={message}
-        rememberHeader={rememberHeader}
-        summary={summary}
-        blueprint={blueprint}
-        onEncodedChange={(value) => {
-          setEncoded(value);
-          if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, value);
+
+  if (blueprint && summary) {
+    return (
+      <AppWorkspaceShell
+        sidebarTitle={blueprint.name}
+        defaultSidebarCollapsed={!showMapSidebar}
+        onSidebarCollapsedChange={(collapsed) =>
+          writeStoredBoolean(SHOW_MAP_SIDEBAR_KEY, !collapsed)
+        }
+        sidebar={
+          <BlueprintInspectorSidebar
+            blueprint={blueprint}
+            summary={summary}
+            encoded={encoded}
+            selected={selectedStructure}
+            selectedIndex={selectedIndex}
+            preparedStructure={preparedStructure}
+            activeFilterCluster={activeFilterCluster}
+            matchingFiltersCount={activeFilterCluster ? matchingFiltersCount : undefined}
+            highlightMatchingFilters={highlightMatchingFilters}
+            onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
+            onClearSelection={() => setSelectedIndex(null)}
+            debugOptions={null}
+            onOpenImport={() => setImportOpen(true)}
+            onCopyString={() => void copyString()}
+            copied={copied}
+          />
+        }
+        statusBarProps={{
+          left: (
+            <span className="flex items-center gap-2 truncate">
+              <span className="font-semibold text-[var(--sd-color-primary,#ffe700)] truncate max-w-xs">
+                {blueprint.name}
+              </span>
+              <span className="text-[var(--sd-color-text-subtle,#808080)]">·</span>
+              <span>{blueprint.data.length} structures</span>
+              <span className="text-[var(--sd-color-text-subtle,#808080)]">·</span>
+              <span>
+                {summary.maxX - summary.minX + 1}×{summary.maxY - summary.minY + 1}
+              </span>
+              <span className="text-[var(--sd-color-text-subtle,#808080)]">·</span>
+              <span className="font-semibold text-yellow-400">{summary.format}</span>
+            </span>
+          ),
+          center: selectedStructure ? (
+            <span>
+              Selected: {structureLabel(selectedStructure.type)} ({selectedStructure.x},{" "}
+              {selectedStructure.y})
+            </span>
+          ) : (
+            <span>{message}</span>
+          ),
         }}
-        onClear={() => {
-          setEncoded("");
-          if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, "");
-        }}
-        onInspect={inspect}
-      />
-      {blueprint && summary ? (
-        mapReady ? (
+        overlays={
           <>
-            <div ref={mapPanelRef} className="scroll-mt-4">
-              <BlueprintMapPanel
-                blueprint={blueprint}
-                remember={remember}
-                blueprintKey={inspectedBlueprintKey}
-                showSidebar={showMapSidebar}
-                onShowSidebarChange={setShowMapSidebar}
-                showGrid={showGrid}
-                onShowGridChange={setShowGrid}
-                showPngBackground={showPngBackground}
-                onShowPngBackgroundChange={setShowPngBackground}
-                showFilters={showFilters}
-                onShowFiltersChange={setShowFilters}
-              />
-            </div>
-            <BlueprintStructuresPanel blueprint={blueprint} structureLabel={structureLabel} />
-          </>
-        ) : (
-          <div ref={mapPanelRef} className="scroll-mt-4">
-            <Panel
-              title="Blueprint map"
-              padded
-              className="flex min-h-80 items-center justify-center"
+            <GlobalFileDropOverlay onFileDrop={(file) => void handleSaveFile(file)} />
+            <Dialog
+              open={importOpen}
+              onClose={() => setImportOpen(false)}
+              title="Import Blueprint or Save"
             >
-              <div className="flex items-center gap-2.5 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
-                <Spinner size="small" />
-                <span>Rendering blueprint map…</span>
+              <div className="space-y-4 p-4">
+                {initialEncoded === undefined ? (
+                  <FromSavedGame
+                    onSelectFixture={(fixture) => {
+                      loadTestBlueprint(fixture);
+                      setImportOpen(false);
+                    }}
+                    onSelectSavedBlueprint={(saveId, blueprintId) => {
+                      setImportOpen(false);
+                      navigate({
+                        to: "/save/$saveId/blueprint/$blueprintId",
+                        params: { saveId, blueprintId },
+                      });
+                    }}
+                  />
+                ) : null}
+                <SaveFileDropzone
+                  onFile={(file) => {
+                    void handleSaveFile(file);
+                  }}
+                  selection={droppedSave}
+                  onSelect={(record) => {
+                    if (droppedSave) {
+                      loadSavedBlueprint(record, droppedSave.fileName);
+                      setImportOpen(false);
+                    }
+                  }}
+                />
+                <BlueprintSubmissionPanel
+                  encoded={encoded}
+                  message={message}
+                  rememberHeader={rememberHeader}
+                  summary={summary}
+                  blueprint={blueprint}
+                  onEncodedChange={(value) => {
+                    setEncoded(value);
+                    if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, value);
+                  }}
+                  onClear={() => {
+                    setEncoded("");
+                    if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, "");
+                  }}
+                  onInspect={() => {
+                    inspect();
+                    setImportOpen(false);
+                  }}
+                />
               </div>
-            </Panel>
+            </Dialog>
+          </>
+        }
+      >
+        {/* Floating Canvas View Controls */}
+        <div className="absolute top-3 left-3 z-30 flex items-center gap-2 rounded border border-slate-700/80 bg-slate-950/80 p-1.5 backdrop-blur shadow-md">
+          <Button
+            size="small"
+            variant="quiet"
+            onClick={() => setImportOpen(true)}
+            className="text-xs"
+          >
+            Change blueprint
+          </Button>
+        </div>
+
+        <div className="absolute bottom-1 left-3 z-30">
+          <ShortcutHelper>
+            <ShortcutHelperItem
+              hotkey={
+                <>
+                  <Keycap size="sm">{primaryModifierKey()}</Keycap>
+                  <span className="text-white/50">+</span>
+                  <Keycap size="sm">V</Keycap>
+                </>
+              }
+              label="Paste blueprint"
+            />
+          </ShortcutHelper>
+        </div>
+
+        {mapReady ? (
+          <BlueprintMap
+            blueprint={blueprint}
+            remember={remember}
+            blueprintKey={inspectedBlueprintKey}
+            showSidebar={showMapSidebar}
+            showGrid={showGrid}
+            showPngBackground={showPngBackground}
+            showFilters={showFilters}
+            fitPolicy={fitPolicy}
+            policySelection={policySelection}
+            onPolicySelectionChange={(selection) => {
+              setPolicySelection(selection);
+              writeStorageValue(POLICY_TESTER_SELECTION_KEY, selection);
+            }}
+            fullHeight
+            externalSidebar
+            selectedIndex={selectedIndex}
+            onSelectedIndexChange={setSelectedIndex}
+            highlightMatchingFilters={highlightMatchingFilters}
+            onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
+            viewportControlsExtra={
+              <>
+                <PersistentCheckbox
+                  boxed
+                  size="small"
+                  label="filters"
+                  storageKey={SHOW_FILTERS_KEY}
+                  defaultChecked={showFilters}
+                  onCheckedChange={setShowFilters}
+                />
+                <PersistentCheckbox
+                  boxed
+                  size="small"
+                  label="grid"
+                  storageKey={SHOW_GRID_KEY}
+                  defaultChecked={showGrid}
+                  onCheckedChange={setShowGrid}
+                />
+                <PersistentCheckbox
+                  boxed
+                  size="small"
+                  label="PNG: blue"
+                  storageKey={SHOW_PNG_BACKGROUND_KEY}
+                  defaultChecked={showPngBackground}
+                  onCheckedChange={setShowPngBackground}
+                />
+              </>
+            }
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-black">
+            <div className="flex items-center gap-2.5 font-mono text-xs text-[var(--sd-color-text-muted,#b6bcc1)]">
+              <Spinner size="small" />
+              <span>Rendering blueprint map…</span>
+            </div>
           </div>
-        )
-      ) : null}
-    </section>
+        )}
+      </AppWorkspaceShell>
+    );
+  }
+
+  return (
+    <AppWorkspaceShell
+      sidebarTitle="Blueprint Inspector"
+      statusBarProps={{ left: <span>{message}</span> }}
+      overlays={<GlobalFileDropOverlay onFileDrop={(file) => void handleSaveFile(file)} />}
+    >
+      <div className="flex h-full w-full overflow-y-auto p-6 md:p-10 justify-center">
+        <div className="w-full max-w-3xl space-y-6">
+          <PageHeader title={title}>{description}</PageHeader>
+          {initialEncoded === undefined ? (
+            <FromSavedGame
+              onSelectFixture={loadTestBlueprint}
+              onSelectSavedBlueprint={(saveId, blueprintId) =>
+                navigate({
+                  to: "/save/$saveId/blueprint/$blueprintId",
+                  params: { saveId, blueprintId },
+                })
+              }
+            />
+          ) : null}
+          <SaveFileDropzone
+            onFile={handleSaveFile}
+            selection={droppedSave}
+            onSelect={(record) => droppedSave && loadSavedBlueprint(record, droppedSave.fileName)}
+          />
+          <BlueprintSubmissionPanel
+            encoded={encoded}
+            message={message}
+            rememberHeader={rememberHeader}
+            summary={summary}
+            blueprint={blueprint}
+            onEncodedChange={(value) => {
+              setEncoded(value);
+              if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, value);
+            }}
+            onClear={() => {
+              setEncoded("");
+              if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, "");
+            }}
+            onInspect={inspect}
+          />
+        </div>
+      </div>
+    </AppWorkspaceShell>
   );
 }
 

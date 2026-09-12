@@ -6,6 +6,10 @@ import {
   createDragDepthTracker,
 } from "@sandustry/ui";
 import type { SaveExplorerCellInspection } from "@sandustry/save-core";
+import { useRef } from "react";
+import { stepZoomIn, stepZoomOut, wheelZoom } from "../utils/zoom";
+import { GlobalFileDropOverlay } from "./GlobalFileDropOverlay";
+import { MapViewportControls } from "./MapViewportControls";
 
 export { createDragDepthTracker };
 
@@ -74,44 +78,58 @@ export function SaveExplorerMapPanel({
   fitMap,
   onInspect,
 }: SaveExplorerMapPanelProps) {
+  const mapPanelRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <FileDropZone
-        accept=".save"
-        dragging={dragging}
-        onDraggingChange={onDraggingChange}
-        onFile={(file) => void onFile(file)}
-        inputRef={inputRef}
-        inputProps={{ className: "hidden" }}
-        className="flex min-h-20 items-center justify-center gap-4 border-b border-slate-800/90 bg-slate-900/45 p-4 transition-colors duration-150"
-        activeClassName="border-yellow-400/70 bg-amber-900/30"
-      >
-        <div className={`flex items-center gap-4 ${dragging ? "pointer-events-none" : ""}`}>
-          <Button type="button" variant="solid" onClick={onChooseFile} disabled={busy}>
-            {busy ? "Decoding…" : documentLoaded ? "Open another save" : "Choose save file"}
-          </Button>
-          <span className="text-xs text-slate-500">or drop a `.save` file</span>
+    <div
+      ref={mapPanelRef}
+      className="relative flex flex-1 h-full min-h-0 w-full flex-col overflow-hidden bg-black"
+    >
+      <GlobalFileDropOverlay containerRef={mapPanelRef} onFileDrop={(file) => void onFile(file)} />
+      {!documentLoaded ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-6">
+          <FileDropZone
+            accept=".save"
+            dragging={dragging}
+            onDraggingChange={onDraggingChange}
+            onFile={(file) => void onFile(file)}
+            inputRef={inputRef}
+            inputProps={{ className: "hidden" }}
+            className="flex w-full max-w-md flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-slate-800/90 bg-slate-950/70 p-8 text-center backdrop-blur transition-colors duration-150"
+            activeClassName="border-yellow-400/70 bg-amber-900/30"
+          >
+            <div
+              className={`flex flex-col items-center gap-3 ${dragging ? "pointer-events-none" : ""}`}
+            >
+              <div className="text-3xl">💾</div>
+              <div className="font-semibold text-slate-200">No save loaded</div>
+              <Button type="button" variant="solid" onClick={onChooseFile} disabled={busy}>
+                {busy ? "Decoding…" : "Choose save file"}
+              </Button>
+              <span className="text-xs text-slate-400">or drop a `.save` file to begin</span>
+            </div>
+          </FileDropZone>
         </div>
-      </FileDropZone>
+      ) : null}
       <div
         ref={mapFrameRef}
         tabIndex={0}
         role="region"
         aria-label="Save minimap viewport"
-        className="relative flex flex-1 min-h-[min(65vh,42rem)] items-center justify-center overflow-hidden bg-black p-4 [touch-action:none] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
+        className="relative flex flex-1 h-full min-h-0 w-full items-center justify-center overflow-hidden bg-black [touch-action:none] [overscroll-behavior:contain] focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
         onKeyDown={(event) => {
           if (!raster) return;
           if (event.key === "+" || event.key === "=") {
             event.preventDefault();
             onViewChange((current) => ({
               ...current,
-              scale: Math.min(8, current.scale * 1.25),
+              scale: stepZoomIn(current.scale, { max: 8 }),
             }));
           } else if (event.key === "-" || event.key === "_") {
             event.preventDefault();
             onViewChange((current) => ({
               ...current,
-              scale: Math.max(0.25, current.scale * 0.8),
+              scale: stepZoomOut(current.scale, { min: 0.25 }),
             }));
           } else if (event.key === "0" || event.key.toLowerCase() === "f") {
             event.preventDefault();
@@ -123,10 +141,7 @@ export function SaveExplorerMapPanel({
           const rect = event.currentTarget.getBoundingClientRect();
           const pointX = event.clientX - rect.left;
           const pointY = event.clientY - rect.top;
-          const nextScale = Math.max(
-            0.25,
-            Math.min(8, view.scale * (event.deltaY < 0 ? 1.15 : 0.87)),
-          );
+          const nextScale = wheelZoom(view.scale, event.deltaY, { min: 0.25, max: 8 });
           const mapX = (pointX - view.offsetX) / view.scale;
           const mapY = (pointY - view.offsetY) / view.scale;
           onViewChange({
@@ -197,46 +212,24 @@ export function SaveExplorerMapPanel({
           </div>
         )}
         {raster ? (
-          <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded border border-slate-600/85 bg-slate-950/80 p-2 font-mono text-[11px] text-slate-300 backdrop-blur-sm">
-            <Button
-              type="button"
-              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
-              onClick={() =>
-                onViewChange((current) => ({
-                  ...current,
-                  scale: Math.max(0.25, current.scale * 0.8),
-                }))
-              }
-              aria-label="Zoom out (-)"
-              title="Zoom out (-)"
-            >
-              −
-            </Button>
-            <span>{Math.round(view.scale * 100)}%</span>
-            <Button
-              type="button"
-              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
-              onClick={() =>
-                onViewChange((current) => ({
-                  ...current,
-                  scale: Math.min(8, current.scale * 1.25),
-                }))
-              }
-              aria-label="Zoom in (+)"
-              title="Zoom in (+)"
-            >
-              +
-            </Button>
-            <Button
-              type="button"
-              className="focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none"
-              onClick={fitMap}
-              aria-label="Fit to viewport (0 or F)"
-              title="Fit to viewport (0 or F)"
-            >
-              Fit
-            </Button>
-          </div>
+          <MapViewportControls
+            zoom={view.scale}
+            minZoom={0.25}
+            maxZoom={8}
+            onZoomIn={() =>
+              onViewChange((current) => ({
+                ...current,
+                scale: stepZoomIn(current.scale, { max: 8 }),
+              }))
+            }
+            onZoomOut={() =>
+              onViewChange((current) => ({
+                ...current,
+                scale: stepZoomOut(current.scale, { min: 0.25 }),
+              }))
+            }
+            onFit={fitMap}
+          />
         ) : null}
         {customCursor && hoverCell ? (
           <div

@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import { useEffect, type HTMLAttributes, type ReactNode } from "react";
 import cx from "clsx";
 import "../elements/dialog";
 
@@ -9,6 +9,7 @@ export type DialogProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   footer?: ReactNode;
   onClose?: () => void;
   closeOnBackdrop?: boolean;
+  closeOnEscape?: boolean;
 };
 
 export function Dialog({
@@ -18,19 +19,35 @@ export function Dialog({
   footer,
   onClose,
   closeOnBackdrop = true,
+  closeOnEscape = true,
   className = "",
   children,
   ...props
 }: DialogProps) {
+  useEffect(() => {
+    if (!open || !closeOnEscape || !onClose) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, closeOnEscape, onClose]);
+
   if (!open) return null;
 
   return (
     <sandustry-dialog
       open={open ? "" : undefined}
       title={typeof title === "string" ? title : undefined}
+      class="pointer-events-auto"
     >
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 pointer-events-auto"
         role="presentation"
         onMouseDown={(event) => {
           if (closeOnBackdrop && event.target === event.currentTarget) onClose?.();
@@ -42,7 +59,7 @@ export function Dialog({
           aria-modal="true"
           aria-label={typeof title === "string" ? title : undefined}
           className={cx(
-            "flex max-h-[80vh] w-full max-w-3xl flex-col overflow-hidden rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/95 text-[var(--sd-color-text,#e8eef5)] shadow-xl",
+            "flex max-h-[80vh] w-full max-w-3xl flex-col overflow-hidden rounded border border-[var(--sd-color-border,#2e2e2e)] bg-[var(--sd-color-surface,#222222)]/95 text-[var(--sd-color-text,#e8eef5)] shadow-xl pointer-events-auto",
             className,
           )}
         >

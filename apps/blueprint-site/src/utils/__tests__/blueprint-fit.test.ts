@@ -97,4 +97,23 @@ describe("blueprint initial-fit policies", () => {
     expect(result.zoom).toBe(0.25);
     expect(result.viewportHeight).toBe(502);
   });
+
+  test("uses the actual fixed viewport height when calculating zoom in Vault policy", () => {
+    // With 1200 content height and margin 48, fitHeight = 1296.
+    // In a tall 1000px viewport, 1000 / 1296 = 0.771 -> fits at zoom 0.75 if width allows.
+    // With 1800 viewportWidth, 1800 / 1296 = 1.38 -> width is not the constraint.
+    const result = solveInitialFit(
+      {
+        contentWidth: 1200,
+        contentHeight: 1200,
+        viewportWidth: 1800,
+        viewportHeight: 1000,
+        marginPx: 48,
+      },
+      FIT_POLICY_PRESETS.vault,
+    );
+
+    expect(result.zoom).toBe(0.75);
+    expect(result.viewportHeight).toBe(1000);
+  });
 });

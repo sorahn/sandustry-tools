@@ -10,6 +10,8 @@ import {
   structureShape,
   structureTopY,
   viewportHeightForWidth,
+  calculateMaxPan,
+  MAP_MIN_VISIBLE_PX,
 } from "../blueprint-map";
 import {
   clusterFilterStructures,
@@ -164,5 +166,60 @@ describe("blueprint map utilities", () => {
     const wallCluster = byIndex.get(3);
     expect(wallCluster).toBeDefined();
     expect(wallCluster).not.toBe(cluster1);
+  });
+
+  describe("calculateMaxPan", () => {
+    test("allows scrolling blueprint almost out of view when blueprint fits within viewport", () => {
+      // Content 800 unzoomed, viewport 1200, zoom 0.5 -> rendered size 400px (fits easily in 1200px viewport)
+      const content = 800;
+      const viewport = 1200;
+      const zoom = 0.5;
+      const maxPan = calculateMaxPan(content, viewport, zoom);
+
+      // maxPan = (1200 + 400 - 2 * 48) / (2 * 0.5) = 1504 / 1 = 1504
+      expect(maxPan).toBe(1504);
+
+      // Shift in screen pixels at maxPan:
+      const maxShiftPx = maxPan * zoom; // 752px
+      // When centered in viewport, center was at 600px.
+      // Left edge was at 600 - 200 = 400px. Right edge was at 600 + 200 = 800px.
+      // When panned to maxPan, right edge is at: 800 - 752 = 48px!
+      // Exactly MAP_MIN_VISIBLE_PX (48px) remains in view at the viewport edge.
+      const initialRightEdge = viewport / 2 + (content * zoom) / 2;
+      const pannedRightEdge = initialRightEdge - maxShiftPx;
+      expect(pannedRightEdge).toBe(MAP_MIN_VISIBLE_PX);
+    });
+
+    test("allows scrolling blueprint almost out of view when zoomed in", () => {
+      // Content 1600, viewport 1000, zoom 2 -> rendered size 3200px
+      const content = 1600;
+      const viewport = 1000;
+      const zoom = 2;
+      const maxPan = calculateMaxPan(content, viewport, zoom);
+
+      // maxPan = (1000 + 3200 - 96) / 4 = 4104 / 4 = 1026
+      expect(maxPan).toBe(1026);
+
+      const maxShiftPx = maxPan * zoom; // 2052px
+      const initialRightEdge = viewport / 2 + (content * zoom) / 2; // 500 + 1600 = 2100px
+      const pannedRightEdge = initialRightEdge - maxShiftPx; // 2100 - 2052 = 48px
+      expect(pannedRightEdge).toBe(MAP_MIN_VISIBLE_PX);
+    });
+
+    test("scales minVisible for tiny content so a fraction remains visible", () => {
+      // Content 40px at 1x zoom in 500px viewport. 25% of 40 = 10px (< 48px).
+      const maxPan = calculateMaxPan(40, 500, 1);
+      // minVisible = 10px. maxPan = (500 + 40 - 20) / 2 = 260
+      expect(maxPan).toBe(260);
+
+      const initialRight = 250 + 20; // 270
+      const pannedRight = initialRight - maxPan * 1; // 270 - 260 = 10px
+      expect(pannedRight).toBe(10);
+    });
+
+    test("returns 0 for non-positive zoom", () => {
+      expect(calculateMaxPan(100, 500, 0)).toBe(0);
+      expect(calculateMaxPan(100, 500, -1)).toBe(0);
+    });
   });
 });

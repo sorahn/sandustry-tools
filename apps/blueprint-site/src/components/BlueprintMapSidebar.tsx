@@ -41,6 +41,7 @@ export type BlueprintMapSidebarProps = {
   onClearSelection?: () => void;
   debugOptions: ReactNode;
   embedMode?: boolean;
+  className?: string;
 };
 
 function matterLabel(matterType?: number): string {
@@ -82,6 +83,7 @@ export function BlueprintMapSidebar({
   onClearSelection,
   debugOptions,
   embedMode = false,
+  className,
 }: BlueprintMapSidebarProps) {
   const entry = selected ? catalogEntry(selected.type) : undefined;
   const footprint = selected ? structureFootprint(selected) : { width: 4, height: 4 };
@@ -194,8 +196,9 @@ export function BlueprintMapSidebar({
   return (
     <aside
       className={cx(
-        "flex flex-col border-l border-slate-800 pl-4 text-xs text-slate-400",
-        embedMode && "max-h-screen overflow-x-hidden overflow-y-auto pt-4 pr-4",
+        "flex flex-col text-xs text-slate-400",
+        className ?? "border-l border-slate-800 p-4",
+        embedMode && "max-h-screen overflow-x-hidden overflow-y-auto",
       )}
     >
       {debugOptions}

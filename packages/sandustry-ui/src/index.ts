@@ -86,6 +86,12 @@ export {
 } from "./components/ColorPicker";
 export { Keycap, type KeycapProps } from "./components/Keycap";
 export {
+  ShortcutHelper,
+  ShortcutHelperItem,
+  type ShortcutHelperProps,
+  type ShortcutHelperItemProps,
+} from "./components/ShortcutHelper";
+export {
   ResourceAmount,
   CurrencyRow,
   CreditsIcon,
