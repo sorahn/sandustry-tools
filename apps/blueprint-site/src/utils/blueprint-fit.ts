@@ -52,7 +52,7 @@ export type FitResult = {
 };
 
 export const DEFAULT_FIT_POLICY: FitPolicy = {
-  geometry: { padding: 6, margin: 6 },
+  geometry: { padding: 4, margin: 6 },
   grid: { extendToViewport: true },
   viewport: {
     orientation: "landscape",
@@ -60,12 +60,12 @@ export const DEFAULT_FIT_POLICY: FitPolicy = {
       landscape: [MAP_VIEWPORT_ASPECT_WIDTH, MAP_VIEWPORT_ASPECT_HEIGHT],
       portrait: [MAP_VIEWPORT_ASPECT_HEIGHT, MAP_VIEWPORT_ASPECT_WIDTH],
     },
-    allowHeightGrowth: true,
+    allowHeightGrowth: false,
     neverShrinkHeight: true,
   },
   zoom: {
-    levels: [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4],
-    min: 0.25,
+    levels: [0.125, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4],
+    min: 0.125,
     max: 2,
     fallbackMax: 1,
     selection: "largest-fitting",
@@ -78,13 +78,13 @@ export const FIT_POLICY_PRESETS: Record<FitPolicyPreset, FitPolicy> = {
   default: DEFAULT_FIT_POLICY,
   vault: {
     ...DEFAULT_FIT_POLICY,
-    geometry: { ...DEFAULT_FIT_POLICY.geometry, padding: 4 },
+    geometry: { padding: 6, margin: 6 },
     grid: { extendToViewport: true },
-    viewport: { ...DEFAULT_FIT_POLICY.viewport, allowHeightGrowth: false },
+    viewport: { ...DEFAULT_FIT_POLICY.viewport, allowHeightGrowth: true },
     zoom: {
       ...DEFAULT_FIT_POLICY.zoom,
-      levels: [0.125, ...DEFAULT_FIT_POLICY.zoom.levels],
-      min: 0.125,
+      levels: [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4],
+      min: 0.25,
     },
   },
   test: {

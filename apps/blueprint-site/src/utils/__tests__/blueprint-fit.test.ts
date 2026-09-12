@@ -16,7 +16,7 @@ describe("blueprint initial-fit policies", () => {
         viewportHeight: 502,
         marginPx: 96,
       },
-      DEFAULT_FIT_POLICY,
+      FIT_POLICY_PRESETS.vault,
     );
 
     expect(result.zoom).toBe(0.5);
@@ -26,7 +26,7 @@ describe("blueprint initial-fit policies", () => {
 
   test("allows a policy to choose a different initial zoom strategy", () => {
     const widthFirstPolicy: FitPolicy = {
-      ...DEFAULT_FIT_POLICY,
+      ...FIT_POLICY_PRESETS.vault,
       zoom: {
         ...DEFAULT_FIT_POLICY.zoom,
         max: 1,
@@ -58,23 +58,24 @@ describe("blueprint initial-fit policies", () => {
         viewportHeight: 502,
         marginPx: 48,
       },
-      DEFAULT_FIT_POLICY,
+      FIT_POLICY_PRESETS.vault,
     );
 
     expect(result.zoom).toBe(1.5);
     expect(result.viewportHeight).toBeGreaterThan(502);
   });
 
-  test("exposes the legacy-equivalent policy as the default preset", () => {
+  test("exposes the current policy as the default preset", () => {
     expect(FIT_POLICY_PRESETS.default).toBe(DEFAULT_FIT_POLICY);
+    expect(DEFAULT_FIT_POLICY.geometry.padding).toBe(4);
     expect(DEFAULT_FIT_POLICY.grid?.extendToViewport).toBe(true);
   });
 
-  test("defines the Vault preset overrides", () => {
-    expect(FIT_POLICY_PRESETS.vault.geometry.padding).toBe(4);
+  test("preserves the historical Vault policy", () => {
+    expect(FIT_POLICY_PRESETS.vault.geometry.padding).toBe(6);
     expect(FIT_POLICY_PRESETS.vault.grid?.extendToViewport).toBe(true);
-    expect(FIT_POLICY_PRESETS.vault.zoom.levels[0]).toBe(0.125);
-    expect(FIT_POLICY_PRESETS.vault.viewport.allowHeightGrowth).toBe(false);
+    expect(FIT_POLICY_PRESETS.vault.zoom.levels[0]).toBe(0.25);
+    expect(FIT_POLICY_PRESETS.vault.viewport.allowHeightGrowth).toBe(true);
   });
 
   test("keeps the test policy aligned with the default policy", () => {
@@ -82,7 +83,7 @@ describe("blueprint initial-fit policies", () => {
     expect(FIT_POLICY_PRESETS.test).toEqual(DEFAULT_FIT_POLICY);
   });
 
-  test("fits the Vault policy to the fixed viewport height", () => {
+  test("fits the Vault policy with a growing viewport", () => {
     const result = solveInitialFit(
       {
         contentWidth: 1200,
@@ -94,11 +95,11 @@ describe("blueprint initial-fit policies", () => {
       FIT_POLICY_PRESETS.vault,
     );
 
-    expect(result.zoom).toBe(0.25);
-    expect(result.viewportHeight).toBe(502);
+    expect(result.zoom).toBe(0.5);
+    expect(result.viewportHeight).toBe(650);
   });
 
-  test("uses the actual fixed viewport height when calculating zoom in Vault policy", () => {
+  test("uses the aspect viewport height when calculating zoom in Vault policy", () => {
     // With 1200 content height and margin 48, fitHeight = 1296.
     // In a tall 1000px viewport, 1000 / 1296 = 0.771 -> fits at zoom 0.75 if width allows.
     // With 1800 viewportWidth, 1800 / 1296 = 1.38 -> width is not the constraint.
@@ -113,7 +114,7 @@ describe("blueprint initial-fit policies", () => {
       FIT_POLICY_PRESETS.vault,
     );
 
-    expect(result.zoom).toBe(0.75);
-    expect(result.viewportHeight).toBe(1000);
+    expect(result.zoom).toBe(1);
+    expect(result.viewportHeight).toBe(1298);
   });
 });

@@ -221,6 +221,7 @@ type BlueprintInspectorPageProps = {
   title?: string;
   description?: ReactNode;
   initialMessage?: string;
+  defaultPolicySelection?: "legacy" | FitPolicyPreset;
 };
 
 export function BlueprintInspectorPage({
@@ -237,6 +238,7 @@ export function BlueprintInspectorPage({
     </>
   ),
   initialMessage,
+  defaultPolicySelection = "default",
 }: BlueprintInspectorPageProps = {}) {
   const [remember, setRemember] = useState(
     () => readStorageValue(REMEMBER_BLUEPRINT_KEY) === "true",
@@ -260,7 +262,7 @@ export function BlueprintInspectorPage({
     if (stored && Object.prototype.hasOwnProperty.call(FIT_POLICY_PRESETS, stored)) {
       return stored as FitPolicyPreset;
     }
-    return "vault";
+    return defaultPolicySelection;
   });
   const fitPolicy = policySelection === "legacy" ? undefined : FIT_POLICY_PRESETS[policySelection];
   const [inspectedBlueprintKey, setInspectedBlueprintKey] = useState("");

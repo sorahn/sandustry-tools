@@ -94,6 +94,7 @@ export function VaultBlueprintInspectorPage() {
     <BlueprintInspectorPage
       initialEncoded={encoded}
       initialMessage={`Loaded “${blueprint.title}” from Sandustry Vault.`}
+      defaultPolicySelection="vault"
       title={`Vault blueprint #${blueprint.id}: ${blueprint.title}`}
       description={
         <>
