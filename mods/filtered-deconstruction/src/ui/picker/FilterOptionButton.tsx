@@ -6,7 +6,7 @@ const UIReact = sandkit.react ?? null;
 const optionClass = (selected: boolean) =>
   `flex-1 flex items-center gap-2 px-2 py-1.5 text-left w-full rounded border ${
     selected
-      ? "border-[#ffe700] bg-[#ffe700] bg-opacity-10"
+      ? "border-[#ffe700] bg-[#ffe700]"
       : "border-slate-700 hover:border-slate-500 bg-black bg-opacity-40 hover:bg-opacity-60"
   }`;
 
@@ -66,10 +66,14 @@ export const FilterOptionButton = ({
           style={{ backgroundColor: entry.color }}
         />
       )}
-      <span className={selected ? "text-xs text-[#ffe700]" : "text-xs text-slate-300"}>
+      <span className={selected ? "text-xs text-black font-semibold" : "text-xs text-slate-300"}>
         {entry.name}
       </span>
-      {description ? <span className="text-[10px] text-slate-500">{description}</span> : null}
+      {description ? (
+        <span className={selected ? "text-[10px] text-neutral-800" : "text-[10px] text-slate-500"}>
+          {description}
+        </span>
+      ) : null}
     </FocusableButton>
   );
 };

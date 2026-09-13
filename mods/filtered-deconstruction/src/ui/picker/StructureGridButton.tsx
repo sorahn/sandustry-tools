@@ -8,7 +8,6 @@ export const StructureGridButton = ({
   index = 0,
   filtered,
   isSelected,
-  isMultiSelected,
   onSelectSingle,
   onToggle,
   pickerId,
@@ -19,7 +18,6 @@ export const StructureGridButton = ({
   index?: number;
   filtered?: StructureEntry[];
   isSelected: boolean;
-  isMultiSelected: boolean;
   onSelectSingle: () => void;
   onToggle: () => void;
   pickerId: string;
@@ -53,7 +51,7 @@ export const StructureGridButton = ({
 
   const focusClass = api.ui.navigation.controllerFocusClass(focusable.focused);
   const containerClass = isSelected
-    ? "border-[#ffe700] bg-[#ffe700] bg-opacity-10"
+    ? "border-[#ffe700] bg-[#ffe700]"
     : "border-slate-700 hover:border-slate-500 bg-black bg-opacity-40 hover:bg-opacity-60";
 
   return (
@@ -63,8 +61,8 @@ export const StructureGridButton = ({
       <button
         type="button"
         className={`ml-2 flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-sm border text-[9px] font-bold ${
-          isMultiSelected
-            ? "border-[#ffe700] bg-[#ffe700] text-black"
+          isSelected
+            ? "border-black bg-black text-[#ffe700]"
             : "border-slate-600 text-transparent hover:border-slate-400"
         }`}
         onClick={(e) => {
@@ -110,14 +108,12 @@ export const StructureGridButton = ({
         )}
         <span
           className={`text-xs truncate transition-colors ${
-            isSelected ? "text-[#ffe700] font-medium" : "text-slate-300 group-hover:text-white"
+            isSelected ? "text-black font-semibold" : "text-slate-300 group-hover:text-white"
           }`}
         >
           {entry.name}
         </span>
-        {isSelected && !isMultiSelected && (
-          <span className="ml-auto text-[#ffe700] text-[10px]">✓</span>
-        )}
+        {isSelected && <span className="ml-auto text-black font-bold text-[10px] pr-0.5">✓</span>}
       </button>
     </div>
   );
