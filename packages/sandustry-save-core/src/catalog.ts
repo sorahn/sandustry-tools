@@ -2,17 +2,17 @@ import type { SaveExplorerCellKind } from "./model";
 
 const TERRAIN_NAMES: Readonly<Record<number, string>> = {
   2: "Dirt",
-  3: "Spore Soil",
+  3: "Sporemound",
   4: "Fog",
   5: "Jetpack Fog",
-  6: "Water Fog",
-  7: "Freezing Ice Soil",
+  6: "Water (Fog)",
+  7: "Frostbed",
   8: "Divider",
   9: "Grass",
   10: "Moss",
   11: "Gold Soil",
   12: "Petal",
-  13: "Lava Fog",
+  13: "Lava (Fog)",
   14: "Fluxite",
   15: "Block",
   16: "Sliding Block",
@@ -23,22 +23,38 @@ const TERRAIN_NAMES: Readonly<Record<number, string>> = {
   21: "Shaker Left",
   22: "Shaker Right",
   23: "Stone",
-  24: "Velocity Soaker",
+  24: "Kinetic Press",
   25: "Ice",
   26: "Grower",
   27: "Nascent Water",
-  28: "Sandium Soil",
-  29: "Obsidian",
+  28: "Redsoil",
+  29: "Scoria",
   30: "Crackstone",
   31: "Solidite",
   32: "Void Flower Soil",
-  35: "Earth",
-  38: "Crystal",
+  33: "Spreading Terrain",
+  34: "Sand2",
+  35: "Earth Strataform",
+  36: "Game of Life (R)",
+  37: "GoL (R)(H)",
+  38: "Mooncrystal",
+  39: "Sandstone",
   40: "Dune",
   41: "Limestone",
-  44: "Copper",
+  42: "Bedrock",
+  43: "Game of Life (S)",
+  44: "Copper Ore",
+  45: "Glass",
+  46: "Brittle Clay",
+  47: "Puff",
+  48: "Snow (Fog)",
+  49: "Blackrock",
+  50: "Florinol Soil",
   51: "Auralite Crystal",
   52: "Vine",
+  53: "Caldera",
+  54: "Shatterstone",
+  55: "Deepstone",
 };
 
 const ELEMENT_NAMES: Readonly<Record<number, string>> = {
@@ -46,22 +62,22 @@ const ELEMENT_NAMES: Readonly<Record<number, string>> = {
   2: "Particle",
   3: "Water",
   4: "Wet Sand",
-  5: "Sandium",
+  5: "Redsand",
   6: "Residue",
   7: "Gold",
-  8: "Gloom",
+  8: "Voidbloom",
   9: "Shake",
   10: "Steam",
   11: "Fire",
-  12: "Freezing Ice",
+  12: "Snow",
   13: "Flame",
   14: "Burnt Residue",
   15: "Seed",
   16: "Wet Seed",
   17: "Seedling",
-  18: "Petalium",
+  18: "Amethelis",
   19: "Lava",
-  20: "Basalt",
+  20: "Cinder",
 };
 
 const STRUCTURE_NAMES: Readonly<Record<string, string>> = {
@@ -84,7 +100,7 @@ const STRUCTURE_NAMES: Readonly<Record<string, string>> = {
   "17": "Filter Left",
   "18": "Filter Right",
   "19": "Sliding Foundation",
-  "20": "Velocity Soaker",
+  "20": "Kinetic Press",
   "21": "Planter Box",
   "22": "Sound Box",
   "23": "Pipe",
@@ -92,41 +108,57 @@ const STRUCTURE_NAMES: Readonly<Record<string, string>> = {
   "25": "Liquid Vent",
   "26": "Wall Light",
   "27": "Flux Emanator",
-  aurixiteCrystallizer: "Aurixite Crystallizer",
+  aurixiteCrystallizer: "Synthesizer",
   clearingFrameLeft: "Clearing Frame Left",
   clearingFrameRight: "Clearing Frame Right",
-  conveyorLeftMk2: "Conveyor Left Mk2",
-  conveyorRightMk2: "Conveyor Right Mk2",
+  coalGenerator: "Coal Generator",
+  conveyorLeftMk2: "Conveyor Left Mk.2",
+  conveyorRightMk2: "Conveyor Right Mk.2",
+  copperMold: "Copper Mold",
   critterFence: "Critter Fence",
-  electricityConnector: "Electricity Connector",
-  filterLeftMk2: "Filter Left Mk2",
-  filterRightMk2: "Filter Right Mk2",
-  heatCannonDown: "Heat Cannon Down",
-  heatCannonLeft: "Heat Cannon Left",
-  heatCannonRight: "Heat Cannon Right",
-  kineticFieldEmitter: "Kinetic Field Emitter",
-  kineticFieldEmitterDownRight: "Kinetic Field Emitter Down Right",
-  kineticFieldEmitterUp: "Kinetic Field Emitter Up",
-  kineticFieldEmitterUpRight: "Kinetic Field Emitter Up Right",
-  launcherLeftMk2: "Launcher Left Mk2",
-  launcherRightMk2: "Launcher Right Mk2",
-  launcherUpMk2: "Launcher Up Mk2",
+  earthStratacore: "Earth Stratacore",
+  electricityConnector: "Energy Connector",
+  fiftyFifty: "Harmonizer",
+  filterLeftMk2: "Advanced Filter Left",
+  filterRightMk2: "Advanced Filter Right",
+  goldBattery: "Florinol Battery",
+  heatCannonDown: "Pyro Dispenser Down",
+  heatCannonLeft: "Pyro Dispenser Left",
+  heatCannonRight: "Pyro Dispenser Right",
+  kineticFieldEmitter: "Aerokinetic Fan",
+  kineticFieldEmitterDownRight: "Aerokinetic Fan Down Right",
+  kineticFieldEmitterUp: "Aerokinetic Fan Up",
+  kineticFieldEmitterUpRight: "Aerokinetic Fan Up Right",
+  launcherLeftMk2: "Launcher Left Mk.2",
+  launcherRightMk2: "Launcher Right Mk.2",
+  launcherUpMk2: "Launcher Up Mk.2",
   powerBrick: "Power Brick",
-  quantumPortal: "Quantum Portal",
-  quantumPortalExit: "Quantum Portal Exit",
-  signalAnd: "Signal AND",
-  signalBuffer: "Signal Buffer",
+  quantumPortal: "Conveyor Portal",
+  quantumPortalExit: "Conveyor Portal Exit",
+  signalAnd: "AND Gate",
+  signalBuffer: "Buffer",
   signalButton: "Signal Button",
-  signalGate: "Signal Gate",
-  signalPulseSensor: "Signal Pulse Sensor",
+  signalGate: "Door",
+  signalLamp: "Signal Lamp",
+  signalNand: "NAND Gate",
+  signalNor: "NOR Gate",
+  signalNot: "NOT Gate",
+  signalOr: "OR Gate",
+  signalPresenceSensor: "Presence Sensor",
+  signalPulseSensor: "Pulse Sensor",
+  signalRepeater: "Repeater",
   signalSensor: "Signal Sensor",
-  signalToggle: "Signal Toggle",
+  signalSwitch: "Signal Switch",
+  signalToggle: "Toggle (T-FlipFlop)",
+  signalXnor: "XNOR Gate",
+  signalXor: "XOR Gate",
   smelter: "Smelter",
   snowmaker: "Snowmaker",
   steamTurbine: "Steam Turbine",
-  thermalRelay: "Thermal Relay",
-  thermodryer: "Thermodryer",
-  thermofroster: "Thermofroster",
+  swarmConsole: "Aura Extractor",
+  thermalRelay: "Thermal Buffer",
+  thermodryer: "Steam Dryer",
+  thermofroster: "Condenser",
   voidRift: "Void Rift",
 };
 
@@ -151,4 +183,36 @@ export function saveExplorerCellName(
   if (kind === "settled-element" || kind === "moving-element" || kind === "moving-particle")
     return saveExplorerElementName(type);
   return undefined;
+}
+
+/**
+ * Terrain IDs that have excavation requirement "indestructible" (cannot be dug or destroyed).
+ * 39: Sandstone
+ * 41: Limestone
+ * 42: Bedrock
+ * 49: Blackrock
+ * 55: Deepstone
+ */
+export const INDESTRUCTIBLE_TERRAIN_IDS: ReadonlySet<number> = new Set([39, 41, 42, 49, 55]);
+
+/** Returns true if the terrain type is indestructible. */
+export function isIndestructibleTerrain(type: number): boolean {
+  return INDESTRUCTIBLE_TERRAIN_IDS.has(type);
+}
+
+/**
+ * Returns true if a raw matrix cell value can be penetrated (i.e. is not indestructible terrain).
+ * Empty air (0), elements (liquids/powders >= 101 or objects), and destructible terrains are passable.
+ */
+export function isPassableMatrixValue(value: unknown): boolean {
+  if (typeof value === "number") {
+    if (value < 0) {
+      const type = Math.floor(-value / 10000);
+      return !INDESTRUCTIBLE_TERRAIN_IDS.has(type);
+    }
+    if (value >= 101) return true; // settled elements
+    return !INDESTRUCTIBLE_TERRAIN_IDS.has(value);
+  }
+  // null/undefined/0/objects (particles or moving elements) are passable
+  return true;
 }

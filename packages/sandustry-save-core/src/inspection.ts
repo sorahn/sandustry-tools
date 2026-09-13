@@ -22,11 +22,16 @@ export type SaveExplorerCellInspection = {
   structures?: Array<{ type: string | number; name?: string; x: number; y: number }>;
 };
 
+export type SaveExplorerInspectOptions = {
+  ignoreFog?: boolean;
+};
+
 /** Inspect a cell using the indexes prepared alongside minimap aggregation. */
 export function inspectPreparedSaveExplorerCell(
   prepared: PreparedSaveExplorerRenderState,
   mapX: number,
   mapY: number,
+  options?: SaveExplorerInspectOptions,
 ): SaveExplorerCellInspection | undefined {
   if (
     !Number.isSafeInteger(mapX) ||
@@ -41,6 +46,7 @@ export function inspectPreparedSaveExplorerCell(
   const worldX = mapX * prepared.cellSize;
   const worldY = mapY * prepared.cellSize;
   const fogValue = prepared.fog[index] ?? 0;
+  const revealed = fogValue === 255 || options?.ignoreFog === true;
   const inspection: SaveExplorerCellInspection = {
     mapX,
     mapY,
@@ -49,9 +55,9 @@ export function inspectPreparedSaveExplorerCell(
     width: Math.min(prepared.cellSize, prepared.worldWidth - worldX),
     height: Math.min(prepared.cellSize, prepared.worldHeight - worldY),
     fogValue,
-    revealed: fogValue === 255,
+    revealed,
   };
-  if (!inspection.revealed) return inspection;
+  if (!revealed) return inspection;
   const value = prepared.inspectionValues[index];
   if (value !== undefined && value !== 0) {
     inspection.kind = classifySaveExplorerMatrixValue(value);
@@ -126,6 +132,7 @@ export function inspectSaveExplorerCell(
   mapX: number,
   mapY: number,
   cellSize = 4,
+  options?: SaveExplorerInspectOptions,
 ): SaveExplorerCellInspection | undefined {
   const size = worldSize(save);
   const width = Math.ceil(size.width / cellSize);
@@ -134,6 +141,7 @@ export function inspectSaveExplorerCell(
   const worldX = mapX * cellSize;
   const worldY = mapY * cellSize;
   const fogValue = fogValueAt(save, mapX, mapY, width, height);
+  const revealed = fogValue === 255 || options?.ignoreFog === true;
   const inspection: SaveExplorerCellInspection = {
     mapX,
     mapY,
@@ -142,9 +150,9 @@ export function inspectSaveExplorerCell(
     width: Math.min(cellSize, size.width - worldX),
     height: Math.min(cellSize, size.height - worldY),
     fogValue,
-    revealed: fogValue === 255,
+    revealed,
   };
-  if (!inspection.revealed) return inspection;
+  if (!revealed) return inspection;
 
   for (let y = worldY; y < worldY + inspection.height; y++) {
     for (let x = worldX; x < worldX + inspection.width; x++) {

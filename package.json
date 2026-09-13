@@ -19,6 +19,8 @@
     "repo-rag:refresh-docs": "bun scripts/repo-rag/index.ts external refresh",
     "repo-rag:search": "bun scripts/repo-rag/index.ts search",
     "repo-rag:status": "bun scripts/repo-rag/index.ts status",
+    "seed": "bun scripts/generate-seed-minimaps.ts --force",
+    "seed:minimap": "bun scripts/generate-seed-minimaps.ts --force",
     "template:update": "node scripts/update-sandustry-mod-template.mjs",
     "test:integration:setup": "node scripts/test/setup-sandustry-integration.mjs",
     "test:integration:splitter": "SANDUSTRY_MOD=splitter node scripts/test/sandustry-integration.mjs",

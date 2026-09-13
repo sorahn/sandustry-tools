@@ -27,6 +27,7 @@ export type MinimapRenderOptions = {
   drawElements?: boolean;
   drawParticles?: boolean;
   drawFog?: boolean;
+  drawTerrainFog?: boolean;
   drawStructures?: boolean;
   drawWalls?: boolean;
   drawAuthorization?: boolean;
@@ -70,19 +71,21 @@ const DEFAULT_STRUCTURE_PALETTE: Readonly<Record<string, RgbaColor>> = {
   "16": [101, 240, 0, 255], // Collector (#65f000 in the game minimap)
 };
 
-const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
+export const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   // CellType values from the captured Sandustry enum.
   1: [186, 186, 186, 255], // Element fallback
   2: [105, 76, 43, 255], // Dirt
-  3: [90, 73, 53, 255], // Spore soil
+  3: [90, 73, 53, 255], // Sporemound
   4: [20, 25, 30, 255], // Fog fallback
   5: [45, 56, 63, 255], // Fog jetpack block
-  6: [72, 178, 214, 255], // Fog water
-  7: [195, 225, 240, 255], // Freezing ice soil
+  6: [80, 190, 255, 255], // Water (Fog) - aligned to Water
+  7: [195, 225, 240, 255], // Frostbed
   8: [100, 100, 100, 255], // Divider
   9: [83, 158, 54, 255], // Grass
   10: [66, 118, 62, 255], // Moss
   11: [176, 139, 59, 255], // Gold soil
+  12: [255, 105, 180, 255], // Petal (#ff69b4)
+  13: [255, 90, 54, 255], // Lava (Fog) - aligned to Lava
   14: [75, 162, 193, 255], // Fluxite
   15: [126, 126, 126, 255], // Block
   16: [150, 150, 150, 255], // Sliding block
@@ -91,36 +94,59 @@ const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   19: [229, 159, 24, 255], // Conveyor left
   20: [229, 159, 24, 255], // Conveyor right
   23: [112, 112, 112, 255], // Stone
-  24: [90, 90, 100, 255], // Velocity soaker
+  24: [90, 90, 100, 255], // Kinetic press
   25: [197, 232, 245, 255], // Ice
   26: [104, 168, 75, 255], // Grower
   27: [101, 181, 209, 255], // Nascent water
-  28: [117, 84, 44, 255], // Sandium soil
-  29: [67, 67, 76, 255], // Obsidian
+  28: [117, 84, 44, 255], // Redsoil
+  29: [67, 67, 76, 255], // Scoria
   30: [90, 86, 80, 255], // Crackstone
+  31: [224, 165, 16, 255], // Solidite (HSL 43, 87, 47 / #de9d10)
+  32: [77, 31, 122, 255], // Void flower soil (HSL 270, 60, 30)
+  33: [150, 50, 180, 255], // Spreading terrain
+  34: [180, 180, 50, 255], // Sand2
+  35: [107, 142, 35, 255], // Earth strataform
+  36: [0, 255, 0, 255], // Game of Life (R)
+  37: [0, 204, 204, 255], // GoL (R)(H)
+  38: [0, 148, 179, 255], // Mooncrystal (#0094b3)
+  39: [194, 187, 120, 255], // Sandstone (pattern base HSL 52, 43, 60)
   40: [240, 219, 117, 255], // Dune (terrain id resolved by Debug Lab)
   41: [255, 223, 0, 255], // Pyramid terrain core (#ffdf00 in the game minimap)
+  42: [34, 34, 34, 255], // Bedrock (#222222 / HSL 0, 0, 55)
+  43: [0, 255, 0, 255], // Game of Life (S)
+  44: [184, 115, 51, 255], // Copper ore (HSL 20, 60, 35 / #ffa500)
+  45: [25, 230, 128, 255], // Glass (HSL 150, 80, 50 / #19e680)
+  46: [74, 55, 40, 255], // Brittle clay (#4a3728)
+  47: [139, 115, 85, 255], // Puff (#8b7355)
+  48: [199, 235, 255, 255], // Snow (Fog) - aligned to Snow
+  49: [20, 20, 20, 255], // Blackrock (#141414)
+  50: [102, 51, 153, 255], // Florinol soil (HSL 270, 50, 40 / #339999)
+  51: [74, 64, 176, 255], // Auralite crystal (HSL 250, 60, 50 / #4a40b0)
+  52: [91, 206, 34, 255], // Vine (HSL 100, 72, 47)
+  53: [255, 72, 0, 255], // Caldera (HSL 17, 100, 50)
+  54: [182, 188, 193, 255], // Shatterstone (HSL 207, 8, 73 / #b6bcc1)
+  55: [24, 28, 32, 255], // Deepstone (HSL 210, 14, 11 / #181c20)
   // ElementType values are represented in the saved matrix as type + 100.
   101: [222, 190, 122, 255], // Sand
   102: [188, 188, 188, 255], // Particle
   103: [80, 190, 255, 255], // Water
   104: [177, 142, 104, 255], // Wet sand
-  105: [204, 65, 48, 255], // Sandium
+  105: [204, 65, 48, 255], // Redsand
   106: [123, 101, 83, 255], // Residue
   107: [255, 207, 54, 255], // Gold
-  108: [142, 32, 188, 255], // Gloom
+  108: [142, 32, 188, 255], // Voidbloom
   109: [194, 194, 194, 255], // Shake
   110: [221, 221, 238, 255], // Steam
   111: [255, 91, 28, 255], // Fire
-  112: [199, 235, 255, 255], // Freezing ice
+  112: [199, 235, 255, 255], // Snow
   113: [255, 125, 46, 255], // Flame
   114: [92, 63, 48, 255], // Burnt residue
   115: [133, 197, 83, 255], // Seed
   116: [116, 178, 72, 255], // Wet seed
   117: [91, 198, 93, 255], // Seedling
-  118: [240, 107, 187, 255], // Petalium
+  118: [240, 107, 187, 255], // Amethelis
   119: [255, 90, 54, 255], // Lava
-  120: [92, 92, 102, 255], // Basalt
+  120: [92, 92, 102, 255], // Cinder
 };
 
 function storeValue(payload: SaveGamePayload, path: string[]) {
@@ -417,7 +443,7 @@ export function composeSaveExplorerMinimap(
   const { width, height, terrainValues, settledElementValues, elementValues, particleValues } =
     prepared;
   const { fog, walls, authorization } = prepared;
-  const palette = options.palette || DEFAULT_PALETTE;
+  const palette = options.palette ? { ...DEFAULT_PALETTE, ...options.palette } : DEFAULT_PALETTE;
   const wallFallback = options.wallColor || [166, 166, 166, 255];
   const authorizationColor = options.authorizationColor || [255, 64, 192, 160];
   const pixels = new Uint8ClampedArray(width * height * 4);
@@ -429,13 +455,20 @@ export function composeSaveExplorerMinimap(
         copyColor(pixels, index * 4, SKY_COLOR);
     },
     matrix: () => {
+      const terrain = options.drawTerrain !== false;
+      const settledElement = options.drawSettledElements !== false;
+      const element = options.drawElements !== false;
+      const particle = options.drawParticles !== false;
+      const terrainFog = options.drawTerrainFog !== false;
       for (let index = 0; index < terrainValues.length; index++) {
-        const terrain = options.drawTerrain !== false;
-        const settledElement = options.drawSettledElements !== false;
-        const element = options.drawElements !== false;
-        const particle = options.drawParticles !== false;
-        if (terrain && terrainValues[index] !== 0)
-          copyColor(pixels, index * 4, colorForValue(terrainValues[index], palette));
+        if (terrain && terrainValues[index] !== 0) {
+          const tVal = terrainValues[index];
+          if (!terrainFog && (tVal === 4 || tVal === 5)) {
+            // Skip ambient terrain fog so open cave background remains visible
+          } else {
+            copyColor(pixels, index * 4, colorForValue(tVal, palette));
+          }
+        }
         if (settledElement && settledElementValues[index] !== 0)
           copyColor(
             pixels,

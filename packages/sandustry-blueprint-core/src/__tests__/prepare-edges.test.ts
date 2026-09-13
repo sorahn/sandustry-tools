@@ -367,4 +367,32 @@ describe("blueprint preparation edges", () => {
       foundationOutlinePath([prepared.preparedStructures[1]], 0, 0, 1, 8),
     );
   });
+
+  test("prefers zero-offset for already-normalized signal links in periodic structures", () => {
+    const blueprint = {
+      name: "3x3 Buffers",
+      data: [
+        { type: "signalBuffer", x: 0, y: 0 },
+        { type: "signalBuffer", x: 0, y: 4 },
+        { type: "signalBuffer", x: 0, y: 8 },
+        { type: "signalBuffer", x: 4, y: 0 },
+        { type: "signalBuffer", x: 4, y: 4 },
+        { type: "signalBuffer", x: 4, y: 8 },
+        { type: "signalBuffer", x: 8, y: 0 },
+        { type: "signalBuffer", x: 8, y: 4 },
+        { type: "signalBuffer", x: 8, y: 8 },
+      ],
+      // Link between buffer at (0, 4) and (4, 4)
+      signalLinks: [{ from: { x: 0, y: 4 }, to: { x: 4, y: 4 }, on: false }],
+    };
+
+    const prepared = prepareBlueprint(blueprint as any);
+    expect(prepared.signalCoordinateOffset).toEqual({ x: 0, y: 0 });
+    expect(prepared.preparedSignalLinks[0]).toMatchObject({
+      fromStructureIndex: 1, // (0, 4)
+      toStructureIndex: 4, // (4, 4)
+      fromPoint: { x: 1.5, y: 5.5 },
+      toPoint: { x: 5.5, y: 5.5 },
+    });
+  });
 });

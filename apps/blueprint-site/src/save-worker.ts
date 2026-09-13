@@ -25,7 +25,7 @@ export type SaveWorkerRequest =
       render?: MinimapRenderOptions;
     }
   | { id?: number; type: "render"; render?: MinimapRenderOptions }
-  | { id?: number; type: "inspect"; mapX: number; mapY: number }
+  | { id?: number; type: "inspect"; mapX: number; mapY: number; ignoreFog?: boolean }
   | { id?: number; type: "encode"; blueprintId: string };
 
 export type SaveWorkerResponse =
@@ -102,7 +102,9 @@ workerScope.onmessage = async ({ data }) => {
       workerScope.postMessage({
         id: data.id,
         type: "inspection",
-        inspection: inspectPreparedSaveExplorerCell(preparedRenderState, data.mapX, data.mapY),
+        inspection: inspectPreparedSaveExplorerCell(preparedRenderState, data.mapX, data.mapY, {
+          ignoreFog: data.ignoreFog,
+        }),
       });
       return;
     }
