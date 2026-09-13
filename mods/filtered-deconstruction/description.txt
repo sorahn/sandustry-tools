@@ -1,0 +1,9 @@
+Filtered Deconstruction is a structure-deletion tool with a multi-select whitelist filter.
+
+- Select single structures or check multiple structure types to deconstruct at once.
+- Use [No filter] to deconstruct all structures like the standard Demolisher.
+- Drag-select an area to deconstruct only matching structures within the bounding box.
+- Soft-matches all tiles inside the selection box and highlights targeted structures in red.
+- Press F while the tool is selected to open the structure filter picker.
+- Remembers your filter selection across tool switches and sessions.
+- Uses the game's native undo system (Ctrl+Z restores the entire selection).
