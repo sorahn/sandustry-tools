@@ -98,14 +98,34 @@ const asPoint = (value: unknown): Point | null => {
     : null;
 };
 
-const mouseCell = (state: SandustryEngineState): Point | null => {
-  const input = state.session.input as { mouse?: { cellPosition?: Point } } | undefined;
-  const mouse = input?.mouse;
-  return asPoint(mouse?.cellPosition);
+const mouseCell = (state?: SandustryEngineState | null): Point | null => {
+  const input = state?.session?.input as { mouse?: { cellPosition?: Point } } | undefined;
+  const fromInput = asPoint(input?.mouse?.cellPosition);
+  if (fromInput) return fromInput;
+  const fromApi = safe(() => api.input.getMouseCellPosition(), null as unknown as Point);
+  if (fromApi && Number.isFinite(fromApi.x) && Number.isFinite(fromApi.y)) {
+    return { x: Math.floor(fromApi.x), y: Math.floor(fromApi.y) };
+  }
+  return null;
 };
 
-const currentDrag = (state: SandustryEngineState): DragData | null => {
-  const data = state.session.action?.customData;
+const mouseWorld = (state?: SandustryEngineState | null): Point | null => {
+  const input = state?.session?.input as { mouse?: { worldPosition?: Point } } | undefined;
+  const fromInput = asPoint(input?.mouse?.worldPosition);
+  if (fromInput) return fromInput;
+  const fromApi = safe(() => api.input.getMousePositionAtWorld?.(), null as unknown as Point);
+  if (fromApi && Number.isFinite(fromApi.x) && Number.isFinite(fromApi.y)) {
+    return { x: fromApi.x, y: fromApi.y };
+  }
+  const cell = mouseCell(state);
+  return cell ? { x: cell.x * 4, y: cell.y * 4 } : null;
+};
+
+let activeDrag: DragData | null = null;
+
+const currentDrag = (state?: SandustryEngineState | null): DragData | null => {
+  if (activeDrag) return activeDrag;
+  const data = state?.session?.action?.customData;
   if (!data || typeof data !== "object") return null;
   const candidate = data as Partial<DragData>;
   const start = asPoint(candidate.start);
@@ -113,8 +133,12 @@ const currentDrag = (state: SandustryEngineState): DragData | null => {
   return start && end ? { start, end } : null;
 };
 
-const setDrag = (state: SandustryEngineState, drag: DragData | null): void => {
-  api.action?.setCustomData(drag ? { filteredDeconstruction: true, ...drag } : null);
+const setDrag = (state: SandustryEngineState | null, drag: DragData | null): void => {
+  activeDrag = drag;
+  safe(
+    () => api.action?.setCustomData(drag ? { filteredDeconstruction: true, ...drag } : null),
+    undefined,
+  );
 };
 
 const selectedTool = (): boolean => {
@@ -870,105 +894,322 @@ const removeAtPositions = (state: SandustryEngineState, positions: Point[]): voi
   for (const position of positions) publicRemove(position.x, position.y, { removeCells: true });
 };
 
-const commitDrag = (state: SandustryEngineState, drag: DragData): void => {
-  const minX = Math.min(drag.start.x, drag.end.x);
-  const maxX = Math.max(drag.start.x, drag.end.x);
-  const minY = Math.min(drag.start.y, drag.end.y);
-  const maxY = Math.max(drag.start.y, drag.end.y);
+const getDrawPosWorld = (state: SandustryEngineState, worldX: number, worldY: number): Point => {
+  if (typeof api.rendering?.getDrawPositionAtWorld === "function") {
+    const pos = api.rendering.getDrawPositionAtWorld(worldX, worldY);
+    return { x: pos.x, y: pos.y };
+  }
+  const camX = (state as any)?.session?.camera?.x ?? 0;
+  const camY = (state as any)?.session?.camera?.y ?? 0;
+  return { x: Math.round(worldX - camX), y: Math.round(worldY - camY) };
+};
 
-  const activeFilter = pickerState?.current ?? currentSelection();
-  const toRemove: Point[] = [];
+const getCapturedStructures = (
+  drag: DragData,
+  activeFilter: StructureSelection,
+): { origin: Point; bounds: { left: number; top: number; width: number; height: number } }[] => {
+  const minWorldX = Math.min(drag.start.x, drag.end.x);
+  const maxWorldX = Math.max(drag.start.x, drag.end.x);
+  const minWorldY = Math.min(drag.start.y, drag.end.y);
+  const maxWorldY = Math.max(drag.start.y, drag.end.y);
+
+  // In Sandustry, structures are aligned to 4-cell blocks (16x16 world pixels)
+  const minBlockX = Math.floor(minWorldX / 16);
+  const maxBlockX = Math.floor(maxWorldX / 16);
+  const minBlockY = Math.floor(minWorldY / 16);
+  const maxBlockY = Math.floor(maxWorldY / 16);
+
+  const captured: {
+    origin: Point;
+    bounds: { left: number; top: number; width: number; height: number };
+  }[] = [];
   const seen = new Set<string>();
+  const isPointClick = minWorldX === maxWorldX && minWorldY === maxWorldY;
 
-  for (let x = minX; x <= maxX; x++) {
-    for (let y = minY; y <= maxY; y++) {
-      const structure = api.structures.getAtCell(x, y);
-      if (structure && matchesFilter(structure, activeFilter)) {
-        const key = `${x},${y}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          toRemove.push({ x, y });
-        }
+  for (let bx = minBlockX; bx <= maxBlockX; bx++) {
+    for (let by = minBlockY; by <= maxBlockY; by++) {
+      const cx = bx * 4;
+      const cy = by * 4;
+      const structure = api.structures.getAtCell(cx, cy);
+      if (!structure) continue;
+
+      const originX = typeof (structure as any).x === "number" ? (structure as any).x : cx;
+      const originY = typeof (structure as any).y === "number" ? (structure as any).y : cy;
+      const key = `${originX},${originY}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const sLeft = originX * 4;
+      const sRight = sLeft + 16;
+      const sTop = originY * 4;
+      const sBottom = sTop + 16;
+
+      const intersects = isPointClick
+        ? sLeft <= minWorldX && sRight >= minWorldX && sTop <= minWorldY && sBottom >= minWorldY
+        : sLeft < maxWorldX && sRight > minWorldX && sTop < maxWorldY && sBottom > minWorldY;
+
+      if (intersects && matchesFilter(structure, activeFilter)) {
+        captured.push({
+          origin: { x: originX, y: originY },
+          bounds: { left: sLeft, top: sTop, width: 16, height: 16 },
+        });
       }
     }
   }
 
-  removeAtPositions(state, toRemove);
+  return captured;
+};
+
+const commitDrag = (state: SandustryEngineState, drag: DragData): void => {
+  const activeFilter = pickerState?.current ?? currentSelection();
+  const captured = getCapturedStructures(drag, activeFilter);
+  removeAtPositions(
+    state,
+    captured.map((c) => c.origin),
+  );
 };
 
 const drawPreview = (state: SandustryEngineState, drag: DragData): void => {
-  const rendering = internalApi.rendering;
-  if (!rendering?.withOverlayContext || !rendering.getCellDrawPos) return;
+  const minWorldX = Math.min(drag.start.x, drag.end.x);
+  const maxWorldX = Math.max(drag.start.x, drag.end.x);
+  const minWorldY = Math.min(drag.start.y, drag.end.y);
+  const maxWorldY = Math.max(drag.start.y, drag.end.y);
 
-  const metrics = rendering.getGridMetrics();
-  const cellSize = metrics.cellSize;
+  // Snapped grid bounds (16px per block)
+  const a = 16;
+  const startBlockX = Math.floor(drag.start.x / a);
+  const startBlockY = Math.floor(drag.start.y / a);
+  const endBlockX = Math.floor(drag.end.x / a);
+  const endBlockY = Math.floor(drag.end.y / a);
 
-  const minX = Math.min(drag.start.x, drag.end.x);
-  const maxX = Math.max(drag.start.x, drag.end.x);
-  const minY = Math.min(drag.start.y, drag.end.y);
-  const maxY = Math.max(drag.start.y, drag.end.y);
+  const snappedMinX = Math.min(startBlockX, endBlockX) * a;
+  const snappedMinY = Math.min(startBlockY, endBlockY) * a;
+  const snappedMaxX = (Math.max(startBlockX, endBlockX) + 1) * a;
+  const snappedMaxY = (Math.max(startBlockY, endBlockY) + 1) * a;
 
-  const drawMin = rendering.getCellDrawPos(state, minX, minY);
-  const drawMax = rendering.getCellDrawPos(state, maxX, maxY);
+  const topLeftSnapped = getDrawPosWorld(state, snappedMinX, snappedMinY);
+  const A = topLeftSnapped.x;
+  const w = topLeftSnapped.y;
+  const k = A + (snappedMaxX - snappedMinX);
+  const S = w + (snappedMaxY - snappedMinY);
 
-  const boxX = Math.min(drawMin.x, drawMax.x);
-  const boxY = Math.min(drawMin.y, drawMax.y);
-  const boxWidth = Math.abs(drawMax.x - drawMin.x) + cellSize;
-  const boxHeight = Math.abs(drawMax.y - drawMin.y) + cellSize;
+  // Free-moving drag rectangle
+  const topLeftFree = getDrawPosWorld(state, minWorldX, minWorldY);
+  const freeWidth = Math.max(1, Math.round(maxWorldX - minWorldX));
+  const freeHeight = Math.max(1, Math.round(maxWorldY - minWorldY));
+
+  const isMultiTile = startBlockX !== endBlockX || startBlockY !== endBlockY;
+  const bracketLength = 5;
 
   const activeFilter = pickerState?.current ?? currentSelection();
+  const captured = getCapturedStructures(drag, activeFilter);
 
-  rendering.withOverlayContext(state, (context) => {
+  const renderCallback = (context: CanvasRenderingContext2D) => {
     context.save();
 
-    // 1. Soft match all tiles inside the selection (subtle red wash)
-    context.fillStyle = "rgba(240, 40, 40, 0.08)";
-    context.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-    // 2. Red rectangle around absolute location of the drag box
-    context.strokeStyle = "rgba(245, 45, 45, 0.9)";
-    context.lineWidth = 1.5;
-    context.strokeRect(boxX + 0.5, boxY + 0.5, boxWidth - 1, boxHeight - 1);
-
-    // 3. Highlight the selected blocks that will be affected
-    context.lineWidth = 1;
-    for (let x = minX; x <= maxX; x++) {
-      for (let y = minY; y <= maxY; y++) {
-        const structure = api.structures.getAtCell(x, y);
-        if (structure && matchesFilter(structure, activeFilter)) {
-          const cellDraw = rendering.getCellDrawPos(state, x, y);
-          context.fillStyle = "rgba(235, 40, 40, 0.4)";
-          context.fillRect(cellDraw.x, cellDraw.y, cellSize, cellSize);
-          context.strokeStyle = "#ffe700";
-          context.strokeRect(cellDraw.x + 0.5, cellDraw.y + 0.5, cellSize - 1, cellSize - 1);
+    if (isMultiTile) {
+      // 1. Subtle tile grid lines for each 16px block in the snapped area
+      context.lineWidth = 1;
+      context.strokeStyle = "rgba(255, 0, 0, 0.08)";
+      context.beginPath();
+      for (let x = snappedMinX; x < snappedMaxX; x += a) {
+        const dx = Math.round(A + (x - snappedMinX));
+        for (let y = snappedMinY; y < snappedMaxY; y += a) {
+          const dy = Math.round(w + (y - snappedMinY));
+          context.rect(dx + 0.5, dy + 0.5, 15, 15);
         }
+      }
+      context.stroke();
+
+      // 2. Subtle outer stroke around the snapped region
+      context.lineWidth = 2;
+      context.strokeStyle = "rgba(255, 0, 0, 0.08)";
+      context.strokeRect(A, w, k - A, S - w);
+
+      // 3. Free-moving solid red rectangle following mouse freely
+      context.lineWidth = 2;
+      context.strokeStyle = "red";
+      context.strokeRect(topLeftFree.x, topLeftFree.y, freeWidth, freeHeight);
+
+      // 4. Red corner brackets on the outer snapped boundary (alpha 0.5)
+      context.save();
+      context.globalAlpha *= 0.5;
+      context.lineWidth = 2;
+      context.strokeStyle = "red";
+      context.beginPath();
+      context.moveTo(A, w + bracketLength);
+      context.lineTo(A, w);
+      context.lineTo(A + bracketLength, w);
+
+      context.moveTo(k - bracketLength, w);
+      context.lineTo(k, w);
+      context.lineTo(k, w + bracketLength);
+
+      context.moveTo(k, S - bracketLength);
+      context.lineTo(k, S);
+      context.lineTo(k - bracketLength, S);
+
+      context.moveTo(A + bracketLength, S);
+      context.lineTo(A, S);
+      context.lineTo(A, S - bracketLength);
+      context.stroke();
+      context.restore();
+    } else {
+      // Single tile: corner brackets with alpha 0.5
+      context.save();
+      context.globalAlpha *= 0.5;
+      context.lineWidth = 2;
+      context.strokeStyle = "red";
+      context.beginPath();
+      context.moveTo(A, w + bracketLength);
+      context.lineTo(A, w);
+      context.lineTo(A + bracketLength, w);
+
+      context.moveTo(k - bracketLength, w);
+      context.lineTo(k, w);
+      context.lineTo(k, w + bracketLength);
+
+      context.moveTo(k, S - bracketLength);
+      context.lineTo(k, S);
+      context.lineTo(k - bracketLength, S);
+
+      context.moveTo(A + bracketLength, S);
+      context.lineTo(A, S);
+      context.lineTo(A, S - bracketLength);
+      context.stroke();
+      context.restore();
+    }
+
+    // 5. Draw the red 'X' image on every captured structure matching the filter
+    const xImg = (state.session?.rendering as any)?.images?.x?.image as
+      | HTMLImageElement
+      | undefined;
+    for (const item of captured) {
+      const sDraw = getDrawPosWorld(state, item.bounds.left, item.bounds.top);
+      if (xImg && xImg.complete && xImg.naturalWidth > 0) {
+        context.drawImage(xImg, 0, 0, 16, 16, sDraw.x, sDraw.y, 16, 16);
+      } else {
+        context.strokeStyle = "red";
+        context.lineWidth = 1.5;
+        context.strokeRect(sDraw.x + 0.5, sDraw.y + 0.5, 15, 15);
+        context.beginPath();
+        context.moveTo(sDraw.x + 3, sDraw.y + 3);
+        context.lineTo(sDraw.x + 13, sDraw.y + 13);
+        context.moveTo(sDraw.x + 13, sDraw.y + 3);
+        context.lineTo(sDraw.x + 3, sDraw.y + 13);
+        context.stroke();
       }
     }
 
     context.restore();
-  });
+  };
+
+  if (typeof api.rendering?.withOverlayContext === "function") {
+    api.rendering.withOverlayContext(renderCallback);
+  } else if (typeof internalApi.rendering?.withOverlayContext === "function") {
+    internalApi.rendering.withOverlayContext(state, renderCallback);
+  }
+};
+
+const drawHover = (state: SandustryEngineState): void => {
+  const pos = mouseWorld(state);
+  if (!pos) return;
+
+  const a = 16;
+  const blockX = Math.floor(pos.x / a) * a;
+  const blockY = Math.floor(pos.y / a) * a;
+
+  const topLeft = getDrawPosWorld(state, blockX, blockY);
+  const A = topLeft.x;
+  const w = topLeft.y;
+  const k = A + 16;
+  const S = w + 16;
+  const bracketLength = 5;
+
+  const activeFilter = pickerState?.current ?? currentSelection();
+  const structure = api.structures.getAtCell(Math.floor(blockX / 4), Math.floor(blockY / 4));
+  const matches = structure && matchesFilter(structure, activeFilter);
+
+  const renderCallback = (context: CanvasRenderingContext2D) => {
+    context.save();
+    context.lineWidth = 2;
+    context.strokeStyle = "red";
+    context.beginPath();
+    context.moveTo(A, w + bracketLength);
+    context.lineTo(A, w);
+    context.lineTo(A + bracketLength, w);
+
+    context.moveTo(k - bracketLength, w);
+    context.lineTo(k, w);
+    context.lineTo(k, w + bracketLength);
+
+    context.moveTo(k, S - bracketLength);
+    context.lineTo(k, S);
+    context.lineTo(k - bracketLength, S);
+
+    context.moveTo(A + bracketLength, S);
+    context.lineTo(A, S);
+    context.lineTo(A, S - bracketLength);
+    context.stroke();
+
+    if (matches) {
+      const xImg = (state.session?.rendering as any)?.images?.x?.image as
+        | HTMLImageElement
+        | undefined;
+      const originX =
+        typeof (structure as any).x === "number" ? (structure as any).x : Math.floor(blockX / 4);
+      const originY =
+        typeof (structure as any).y === "number" ? (structure as any).y : Math.floor(blockY / 4);
+      const sDraw = getDrawPosWorld(state, originX * 4, originY * 4);
+      if (xImg && xImg.complete && xImg.naturalWidth > 0) {
+        context.drawImage(xImg, 0, 0, 16, 16, sDraw.x, sDraw.y, 16, 16);
+      } else {
+        context.strokeStyle = "red";
+        context.lineWidth = 1.5;
+        context.strokeRect(sDraw.x + 0.5, sDraw.y + 0.5, 15, 15);
+        context.beginPath();
+        context.moveTo(sDraw.x + 3, sDraw.y + 3);
+        context.lineTo(sDraw.x + 13, sDraw.y + 13);
+        context.moveTo(sDraw.x + 13, sDraw.y + 3);
+        context.lineTo(sDraw.x + 3, sDraw.y + 13);
+        context.stroke();
+      }
+    }
+
+    context.restore();
+  };
+
+  if (typeof api.rendering?.withOverlayContext === "function") {
+    api.rendering.withOverlayContext(renderCallback);
+  } else if (typeof internalApi.rendering?.withOverlayContext === "function") {
+    internalApi.rendering.withOverlayContext(state, renderCallback);
+  }
 };
 
 const handleAction = (state: SandustryEngineState): void => {
-  const actionState = state.session.action?.state;
-  const cell = mouseCell(state);
-  if (!cell) return;
+  const actionState = state.session?.action?.state;
+  const pos = mouseWorld(state);
+  if (!pos) return;
 
   if (actionState?.[ACTION_START]) {
-    setDrag(state, { start: cell, end: cell });
+    setDrag(state, { start: pos, end: pos });
     return;
   }
 
   const drag = currentDrag(state);
-  if (!drag) return;
 
   if (actionState?.[ACTION_ACTIVE]) {
-    setDrag(state, { start: drag.start, end: cell });
+    if (!drag) {
+      setDrag(state, { start: pos, end: pos });
+    } else {
+      setDrag(state, { start: drag.start, end: pos });
+    }
     return;
   }
 
   if (actionState?.[ACTION_END]) {
-    commitDrag(state, { start: drag.start, end: cell });
+    const finalDrag = drag ? { start: drag.start, end: pos } : { start: pos, end: pos };
+    commitDrag(state, finalDrag);
     setDrag(state, null);
   }
 };
@@ -983,9 +1224,16 @@ const registerItem = (): void => {
     sprite: { id: ITEM_SPRITE_ID, type: "backhand" },
     handleAction,
     afterRender: (state) => {
-      if (!selectedTool()) return;
+      if (!selectedTool()) {
+        if (activeDrag) setDrag(null, null);
+        return;
+      }
       const drag = currentDrag(state);
-      if (drag) drawPreview(state, drag);
+      if (drag) {
+        drawPreview(state, drag);
+      } else {
+        drawHover(state);
+      }
     },
   };
 
@@ -1000,7 +1248,7 @@ const registerItem = (): void => {
     category: "utility",
     handlers: {
       down: () => {
-        if (selectedTool()) api.action?.setCustomData(null);
+        if (selectedTool()) setDrag(null, null);
       },
     },
   });
@@ -1021,7 +1269,7 @@ const registerItem = (): void => {
   });
 
   api.events.on("action:changed", () => {
-    if (!selectedTool()) api.action?.setCustomData(null);
+    if (!selectedTool()) setDrag(null, null);
     syncPickerToSelectedAction();
   });
 
