@@ -69,6 +69,49 @@ export const deserializeSelection = (
   };
 };
 
+export const CATEGORY_ORDER: string[] = [
+  "logistics",
+  "production",
+  "blocks",
+  "economy",
+  "lighting",
+  "fluids",
+  "special",
+  "thermal",
+  "energy",
+  "logic",
+  "misc",
+];
+
+export const CATEGORY_TITLES: Record<string, string> = {
+  logistics: "Logistics",
+  production: "Production",
+  blocks: "Blocks",
+  economy: "Economy",
+  lighting: "Lighting",
+  fluids: "Fluids",
+  special: "Special",
+  thermal: "Thermal",
+  energy: "Energy",
+  logic: "Logic",
+  misc: "Misc",
+  testblocks: "Test Blocks",
+};
+
+export const normalizeCategoryKey = (categoryKey?: string, category?: string): string => {
+  const raw = categoryKey || category || "misc";
+  const str = String(raw).trim().toLowerCase();
+  if (str.startsWith("ui|management|category|")) {
+    return str.slice(23);
+  }
+  return str;
+};
+
+export const getCategoryTitle = (categoryKey?: string): string => {
+  const norm = normalizeCategoryKey(categoryKey);
+  return CATEGORY_TITLES[norm] || norm.charAt(0).toUpperCase() + norm.slice(1);
+};
+
 export const CATEGORY_COLORS: Record<string, string> = {
   logistics: "#38bdf8",
   production: "#f59e0b",

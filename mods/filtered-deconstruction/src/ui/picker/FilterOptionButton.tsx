@@ -40,7 +40,32 @@ export const FilterOptionButton = ({
       }}
       className={optionClass(selected)}
     >
-      <span className="w-3 h-3 flex-shrink-0 rounded-sm" style={{ backgroundColor: entry.color }} />
+      {entry.iconSrc ? (
+        <div
+          className="flex items-center justify-center flex-shrink-0 pointer-events-none overflow-hidden"
+          style={{ width: "16px", height: "16px" }}
+        >
+          <img
+            src={entry.iconSrc}
+            alt=""
+            draggable={false}
+            style={
+              entry.iconStyle || {
+                width: "16px",
+                height: "16px",
+                objectFit: "none",
+                objectPosition: "top left",
+                imageRendering: "pixelated",
+              }
+            }
+          />
+        </div>
+      ) : (
+        <span
+          className="w-3.5 h-3.5 flex-shrink-0 rounded-sm"
+          style={{ backgroundColor: entry.color }}
+        />
+      )}
       <span className={selected ? "text-xs text-[#ffe700]" : "text-xs text-slate-300"}>
         {entry.name}
       </span>

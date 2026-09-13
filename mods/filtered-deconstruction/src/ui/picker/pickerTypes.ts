@@ -1,3 +1,14 @@
+export type StructureIconStyle = {
+  width?: string;
+  height?: string;
+  objectFit: "none";
+  objectPosition: string;
+  imageRendering: "pixelated";
+  clipPath?: string;
+  transform?: string;
+  transformOrigin?: string;
+};
+
 export type StructureEntry = {
   id: string;
   type: number | string;
@@ -5,7 +16,11 @@ export type StructureEntry = {
   ids?: string[];
   name: string;
   categoryKey?: string;
+  categoryTitle?: string;
   color: string;
+  order?: number;
+  iconSrc?: string;
+  iconStyle?: StructureIconStyle;
 };
 
 export type StructureSelection = {

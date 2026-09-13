@@ -5,7 +5,7 @@ const UIReact = sandkit.react ?? null;
 
 export const StructureGridButton = ({
   entry,
-  index,
+  index = 0,
   filtered,
   isSelected,
   isMultiSelected,
@@ -13,31 +13,37 @@ export const StructureGridButton = ({
   onToggle,
   pickerId,
   scope,
+  neighbors,
 }: {
   entry: StructureEntry;
-  index: number;
-  filtered: StructureEntry[];
+  index?: number;
+  filtered?: StructureEntry[];
   isSelected: boolean;
   isMultiSelected: boolean;
   onSelectSingle: () => void;
   onToggle: () => void;
   pickerId: string;
   scope: string;
+  neighbors?: Record<string, string | undefined>;
 }) => {
   if (!UIReact) return null;
   const key = (value: StructureEntry) => `${pickerId}-struct-${value.id}`;
-  const column = index % 4;
+  const column = index % 3;
+  const defaultNeighbors = filtered
+    ? {
+        left: column > 0 ? key(filtered[index - 1]) : undefined,
+        right: column < 2 && filtered[index + 1] ? key(filtered[index + 1]) : undefined,
+        up: index >= 3 ? key(filtered[index - 3]) : `${pickerId}-no-filter`,
+        down: filtered[index + 3] ? key(filtered[index + 3]) : undefined,
+      }
+    : undefined;
+
   const focusable = api.ui.navigation.useFocusable({
     id: key(entry),
     scope,
     onActivate: onSelectSingle,
     scrollIntoView: true,
-    neighbors: {
-      left: column > 0 ? key(filtered[index - 1]) : undefined,
-      right: column < 3 && filtered[index + 1] ? key(filtered[index + 1]) : undefined,
-      up: index >= 4 ? key(filtered[index - 4]) : `${pickerId}-no-filter`,
-      down: filtered[index + 4] ? key(filtered[index + 4]) : undefined,
-    },
+    neighbors: neighbors ?? defaultNeighbors,
   });
 
   const select = () => {
@@ -76,10 +82,32 @@ export const StructureGridButton = ({
         onClick={select}
         className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left"
       >
-        <span
-          className="w-3 h-3 flex-shrink-0 rounded-sm"
-          style={{ backgroundColor: entry.color }}
-        />
+        {entry.iconSrc ? (
+          <div
+            className="flex items-center justify-center flex-shrink-0 pointer-events-none overflow-hidden"
+            style={{ width: "16px", height: "16px" }}
+          >
+            <img
+              src={entry.iconSrc}
+              alt=""
+              draggable={false}
+              style={
+                entry.iconStyle || {
+                  width: "16px",
+                  height: "16px",
+                  objectFit: "none",
+                  objectPosition: "top left",
+                  imageRendering: "pixelated",
+                }
+              }
+            />
+          </div>
+        ) : (
+          <span
+            className="w-3.5 h-3.5 flex-shrink-0 rounded-sm"
+            style={{ backgroundColor: entry.color }}
+          />
+        )}
         <span
           className={`text-xs truncate transition-colors ${
             isSelected ? "text-[#ffe700] font-medium" : "text-slate-300 group-hover:text-white"

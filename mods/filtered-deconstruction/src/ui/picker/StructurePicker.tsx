@@ -2,7 +2,9 @@ import {
   NO_FILTER_ENTRY,
   NO_FILTER_ID,
   NO_FILTER_SELECTION,
+  getCategoryTitle,
   isNoFilter,
+  normalizeCategoryKey,
 } from "../../structureCatalog";
 import { FilterOptionButton } from "./FilterOptionButton";
 import { FocusableButton } from "./FocusableButton";
@@ -30,7 +32,29 @@ const SelectedPills = ({ elements }: { elements: StructureEntry[] }) => (
     {elements.slice(0, 5).map((entry, idx) => (
       <div key={entry.id} className="flex items-center gap-1.5">
         {idx > 0 && <span className="text-slate-500">,</span>}
-        <span className="w-3 h-3 flex-shrink-0" style={{ backgroundColor: entry.color }} />
+        {entry.iconSrc ? (
+          <div
+            className="flex items-center justify-center flex-shrink-0 pointer-events-none overflow-hidden"
+            style={{ width: "14px", height: "14px" }}
+          >
+            <img
+              src={entry.iconSrc}
+              alt=""
+              draggable={false}
+              style={
+                entry.iconStyle || {
+                  width: "14px",
+                  height: "14px",
+                  objectFit: "none",
+                  objectPosition: "top left",
+                  imageRendering: "pixelated",
+                }
+              }
+            />
+          </div>
+        ) : (
+          <span className="w-3 h-3 flex-shrink-0" style={{ backgroundColor: entry.color }} />
+        )}
         <span className="text-white text-xs">{entry.name}</span>
       </div>
     ))}
@@ -80,6 +104,34 @@ export const StructurePicker = ({
     scrollIntoView: true,
   });
 
+  const normalizedQuery = query.trim().toLowerCase();
+  const filtered = UIReact.useMemo(
+    () =>
+      entries.filter(
+        (entry) =>
+          !normalizedQuery ||
+          entry.name.toLowerCase().includes(normalizedQuery) ||
+          entry.id.toLowerCase().includes(normalizedQuery),
+      ),
+    [entries, normalizedQuery],
+  );
+
+  const groups = UIReact.useMemo(() => {
+    const map = new Map<string, { categoryKey: string; title: string; items: StructureEntry[] }>();
+    for (const entry of filtered) {
+      const cat = normalizeCategoryKey(entry.categoryKey);
+      if (!map.has(cat)) {
+        map.set(cat, {
+          categoryKey: cat,
+          title: entry.categoryTitle || getCategoryTitle(cat),
+          items: [],
+        });
+      }
+      map.get(cat)!.items.push(entry);
+    }
+    return Array.from(map.values());
+  }, [filtered]);
+
   if (!picker) return null;
 
   if (picker.minimized) {
@@ -110,17 +162,46 @@ export const StructurePicker = ({
     );
   }
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const filtered = entries.filter(
-    (entry) =>
-      !normalizedQuery ||
-      entry.name.toLowerCase().includes(normalizedQuery) ||
-      entry.id.toLowerCase().includes(normalizedQuery),
-  );
-  const firstStructureId = filtered[0] ? `${pickerId}-struct-${filtered[0].id}` : undefined;
+  const firstStructureId = groups[0]?.items[0]
+    ? `${pickerId}-struct-${groups[0].items[0].id}`
+    : undefined;
 
   const selectedIdSet = new Set(isNoFilter(picker.current) ? [] : picker.current.ids);
   const isMulti = selectedIdSet.size > 1;
+
+  const key = (entry: StructureEntry) => `${pickerId}-struct-${entry.id}`;
+
+  const getNeighbors = (groupIdx: number, itemIdx: number, group: { items: StructureEntry[] }) => {
+    const column = itemIdx % 3;
+    const row = Math.floor(itemIdx / 3);
+
+    const left = column > 0 ? key(group.items[itemIdx - 1]) : undefined;
+    const right =
+      column < 2 && itemIdx + 1 < group.items.length ? key(group.items[itemIdx + 1]) : undefined;
+
+    let up: string | undefined;
+    if (row > 0) {
+      up = key(group.items[itemIdx - 3]);
+    } else if (groupIdx === 0) {
+      up = `${pickerId}-no-filter`;
+    } else {
+      const prevGroup = groups[groupIdx - 1];
+      const prevLastRowStart = Math.floor((prevGroup.items.length - 1) / 3) * 3;
+      const targetIdx = Math.min(prevLastRowStart + column, prevGroup.items.length - 1);
+      up = key(prevGroup.items[targetIdx]);
+    }
+
+    let down: string | undefined;
+    if (itemIdx + 3 < group.items.length) {
+      down = key(group.items[itemIdx + 3]);
+    } else if (groupIdx + 1 < groups.length) {
+      const nextGroup = groups[groupIdx + 1];
+      const targetIdx = Math.min(column, nextGroup.items.length - 1);
+      down = key(nextGroup.items[targetIdx]);
+    }
+
+    return { left, right, up, down };
+  };
 
   return (
     <div
@@ -174,50 +255,70 @@ export const StructurePicker = ({
           />
         </div>
 
-        {filtered.length ? (
-          <div className="grid grid-cols-4 gap-1.5 py-1.5">
-            {filtered.map((entry, index) => {
-              const isSelected = selectedIdSet.has(entry.id);
-              const isMultiSelected = isMulti && isSelected;
-              return (
-                <StructureGridButton
-                  key={entry.id}
-                  entry={entry}
-                  index={index}
-                  filtered={filtered}
-                  isSelected={isSelected}
-                  isMultiSelected={isMultiSelected}
-                  onSelectSingle={() => {
-                    onClose({
-                      ids: [entry.id],
-                      types: [entry.type],
-                      entries: [entry],
-                    });
+        {groups.length ? (
+          <div className="flex flex-col gap-3 py-1.5">
+            {groups.map((group, groupIdx) => (
+              <div key={group.categoryKey} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span className="text-xs font-semibold text-slate-200 tracking-wide uppercase text-[11px]">
+                    {group.title}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">{group.items.length}</span>
+                </div>
+                <div
+                  className="grid gap-1.5"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                    gap: "6px",
                   }}
-                  onToggle={() => {
-                    let nextEntries: StructureEntry[];
-                    if (isSelected) {
-                      nextEntries = picker.current.entries.filter((e) => e.id !== entry.id);
-                    } else {
-                      nextEntries = isNoFilter(picker.current)
-                        ? [entry]
-                        : [...picker.current.entries, entry];
-                    }
-                    if (nextEntries.length === 0) {
-                      onUpdate(NO_FILTER_SELECTION);
-                    } else {
-                      onUpdate({
-                        ids: nextEntries.map((e) => e.id),
-                        types: nextEntries.map((e) => e.type),
-                        entries: nextEntries,
-                      });
-                    }
-                  }}
-                  pickerId={pickerId}
-                  scope={scope}
-                />
-              );
-            })}
+                >
+                  {group.items.map((entry, itemIdx) => {
+                    const isSelected = selectedIdSet.has(entry.id);
+                    const isMultiSelected = isMulti && isSelected;
+                    const neighbors = getNeighbors(groupIdx, itemIdx, group);
+                    return (
+                      <StructureGridButton
+                        key={entry.id}
+                        entry={entry}
+                        index={itemIdx}
+                        neighbors={neighbors}
+                        isSelected={isSelected}
+                        isMultiSelected={isMultiSelected}
+                        onSelectSingle={() => {
+                          onClose({
+                            ids: [entry.id],
+                            types: [entry.type],
+                            entries: [entry],
+                          });
+                        }}
+                        onToggle={() => {
+                          let nextEntries: StructureEntry[];
+                          if (isSelected) {
+                            nextEntries = picker.current.entries.filter((e) => e.id !== entry.id);
+                          } else {
+                            nextEntries = isNoFilter(picker.current)
+                              ? [entry]
+                              : [...picker.current.entries, entry];
+                          }
+                          if (nextEntries.length === 0) {
+                            onUpdate(NO_FILTER_SELECTION);
+                          } else {
+                            onUpdate({
+                              ids: nextEntries.map((e) => e.id),
+                              types: nextEntries.map((e) => e.type),
+                              entries: nextEntries,
+                            });
+                          }
+                        }}
+                        pickerId={pickerId}
+                        scope={scope}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="py-8 text-center text-slate-600">
