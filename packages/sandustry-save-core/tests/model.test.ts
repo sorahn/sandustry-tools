@@ -15,13 +15,16 @@ import {
 } from "../src/index";
 
 test("resolves known first-party catalog names", () => {
-  expect(saveExplorerTerrainName(44)).toBe("Copper");
+  expect(saveExplorerTerrainName(44)).toBe("Copper Ore");
+  expect(saveExplorerTerrainName(28)).toBe("Redsoil");
   expect(saveExplorerTerrainName(54)).toBe("Shatterstone");
   expect(saveExplorerTerrainName(99)).toBeUndefined();
+  expect(saveExplorerElementName(5)).toBe("Redsand");
   expect(saveExplorerElementName(19)).toBe("Lava");
   expect(saveExplorerElementName(33)).toBeUndefined();
   expect(saveExplorerStructureName(16)).toBe("Collector");
-  expect(saveExplorerStructureName("signalAnd")).toBe("Signal AND");
+  expect(saveExplorerStructureName(20)).toBe("Kinetic Press");
+  expect(saveExplorerStructureName("signalAnd")).toBe("AND Gate");
 });
 
 test("classifies terrain, settled elements, moving elements, and particles", () => {

@@ -74,17 +74,17 @@ const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   // CellType values from the captured Sandustry enum.
   1: [186, 186, 186, 255], // Element fallback
   2: [105, 76, 43, 255], // Dirt
-  3: [90, 73, 53, 255], // Spore soil
+  3: [90, 73, 53, 255], // Sporemound
   4: [20, 25, 30, 255], // Fog fallback
   5: [45, 56, 63, 255], // Fog jetpack block
-  6: [72, 178, 214, 255], // Fog water
-  7: [195, 225, 240, 255], // Freezing ice soil
+  6: [80, 190, 255, 255], // Water (Fog) - aligned to Water
+  7: [195, 225, 240, 255], // Frostbed
   8: [100, 100, 100, 255], // Divider
   9: [83, 158, 54, 255], // Grass
   10: [66, 118, 62, 255], // Moss
   11: [176, 139, 59, 255], // Gold soil
   12: [255, 105, 180, 255], // Petal (#ff69b4)
-  13: [178, 34, 34, 255], // Lava fog (#b22222)
+  13: [255, 90, 54, 255], // Lava (Fog) - aligned to Lava
   14: [75, 162, 193, 255], // Fluxite
   15: [126, 126, 126, 255], // Block
   16: [150, 150, 150, 255], // Sliding block
@@ -93,12 +93,12 @@ const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   19: [229, 159, 24, 255], // Conveyor left
   20: [229, 159, 24, 255], // Conveyor right
   23: [112, 112, 112, 255], // Stone
-  24: [90, 90, 100, 255], // Velocity soaker
+  24: [90, 90, 100, 255], // Kinetic press
   25: [197, 232, 245, 255], // Ice
   26: [104, 168, 75, 255], // Grower
   27: [101, 181, 209, 255], // Nascent water
-  28: [117, 84, 44, 255], // Sandium soil
-  29: [67, 67, 76, 255], // Obsidian
+  28: [117, 84, 44, 255], // Redsoil
+  29: [67, 67, 76, 255], // Scoria
   30: [90, 86, 80, 255], // Crackstone
   31: [224, 165, 16, 255], // Solidite (HSL 43, 87, 47 / #de9d10)
   32: [77, 31, 122, 255], // Void flower soil (HSL 270, 60, 30)
@@ -117,7 +117,7 @@ const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   45: [25, 230, 128, 255], // Glass (HSL 150, 80, 50 / #19e680)
   46: [74, 55, 40, 255], // Brittle clay (#4a3728)
   47: [139, 115, 85, 255], // Puff (#8b7355)
-  48: [173, 216, 230, 255], // Freezing ice fog (#add8e6)
+  48: [199, 235, 255, 255], // Snow (Fog) - aligned to Snow
   49: [20, 20, 20, 255], // Blackrock (#141414)
   50: [102, 51, 153, 255], // Florinol soil (HSL 270, 50, 40 / #339999)
   51: [74, 64, 176, 255], // Auralite crystal (HSL 250, 60, 50 / #4a40b0)
@@ -130,22 +130,22 @@ const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   102: [188, 188, 188, 255], // Particle
   103: [80, 190, 255, 255], // Water
   104: [177, 142, 104, 255], // Wet sand
-  105: [204, 65, 48, 255], // Sandium
+  105: [204, 65, 48, 255], // Redsand
   106: [123, 101, 83, 255], // Residue
   107: [255, 207, 54, 255], // Gold
-  108: [142, 32, 188, 255], // Gloom
+  108: [142, 32, 188, 255], // Voidbloom
   109: [194, 194, 194, 255], // Shake
   110: [221, 221, 238, 255], // Steam
   111: [255, 91, 28, 255], // Fire
-  112: [199, 235, 255, 255], // Freezing ice
+  112: [199, 235, 255, 255], // Snow
   113: [255, 125, 46, 255], // Flame
   114: [92, 63, 48, 255], // Burnt residue
   115: [133, 197, 83, 255], // Seed
   116: [116, 178, 72, 255], // Wet seed
   117: [91, 198, 93, 255], // Seedling
-  118: [240, 107, 187, 255], // Petalium
+  118: [240, 107, 187, 255], // Amethelis
   119: [255, 90, 54, 255], // Lava
-  120: [92, 92, 102, 255], // Basalt
+  120: [92, 92, 102, 255], // Cinder
 };
 
 function storeValue(payload: SaveGamePayload, path: string[]) {

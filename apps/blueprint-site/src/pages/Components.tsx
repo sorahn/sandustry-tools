@@ -139,8 +139,8 @@ const colorGroups: ColorGroup[] = [
     colors: [
       { name: "Danger", value: "#ef4444", use: "status" },
       { name: "Lava", value: "#ff3300", use: "element" },
-      { name: "Lava Fog", value: "#b22222", use: "terrain" },
-      { name: "Sandium Soil", value: "#8b0000", use: "terrain" },
+      { name: "Lava (Fog)", value: "#ff5a36", use: "terrain" },
+      { name: "Redsoil", value: "#8b0000", use: "terrain" },
     ],
   },
   {
@@ -170,17 +170,17 @@ const colorGroups: ColorGroup[] = [
     colors: [
       { name: "Ice", value: "#afeeee", use: "terrain" },
       { name: "Water", value: "#1e90ff", use: "element" },
-      { name: "Water Fog", value: "#4682b4", use: "terrain" },
+      { name: "Water (Fog)", value: "#50beff", use: "terrain" },
       { name: "Pyronol", value: "#3050c8", use: "element" },
       { name: "Coolant", value: "#0033aa", use: "element" },
     ],
   },
   {
     name: "Magenta",
-    description: "Petalium, prism, fluxite, and void materials",
+    description: "Amethelis, prism, fluxite, and void materials",
     colors: [
       { name: "Prismaline", value: "#ff99cc", use: "element" },
-      { name: "Petalium", value: "#cc5cdb", use: "element" },
+      { name: "Amethelis", value: "#cc5cdb", use: "element" },
       { name: "Purple", value: "#9966ff", use: "status" },
       { name: "Void Seeds", value: "#9932cc", use: "element" },
       { name: "Fluxite", value: "#8a2be2", use: "terrain" },
@@ -190,11 +190,11 @@ const colorGroups: ColorGroup[] = [
     name: "Cyan",
     description: "Steam, freezing materials, crystal, and information",
     colors: [
-      { name: "Freezing Ice", value: "#e0ffff", use: "element" },
-      { name: "Freezing Ice Soil", value: "#add8e6", use: "terrain" },
+      { name: "Snow", value: "#e0ffff", use: "element" },
+      { name: "Frostbed", value: "#add8e6", use: "terrain" },
       { name: "Info", value: "#00ffff", use: "status" },
       { name: "Void Petal", value: "#00ced1", use: "element" },
-      { name: "Crystal", value: "#0094b3", use: "terrain" },
+      { name: "Mooncrystal", value: "#0094b3", use: "terrain" },
     ],
   },
   {
