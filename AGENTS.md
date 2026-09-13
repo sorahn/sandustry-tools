@@ -3,7 +3,7 @@
 ## Source of truth
 
 - The Obsidian Kanban board at Boards/Sandustry Board.md owns active
-  priorities, status, plans, and completion state.
+  priorities, status, plans, and completion state. Connect with it via MCP.
 - Research notes under Sandustry/Notes/ are living technical context.
 
 Create or update a board card for work involving multiple implementation areas,
