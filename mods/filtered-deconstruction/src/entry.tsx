@@ -1289,6 +1289,23 @@ const registerItem = (): void => {
   } catch (error) {
     noop(error);
   }
+
+  if (typeof api.hooks?.intercept === "function") {
+    try {
+      const unhook = api.hooks.intercept(
+        "input:escape",
+        (_data: unknown, control: { cancel: () => void }) => {
+          if (pickerState && !pickerState.minimized) {
+            minimizePicker();
+            control.cancel();
+          }
+        },
+      );
+      if (typeof unhook === "function") onDispose(unhook);
+    } catch (error) {
+      noop(error);
+    }
+  }
 };
 
 const ensureSingleInventoryItem = (): void => {

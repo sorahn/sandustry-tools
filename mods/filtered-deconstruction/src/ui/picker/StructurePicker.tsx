@@ -108,6 +108,22 @@ export const StructurePicker = ({
   UIReact.useEffect(() => onRegisterRepaint(bump), [bump, onRegisterRepaint]);
 
   UIReact.useEffect(() => {
+    if (!picker || picker.minimized) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.code === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        onMinimize();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [picker?.minimized, onMinimize]);
+
+  UIReact.useEffect(() => {
     if (picker && !picker.minimized) {
       setQuery("");
     }

@@ -23,7 +23,12 @@ export const SearchInput = ({
       maxLength={64}
       onChange={(event) => onChange(event.target.value)}
       onKeyDown={(event) => {
-        if (event.key === "Escape") onEscape();
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          event.nativeEvent?.stopImmediatePropagation?.();
+          onEscape();
+        }
       }}
       className="w-full bg-black bg-opacity-60 border border-slate-700 px-3 py-1.5 rounded text-xs text-white placeholder-slate-600 focus:outline-none focus:border-slate-500 transition-colors"
     />
