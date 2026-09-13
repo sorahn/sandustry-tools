@@ -573,8 +573,26 @@ function coordinateOffset(
 ): BlueprintCoordinate {
   const signalLinks = blueprint.signalLinks ?? [];
   if (!signalLinks.length || !blueprint.data.length) return { x: 0, y: 0 };
+
+  const matchesOffset = (ox: number, oy: number) => {
+    for (const link of signalLinks) {
+      if (
+        !structureMap.has(`${link.from.x - ox},${link.from.y - oy}`) ||
+        !structureMap.has(`${link.to.x - ox},${link.to.y - oy}`)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Prefer (0, 0) if signal links are already normalized to structure coordinates.
+  if (matchesOffset(0, 0)) {
+    return { x: 0, y: 0 };
+  }
+
   const first = signalLinks[0].from;
-  const testedOffsets = new Set<string>();
+  const testedOffsets = new Set<string>(["0,0"]);
   for (const structure of blueprint.data) {
     const ox = first.x - structure.x;
     const oy = first.y - structure.y;
@@ -582,17 +600,7 @@ function coordinateOffset(
     if (testedOffsets.has(key)) continue;
     testedOffsets.add(key);
 
-    let allMatch = true;
-    for (const link of signalLinks) {
-      if (
-        !structureMap.has(`${link.from.x - ox},${link.from.y - oy}`) ||
-        !structureMap.has(`${link.to.x - ox},${link.to.y - oy}`)
-      ) {
-        allMatch = false;
-        break;
-      }
-    }
-    if (allMatch) {
+    if (matchesOffset(ox, oy)) {
       return { x: ox, y: oy };
     }
   }
