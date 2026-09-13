@@ -88,6 +88,22 @@ test("inspects revealed minimap cells without exposing fogged contents", () => {
   expect(inspectPreparedSaveExplorerCell(prepareSaveExplorerRenderState(save), 1, 0)).toEqual(
     inspectSaveExplorerCell(save, 1, 0),
   );
+  expect(inspectSaveExplorerCell(save, 1, 0, 4, { ignoreFog: true })).toMatchObject({
+    mapX: 1,
+    mapY: 0,
+    fogValue: 0,
+    revealed: true,
+  });
+  expect(
+    inspectPreparedSaveExplorerCell(prepareSaveExplorerRenderState(save), 1, 0, {
+      ignoreFog: true,
+    }),
+  ).toMatchObject({
+    mapX: 1,
+    mapY: 0,
+    fogValue: 0,
+    revealed: true,
+  });
 });
 
 const fixture = (name: string) => Bun.file(new URL(`./visual/saves/${name}`, import.meta.url));

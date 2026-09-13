@@ -106,6 +106,7 @@ export {
   inspectSaveExplorerCell,
   inspectPreparedSaveExplorerCell,
   type SaveExplorerCellInspection,
+  type SaveExplorerInspectOptions,
 } from "./inspection";
 
 export {

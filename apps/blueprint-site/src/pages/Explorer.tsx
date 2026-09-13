@@ -612,6 +612,9 @@ export function SaveExplorerPage() {
           drawAuthorization: next.authorization,
         },
       });
+      if (hoverCellRef.current) {
+        queueInspect(hoverCellRef.current.mapX, hoverCellRef.current.mapY);
+      }
     }
   };
 
@@ -625,7 +628,12 @@ export function SaveExplorerPage() {
       if (!cell) return;
       const reqId = nextRequestIdRef.current++;
       latestInspectIdRef.current = reqId;
-      workerRef.current?.postMessage({ id: reqId, type: "inspect", ...cell });
+      workerRef.current?.postMessage({
+        id: reqId,
+        type: "inspect",
+        ...cell,
+        ignoreFog: !layersRef.current.fog,
+      });
     });
   };
 
