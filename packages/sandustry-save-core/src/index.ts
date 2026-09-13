@@ -229,6 +229,7 @@ export function decodeDamagedTerrainValue(value: number): DamagedTerrainValue | 
 }
 
 export {
+  DEFAULT_PALETTE,
   FOG_COLOR,
   MINIMAP_CELL_SIZE,
   SKY_COLOR,

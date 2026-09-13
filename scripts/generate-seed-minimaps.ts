@@ -128,6 +128,8 @@ function parseArgs(args: string[]) {
   let surfaceOnly = false;
   let excludeEdgeMargin = 0;
   let ranking: "underground" | "total" = "underground";
+  let maxFullHeightShafts = 2;
+  let fullHeightThresholdTiles = 950;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -171,6 +173,10 @@ function parseArgs(args: string[]) {
     } else if (arg.startsWith("--ranking=")) {
       const val = arg.slice(10);
       if (val === "underground" || val === "total") ranking = val;
+    } else if (arg.startsWith("--max-full-height=")) {
+      maxFullHeightShafts = Number.parseInt(arg.slice(18), 10);
+    } else if (arg.startsWith("--full-height-threshold=")) {
+      fullHeightThresholdTiles = Number.parseInt(arg.slice(24), 10);
     } else if (!arg.startsWith("-")) {
       if (existsSync(resolve(arg))) {
         seedsPath = arg;
@@ -200,6 +206,8 @@ function parseArgs(args: string[]) {
     surfaceOnly,
     excludeEdgeMargin,
     ranking,
+    maxFullHeightShafts,
+    fullHeightThresholdTiles,
   };
 }
 
@@ -216,6 +224,8 @@ export async function runBatchGenerate(options: {
   surfaceOnly?: boolean;
   excludeEdgeMargin?: number;
   ranking?: "underground" | "total";
+  maxFullHeightShafts?: number;
+  fullHeightThresholdTiles?: number;
 }): Promise<BatchGenerateResult> {
   const {
     seeds,
@@ -230,6 +240,8 @@ export async function runBatchGenerate(options: {
     surfaceOnly = false,
     excludeEdgeMargin = 0,
     ranking = "underground",
+    maxFullHeightShafts = 2,
+    fullHeightThresholdTiles = 950,
   } = options;
   mkdirSync(outDir, { recursive: true });
 
@@ -299,6 +311,8 @@ export async function runBatchGenerate(options: {
             surfaceOnly,
             excludeEdgeMargin,
             ranking,
+            maxFullHeightShafts,
+            fullHeightThresholdTiles,
           });
           hellevators = scanResult.shafts;
           console.log(formatHellevatorTable(scanResult));

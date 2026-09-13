@@ -27,6 +27,7 @@ export type MinimapRenderOptions = {
   drawElements?: boolean;
   drawParticles?: boolean;
   drawFog?: boolean;
+  drawTerrainFog?: boolean;
   drawStructures?: boolean;
   drawWalls?: boolean;
   drawAuthorization?: boolean;
@@ -70,7 +71,7 @@ const DEFAULT_STRUCTURE_PALETTE: Readonly<Record<string, RgbaColor>> = {
   "16": [101, 240, 0, 255], // Collector (#65f000 in the game minimap)
 };
 
-const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
+export const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   // CellType values from the captured Sandustry enum.
   1: [186, 186, 186, 255], // Element fallback
   2: [105, 76, 43, 255], // Dirt
@@ -442,7 +443,7 @@ export function composeSaveExplorerMinimap(
   const { width, height, terrainValues, settledElementValues, elementValues, particleValues } =
     prepared;
   const { fog, walls, authorization } = prepared;
-  const palette = options.palette || DEFAULT_PALETTE;
+  const palette = options.palette ? { ...DEFAULT_PALETTE, ...options.palette } : DEFAULT_PALETTE;
   const wallFallback = options.wallColor || [166, 166, 166, 255];
   const authorizationColor = options.authorizationColor || [255, 64, 192, 160];
   const pixels = new Uint8ClampedArray(width * height * 4);
@@ -454,13 +455,20 @@ export function composeSaveExplorerMinimap(
         copyColor(pixels, index * 4, SKY_COLOR);
     },
     matrix: () => {
+      const terrain = options.drawTerrain !== false;
+      const settledElement = options.drawSettledElements !== false;
+      const element = options.drawElements !== false;
+      const particle = options.drawParticles !== false;
+      const terrainFog = options.drawTerrainFog !== false;
       for (let index = 0; index < terrainValues.length; index++) {
-        const terrain = options.drawTerrain !== false;
-        const settledElement = options.drawSettledElements !== false;
-        const element = options.drawElements !== false;
-        const particle = options.drawParticles !== false;
-        if (terrain && terrainValues[index] !== 0)
-          copyColor(pixels, index * 4, colorForValue(terrainValues[index], palette));
+        if (terrain && terrainValues[index] !== 0) {
+          const tVal = terrainValues[index];
+          if (!terrainFog && (tVal === 4 || tVal === 5)) {
+            // Skip ambient terrain fog so open cave background remains visible
+          } else {
+            copyColor(pixels, index * 4, colorForValue(tVal, palette));
+          }
+        }
         if (settledElement && settledElementValues[index] !== 0)
           copyColor(
             pixels,

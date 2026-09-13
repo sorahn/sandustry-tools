@@ -50,6 +50,10 @@ export interface HellevatorScanOptions {
   ranking?: "underground" | "total";
   /** Optional border margin in cells to exclude from the left/right map edges (default: 0). */
   excludeEdgeMargin?: number;
+  /** Maximum number of full-height shafts (> fullHeightThresholdTiles) to select before forcing shorter shafts (default: 2). */
+  maxFullHeightShafts?: number;
+  /** Tile length threshold to define a "full-height" shaft (default: 950 tiles = 3800 cells). */
+  fullHeightThresholdTiles?: number;
 }
 
 export interface HellevatorScanResult {
@@ -114,10 +118,21 @@ export function scanHellevatorShafts(
     clusterDistance: options.clusterDistance ?? 32,
     ranking: options.ranking ?? "underground",
     excludeEdgeMargin: options.excludeEdgeMargin ?? 0,
+    maxFullHeightShafts: options.maxFullHeightShafts ?? 2,
+    fullHeightThresholdTiles: options.fullHeightThresholdTiles ?? 950,
   };
 
-  const { minWidth, minLength, topK, surfaceOnly, clusterDistance, ranking, excludeEdgeMargin } =
-    resolvedOptions;
+  const {
+    minWidth,
+    minLength,
+    topK,
+    surfaceOnly,
+    clusterDistance,
+    ranking,
+    excludeEdgeMargin,
+    maxFullHeightShafts,
+    fullHeightThresholdTiles,
+  } = resolvedOptions;
 
   const totalCells = width * height;
   const passable = new Uint8Array(totalCells);
@@ -334,7 +349,49 @@ export function scanHellevatorShafts(
     return a.startX - b.startX;
   });
 
-  const finalShafts = selectedShafts.slice(0, topK);
+  // Separate full-height shafts (> fullHeightThresholdTiles) from shorter interior shafts.
+  // For full-height shafts, prioritize the widest corridors found across the entire map.
+  const fullShafts: HellevatorShaft[] = [];
+  const shorterShafts: HellevatorShaft[] = [];
+
+  for (const shaft of selectedShafts) {
+    if (shaft.tileLength > fullHeightThresholdTiles) {
+      fullShafts.push(shaft);
+    } else {
+      shorterShafts.push(shaft);
+    }
+  }
+
+  // Sort full-height shafts primarily by width descending, breaking ties with underground/total depth
+  fullShafts.sort((a, b) => {
+    if (b.width !== a.width) {
+      return b.width - a.width;
+    }
+    const depthA = ranking === "underground" ? a.undergroundDepth : a.length;
+    const depthB = ranking === "underground" ? b.undergroundDepth : b.length;
+    if (depthB !== depthA) {
+      return depthB - depthA;
+    }
+    return a.startX - b.startX;
+  });
+
+  // Select up to maxFullHeightShafts from the widest full-height shafts, then fill
+  // remaining slots from the best shorter interior shafts.
+  const finalShafts: HellevatorShaft[] = [];
+  const fullToTake = fullShafts.slice(0, maxFullHeightShafts);
+  finalShafts.push(...fullToTake);
+
+  const remainingNeeded = topK - finalShafts.length;
+  if (remainingNeeded > 0) {
+    finalShafts.push(...shorterShafts.slice(0, remainingNeeded));
+  }
+
+  // If we still haven't reached topK (e.g. fewer shorter shafts exist on the map),
+  // backfill with any remaining full-height shafts (widest first).
+  if (finalShafts.length < topK) {
+    const remainingFull = fullShafts.slice(maxFullHeightShafts);
+    finalShafts.push(...remainingFull.slice(0, topK - finalShafts.length));
+  }
 
   // Compute composition only for the top finalists
   for (const shaft of finalShafts) {

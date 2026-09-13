@@ -246,3 +246,23 @@ test("uses persisted custom structure colors before representative colors", () =
   } as SaveGameDocument;
   expect([...renderMinimapRgba(save).pixels.slice(0, 4)]).toEqual([255, 128, 0, 255]);
 });
+
+test("skips terrain fog when drawTerrainFog is false", () => {
+  const save = {
+    metadata: { id: "fixture" },
+    payload: {
+      store: { world: { size: { width: 4, height: 4 } }, structures: [] },
+      matrix: [4, 16], // Fog (terrain 4) across entire world
+    },
+    compressedPayloadBytes: 1,
+    decompressedPayloadBytes: 1,
+  } as SaveGameDocument;
+
+  // With default drawTerrainFog (true), renders Fog color [20, 25, 30, 255]
+  expect([...renderMinimapRgba(save).pixels.slice(0, 4)]).toEqual([20, 25, 30, 255]);
+
+  // With drawTerrainFog: false, skips Fog and leaves background SKY_COLOR
+  expect([...renderMinimapRgba(save, { drawTerrainFog: false }).pixels.slice(0, 4)]).toEqual([
+    ...SKY_COLOR,
+  ]);
+});

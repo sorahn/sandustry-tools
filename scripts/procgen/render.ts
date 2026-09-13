@@ -87,18 +87,46 @@ export interface TerrainMinimapOptions extends MinimapRenderOptions {
 }
 
 /**
+ * Default procgen palette overrides.
+ * Uses Option B (Deep Scrim Blue: [30, 80, 102, 255]) for cavern fog to cleanly distinguish
+ * open subterranean chambers from pitch-black bedrock without looking like bright daylight sky.
+ */
+export const DEFAULT_PROCGEN_PALETTE: Readonly<
+  Record<number, readonly [number, number, number, number]>
+> = {
+  4: [30, 80, 102, 255], // Fog (Deep Scrim Blue)
+  5: [30, 80, 102, 255], // Jetpack Fog
+};
+
+/**
+ * Backup / alternative palette: Option D (Cool Mist Grey: [70, 82, 92, 255]).
+ */
+export const COOL_MIST_FOG_PALETTE: Readonly<
+  Record<number, readonly [number, number, number, number]>
+> = {
+  4: [70, 82, 92, 255],
+  5: [70, 82, 92, 255],
+};
+
+/**
  * Renders a SaveGameDocument (including synthetic procgen saves) directly to a PNG buffer.
- * Disables fog by default for pure terrain visibility.
+ * Renders cavern fog with Deep Scrim Blue by default for clear separation from bedrock and sky.
  */
 export function renderTerrainMinimapPng(
   document: SaveGameDocument,
   options: TerrainMinimapOptions = {},
 ): { png: Buffer; width: number; height: number } {
-  const { highlightShafts, maxHighlights, ...renderOptions } = options;
+  const { highlightShafts, maxHighlights, palette, ...renderOptions } = options;
+  const mergedPalette = {
+    ...DEFAULT_PROCGEN_PALETTE,
+    ...palette,
+  };
   const raster = renderMinimapRgba(document, {
     drawFog: false,
+    drawTerrainFog: true,
     drawWalls: false,
     drawAuthorization: false,
+    palette: mergedPalette,
     ...renderOptions,
   });
 

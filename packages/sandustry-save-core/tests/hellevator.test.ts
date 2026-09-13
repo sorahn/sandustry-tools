@@ -170,3 +170,94 @@ test("scans hellevator shafts in real world save (new-world.save)", async () => 
   expect(top1.rank).toBe(1);
   expect(top1.undergroundDepth).toBeGreaterThan(1000);
 });
+
+test("limits full-height shafts to 2 by default and selects the widest of all full-height shafts", () => {
+  // Height 4000 cells (1000 tiles).
+  // 5 full-height corridors of length 3900 cells (975 tiles > 950 tiles):
+  //   Corridor 0: x=0..3   (width 4)
+  //   Corridor 1: x=8..11  (width 4)
+  //   Corridor 2: x=16..27 (width 12) -> should be Rank 1
+  //   Corridor 3: x=32..35 (width 4)
+  //   Corridor 4: x=40..47 (width 8)  -> should be Rank 2
+  // 3 shorter corridors of length 2000, 1600, 1200 cells (all <= 950 tiles):
+  //   Corridor 5: x=52..55, y=1000..2999 (len 2000 = 500t) -> should be Rank 3
+  //   Corridor 6: x=60..63, y=1000..2599 (len 1600 = 400t) -> should be Rank 4
+  //   Corridor 7: x=68..71, y=1000..2199 (len 1200 = 300t) -> should be Rank 5
+  // All other cells are Bedrock (42)
+  const width = 80;
+  const height = 4000;
+  const grid = new Int32Array(width * height);
+  grid.fill(42); // Bedrock by default
+
+  const carve = (startX: number, w: number, startY: number, endY: number) => {
+    for (let y = startY; y <= endY; y++) {
+      for (let dx = 0; dx < w; dx++) {
+        grid[y * width + startX + dx] = 2; // Dirt
+      }
+    }
+  };
+
+  // Carve 5 full-height shafts
+  carve(0, 4, 0, 3899); // w=4
+  carve(8, 4, 0, 3899); // w=4
+  carve(16, 12, 0, 3899); // w=12 (widest)
+  carve(32, 4, 0, 3899); // w=4
+  carve(40, 8, 0, 3899); // w=8 (2nd widest)
+
+  // Carve 3 shorter shafts
+  carve(52, 4, 1000, 2999); // len 2000 = 500t
+  carve(60, 4, 1000, 2599); // len 1600 = 400t
+  carve(68, 4, 1000, 2199); // len 1200 = 300t
+
+  // Encode RLE
+  const matrix: number[] = [];
+  let cur = grid[0];
+  let count = 1;
+  for (let i = 1; i < grid.length; i++) {
+    if (grid[i] === cur) {
+      count++;
+    } else {
+      matrix.push(cur, count);
+      cur = grid[i];
+      count = 1;
+    }
+  }
+  matrix.push(cur, count);
+
+  const result = scanHellevatorShafts(
+    { matrix, width, height },
+    {
+      minWidth: 4,
+      minLength: 100,
+      topK: 5,
+      clusterDistance: 2,
+      ranking: "total",
+    },
+  );
+
+  expect(result.shafts.length).toBe(5);
+
+  // Ranks 1 and 2 must be the 2 WIDEST full-height shafts (width 12 at x=16 and width 8 at x=40)
+  expect(result.shafts[0].rank).toBe(1);
+  expect(result.shafts[0].tileLength).toBeGreaterThan(950);
+  expect(result.shafts[0].startX).toBe(16);
+  expect(result.shafts[0].width).toBe(12);
+
+  expect(result.shafts[1].rank).toBe(2);
+  expect(result.shafts[1].tileLength).toBeGreaterThan(950);
+  expect(result.shafts[1].startX).toBe(40);
+  expect(result.shafts[1].width).toBe(8);
+
+  // Ranks 3, 4, 5 MUST all be forced to be the shorter shafts (<= 950 tiles)
+  expect(result.shafts[2].rank).toBe(3);
+  expect(result.shafts[2].tileLength).toBe(500); // len 2000 / 4
+  expect(result.shafts[2].startX).toBe(52);
+
+  expect(result.shafts[3].rank).toBe(4);
+  expect(result.shafts[3].tileLength).toBe(400); // len 1600 / 4
+  expect(result.shafts[3].startX).toBe(60);
+
+  expect(result.shafts[4].rank).toBe(5);
+  expect(result.shafts[4].tileLength).toBe(300); // len 1200 / 4
+  expect(result.shafts[4].startX).toBe(68);
+});
