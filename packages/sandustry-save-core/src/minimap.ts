@@ -83,6 +83,8 @@ const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   9: [83, 158, 54, 255], // Grass
   10: [66, 118, 62, 255], // Moss
   11: [176, 139, 59, 255], // Gold soil
+  12: [255, 105, 180, 255], // Petal (#ff69b4)
+  13: [178, 34, 34, 255], // Lava fog (#b22222)
   14: [75, 162, 193, 255], // Fluxite
   15: [126, 126, 126, 255], // Block
   16: [150, 150, 150, 255], // Sliding block
@@ -98,8 +100,31 @@ const DEFAULT_PALETTE: Readonly<Record<number, RgbaColor>> = {
   28: [117, 84, 44, 255], // Sandium soil
   29: [67, 67, 76, 255], // Obsidian
   30: [90, 86, 80, 255], // Crackstone
+  31: [224, 165, 16, 255], // Solidite (HSL 43, 87, 47 / #de9d10)
+  32: [77, 31, 122, 255], // Void flower soil (HSL 270, 60, 30)
+  33: [150, 50, 180, 255], // Spreading terrain
+  34: [180, 180, 50, 255], // Sand2
+  35: [107, 142, 35, 255], // Earth strataform
+  36: [0, 255, 0, 255], // Game of Life (R)
+  37: [0, 204, 204, 255], // GoL (R)(H)
+  38: [0, 148, 179, 255], // Mooncrystal (#0094b3)
+  39: [194, 187, 120, 255], // Sandstone (pattern base HSL 52, 43, 60)
   40: [240, 219, 117, 255], // Dune (terrain id resolved by Debug Lab)
   41: [255, 223, 0, 255], // Pyramid terrain core (#ffdf00 in the game minimap)
+  42: [34, 34, 34, 255], // Bedrock (#222222 / HSL 0, 0, 55)
+  43: [0, 255, 0, 255], // Game of Life (S)
+  44: [184, 115, 51, 255], // Copper ore (HSL 20, 60, 35 / #ffa500)
+  45: [25, 230, 128, 255], // Glass (HSL 150, 80, 50 / #19e680)
+  46: [74, 55, 40, 255], // Brittle clay (#4a3728)
+  47: [139, 115, 85, 255], // Puff (#8b7355)
+  48: [173, 216, 230, 255], // Freezing ice fog (#add8e6)
+  49: [20, 20, 20, 255], // Blackrock (#141414)
+  50: [102, 51, 153, 255], // Florinol soil (HSL 270, 50, 40 / #339999)
+  51: [74, 64, 176, 255], // Auralite crystal (HSL 250, 60, 50 / #4a40b0)
+  52: [91, 206, 34, 255], // Vine (HSL 100, 72, 47)
+  53: [255, 72, 0, 255], // Caldera (HSL 17, 100, 50)
+  54: [182, 188, 193, 255], // Shatterstone (HSL 207, 8, 73 / #b6bcc1)
+  55: [24, 28, 32, 255], // Deepstone (HSL 210, 14, 11 / #181c20)
   // ElementType values are represented in the saved matrix as type + 100.
   101: [222, 190, 122, 255], // Sand
   102: [188, 188, 188, 255], // Particle

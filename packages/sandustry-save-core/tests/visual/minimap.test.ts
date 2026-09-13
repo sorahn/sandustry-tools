@@ -30,10 +30,10 @@ async function compareFixture(fixtureName: string) {
   await mkdir(outputRoot, { recursive: true });
   const save = await decodeBrowserSave(await readFile(fixturePath));
   const raster = renderMinimapRgba(save);
-  const rawPath = path.join(outputRoot, "main-save-current.rgba");
-  const currentPath = path.join(outputRoot, "main-save-current.png");
-  const normalizedReferencePath = path.join(outputRoot, "main-save-reference-960.png");
-  const diffPath = path.join(outputRoot, "main-save-diff.png");
+  const rawPath = path.join(outputRoot, `${fixtureStem}-current.rgba`);
+  const currentPath = path.join(outputRoot, `${fixtureStem}-current.png`);
+  const normalizedReferencePath = path.join(outputRoot, `${fixtureStem}-reference-960.png`);
+  const diffPath = path.join(outputRoot, `${fixtureStem}-diff.png`);
   await writeFile(rawPath, raster.pixels);
 
   const render = await runMagick([
@@ -45,6 +45,11 @@ async function compareFixture(fixtureName: string) {
     currentPath,
   ]);
   assert.equal(render.code, 0, `Unable to write rendered minimap: ${render.stderr}`);
+
+  if (process.env.UPDATE_PNG_SNAPSHOTS === "1") {
+    await writeFile(referencePath, await readFile(currentPath));
+    return;
+  }
 
   const normalize = await runMagick([
     referencePath,

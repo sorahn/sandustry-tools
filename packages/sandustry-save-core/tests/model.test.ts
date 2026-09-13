@@ -16,7 +16,8 @@ import {
 
 test("resolves known first-party catalog names", () => {
   expect(saveExplorerTerrainName(44)).toBe("Copper");
-  expect(saveExplorerTerrainName(54)).toBeUndefined();
+  expect(saveExplorerTerrainName(54)).toBe("Shatterstone");
+  expect(saveExplorerTerrainName(99)).toBeUndefined();
   expect(saveExplorerElementName(19)).toBe("Lava");
   expect(saveExplorerElementName(33)).toBeUndefined();
   expect(saveExplorerStructureName(16)).toBe("Collector");
