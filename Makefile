@@ -13,7 +13,13 @@ INSTALL_MODS := $(filter-out $(DEPRECATED_MODS),$(MODS))
 MOD_DIR := $(or $(filter $(MOD),$(MODS)),$(filter sandustry-$(MOD),$(MODS)))
 MOD_NAMES := $(sort $(patsubst sandustry-%,%,$(filter sandustry-%,$(MODS))) $(filter-out sandustry-%,$(MODS)))
 
-.PHONY: all build install publish steamdl dev check format version major minor patch clean list-mods
+# Allow passing positional seed argument, e.g. `make seed 180a9w6o`
+ifneq ($(filter seed,$(firstword $(MAKECMDGOALS))),)
+  SEED_ARG := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(SEED_ARG):;@:)
+endif
+
+.PHONY: all build install publish steamdl dev check format version major minor patch clean list-mods seed
 
 all: build
 
@@ -56,3 +62,9 @@ major minor patch:
 clean:
 	@if [ -n "$(MOD)" ]; then if [ -z "$(MOD_DIR)" ]; then echo "Unknown MOD='$(MOD)'. Available mods: $(MOD_NAMES)" >&2; exit 2; fi; $(MAKE) -C "mods/$(MOD_DIR)" clean; else for mod in $(MODS); do $(MAKE) -C "mods/$$mod" clean || exit $$?; done; fi
 	@node scripts/clean-installed-mods.mjs "$(SANDUSTRY_MODS_DIR)" "$(MOD_DIR)"
+
+seed:
+	@SEED="$(or $(SEED),$(SEED_ARG))"; \
+	if [ -z "$$SEED" ] && [ -z "$(SEEDS)" ]; then echo "Usage: make seed [SEED=]<seed> [VIEW=1] [OUT=<dir>]" >&2; exit 2; fi; \
+	bun scripts/generate-seed-minimaps.ts $${SEED:+--seed="$$SEED"} $(if $(SEEDS),--seeds="$(SEEDS)",) $(if $(filter 0 false,$(FORCE)),--no-force,--force) $(if $(filter-out 0 false,$(VIEW)),--view,) $(if $(OUT),--out="$(OUT)",)
+

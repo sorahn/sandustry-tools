@@ -184,3 +184,35 @@ export function saveExplorerCellName(
     return saveExplorerElementName(type);
   return undefined;
 }
+
+/**
+ * Terrain IDs that have excavation requirement "indestructible" (cannot be dug or destroyed).
+ * 39: Sandstone
+ * 41: Limestone
+ * 42: Bedrock
+ * 49: Blackrock
+ * 55: Deepstone
+ */
+export const INDESTRUCTIBLE_TERRAIN_IDS: ReadonlySet<number> = new Set([39, 41, 42, 49, 55]);
+
+/** Returns true if the terrain type is indestructible. */
+export function isIndestructibleTerrain(type: number): boolean {
+  return INDESTRUCTIBLE_TERRAIN_IDS.has(type);
+}
+
+/**
+ * Returns true if a raw matrix cell value can be penetrated (i.e. is not indestructible terrain).
+ * Empty air (0), elements (liquids/powders >= 101 or objects), and destructible terrains are passable.
+ */
+export function isPassableMatrixValue(value: unknown): boolean {
+  if (typeof value === "number") {
+    if (value < 0) {
+      const type = Math.floor(-value / 10000);
+      return !INDESTRUCTIBLE_TERRAIN_IDS.has(type);
+    }
+    if (value >= 101) return true; // settled elements
+    return !INDESTRUCTIBLE_TERRAIN_IDS.has(value);
+  }
+  // null/undefined/0/objects (particles or moving elements) are passable
+  return true;
+}

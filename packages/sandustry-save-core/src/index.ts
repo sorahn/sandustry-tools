@@ -114,7 +114,17 @@ export {
   saveExplorerElementName,
   saveExplorerStructureName,
   saveExplorerTerrainName,
+  INDESTRUCTIBLE_TERRAIN_IDS,
+  isIndestructibleTerrain,
+  isPassableMatrixValue,
 } from "./catalog";
+
+export {
+  scanHellevatorShafts,
+  type HellevatorShaft,
+  type HellevatorScanOptions,
+  type HellevatorScanResult,
+} from "./hellevator";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

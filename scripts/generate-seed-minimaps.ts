@@ -6,11 +6,17 @@ import { performance } from "node:perf_hooks";
 import { SandustryProcgenSession } from "./procgen/session.ts";
 import { createSyntheticSaveDocument } from "./procgen/save-adapter.ts";
 import { renderTerrainMinimapPng } from "./procgen/render.ts";
+import {
+  scanHellevatorShafts,
+  type HellevatorShaft,
+  type HellevatorScanResult,
+} from "../packages/sandustry-save-core/src/index.ts";
 
-export type SeedManifestEntry = {
+export type SeedMetadata = {
   requestedSeed: string;
   actualSeed?: string;
-  filename: string;
+  imageFilename: string;
+  metaFilename: string;
   status: "generated" | "skipped" | "failed";
   sha256?: string;
   width?: number;
@@ -20,12 +26,14 @@ export type SeedManifestEntry = {
   durationMs?: number;
   error?: string;
   timestamp: string;
+  hellevators?: HellevatorShaft[];
 };
 
-export type SeedManifest = {
-  version: string;
-  generatedAt: string;
-  seeds: SeedManifestEntry[];
+export type BatchGenerateResult = {
+  results: SeedMetadata[];
+  generated: number;
+  skipped: number;
+  failed: number;
 };
 
 export function parseSeedsFile(content: string): string[] {
@@ -44,22 +52,89 @@ export function parseSeedsFile(content: string): string[] {
   return seeds;
 }
 
+export function formatFileUrl(filePath: string): string {
+  const resolved = resolve(filePath);
+  return `file://${resolved}`;
+}
+
+export function sanitizeSeedBasename(seed: string): string {
+  return seed.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 64) || "empty";
+}
+
 export function sanitizeSeedFilename(seed: string): string {
-  const sanitized = seed.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 64) || "empty";
-  return `${sanitized}.png`;
+  return `${sanitizeSeedBasename(seed)}.png`;
+}
+
+export function sanitizeSeedMetaFilename(seed: string): string {
+  return `${sanitizeSeedBasename(seed)}.json`;
+}
+
+export function formatHellevatorTable(result: HellevatorScanResult): string {
+  if (result.shafts.length === 0) {
+    return "  No hellevator shafts found matching criteria.\n";
+  }
+
+  const lines: string[] = [
+    `  Hellevator Scan (minWidth=${result.options.minWidth} cells [${result.options.minWidth / 4} tile], ranking=${result.options.ranking}):`,
+    "  " +
+      "Rank".padEnd(6) +
+      "Tile X (Cells)".padEnd(22) +
+      "Width".padEnd(16) +
+      "Tile Y Span (Cells)".padEnd(28) +
+      "Underground".padEnd(18) +
+      "Total Depth".padEnd(16) +
+      "Surface".padEnd(12) +
+      "Bedrock",
+    "  " + "-".repeat(116),
+  ];
+
+  for (const s of result.shafts) {
+    const rankStr = `#${s.rank}`.padEnd(6);
+    const xStr = `${s.tileX.toFixed(1)} (${s.startX}..${s.endX})`.padEnd(22);
+    const wStr = `${s.tileWidth}t (${s.width}c)`.padEnd(16);
+    const yStr =
+      `[${s.tileStartY.toFixed(0)}..${s.tileEndY.toFixed(0)}] (${s.startY}..${s.endY})`.padEnd(28);
+    const undergrStr = `${s.tileUndergroundDepth.toFixed(1)}t (${s.undergroundDepth}c)`.padEnd(18);
+    const totalStr = `${s.tileLength.toFixed(1)}t (${s.length}c)`.padEnd(16);
+    const surfStr = (s.reachesSurface ? "✓ Sky" : "✗ Cavern").padEnd(12);
+    const bedStr = s.reachesBedrock ? "✓ Bedrock" : "No";
+
+    let line = `  ${rankStr}${xStr}${wStr}${yStr}${undergrStr}${totalStr}${surfStr}${bedStr}`;
+    if (s.composition && Object.keys(s.composition).length > 0) {
+      const topMats = Object.entries(s.composition)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([m, p]) => `${m} ${p}%`)
+        .join(", ");
+      line += `  [${topMats}]`;
+    }
+    lines.push(line);
+  }
+
+  return lines.join("\n");
 }
 
 function parseArgs(args: string[]) {
   let seedsPath: string | null = null;
+  const directSeeds: string[] = [];
   let outDir = "artifacts/seed-minimaps";
-  let force = false;
+  let explicitForce: boolean | null = null;
   let visible = false;
   let timeoutMs = 120_000;
+  let explicitScan: boolean | null = null;
+  let explicitHighlight: boolean | null = null;
+  let minWidth = 4;
+  let topK = 5;
+  let surfaceOnly = false;
+  let excludeEdgeMargin = 0;
+  let ranking: "underground" | "total" = "underground";
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--force" || arg === "-f") {
-      force = true;
+      explicitForce = true;
+    } else if (arg === "--no-force" || arg === "--skip-existing") {
+      explicitForce = false;
     } else if (arg === "--view" || arg === "-v") {
       visible = true;
     } else if (arg.startsWith("--out=")) {
@@ -68,14 +143,64 @@ function parseArgs(args: string[]) {
       outDir = args[++i];
     } else if (arg.startsWith("--timeout=")) {
       timeoutMs = Number.parseInt(arg.slice(10), 10);
-    } else if (arg.startsWith("--seeds=")) {
-      seedsPath = arg.slice(8);
-    } else if (!arg.startsWith("-") && !seedsPath) {
-      seedsPath = arg;
+    } else if (arg.startsWith("--seeds=") || arg.startsWith("--file=")) {
+      seedsPath = arg.slice(arg.indexOf("=") + 1);
+    } else if (arg === "-s" || arg === "--seed") {
+      if (args[i + 1] && !args[i + 1].startsWith("-")) {
+        directSeeds.push(args[++i]);
+      }
+    } else if (arg.startsWith("--seed=")) {
+      directSeeds.push(arg.slice(7));
+    } else if (arg === "--scan" || arg === "--hellevator") {
+      explicitScan = true;
+    } else if (arg === "--no-scan" || arg === "--no-hellevator") {
+      explicitScan = false;
+    } else if (arg === "--highlight" || arg === "--highlight-hellevator") {
+      explicitHighlight = true;
+      explicitScan = true;
+    } else if (arg === "--no-highlight") {
+      explicitHighlight = false;
+    } else if (arg.startsWith("--min-width=")) {
+      minWidth = Number.parseInt(arg.slice(12), 10);
+    } else if (arg.startsWith("--top=")) {
+      topK = Number.parseInt(arg.slice(6), 10);
+    } else if (arg === "--surface-only") {
+      surfaceOnly = true;
+    } else if (arg.startsWith("--edge-margin=") || arg.startsWith("--exclude-edge=")) {
+      excludeEdgeMargin = Number.parseInt(arg.slice(arg.indexOf("=") + 1), 10);
+    } else if (arg.startsWith("--ranking=")) {
+      const val = arg.slice(10);
+      if (val === "underground" || val === "total") ranking = val;
+    } else if (!arg.startsWith("-")) {
+      if (existsSync(resolve(arg))) {
+        seedsPath = arg;
+      } else {
+        directSeeds.push(arg);
+      }
     }
   }
 
-  return { seedsPath, outDir, force, visible, timeoutMs };
+  // Default to force regeneration for direct one-off seed runs unless explicitly disabled
+  const force = explicitForce !== null ? explicitForce : directSeeds.length > 0;
+  const scanHellevator = explicitScan !== null ? explicitScan : directSeeds.length > 0;
+  // If scanning is active, default highlight to true unless explicitly disabled with --no-highlight
+  const highlightHellevator = explicitHighlight !== null ? explicitHighlight : scanHellevator;
+
+  return {
+    seedsPath,
+    directSeeds,
+    outDir,
+    force,
+    visible,
+    timeoutMs,
+    scanHellevator,
+    highlightHellevator,
+    minWidth,
+    topK,
+    surfaceOnly,
+    excludeEdgeMargin,
+    ranking,
+  };
 }
 
 export async function runBatchGenerate(options: {
@@ -84,48 +209,65 @@ export async function runBatchGenerate(options: {
   force?: boolean;
   visible?: boolean;
   timeoutMs?: number;
-}): Promise<SeedManifest> {
-  const { seeds, outDir, force = false, visible = false, timeoutMs = 120_000 } = options;
+  scanHellevator?: boolean;
+  highlightHellevator?: boolean;
+  minWidth?: number;
+  topK?: number;
+  surfaceOnly?: boolean;
+  excludeEdgeMargin?: number;
+  ranking?: "underground" | "total";
+}): Promise<BatchGenerateResult> {
+  const {
+    seeds,
+    outDir,
+    force = false,
+    visible = false,
+    timeoutMs = 120_000,
+    scanHellevator = false,
+    highlightHellevator = false,
+    minWidth = 4,
+    topK = 5,
+    surfaceOnly = false,
+    excludeEdgeMargin = 0,
+    ranking = "underground",
+  } = options;
   mkdirSync(outDir, { recursive: true });
 
-  const manifestPath = join(outDir, "manifest.json");
-  const existingEntries = new Map<string, SeedManifestEntry>();
-  if (existsSync(manifestPath)) {
-    try {
-      const prev = JSON.parse(readFileSync(manifestPath, "utf8")) as SeedManifest;
-      if (Array.isArray(prev?.seeds)) {
-        for (const entry of prev.seeds) {
-          existingEntries.set(entry.requestedSeed, entry);
-        }
-      }
-    } catch {
-      /* ignore invalid manifest */
-    }
-  }
-
-  const entries: SeedManifestEntry[] = [];
+  const results: SeedMetadata[] = [];
   let session: SandustryProcgenSession | null = null;
 
   try {
     for (let index = 0; index < seeds.length; index++) {
       const seed = seeds[index];
-      const filename = sanitizeSeedFilename(seed);
-      const filePath = join(outDir, filename);
+      const imageFilename = sanitizeSeedFilename(seed);
+      const metaFilename = sanitizeSeedMetaFilename(seed);
+      const imagePath = join(outDir, imageFilename);
+      const metaPath = join(outDir, metaFilename);
       const now = new Date().toISOString();
 
-      if (!force && existsSync(filePath)) {
-        console.log(`[${index + 1}/${seeds.length}] Skipping existing: ${seed} (${filename})`);
-        const existing = existingEntries.get(seed);
-        if (existing && existing.sha256) {
-          entries.push({ ...existing, status: "skipped", timestamp: now });
+      if (!force && existsSync(imagePath)) {
+        console.log(`[${index + 1}/${seeds.length}] Skipping existing: ${seed} (${imageFilename})`);
+        console.log(`  → Image: ${formatFileUrl(imagePath)}`);
+        if (existsSync(metaPath)) {
+          console.log(`  → Meta:  ${formatFileUrl(metaPath)}`);
+          try {
+            const prev = JSON.parse(readFileSync(metaPath, "utf8")) as SeedMetadata;
+            results.push({ ...prev, status: "skipped" });
+          } catch {
+            results.push({
+              requestedSeed: seed,
+              imageFilename,
+              metaFilename,
+              status: "skipped",
+              timestamp: now,
+            });
+          }
         } else {
-          const fileBytes = readFileSync(filePath);
-          const sha256 = createHash("sha256").update(fileBytes).digest("hex");
-          entries.push({
+          results.push({
             requestedSeed: seed,
-            filename,
+            imageFilename,
+            metaFilename,
             status: "skipped",
-            sha256,
             timestamp: now,
           });
         }
@@ -139,7 +281,7 @@ export async function runBatchGenerate(options: {
         isInitial = true;
       }
 
-      console.log(`[${index + 1}/${seeds.length}] Generating seed: "${seed}" -> ${filename}`);
+      console.log(`[${index + 1}/${seeds.length}] Generating seed: "${seed}" -> ${imageFilename}`);
       const startTime = performance.now();
 
       try {
@@ -148,20 +290,33 @@ export async function runBatchGenerate(options: {
         }
         const captured = await session.captureTerrain();
         const doc = createSyntheticSaveDocument(captured);
-        const { png, width, height } = renderTerrainMinimapPng(doc);
 
-        writeFileSync(filePath, png);
+        let hellevators: HellevatorShaft[] | undefined;
+        if (scanHellevator) {
+          const scanResult = scanHellevatorShafts(doc, {
+            minWidth,
+            topK,
+            surfaceOnly,
+            excludeEdgeMargin,
+            ranking,
+          });
+          hellevators = scanResult.shafts;
+          console.log(formatHellevatorTable(scanResult));
+        }
+
+        const { png, width, height } = renderTerrainMinimapPng(doc, {
+          highlightShafts: highlightHellevator && hellevators ? hellevators : undefined,
+        });
+
+        writeFileSync(imagePath, png);
         const sha256 = createHash("sha256").update(png).digest("hex");
         const durationMs = Math.round(performance.now() - startTime);
 
-        console.log(
-          `  ✓ Saved ${filename} (${width}x${height}, ${(png.length / 1024).toFixed(1)} KB, ${durationMs} ms)`,
-        );
-
-        entries.push({
+        const metadata: SeedMetadata = {
           requestedSeed: seed,
           actualSeed: captured.seed,
-          filename,
+          imageFilename,
+          metaFilename,
           status: "generated",
           sha256,
           width,
@@ -170,17 +325,33 @@ export async function runBatchGenerate(options: {
           transientCellsHandled: captured.transientCellsHandled,
           durationMs,
           timestamp: now,
-        });
+          hellevators,
+        };
+
+        writeFileSync(metaPath, `${JSON.stringify(metadata, null, 2)}\n`);
+
+        console.log(
+          `  ✓ Saved ${imageFilename} (${width}x${height}, ${(png.length / 1024).toFixed(1)} KB, ${durationMs} ms)`,
+        );
+        console.log(`  → Image: ${formatFileUrl(imagePath)}`);
+        console.log(`  → Meta:  ${formatFileUrl(metaPath)}\n`);
+
+        results.push(metadata);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.error(`  ✗ Failed seed "${seed}": ${message}`);
-        entries.push({
+        const failMeta: SeedMetadata = {
           requestedSeed: seed,
-          filename,
+          imageFilename,
+          metaFilename,
           status: "failed",
           error: message,
           timestamp: now,
-        });
+        };
+        try {
+          writeFileSync(metaPath, `${JSON.stringify(failMeta, null, 2)}\n`);
+        } catch {}
+        results.push(failMeta);
       }
     }
   } finally {
@@ -190,59 +361,99 @@ export async function runBatchGenerate(options: {
     }
   }
 
-  const manifest: SeedManifest = {
-    version: "1.0",
-    generatedAt: new Date().toISOString(),
-    seeds: entries,
-  };
+  const generated = results.filter((s) => s.status === "generated").length;
+  const skipped = results.filter((s) => s.status === "skipped").length;
+  const failed = results.filter((s) => s.status === "failed").length;
 
-  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-  return manifest;
+  return { results, generated, skipped, failed };
 }
 
 async function main() {
-  const { seedsPath, outDir, force, visible, timeoutMs } = parseArgs(process.argv.slice(2));
+  const {
+    seedsPath,
+    directSeeds,
+    outDir,
+    force,
+    visible,
+    timeoutMs,
+    scanHellevator,
+    highlightHellevator,
+    minWidth,
+    topK,
+    surfaceOnly,
+    excludeEdgeMargin,
+    ranking,
+  } = parseArgs(process.argv.slice(2));
 
-  if (!seedsPath) {
-    console.error("Usage: bun run scripts/generate-seed-minimaps.ts <seeds.txt> [options]");
-    console.error("Options:");
-    console.error("  --out=<dir>, -o <dir>  Output directory (default: artifacts/seed-minimaps)");
-    console.error("  --force, -f            Force regeneration of existing files");
-    console.error("  --view, -v             Visible Chrome window for debugging");
-    console.error("  --timeout=<ms>         Timeout per seed in milliseconds (default: 120000)");
-    process.exit(1);
+  const seeds: string[] = [];
+
+  if (seedsPath) {
+    const resolvedSeedsPath = resolve(seedsPath);
+    if (!existsSync(resolvedSeedsPath)) {
+      console.error(`Seeds file not found: ${resolvedSeedsPath}`);
+      process.exit(1);
+    }
+    const rawSeeds = readFileSync(resolvedSeedsPath, "utf8");
+    const loaded = parseSeedsFile(rawSeeds);
+    console.log(`Loaded ${loaded.length} unique seed(s) from ${basename(seedsPath)}`);
+    for (const s of loaded) {
+      if (!seeds.includes(s)) seeds.push(s);
+    }
   }
 
-  const resolvedSeedsPath = resolve(seedsPath);
-  if (!existsSync(resolvedSeedsPath)) {
-    console.error(`Seeds file not found: ${resolvedSeedsPath}`);
-    process.exit(1);
+  for (const s of directSeeds) {
+    const trimmed = s.trim();
+    if (trimmed && !seeds.includes(trimmed)) {
+      seeds.push(trimmed);
+    }
   }
-
-  const rawSeeds = readFileSync(resolvedSeedsPath, "utf8");
-  const seeds = parseSeedsFile(rawSeeds);
-  console.log(`Loaded ${seeds.length} unique seed(s) from ${basename(seedsPath)}`);
 
   if (seeds.length === 0) {
-    console.log("No valid seeds to process.");
-    process.exit(0);
+    console.error("Usage: bun run scripts/generate-seed-minimaps.ts <seed|seeds.txt> [options]");
+    console.error("Options:");
+    console.error("  --seed=<seed>, -s <seed>  Single seed to generate (or pass as argument)");
+    console.error("  --seeds=<file>, --file    Seeds file path to read seeds from");
+    console.error(
+      "  --out=<dir>, -o <dir>     Output directory (default: artifacts/seed-minimaps)",
+    );
+    console.error("  --force, -f               Force regeneration of existing files");
+    console.error("  --view, -v                Visible Chrome window for debugging");
+    console.error("  --timeout=<ms>            Timeout per seed in milliseconds (default: 120000)");
+    console.error(
+      "  --scan, --hellevator      Scan for vertical hellevator shafts (default for direct seeds)",
+    );
+    console.error("  --no-scan                 Disable hellevator scan");
+    console.error(
+      "  --highlight               Overlay hellevator shafts visually on the rendered PNG",
+    );
+    console.error(
+      "  --min-width=<cells>       Minimum shaft width in cells (default: 4 cells = 1 tile)",
+    );
+    console.error("  --top=<n>                 Number of top shafts to report (default: 5)");
+    console.error("  --surface-only            Only report shafts starting at the surface/sky");
+    process.exit(1);
   }
 
   const resolvedOutDir = resolve(outDir);
-  const manifest = await runBatchGenerate({
+  const result = await runBatchGenerate({
     seeds,
     outDir: resolvedOutDir,
     force,
     visible,
     timeoutMs,
+    scanHellevator,
+    highlightHellevator,
+    minWidth,
+    topK,
+    surfaceOnly,
+    excludeEdgeMargin,
+    ranking,
   });
 
-  const generated = manifest.seeds.filter((s) => s.status === "generated").length;
-  const skipped = manifest.seeds.filter((s) => s.status === "skipped").length;
-  const failed = manifest.seeds.filter((s) => s.status === "failed").length;
-
-  console.log(`\nComplete: ${generated} generated, ${skipped} skipped, ${failed} failed.`);
-  console.log(`Manifest: ${join(resolvedOutDir, "manifest.json")}`);
+  console.log(
+    `\nComplete: ${result.generated} generated, ${result.skipped} skipped, ${result.failed} failed.`,
+  );
+  console.log(`Output directory: ${formatFileUrl(resolvedOutDir)}`);
 }
 
 if (import.meta.main || process.argv[1]?.endsWith("generate-seed-minimaps.ts")) {
