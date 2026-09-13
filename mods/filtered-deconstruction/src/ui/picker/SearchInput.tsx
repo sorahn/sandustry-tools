@@ -18,7 +18,6 @@ export const SearchInput = ({
   <div className="relative w-full">
     <input
       ref={inputRef}
-      autoFocus
       value={value}
       placeholder={placeholder}
       maxLength={64}

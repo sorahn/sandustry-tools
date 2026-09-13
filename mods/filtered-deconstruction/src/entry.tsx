@@ -225,6 +225,79 @@ const NATIVE_TYPE_RENDER_MAP: Record<number | string, any> = {
   glassFoundation: { imageName: "block", size: { width: 16, height: 16 } },
 };
 
+const KNOWN_TYPE_FAMILIES: Record<string | number, (string | number)[]> = {
+  // Conveyor Belts (left and right)
+  1: [1, 2],
+  2: [1, 2],
+  conveyor: [1, 2],
+  conveyorRight: [1, 2],
+  conveyorLeft: [1, 2],
+  conveyorRightMk2: ["conveyorRightMk2", "conveyorLeftMk2"],
+  conveyorLeftMk2: ["conveyorRightMk2", "conveyorLeftMk2"],
+  burnerBeltRight: ["burnerBeltRight", "burnerBeltLeft"],
+  burnerBeltLeft: ["burnerBeltRight", "burnerBeltLeft"],
+  // Shakers (left and right)
+  3: [3, 4],
+  4: [3, 4],
+  shaker: [3, 4],
+  shakerRight: [3, 4],
+  shakerLeft: [3, 4],
+  // Launchers (up, left, right)
+  5: [5, 6, 7],
+  6: [5, 6, 7],
+  7: [5, 6, 7],
+  launcher: [5, 6, 7],
+  launcherUp: [5, 6, 7],
+  launcherLeft: [5, 6, 7],
+  launcherRight: [5, 6, 7],
+  launcherUpMk2: ["launcherUpMk2", "launcherLeftMk2", "launcherRightMk2"],
+  launcherLeftMk2: ["launcherUpMk2", "launcherLeftMk2", "launcherRightMk2"],
+  launcherRightMk2: ["launcherUpMk2", "launcherLeftMk2", "launcherRightMk2"],
+  // Splitters
+  8: [8, 9, "sandustrySplitter", "sandustryTestBlocksSplitter"],
+  9: [8, 9, "sandustrySplitter", "sandustryTestBlocksSplitter"],
+  splitter: [8, 9, "sandustrySplitter", "sandustryTestBlocksSplitter"],
+  sandustrySplitter: [8, 9, "sandustrySplitter", "sandustryTestBlocksSplitter"],
+  sandustryTestBlocksSplitter: [8, 9, "sandustrySplitter", "sandustryTestBlocksSplitter"],
+  // Foundations (plain, angled left, triangle left, angled right, triangle right)
+  11: [11, 12, 13, 14, 15],
+  12: [11, 12, 13, 14, 15],
+  13: [11, 12, 13, 14, 15],
+  14: [11, 12, 13, 14, 15],
+  15: [11, 12, 13, 14, 15],
+  foundation: [11, 12, 13, 14, 15],
+  // Filters (left and right)
+  17: [17, 18],
+  18: [17, 18],
+  filter: [17, 18],
+  filterRight: [17, 18],
+  filterLeft: [17, 18],
+  filterRightMk2: ["filterRightMk2", "filterLeftMk2"],
+  filterLeftMk2: ["filterRightMk2", "filterLeftMk2"],
+  // Clearing Frames
+  clearingFrameRight: ["clearingFrameRight", "clearingFrameLeft"],
+  clearingFrameLeft: ["clearingFrameRight", "clearingFrameLeft"],
+  // Heat Cannons (all directions)
+  heatCannonUp: ["heatCannonUp", "heatCannonRight", "heatCannonDown", "heatCannonLeft"],
+  heatCannonRight: ["heatCannonUp", "heatCannonRight", "heatCannonDown", "heatCannonLeft"],
+  heatCannonDown: ["heatCannonUp", "heatCannonRight", "heatCannonDown", "heatCannonLeft"],
+  heatCannonLeft: ["heatCannonUp", "heatCannonRight", "heatCannonDown", "heatCannonLeft"],
+  // Fans (all angles)
+  kineticFieldEmitter: [
+    "kineticFieldEmitter",
+    "kineticFieldEmitterDownRight",
+    "kineticFieldEmitterDown",
+    "kineticFieldEmitterDownLeft",
+    "kineticFieldEmitterLeft",
+    "kineticFieldEmitterUpLeft",
+    "kineticFieldEmitterUp",
+    "kineticFieldEmitterUpRight",
+  ],
+  // Linked portals
+  quantumPortal: ["quantumPortal", "quantumPortalExit"],
+  eierschaukelPortalIn: ["eierschaukelPortalIn", "eierschaukelPortalOut"],
+};
+
 const computeIconStyle = (ref: number | string, def?: any, targetSize = 16): StructureIconStyle => {
   const nativeOverride = NATIVE_TYPE_RENDER_MAP[ref] || (def?.id && NATIVE_TYPE_RENDER_MAP[def.id]);
   const renderDef = def?.render ? { ...def.render, ...nativeOverride } : nativeOverride || {};
@@ -331,8 +404,29 @@ const entries = (): StructureEntry[] =>
     const entriesByName = new Map<string, StructureEntry>();
     let prefabEntry: StructureEntry | null = null;
 
+    const availableSet = new Set<string | number>();
+    try {
+      const available = api.structures.getAvailableTypes?.();
+      if (available && typeof (available as any)[Symbol.iterator] === "function") {
+        for (const ref of available) {
+          availableSet.add(ref);
+          availableSet.add(String(ref));
+        }
+      }
+    } catch (err) {
+      noop(err);
+    }
+
+    const isAvailable = (refOrId: string | number): boolean => {
+      if (availableSet.size === 0) return true;
+      return availableSet.has(refOrId) || availableSet.has(String(refOrId));
+    };
+
     const processRef = (ref: number | string, def?: any) => {
       if (isPipeStructure(ref) || isPipeStructure(def)) return;
+      if (availableSet.size > 0 && !isAvailable(ref) && (!def?.id || !isAvailable(def.id))) {
+        return;
+      }
       if (isPrefabIdentifier(ref, def?.id)) {
         if (!prefabEntry) {
           prefabEntry = {
@@ -367,6 +461,38 @@ const entries = (): StructureEntry[] =>
       const order =
         typeof def?.order === "number" && !Number.isNaN(def.order) ? def.order : undefined;
 
+      const attachVariants = (target: StructureEntry, targetDef?: any) => {
+        const addV = (val: number | string) => {
+          if (availableSet.size > 0 && !isAvailable(val)) return;
+          if (!target.types?.includes(val)) target.types?.push(val);
+          const strVal = String(val);
+          if (!target.ids?.includes(strVal)) target.ids?.push(strVal);
+        };
+
+        if (Array.isArray(targetDef?.variants)) {
+          for (const v of targetDef.variants) {
+            if (v?.id === undefined || v?.id === null) continue;
+            const vRef = v.id;
+            const vDef =
+              api.structures.getDefinitionByType?.(vRef) ||
+              (typeof vRef === "string"
+                ? (api.structures as any).getDefinitionById?.(vRef)
+                : undefined);
+            const vName = resolveTranslatedName(vDef);
+            if (vName && vName !== name) continue;
+            addV(vRef);
+          }
+        }
+
+        const family =
+          KNOWN_TYPE_FAMILIES[ref] ||
+          (targetDef?.id && KNOWN_TYPE_FAMILIES[targetDef.id]) ||
+          KNOWN_TYPE_FAMILIES[target.id];
+        if (family) {
+          for (const v of family) addV(v);
+        }
+      };
+
       if (entriesByName.has(name)) {
         const existing = entriesByName.get(name)!;
         if (!existing.types?.includes(ref)) existing.types?.push(ref);
@@ -378,9 +504,10 @@ const entries = (): StructureEntry[] =>
           existing.iconSrc = resolveIconSrc(ref, def);
           existing.iconStyle = computeIconStyle(ref, def, 16);
         }
+        attachVariants(existing, def);
       } else {
         const id = def?.id || (typeof ref === "string" ? ref : String(ref));
-        entriesByName.set(name, {
+        const newEntry: StructureEntry = {
           id,
           type: ref,
           types: [ref],
@@ -392,7 +519,9 @@ const entries = (): StructureEntry[] =>
           color: getCategoryColor(categoryKey),
           iconSrc: resolveIconSrc(ref, def),
           iconStyle: computeIconStyle(ref, def, 16),
-        });
+        };
+        attachVariants(newEntry, def);
+        entriesByName.set(name, newEntry);
       }
     };
 
@@ -474,11 +603,23 @@ const entries = (): StructureEntry[] =>
       }
     }
 
-    const discovered = Array.from(entriesByName.values());
-    if (prefabEntry) discovered.push(prefabEntry);
-
     const playerBuildings =
       ((sandkit as any).state?.store?.player?.buildings as (string | number)[]) || [];
+
+    for (const pb of playerBuildings) {
+      if (pb === undefined || pb === null) continue;
+      try {
+        const def =
+          api.structures.getDefinitionByType?.(pb) ||
+          (typeof pb === "string" ? (api.structures as any).getDefinitionById?.(pb) : undefined);
+        processRef(pb, def);
+      } catch {
+        // ignore unresolvable
+      }
+    }
+
+    const discovered = Array.from(entriesByName.values());
+    if (prefabEntry) discovered.push(prefabEntry);
 
     const categoryRank = (catKey?: string): number => {
       const idx = CATEGORY_ORDER.indexOf(normalizeCategoryKey(catKey));
@@ -547,6 +688,8 @@ const matchesFilter = (structure: any, selection: StructureSelection): boolean =
     if (entry.id === PREFAB_ENTRY_ID && isStructurePrefab) return true;
     if (entry.types?.includes(structType)) return true;
     if (structId && entry.ids?.includes(structId)) return true;
+    if (structId && entry.types?.includes(structId)) return true;
+    if (entry.ids?.includes(String(structType))) return true;
     if (entry.type !== -1 && entry.type === structType) return true;
     if (entry.id && entry.id === structId) return true;
     if (entry.id) {

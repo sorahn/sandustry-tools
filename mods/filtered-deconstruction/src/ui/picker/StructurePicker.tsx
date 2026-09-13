@@ -96,6 +96,12 @@ export const StructurePicker = ({
 
   UIReact.useEffect(() => onRegisterRepaint(bump), [bump, onRegisterRepaint]);
 
+  UIReact.useEffect(() => {
+    if (picker && !picker.minimized) {
+      setQuery("");
+    }
+  }, [picker?.minimized]);
+
   const search = api.ui.navigation.useFocusable({
     id: `${pickerId}-search`,
     scope,
