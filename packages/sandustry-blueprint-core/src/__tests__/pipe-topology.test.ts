@@ -146,4 +146,43 @@ describe("pipe topology preparation", () => {
       svg.indexOf('data-layer="foundation-structures"') < svg.indexOf('data-layer="structures"'),
     );
   });
+
+  test("renders a pipe-specific fallback for malformed topology", () => {
+    const svg = renderBlueprintToSvg(
+      {
+        name: "malformed pipe",
+        signalLinks: null,
+        data: [
+          {
+            type: PIPE_STRUCTURE_TYPE,
+            x: 0,
+            y: 0,
+            data: { pipeConnectionMask: 99 },
+          },
+        ],
+      },
+      { catalog: blueprintCatalog(), showGrid: false },
+    ).svg;
+    assert.match(svg, /data-pipe-fallback="segment"/);
+    assert.doesNotMatch(svg, /data-pipe-fallback="bridge"/);
+  });
+
+  test("renders a pipe-specific fallback when the pipe asset is missing", () => {
+    const baseCatalog = blueprintCatalog();
+    const catalog = {
+      get(type: Parameters<typeof baseCatalog.get>[0]) {
+        const entry = baseCatalog.get(type);
+        return type === PIPE_STRUCTURE_TYPE && entry ? { ...entry, renderAsset: undefined } : entry;
+      },
+    };
+    const svg = renderBlueprintToSvg(
+      {
+        name: "missing pipe asset",
+        signalLinks: null,
+        data: [{ type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 0 } }],
+      },
+      { catalog, showGrid: false },
+    ).svg;
+    assert.match(svg, /data-pipe-fallback="segment"/);
+  });
 });

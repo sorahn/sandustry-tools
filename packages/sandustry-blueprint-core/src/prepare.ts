@@ -32,6 +32,8 @@ export type PipeTopology = {
   gridAnchor: BlueprintCoordinate;
   /** Junctions and bridge pieces suppress the normal grid bulb at this cell. */
   gridBulb: "eligible" | "suppressed";
+  /** Serialized pipe data was malformed and is being shown with a safe fallback. */
+  fallback?: "invalid-data";
 };
 
 export type PipeTopologyDiagnostic = {
@@ -815,6 +817,10 @@ export function preparePipeTopology(
       message: "Expected 'horizontal' or 'vertical'; ignoring the value.",
     });
   }
+  const hasInvalidData =
+    (hasMask && !validPipeMask(rawMask)) ||
+    (hasBridgeMask && !validPipeMask(rawBridgeMask)) ||
+    (rawAxis !== undefined && !validPipeBridgeAxis(rawAxis));
   const kind = bridgeAxis || bridgeConnectionMask !== 0 ? "bridge" : pipeMaskKind(connectionMask);
   return {
     kind,
@@ -830,6 +836,7 @@ export function preparePipeTopology(
       kind === "corner" || kind === "tee" || kind === "cross" || kind === "bridge"
         ? "suppressed"
         : "eligible",
+    ...(hasInvalidData ? { fallback: "invalid-data" as const } : {}),
   };
 }
 

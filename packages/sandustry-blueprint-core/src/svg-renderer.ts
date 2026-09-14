@@ -185,11 +185,14 @@ function renderStructure(
   const labelLineHeight = labelFontSize * 1.15;
   const labelY = top + tileHeight / 2 - ((lines.length - 1) * labelLineHeight) / 2;
   let output = `<g data-structure-index="${index}">`;
+  const isPipe = prepared.pipeTopology !== undefined;
   const customAsset =
     isCustomShape && options.useCustomShapeAsset !== false
       ? options.catalog?.get(11)?.renderAsset
       : undefined;
-  const asset = prepared.sprite?.asset ?? customAsset;
+  const asset = prepared.pipeTopology?.fallback
+    ? undefined
+    : (prepared.sprite?.asset ?? customAsset);
   const usesFallbackAsset = asset !== undefined && prepared.sprite?.asset === undefined;
   const isUnknown = entry === undefined;
   const unknownBorderInset = 1;
@@ -198,7 +201,13 @@ function renderStructure(
     if (isUnknown) {
       output += `<rect x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}" fill="#172033"/>`;
     }
-    output += `<rect x="${number(left + (isUnknown ? unknownBorderInset : 0))}" y="${number(top + (isUnknown ? unknownBorderInset : 0))}" width="${number(tileWidth - (isUnknown ? unknownBorderInset * 2 : 0))}" height="${number(tileHeight - (isUnknown ? unknownBorderInset * 2 : 0))}" rx="${isUnknown ? "0" : "5"}" fill="${isUnknown ? "transparent" : isCustomShape ? "transparent" : tileColor(prepared.structure.type)}" stroke="${isUnknown ? "#f0b429" : isCustomShape ? "none" : "#8491a3"}" stroke-width="${isUnknown ? String(unknownBorderWidth) : "1.5"}"${isUnknown ? ' stroke-dasharray="4 3" shape-rendering="crispEdges"' : ""}/>`;
+    if (isPipe) {
+      const inset = Math.max(1, model.cell / 4);
+      output += `<rect data-pipe-fallback="segment" x="${number(left + inset)}" y="${number(top + inset)}" width="${number(tileWidth - inset * 2)}" height="${number(tileHeight - inset * 2)}" fill="#263241" stroke="#f0b429" stroke-width="${number(Math.max(1, model.cell / 8))}" stroke-dasharray="${number(model.cell / 2)} ${number(model.cell / 3)}"/>`;
+    }
+    if (!isPipe) {
+      output += `<rect x="${number(left + (isUnknown ? unknownBorderInset : 0))}" y="${number(top + (isUnknown ? unknownBorderInset : 0))}" width="${number(tileWidth - (isUnknown ? unknownBorderInset * 2 : 0))}" height="${number(tileHeight - (isUnknown ? unknownBorderInset * 2 : 0))}" rx="${isUnknown ? "0" : "5"}" fill="${isUnknown ? "transparent" : isCustomShape ? "transparent" : tileColor(prepared.structure.type)}" stroke="${isUnknown ? "#f0b429" : isCustomShape ? "none" : "#8491a3"}" stroke-width="${isUnknown ? String(unknownBorderWidth) : "1.5"}"${isUnknown ? ' stroke-dasharray="4 3" shape-rendering="crispEdges"' : ""}/>`;
+    }
     if (isUnknown) {
       output += `<path d="M ${number(left + model.cell)} ${number(top + model.cell)} L ${number(left + tileWidth - model.cell)} ${number(top + tileHeight - model.cell)} M ${number(left + tileWidth - model.cell)} ${number(top + model.cell)} L ${number(left + model.cell)} ${number(top + tileHeight - model.cell)}" stroke="#f0b429" stroke-width="2" opacity=".65"/>`;
     }
@@ -283,15 +292,25 @@ function renderPipeBridge(
   const prepared = model.preparedBlueprint.preparedStructures[index];
   const topology = prepared.pipeTopology;
   const bridge = prepared.sprite?.asset.pipeBridge;
-  if (!topology?.bridgeAxis || !bridge || options.showSprites === false) return "";
+  if (!topology?.bridgeAxis || options.showSprites === false) return "";
   const left = (prepared.structure.x - model.minX + model.paddingX) * model.cell;
   const top = (prepared.topY - model.minY + model.padding) * model.cell;
+  const pipeBlock = prepared.footprint.width * model.cell;
+  if (!bridge) {
+    const centerX = left + pipeBlock / 2;
+    const centerY = top + pipeBlock / 2;
+    const arm = pipeBlock * 1.5;
+    const path =
+      topology.bridgeAxis === "horizontal"
+        ? `M ${number(centerX - arm)} ${number(centerY)} H ${number(centerX + arm)}`
+        : `M ${number(centerX)} ${number(centerY - arm)} V ${number(centerY + arm)}`;
+    return `<g data-structure-index="${index}" data-pipe-fallback="bridge"><path d="${path}" stroke="#263241" stroke-width="${number(Math.max(2, model.cell / 2))}" stroke-linecap="square"/><path d="${path}" stroke="#f0b429" stroke-width="${number(Math.max(1, model.cell / 8))}" stroke-dasharray="${number(model.cell / 2)} ${number(model.cell / 3)}"/></g>`;
+  }
   const scale = renderPixelScale(model.cell);
   const frameWidth = bridge.frame?.width ?? 16;
   const frameHeight = bridge.frame?.height ?? 16;
   const width = frameWidth * scale * 3;
   const height = frameHeight * scale;
-  const pipeBlock = prepared.footprint.width * model.cell;
   const href = options.assetUrl
     ? options.assetUrl(bridge.path)
     : `${options.assetBaseUrl ?? ""}${bridge.path}`;
