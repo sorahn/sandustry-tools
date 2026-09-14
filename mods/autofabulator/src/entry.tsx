@@ -72,6 +72,7 @@ let editorRepaint: ((update: (value: number) => number) => void) | null = null;
 let editorDispose: (() => void) | null = null;
 let activePaintMode: PaintMode | null = null;
 let nativePickerKeyActive = false;
+let nativeMarqueeKeyActive = false;
 let activePaintPointerId: number | null = null;
 let activePaintCanvas: HTMLElement | null = null;
 let activePaintLastCell: string | null = null;
@@ -215,7 +216,8 @@ function nativeSelectionActive(state: SandustryEngineState = sandkit.engine.stat
     session?.construction?.demolisherActive ||
     session?.construction?.marqueeActive ||
     session?.action?.customData?.marqueeSelected ||
-    nativePickerActive(state),
+    nativePickerActive(state) ||
+    nativeMarqueeKeyActive,
   );
 }
 
@@ -1076,9 +1078,11 @@ function registerAutofabulator(): void {
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.code === "KeyF") nativePickerKeyActive = true;
+    if (event.code === "KeyC") nativeMarqueeKeyActive = true;
   };
   const onKeyUp = (event: KeyboardEvent) => {
     if (event.code === "KeyF") nativePickerKeyActive = false;
+    if (event.code === "KeyC") nativeMarqueeKeyActive = false;
   };
   window.addEventListener("keydown", onKeyDown, true);
   window.addEventListener("keyup", onKeyUp, true);
@@ -1086,6 +1090,7 @@ function registerAutofabulator(): void {
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);
     nativePickerKeyActive = false;
+    nativeMarqueeKeyActive = false;
   });
 
   api.items.register({

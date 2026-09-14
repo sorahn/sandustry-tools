@@ -602,6 +602,9 @@ interface SandustryApi {
   };
   rendering: {
     getGridMetrics(): { cellSize: number; snapGridCellSize: number };
+    getDrawPositionAtCell?(x: number, y: number): { x: number; y: number };
+    getDrawPositionAtWorld?(worldX: number, worldY: number): { x: number; y: number };
+    withOverlayContext?(callback: (context: CanvasRenderingContext2D) => void): void;
   };
   world: {
     getDimensions(): { width: number; height: number };
@@ -632,6 +635,7 @@ interface SandustryApi {
       definition: SandustryInputBindingDefinition,
     ): string;
     getMouseCellPosition(): { x: number; y: number };
+    getMousePositionAtWorld?(): { x: number; y: number };
     getBoundKeys(bindingId: string): string[];
     getDisplayKey(bindingId: string, fallback?: string): string;
     triggerBinding(bindingId: string): void;

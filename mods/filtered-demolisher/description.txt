@@ -1,0 +1,5 @@
+Choose which structures to demolish, then drag to remove only those structures.
+
+- Select one or more structure types, or choose [No filter] for everything.
+- Use the configured filter key to change the filter.
+- Your filter is remembered, and demolishing supports undo.
