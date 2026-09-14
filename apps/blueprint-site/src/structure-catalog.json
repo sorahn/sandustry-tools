@@ -1229,14 +1229,30 @@
       },
       "source": "runtime structure definition",
       "renderAsset": {
-        "path": "catalog/img__pipes_icon.png",
+        "path": "catalog/pipes.png",
         "sourceSize": {
-          "width": 16,
-          "height": 16
+          "width": 96,
+          "height": 48
         },
         "frame": {
           "width": 16,
           "height": 16
+        },
+        "frameColumns": 6,
+        "clip": true,
+        "animation": {
+          "topology": "pipe"
+        },
+        "pipeBridge": {
+          "path": "catalog/pipe_bridge.png",
+          "sourceSize": {
+            "width": 48,
+            "height": 16
+          },
+          "frame": {
+            "width": 16,
+            "height": 16
+          }
         }
       }
     },

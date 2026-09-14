@@ -22,6 +22,7 @@ export type PipeTopologyKind =
 export type PipeTopology = {
   kind: PipeTopologyKind;
   connectionMask: number;
+  spriteIndex: number;
   bridgeConnectionMask: number;
   bridgeAxis?: PipeBridgeAxis;
   connectedDirections: PipeDirection[];
@@ -70,6 +71,7 @@ export type RenderAsset = {
   sourceCrop?: { x: number; y: number; width: number; height: number };
   frame?: { width: number; height: number };
   frameIndex?: number;
+  frameColumns?: number;
   scale?: string | { mode: string; factor?: number };
   clip?: boolean;
   offset?: { x?: number; y?: number };
@@ -82,6 +84,11 @@ export type RenderAsset = {
     edgeFrame?: number;
     interiorFrame?: number;
     sideRotation?: number;
+  };
+  pipeBridge?: {
+    path: string;
+    sourceSize: { width: number; height: number };
+    frame?: { width: number; height: number };
   };
   [key: string]: unknown;
 };
@@ -687,6 +694,36 @@ const PIPE_DIRECTION_BITS: Array<[PipeDirection, number]> = [
   ["west", 8],
 ];
 
+/** Native pipe mask-to-sprite order from the 0.5.7 renderer. */
+export const PIPE_SPRITE_INDEX_BY_MASK: Readonly<Record<number, number>> = {
+  0: 0,
+  2: 1,
+  8: 2,
+  10: 3,
+  4: 4,
+  6: 5,
+  12: 6,
+  14: 7,
+  1: 8,
+  3: 9,
+  9: 10,
+  11: 11,
+  5: 12,
+  7: 13,
+  13: 14,
+  15: 15,
+};
+
+export function pipeSpriteIndexFor(mask: number, x: number, y: number) {
+  let spriteIndex = PIPE_SPRITE_INDEX_BY_MASK[mask] ?? 0;
+  // The native renderer selects two alternate connector/bulb frames from the
+  // absolute pipe-grid position, so translating a blueprint can change the
+  // decoration without changing its topology.
+  if (spriteIndex === 3 && (x / PIPE_GRID_STEP) % 2 !== 0) spriteIndex = 16;
+  if (spriteIndex === 12 && (y / PIPE_GRID_STEP) % 2 === 0) spriteIndex = 17;
+  return spriteIndex;
+}
+
 function pipeDirections(mask: number) {
   return PIPE_DIRECTION_BITS.filter(([, bit]) => (mask & bit) !== 0).map(
     ([direction]) => direction,
@@ -782,6 +819,7 @@ export function preparePipeTopology(
   return {
     kind,
     connectionMask,
+    spriteIndex: pipeSpriteIndexFor(connectionMask, structure.x, structure.y),
     bridgeConnectionMask,
     bridgeAxis,
     connectedDirections: pipeDirections(connectionMask),
@@ -823,6 +861,7 @@ export function prepareBlueprint(
   }
   const preparedStructures = blueprint.data.map((structure, index) => {
     const catalogEntry = options.catalog?.get(structure.type);
+    const pipeTopology = preparePipeTopology(structure, index, pipePositions, pipeDiagnostics);
     const customShape = customShapeFromStructure(structure);
     const shape = customShape ?? catalogEntry?.shape;
     const footprint = shape
@@ -852,11 +891,12 @@ export function prepareBlueprint(
       sprite: renderAsset
         ? {
             asset: renderAsset,
-            frameIndex: spriteIndexFor(structure) ?? renderAsset.frameIndex ?? 0,
+            frameIndex:
+              spriteIndexFor(structure) ?? pipeTopology?.spriteIndex ?? renderAsset.frameIndex ?? 0,
             rotation: renderAsset.rotation ?? 0,
           }
         : undefined,
-      pipeTopology: preparePipeTopology(structure, index, pipePositions, pipeDiagnostics),
+      pipeTopology,
     };
   });
   prepareSprites(preparedStructures);

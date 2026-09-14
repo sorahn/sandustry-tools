@@ -237,6 +237,11 @@ function renderStructure(
           renderAnchorOffsetCells(asset.anchor) * model.cell +
           offsetY * renderPixelScale(model.cell)
         : top + offsetY * renderPixelScale(model.cell);
+    const frameColumns = asset.frameColumns ?? 1;
+    const frameColumn = frameIndex % frameColumns;
+    const frameRow = Math.floor(frameIndex / frameColumns);
+    const frameImageX = imageX - frameColumn * visualWidth;
+    const frameImageY = imageY - (frameColumns > 1 ? frameRow * visualHeight : 0);
     const href = options.assetUrl
       ? options.assetUrl(asset.path)
       : `${options.assetBaseUrl ?? ""}${asset.path}`;
@@ -246,9 +251,9 @@ function renderStructure(
     if (usesFallbackAsset && isCustomShape) {
       output += `<defs><mask id="custom-shape-mask-${index}" maskUnits="userSpaceOnUse" x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}"><rect x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}" fill="black"/>${renderShapeRects(shape, left, top, model.cell, "white")}</mask></defs>`;
     }
-    output += `<image href="${escapeXml(href)}" x="${number(imageX - frameIndex * visualWidth)}" y="${number(imageY - (asset.sourceCrop?.y ?? 0) * sourceScale)}" width="${number(visualWidth * (sourceWidth / frameWidth))}" height="${number(imageHeight)}" preserveAspectRatio="none"${(asset.clip ?? sourceWidth > frameWidth) ? ` clip-path="url(#asset-clip-${index})"` : ""}${usesFallbackAsset && isCustomShape ? ` mask="url(#custom-shape-mask-${index})"` : ""}${transform} style="image-rendering:pixelated"/>`;
+    output += `<image href="${escapeXml(href)}" x="${number(frameImageX)}" y="${number(frameImageY - (asset.sourceCrop?.y ?? 0) * sourceScale)}" width="${number(visualWidth * (sourceWidth / frameWidth))}" height="${number(imageHeight)}" preserveAspectRatio="none"${(asset.clip ?? sourceWidth > frameWidth) ? ` clip-path="url(#asset-clip-${index})"` : ""}${usesFallbackAsset && isCustomShape ? ` mask="url(#custom-shape-mask-${index})"` : ""}${transform} style="image-rendering:pixelated"/>`;
     if (asset.clip ?? sourceWidth > frameWidth) {
-      output = `<clipPath id="asset-clip-${index}"><rect x="${number(imageX)}" y="${number(asset.sourceCrop ? imageY : 0)}" width="${number(visualWidth)}" height="${number(asset.sourceCrop ? visualHeight : model.height)}"/></clipPath>${output}`;
+      output = `<clipPath id="asset-clip-${index}"><rect x="${number(imageX)}" y="${number(frameColumns > 1 || asset.sourceCrop ? imageY : 0)}" width="${number(visualWidth)}" height="${number(frameColumns > 1 || asset.sourceCrop ? visualHeight : model.height)}"/></clipPath>${output}`;
     }
     if (prepared.lightColor) {
       output += [4, 7, 10]
@@ -268,6 +273,33 @@ function renderStructure(
       .join("");
   }
   return `${output}</g>`;
+}
+
+function renderPipeBridge(
+  model: BlueprintRenderModel,
+  index: number,
+  options: BlueprintSvgRenderOptions,
+) {
+  const prepared = model.preparedBlueprint.preparedStructures[index];
+  const topology = prepared.pipeTopology;
+  const bridge = prepared.sprite?.asset.pipeBridge;
+  if (!topology?.bridgeAxis || !bridge || options.showSprites === false) return "";
+  const left = (prepared.structure.x - model.minX + model.paddingX) * model.cell;
+  const top = (prepared.topY - model.minY + model.padding) * model.cell;
+  const scale = renderPixelScale(model.cell);
+  const frameWidth = bridge.frame?.width ?? 16;
+  const frameHeight = bridge.frame?.height ?? 16;
+  const width = frameWidth * scale * 3;
+  const height = frameHeight * scale;
+  const href = options.assetUrl
+    ? options.assetUrl(bridge.path)
+    : `${options.assetBaseUrl ?? ""}${bridge.path}`;
+  if (topology.bridgeAxis === "horizontal") {
+    return `<image href="${escapeXml(href)}" x="${number(left - model.cell)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>`;
+  }
+  const centerX = left + model.cell / 2;
+  const centerY = top + model.cell / 2;
+  return `<g data-structure-index="${index}"><image href="${escapeXml(href)}" x="${number(left - model.cell)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" preserveAspectRatio="none" transform="rotate(-90 ${number(centerX)} ${number(centerY)})" style="image-rendering:pixelated"/></g>`;
 }
 
 export function renderBlueprintToSvg(
@@ -291,6 +323,9 @@ export function renderBlueprintToSvg(
     .join("");
   const otherStructureMarkup = otherStructures
     .map(({ index }) => renderStructure(model, index, options))
+    .join("");
+  const pipeBridgeMarkup = otherStructures
+    .map(({ index }) => renderPipeBridge(model, index, options))
     .join("");
   const foundationPath = showFoundationOutlines
     ? foundationOutlinePath(
@@ -331,7 +366,7 @@ export function renderBlueprintToSvg(
       })
     : "";
   const edgeFade = showEdgeFade && includeBackground ? renderEdgeFade(model) : "";
-  const markup = `${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}${filterOverlay}${edgeFade}`;
+  const markup = `${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g><g data-layer="pipe-bridges">${pipeBridgeMarkup}</g>${signals}${filterOverlay}${edgeFade}`;
   return {
     model,
     markup,

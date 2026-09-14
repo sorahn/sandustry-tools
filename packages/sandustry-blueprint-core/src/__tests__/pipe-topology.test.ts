@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, test } from "bun:test";
-import { decodeBlueprint, type Blueprint } from "..";
-import { PIPE_STRUCTURE_TYPE, prepareBlueprint, preparePipeTopology } from "../prepare";
+import { blueprintCatalog, decodeBlueprint, renderBlueprintToSvg, type Blueprint } from "..";
+import {
+  PIPE_STRUCTURE_TYPE,
+  pipeSpriteIndexFor,
+  prepareBlueprint,
+  preparePipeTopology,
+} from "../prepare";
 
 describe("pipe topology preparation", () => {
   test("classifies masks and preserves the fixed native grid anchor", () => {
@@ -34,6 +39,7 @@ describe("pipe topology preparation", () => {
     assert.deepEqual(prepared.preparedStructures[4].pipeTopology, {
       kind: "bridge",
       connectionMask: 5,
+      spriteIndex: 17,
       bridgeConnectionMask: 8,
       bridgeAxis: "horizontal",
       connectedDirections: ["north", "south"],
@@ -105,5 +111,28 @@ describe("pipe topology preparation", () => {
       diagnostics.map((diagnostic) => diagnostic.field),
       ["pipeConnectionMask", "pipeBridgeConnectionMask", "pipeBridgeAxis"],
     );
+  });
+
+  test("uses the native mask order and fixed-grid alternate frames", () => {
+    assert.equal(pipeSpriteIndexFor(0, 0, 0), 0);
+    assert.equal(pipeSpriteIndexFor(10, 0, 0), 3);
+    assert.equal(pipeSpriteIndexFor(5, 0, 0), 17);
+    assert.equal(pipeSpriteIndexFor(5, 0, 4), 12);
+    assert.equal(pipeSpriteIndexFor(10, 4, 0), 16);
+    assert.equal(pipeSpriteIndexFor(3, 0, 0), 9);
+  });
+
+  test("renders the native pipe sheet and bridge asset", () => {
+    const encoded = readFileSync(
+      new URL("../../tests/visual/blueprints/pipeworks.txt", import.meta.url),
+      "utf8",
+    ).trim();
+    const svg = renderBlueprintToSvg(decodeBlueprint(encoded), {
+      catalog: blueprintCatalog(),
+      assetBaseUrl: "",
+      showGrid: false,
+    }).svg;
+    assert.match(svg, /href="catalog\/pipes\.png"/);
+    assert.match(svg, /href="catalog\/pipe_bridge\.png"/);
   });
 });
