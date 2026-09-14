@@ -1,4 +1,4 @@
-/* Filtered Deconstruction: a native-backed structure removal tool with multi-select whitelist. */
+/* Filtered Demolisher: a native-backed structure removal tool with multi-select whitelist. */
 
 "use strict";
 
@@ -24,9 +24,9 @@ import type {
 const api = sandkit.api;
 const engine = sandkit.engine;
 
-const MOD_ID = "sorahn.sandustry-filtered-deconstruction";
-const ITEM_ID = "filteredDeconstruction";
-const ITEM_SPRITE_ID = "filteredDeconstructionSprite";
+const MOD_ID = "sorahn.sandustry-filtered-demolisher";
+const ITEM_ID = "filteredDemolisher";
+const ITEM_SPRITE_ID = "filteredDemolisherSprite";
 const ACTION_START = 1;
 const ACTION_ACTIVE = 2;
 const ACTION_END = 3;
@@ -39,11 +39,11 @@ const UIReact = sandkit.react ?? null;
 const HOTBAR_OVERLAY_SLOT = "hotbar";
 
 const TEXT = {
-  "items|filteredDeconstruction|name": "Filtered Deconstruction",
-  "items|filteredDeconstruction|description":
-    "Deconstruct structures with a whitelist filter. Drag to select an area. Press F to change the filter.",
-  "mods|filteredDeconstruction|configurePrompt":
-    "Enter structure IDs to deconstruct, separated by commas (or leave blank for all).",
+  "items|filteredDemolisher|name": "Filtered Demolisher",
+  "items|filteredDemolisher|description":
+    "Demolish structures with a whitelist filter. Drag to select an area. Press F to change the filter.",
+  "mods|filteredDemolisher|configurePrompt":
+    "Enter structure IDs to demolish, separated by commas (or leave blank for all).",
 };
 
 type Point = { x: number; y: number };
@@ -136,7 +136,7 @@ const currentDrag = (state?: SandustryEngineState | null): DragData | null => {
 const setDrag = (state: SandustryEngineState | null, drag: DragData | null): void => {
   activeDrag = drag;
   safe(
-    () => api.action?.setCustomData(drag ? { filteredDeconstruction: true, ...drag } : null),
+    () => api.action?.setCustomData(drag ? { filteredDemolisher: true, ...drag } : null),
     undefined,
   );
 };
@@ -831,7 +831,7 @@ const openStructurePicker = async (current: StructureSelection) => {
     });
     return pickerPromise;
   }
-  const entered = await api.ui.prompt(TEXT["mods|filteredDeconstruction|configurePrompt"]);
+  const entered = await api.ui.prompt(TEXT["mods|filteredDemolisher|configurePrompt"]);
   if (!entered?.trim()) return null;
   return deserializeSelection(`structures:${entered.trim()}`, entries());
 };
@@ -1218,8 +1218,8 @@ const registerItem = (): void => {
   const definition: SandustryItemDefinition = {
     id: ITEM_ID,
     itemType: TOOL_ITEM_TYPE,
-    nameKey: "items|filteredDeconstruction|name",
-    descriptionKey: "items|filteredDeconstruction|description",
+    nameKey: "items|filteredDemolisher|name",
+    descriptionKey: "items|filteredDemolisher|description",
     categoryKey: "utility",
     sprite: { id: ITEM_SPRITE_ID, type: "backhand" },
     handleAction,
@@ -1244,7 +1244,7 @@ const registerItem = (): void => {
   }
 
   api.input.registerBinding(`${MOD_ID}:cancel`, ["MouseRight"], {
-    displayName: "Filtered Deconstruction Cancel",
+    displayName: "Filtered Demolisher Cancel",
     category: "utility",
     handlers: {
       down: () => {
@@ -1254,7 +1254,7 @@ const registerItem = (): void => {
   });
 
   api.input.registerBinding(CONFIGURE_BINDING_ID, ["KeyF"], {
-    displayName: "Configure Deconstruction Filter",
+    displayName: "Configure Demolisher Filter",
     category: "utility",
     handlers: {
       down: () => {
@@ -1329,7 +1329,7 @@ const ensureSingleInventoryItem = (): void => {
 
 const initialize = async (): Promise<void> => {
   api.i18n.register("en", TEXT);
-  await api.sprites.loadFromMod(ITEM_SPRITE_ID, "assets/filtered-deconstruction.png");
+  await api.sprites.loadFromMod(ITEM_SPRITE_ID, "assets/filtered-demolisher.png");
   registerItem();
 
   api.events.on("game:ready", () => {

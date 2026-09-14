@@ -175,7 +175,7 @@ export const StructurePicker = ({
         style={{ maxWidth: "640px" }}
         onClick={() => onOpen(picker.current)}
       >
-        <span className="text-white text-xs font-semibold flex-shrink-0">Deconstruct filter</span>
+        <span className="text-white text-xs font-semibold flex-shrink-0">Demolisher filter</span>
         <FocusableButton
           id={`${pickerId}-selected`}
           scope={scope}
@@ -286,7 +286,7 @@ export const StructurePicker = ({
     >
       <div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-white text-xs font-semibold">Deconstruct filter</span>
+          <span className="text-white text-xs font-semibold">Demolisher filter</span>
           {!isNoFilter(picker.current) && (
             <span className="text-[10px] text-[#ffe700]">
               {picker.current.entries.length} selected
@@ -327,7 +327,7 @@ export const StructurePicker = ({
             pickerId={pickerId}
             scope={scope}
             down={firstStructureId}
-            description="Deconstruct all structures without filtering"
+            description="Demolish all structures without filtering"
           />
         </div>
 
