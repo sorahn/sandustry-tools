@@ -41,7 +41,7 @@ const HOTBAR_OVERLAY_SLOT = "hotbar";
 const TEXT = {
   "items|filteredDemolisher|name": "Filtered Demolisher",
   "items|filteredDemolisher|description":
-    "Demolish structures with a whitelist filter. Drag to select an area. Press F to change the filter.",
+    "Demolish structures with a whitelist filter. Drag to select an area. Use the configured filter key to change the filter.",
   "mods|filteredDemolisher|configurePrompt":
     "Enter structure IDs to demolish, separated by commas (or leave blank for all).",
 };
@@ -1253,21 +1253,6 @@ const registerItem = (): void => {
     },
   });
 
-  api.input.registerBinding(CONFIGURE_BINDING_ID, ["KeyF"], {
-    displayName: "Configure Demolisher Filter",
-    category: "utility",
-    handlers: {
-      down: () => {
-        if (!selectedTool()) return;
-        if (pickerState && !pickerState.minimized) {
-          minimizePicker();
-        } else {
-          void openStructurePicker(currentSelection());
-        }
-      },
-    },
-  });
-
   api.events.on("action:changed", () => {
     if (!selectedTool()) setDrag(null, null);
     syncPickerToSelectedAction();
@@ -1308,6 +1293,23 @@ const registerItem = (): void => {
   }
 };
 
+const registerBindings = (): void => {
+  api.input.registerBinding(CONFIGURE_BINDING_ID, ["KeyF"], {
+    displayName: "Configure Demolisher Filter",
+    category: "utility",
+    handlers: {
+      down: () => {
+        if (!selectedTool()) return;
+        if (pickerState && !pickerState.minimized) {
+          minimizePicker();
+        } else {
+          void openStructurePicker(currentSelection());
+        }
+      },
+    },
+  });
+};
+
 const ensureSingleInventoryItem = (): void => {
   const state = engine.state as unknown as {
     store?: { player?: { inventory?: Array<{ id?: string | number }> } };
@@ -1330,6 +1332,7 @@ const ensureSingleInventoryItem = (): void => {
 const initialize = async (): Promise<void> => {
   api.i18n.register("en", TEXT);
   await api.sprites.loadFromMod(ITEM_SPRITE_ID, "assets/filtered-demolisher.png");
+  registerBindings();
   registerItem();
 
   api.events.on("game:ready", () => {
