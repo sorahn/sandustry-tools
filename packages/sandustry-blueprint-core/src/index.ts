@@ -45,6 +45,16 @@ export {
   structureVisualTopY,
   foundationOutlinePath,
   UNKNOWN_STRUCTURE_FOOTPRINT,
+  LIQUID_VENT_STRUCTURE_TYPE,
+  PIPE_GRID_STEP,
+  PIPE_STRUCTURE_TYPE,
+  PUMP_STRUCTURE_TYPE,
+  preparePipeTopology,
+  type PipeBridgeAxis,
+  type PipeDirection,
+  type PipeTopology,
+  type PipeTopologyDiagnostic,
+  type PipeTopologyKind,
 } from "./prepare.js";
 export {
   catalogRender,

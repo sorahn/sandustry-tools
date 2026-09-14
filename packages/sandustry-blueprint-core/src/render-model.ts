@@ -25,6 +25,7 @@ export type BlueprintRenderStructure = {
   structure: Blueprint["data"][number];
   index: number;
   z: number;
+  pipeTopology?: PreparedStructure["pipeTopology"];
 };
 
 export type BlueprintRenderModel = {
@@ -141,6 +142,7 @@ export function createBlueprintRenderModel(
       structure,
       index,
       z: preparedBlueprint.preparedStructures[index].z,
+      pipeTopology: preparedBlueprint.preparedStructures[index].pipeTopology,
     }))
     .sort(
       (left, right) =>

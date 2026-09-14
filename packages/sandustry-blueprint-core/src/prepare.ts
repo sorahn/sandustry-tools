@@ -2,6 +2,43 @@ import type { Blueprint, BlueprintStructure, BlueprintType, SignalLink } from ".
 
 export type BlueprintCoordinate = { x: number; y: number };
 
+/** Native structure ids used by the vanilla pipe family. */
+export const PIPE_STRUCTURE_TYPE = 23;
+export const PUMP_STRUCTURE_TYPE = 24;
+export const LIQUID_VENT_STRUCTURE_TYPE = 25;
+export const PIPE_GRID_STEP = 4;
+
+export type PipeDirection = "north" | "east" | "south" | "west";
+export type PipeBridgeAxis = "horizontal" | "vertical";
+export type PipeTopologyKind =
+  | "isolated"
+  | "endpoint"
+  | "straight"
+  | "corner"
+  | "tee"
+  | "cross"
+  | "bridge";
+
+export type PipeTopology = {
+  kind: PipeTopologyKind;
+  connectionMask: number;
+  bridgeConnectionMask: number;
+  bridgeAxis?: PipeBridgeAxis;
+  connectedDirections: PipeDirection[];
+  bridgeDirections: PipeDirection[];
+  source: "serialized" | "inferred";
+  /** The native grid anchor used by fixed-cadence pipe decorations. */
+  gridAnchor: BlueprintCoordinate;
+  /** Junctions and bridge pieces suppress the normal grid bulb at this cell. */
+  gridBulb: "eligible" | "suppressed";
+};
+
+export type PipeTopologyDiagnostic = {
+  structureIndex: number;
+  field: "pipeConnectionMask" | "pipeBridgeConnectionMask" | "pipeBridgeAxis";
+  message: string;
+};
+
 /** Used only to keep unknown structures visible as one blueprint block. */
 export const UNKNOWN_STRUCTURE_FOOTPRINT = { width: 4, height: 4 } as const;
 
@@ -91,6 +128,7 @@ export type PreparedStructure = {
   z: number;
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
   sprite?: PreparedSprite;
+  pipeTopology?: PipeTopology;
 };
 
 export type UnderlyingCell = { x: number; y: number };
@@ -100,6 +138,7 @@ export type PreparedBlueprint = Blueprint & {
   signalCoordinateOffset: BlueprintCoordinate;
   preparedStructures: PreparedStructure[];
   preparedSignalLinks: PreparedSignalLink[];
+  pipeDiagnostics: PipeTopologyDiagnostic[];
 };
 
 export type PrepareBlueprintOptions = {
@@ -641,10 +680,135 @@ function wirePath(from: BlueprintCoordinate, to: BlueprintCoordinate, straight: 
   };
 }
 
+const PIPE_DIRECTION_BITS: Array<[PipeDirection, number]> = [
+  ["north", 1],
+  ["east", 2],
+  ["south", 4],
+  ["west", 8],
+];
+
+function pipeDirections(mask: number) {
+  return PIPE_DIRECTION_BITS.filter(([, bit]) => (mask & bit) !== 0).map(
+    ([direction]) => direction,
+  );
+}
+
+function pipeMaskKind(mask: number): PipeTopologyKind {
+  const count = pipeDirections(mask).length;
+  if (count === 0) return "isolated";
+  if (count === 1) return "endpoint";
+  if (count === 2) return mask === 5 || mask === 10 ? "straight" : "corner";
+  if (count === 3) return "tee";
+  return "cross";
+}
+
+function pipeData(structure: BlueprintStructure) {
+  return typeof structure.data === "object" && structure.data !== null
+    ? (structure.data as Record<string, unknown>)
+    : undefined;
+}
+
+function validPipeMask(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 15;
+}
+
+function validPipeBridgeAxis(value: unknown): value is PipeBridgeAxis {
+  return value === "horizontal" || value === "vertical";
+}
+
+function inferredPipeMask(structure: BlueprintStructure, pipePositions: Set<string> | undefined) {
+  if (!pipePositions) return 0;
+  let mask = 0;
+  for (const [bit, dx, dy] of [
+    [1, 0, -PIPE_GRID_STEP],
+    [2, PIPE_GRID_STEP, 0],
+    [4, 0, PIPE_GRID_STEP],
+    [8, -PIPE_GRID_STEP, 0],
+  ] as const) {
+    if (pipePositions.has(`${structure.x + dx},${structure.y + dy}`)) mask |= bit;
+  }
+  return mask;
+}
+
+/**
+ * Converts native pipe state into a renderer-neutral topology description.
+ * The native data remains untouched; missing masks are inferred only from
+ * neighboring pipe anchors on the native four-pixel grid.
+ */
+export function preparePipeTopology(
+  structure: BlueprintStructure,
+  structureIndex = -1,
+  pipePositions?: Set<string>,
+  diagnostics: PipeTopologyDiagnostic[] = [],
+): PipeTopology | undefined {
+  if (structure.type !== PIPE_STRUCTURE_TYPE) return undefined;
+  const data = pipeData(structure);
+  const hasMask = data !== undefined && "pipeConnectionMask" in data;
+  const rawMask = data?.pipeConnectionMask;
+  const connectionMask = validPipeMask(rawMask)
+    ? rawMask
+    : hasMask
+      ? 0
+      : inferredPipeMask(structure, pipePositions);
+  if (hasMask && !validPipeMask(rawMask)) {
+    diagnostics.push({
+      structureIndex,
+      field: "pipeConnectionMask",
+      message: "Expected an integer mask from 0 through 15; using 0.",
+    });
+  }
+
+  const hasBridgeMask = data !== undefined && "pipeBridgeConnectionMask" in data;
+  const rawBridgeMask = data?.pipeBridgeConnectionMask;
+  const bridgeConnectionMask = validPipeMask(rawBridgeMask) ? rawBridgeMask : hasBridgeMask ? 0 : 0;
+  if (hasBridgeMask && !validPipeMask(rawBridgeMask)) {
+    diagnostics.push({
+      structureIndex,
+      field: "pipeBridgeConnectionMask",
+      message: "Expected an integer mask from 0 through 15; using 0.",
+    });
+  }
+
+  const rawAxis = data?.pipeBridgeAxis;
+  const bridgeAxis = validPipeBridgeAxis(rawAxis) ? rawAxis : undefined;
+  if (rawAxis !== undefined && !validPipeBridgeAxis(rawAxis)) {
+    diagnostics.push({
+      structureIndex,
+      field: "pipeBridgeAxis",
+      message: "Expected 'horizontal' or 'vertical'; ignoring the value.",
+    });
+  }
+  const kind = bridgeAxis || bridgeConnectionMask !== 0 ? "bridge" : pipeMaskKind(connectionMask);
+  return {
+    kind,
+    connectionMask,
+    bridgeConnectionMask,
+    bridgeAxis,
+    connectedDirections: pipeDirections(connectionMask),
+    bridgeDirections: pipeDirections(bridgeConnectionMask),
+    source: hasMask ? "serialized" : "inferred",
+    gridAnchor: { x: structure.x, y: structure.y },
+    gridBulb:
+      kind === "corner" || kind === "tee" || kind === "cross" || kind === "bridge"
+        ? "suppressed"
+        : "eligible",
+  };
+}
+
+function pipePositionSet(blueprint: Blueprint) {
+  const positions = new Set<string>();
+  for (const structure of blueprint.data) {
+    if (structure.type === PIPE_STRUCTURE_TYPE) positions.add(`${structure.x},${structure.y}`);
+  }
+  return positions;
+}
+
 export function prepareBlueprint(
   blueprint: Blueprint,
   options: PrepareBlueprintOptions = {},
 ): PreparedBlueprint {
+  const pipePositions = pipePositionSet(blueprint);
+  const pipeDiagnostics: PipeTopologyDiagnostic[] = [];
   const resolveSignalPoints =
     options.resolveSignalPoints ??
     ((type: BlueprintType) =>
@@ -692,6 +856,7 @@ export function prepareBlueprint(
             rotation: renderAsset.rotation ?? 0,
           }
         : undefined,
+      pipeTopology: preparePipeTopology(structure, index, pipePositions, pipeDiagnostics),
     };
   });
   prepareSprites(preparedStructures);
@@ -740,5 +905,12 @@ export function prepareBlueprint(
       path: wirePath(from.point, to.point, sourceType === "signalBuffer"),
     };
   });
-  return { ...blueprint, bounds, signalCoordinateOffset, preparedStructures, preparedSignalLinks };
+  return {
+    ...blueprint,
+    bounds,
+    signalCoordinateOffset,
+    preparedStructures,
+    preparedSignalLinks,
+    pipeDiagnostics,
+  };
 }
