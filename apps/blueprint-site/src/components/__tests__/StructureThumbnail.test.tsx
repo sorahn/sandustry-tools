@@ -45,6 +45,25 @@ describe("StructureThumbnail", () => {
     expect(html).toContain('y="3.5"');
   });
 
+  test("selects the correct row for a multi-row sprite sheet frame", () => {
+    const html = renderToStaticMarkup(
+      <StructureThumbnail
+        name="Pipe"
+        footprint={{ width: 1, height: 1 }}
+        frameIndex={12}
+        asset={{
+          path: "catalog/pipes.png",
+          sourceSize: { width: 96, height: 48 },
+          frame: { width: 16, height: 16 },
+          frameColumns: 6,
+        }}
+      />,
+    );
+
+    expect(html).toContain('x="0"');
+    expect(html).toContain('y="-16"');
+  });
+
   test("renders custom shape outline and mask for prefab terrain", () => {
     const customShape = [
       [1, 1],

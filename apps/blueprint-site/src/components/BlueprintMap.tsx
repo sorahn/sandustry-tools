@@ -1082,6 +1082,7 @@ export function BlueprintMap({
           preparedStructure={
             selectedIndex !== null ? preparedBlueprint.preparedStructures[selectedIndex] : null
           }
+          preparedBlueprint={preparedBlueprint}
           totalStructures={blueprint.data.length}
           blueprint={blueprint}
           activeFilterCluster={activeFilterCluster}

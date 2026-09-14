@@ -7,10 +7,15 @@ import {
   resolveElement,
   normalizeElementList,
   MATTER_TYPE,
+  LIQUID_VENT_STRUCTURE_TYPE,
+  PIPE_GRID_STEP,
+  PIPE_STRUCTURE_TYPE,
+  PUMP_STRUCTURE_TYPE,
   isFilterStructure,
   customShapeFromStructure,
   isFoundationStructure,
   type FilterOverlayCluster,
+  type PreparedBlueprint,
   type PreparedStructure,
 } from "@daryl.roberts/sandustry-blueprint-core";
 import { structureFootprint, structureTopY } from "../utils/blueprint-map";
@@ -32,6 +37,7 @@ export type BlueprintMapSidebarProps = {
   selected: BlueprintStructure | null;
   selectedIndex?: number | null;
   preparedStructure?: PreparedStructure | null;
+  preparedBlueprint?: PreparedBlueprint | null;
   totalStructures?: number;
   blueprint?: Blueprint;
   activeFilterCluster?: FilterOverlayCluster | null;
@@ -74,6 +80,7 @@ export function BlueprintMapSidebar({
   selected,
   selectedIndex,
   preparedStructure,
+  preparedBlueprint,
   totalStructures,
   blueprint,
   activeFilterCluster,
@@ -134,8 +141,19 @@ export function BlueprintMapSidebar({
 
   const sprite = preparedStructure?.sprite;
   const asset = sprite?.asset ?? entry?.renderAsset;
-  const frameIndex = sprite?.frameIndex ?? asset?.frameIndex ?? 0;
-  const rotation = sprite?.rotation ?? asset?.rotation ?? 0;
+  const pipeBridge = preparedStructure?.pipeTopology?.bridgeAxis ? asset?.pipeBridge : undefined;
+  const thumbnailAsset = pipeBridge
+    ? {
+        ...pipeBridge,
+        frame: { width: pipeBridge.sourceSize.width, height: pipeBridge.sourceSize.height },
+      }
+    : asset;
+  const frameIndex = pipeBridge ? 0 : (sprite?.frameIndex ?? asset?.frameIndex ?? 0);
+  const rotation = pipeBridge
+    ? preparedStructure?.pipeTopology?.bridgeAxis === "vertical"
+      ? -90
+      : 0
+    : (sprite?.rotation ?? asset?.rotation ?? 0);
   const lightColor = preparedStructure?.lightColor;
 
   // Connected signals
@@ -186,6 +204,105 @@ export function BlueprintMapSidebar({
   const dataRecord = selected?.data as Record<string, unknown> | undefined;
   const passThrough = Boolean(dataRecord?.filterPassThrough);
 
+  const pipeNeighbors = useMemo(() => {
+    if (!selected || !preparedStructure?.pipeTopology || !blueprint) return [];
+    const byAnchor = new Map(
+      blueprint.data
+        .map((structure, index) => [`${structure.x},${structure.y}`, index] as const)
+        .filter(([, index]) => blueprint.data[index].type === PIPE_STRUCTURE_TYPE),
+    );
+    const offsets = {
+      north: [0, -PIPE_GRID_STEP],
+      east: [PIPE_GRID_STEP, 0],
+      south: [0, PIPE_GRID_STEP],
+      west: [-PIPE_GRID_STEP, 0],
+    } as const;
+    const directions = [
+      ...preparedStructure.pipeTopology.connectedDirections,
+      ...preparedStructure.pipeTopology.bridgeDirections,
+    ];
+    return [...new Set(directions)].flatMap((direction) => {
+      const [dx, dy] = offsets[direction];
+      const index = byAnchor.get(`${selected.x + dx},${selected.y + dy}`);
+      return index === undefined ? [] : [{ direction, index }];
+    });
+  }, [blueprint, preparedStructure, selected]);
+
+  const pipeSummary = useMemo(() => {
+    if (!blueprint) return null;
+    const pipeIndices = blueprint.data.flatMap((structure, index) =>
+      structure.type === PIPE_STRUCTURE_TYPE ? [index] : [],
+    );
+    if (pipeIndices.length === 0) return null;
+    const pipeSet = new Set(pipeIndices);
+    const byAnchor = new Map(
+      pipeIndices.map((index) => {
+        const structure = blueprint.data[index];
+        return [`${structure.x},${structure.y}`, index] as const;
+      }),
+    );
+    const offsets = {
+      north: [0, -PIPE_GRID_STEP],
+      east: [PIPE_GRID_STEP, 0],
+      south: [0, PIPE_GRID_STEP],
+      west: [-PIPE_GRID_STEP, 0],
+    } as const;
+    const edges = (index: number) => {
+      const topology = preparedBlueprint?.preparedStructures[index]?.pipeTopology;
+      const structure = blueprint.data[index];
+      const data = structure.data as Record<string, unknown> | undefined;
+      const mask = typeof data?.pipeConnectionMask === "number" ? data.pipeConnectionMask : 0;
+      const directions = [
+        ...(topology?.connectedDirections ?? []),
+        ...(topology?.bridgeDirections ?? []),
+      ];
+      const fallbackDirections = [
+        ["north", 1],
+        ["east", 2],
+        ["south", 4],
+        ["west", 8],
+      ] as const;
+      const resolvedDirections = directions.length
+        ? directions
+        : fallbackDirections
+            .filter(([, bit]) => (mask & bit) !== 0)
+            .map(([direction]) => direction);
+      return [...new Set(resolvedDirections)].flatMap((direction) => {
+        const [dx, dy] = offsets[direction];
+        const neighbor = byAnchor.get(`${structure.x + dx},${structure.y + dy}`);
+        return neighbor === undefined ? [] : [neighbor];
+      });
+    };
+    const visited = new Set<number>();
+    let components = 0;
+    for (const index of pipeIndices) {
+      if (visited.has(index)) continue;
+      components += 1;
+      const queue = [index];
+      visited.add(index);
+      while (queue.length) {
+        const current = queue.pop()!;
+        for (const neighbor of edges(current)) {
+          if (pipeSet.has(neighbor) && !visited.has(neighbor)) {
+            visited.add(neighbor);
+            queue.push(neighbor);
+          }
+        }
+      }
+    }
+    return {
+      segments: pipeIndices.length,
+      endpoints: pipeIndices.filter((index) => {
+        const topology = preparedBlueprint?.preparedStructures[index]?.pipeTopology;
+        return topology?.kind === "endpoint";
+      }).length,
+      pumps: blueprint.data.filter((structure) => structure.type === PUMP_STRUCTURE_TYPE).length,
+      vents: blueprint.data.filter((structure) => structure.type === LIQUID_VENT_STRUCTURE_TYPE)
+        .length,
+      components,
+    };
+  }, [blueprint, preparedBlueprint, preparedStructure]);
+
   // Mod / Custom source element (e.g. Test Blocks Infinite Source)
   const sourceElementId = dataRecord?.elementId ?? dataRecord?.elementType;
   const sourceElement =
@@ -221,7 +338,7 @@ export function BlueprintMapSidebar({
             {/* Header: Sprite Thumbnail + Title + Type/Category */}
             <div className="flex items-start gap-3 rounded-lg border border-slate-800 bg-black/40 p-2.5">
               <StructureThumbnail
-                asset={asset}
+                asset={thumbnailAsset}
                 frameIndex={frameIndex}
                 rotation={rotation}
                 lightColor={lightColor}
@@ -263,6 +380,57 @@ export function BlueprintMapSidebar({
                 Unknown structure — no catalog entry or sprite is available. Showing a placeholder
                 using the raw blueprint record.
               </Alert>
+            ) : null}
+
+            {preparedStructure?.pipeTopology ? (
+              <div className="rounded-lg border border-cyan-900/60 bg-cyan-950/20 p-2.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold tracking-wider text-cyan-300 uppercase">
+                    Pipe topology
+                  </span>
+                  <Badge tone="blue" className="text-[10px]">
+                    {preparedStructure.pipeTopology.source === "serialized"
+                      ? "Recorded"
+                      : "Inferred"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <PropertyTile label="Role" value={preparedStructure.pipeTopology.kind} />
+                  <PropertyTile
+                    label="Connected"
+                    value={preparedStructure.pipeTopology.connectedDirections.join(", ") || "none"}
+                  />
+                  <PropertyTile
+                    label="Bridge"
+                    value={preparedStructure.pipeTopology.bridgeAxis ?? "none"}
+                  />
+                  <PropertyTile
+                    label="Neighbors"
+                    value={
+                      pipeNeighbors.length
+                        ? pipeNeighbors.map(({ index }) => `#${index + 1}`).join(", ")
+                        : "none"
+                    }
+                  />
+                </div>
+                {pipeNeighbors.length ? (
+                  <div className="text-[10px] text-slate-400">
+                    Linked by:{" "}
+                    {pipeNeighbors
+                      .map(({ direction, index }) => `${direction} #${index + 1}`)
+                      .join(" · ")}
+                  </div>
+                ) : null}
+                {blueprint && preparedStructure.index !== undefined ? (
+                  <div className="text-[10px] text-amber-300">
+                    {preparedBlueprint?.pipeDiagnostics.some(
+                      (diagnostic) => diagnostic.structureIndex === preparedStructure.index,
+                    )
+                      ? "Some pipe data was malformed; the map is showing a fallback."
+                      : null}
+                  </div>
+                ) : null}
+              </div>
             ) : null}
 
             {/* Filter Configuration Card */}
@@ -521,6 +689,26 @@ export function BlueprintMapSidebar({
                       </span>
                     </div>
                   ))}
+                </div>
+              </div>
+            ) : null}
+
+            {pipeSummary ? (
+              <div className="rounded-lg border border-slate-800 bg-black/30 p-2.5 space-y-2">
+                <div className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                  Pipe network summary
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <PropertyTile label="Pipe segments" value={pipeSummary.segments} />
+                  <PropertyTile label="Components" value={pipeSummary.components} />
+                  <PropertyTile label="Endpoints" value={pipeSummary.endpoints} />
+                  <PropertyTile
+                    label="Pumps / vents"
+                    value={`${pipeSummary.pumps} / ${pipeSummary.vents}`}
+                  />
+                </div>
+                <div className="text-[10px] text-slate-500">
+                  Network values are derived from blueprint positions and pipe connection data.
                 </div>
               </div>
             ) : null}

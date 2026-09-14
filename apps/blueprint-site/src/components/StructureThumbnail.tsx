@@ -261,8 +261,11 @@ export function StructureThumbnail({
   const boxOffsetX = (bboxWidth - cropWidth) / 2;
   const boxOffsetY = (bboxHeight - cropHeight) / 2;
 
-  const imageX = boxOffsetX - frameIndex * frameWidth - cropX;
-  const imageY = boxOffsetY - cropY;
+  const frameColumns = asset.frameColumns ?? 1;
+  const frameColumn = frameColumns > 1 ? frameIndex % frameColumns : frameIndex;
+  const frameRow = frameColumns > 1 ? Math.floor(frameIndex / frameColumns) : 0;
+  const imageX = boxOffsetX - frameColumn * frameWidth - cropX;
+  const imageY = boxOffsetY - frameRow * frameHeight - cropY;
 
   const href = `${import.meta.env.BASE_URL}${asset.path}`;
   const cx = bboxWidth / 2;
