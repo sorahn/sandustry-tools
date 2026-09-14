@@ -134,5 +134,16 @@ describe("pipe topology preparation", () => {
     }).svg;
     assert.match(svg, /href="catalog\/pipes\.png"/);
     assert.match(svg, /href="catalog\/pipe_bridge\.png"/);
+    assert.ok(svg.indexOf('data-layer="pipes"') < svg.indexOf('data-layer="pipe-bridges"'));
+    assert.ok(
+      svg.indexOf('data-layer="pipe-bridges"') < svg.indexOf('data-layer="foundation-outline"'),
+    );
+    assert.ok(
+      svg.indexOf('data-layer="foundation-outline"') <
+        svg.indexOf('data-layer="foundation-structures"'),
+    );
+    assert.ok(
+      svg.indexOf('data-layer="foundation-structures"') < svg.indexOf('data-layer="structures"'),
+    );
   });
 });

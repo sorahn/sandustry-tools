@@ -291,15 +291,16 @@ function renderPipeBridge(
   const frameHeight = bridge.frame?.height ?? 16;
   const width = frameWidth * scale * 3;
   const height = frameHeight * scale;
+  const pipeBlock = prepared.footprint.width * model.cell;
   const href = options.assetUrl
     ? options.assetUrl(bridge.path)
     : `${options.assetBaseUrl ?? ""}${bridge.path}`;
   if (topology.bridgeAxis === "horizontal") {
-    return `<image href="${escapeXml(href)}" x="${number(left - model.cell)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>`;
+    return `<image href="${escapeXml(href)}" x="${number(left - pipeBlock)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>`;
   }
-  const centerX = left + model.cell / 2;
-  const centerY = top + model.cell / 2;
-  return `<g data-structure-index="${index}"><image href="${escapeXml(href)}" x="${number(left - model.cell)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" preserveAspectRatio="none" transform="rotate(-90 ${number(centerX)} ${number(centerY)})" style="image-rendering:pixelated"/></g>`;
+  const centerX = left + pipeBlock / 2;
+  const centerY = top + pipeBlock / 2;
+  return `<g data-structure-index="${index}"><image href="${escapeXml(href)}" x="${number(left - pipeBlock)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" preserveAspectRatio="none" transform="rotate(-90 ${number(centerX)} ${number(centerY)})" style="image-rendering:pixelated"/></g>`;
 }
 
 export function renderBlueprintToSvg(
@@ -312,19 +313,29 @@ export function renderBlueprintToSvg(
   const showFoundationOutlines = options.showFoundationOutlines ?? true;
   const showSignalLinks = options.showSignalLinks ?? true;
   const showEdgeFade = options.showEdgeFade ?? false;
-  const foundationAndBeltStructures = model.renderStructures.filter(({ index }) =>
-    isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
+  const isPipeStructure = (index: number) =>
+    model.preparedBlueprint.preparedStructures[index].pipeTopology !== undefined;
+  const foundationAndBeltStructures = model.renderStructures.filter(
+    ({ index }) =>
+      !isPipeStructure(index) &&
+      isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
   );
   const otherStructures = model.renderStructures.filter(
-    ({ index }) => !isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
+    ({ index }) =>
+      !isPipeStructure(index) &&
+      !isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
   );
+  const pipeStructures = model.renderStructures.filter(({ index }) => isPipeStructure(index));
+  const pipeMarkup = pipeStructures
+    .map(({ index }) => renderStructure(model, index, options))
+    .join("");
   const foundationAndBeltMarkup = foundationAndBeltStructures
     .map(({ index }) => renderStructure(model, index, options))
     .join("");
   const otherStructureMarkup = otherStructures
     .map(({ index }) => renderStructure(model, index, options))
     .join("");
-  const pipeBridgeMarkup = otherStructures
+  const pipeBridgeMarkup = pipeStructures
     .map(({ index }) => renderPipeBridge(model, index, options))
     .join("");
   const foundationPath = showFoundationOutlines
@@ -366,7 +377,7 @@ export function renderBlueprintToSvg(
       })
     : "";
   const edgeFade = showEdgeFade && includeBackground ? renderEdgeFade(model) : "";
-  const markup = `${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g><g data-layer="pipe-bridges">${pipeBridgeMarkup}</g>${signals}${filterOverlay}${edgeFade}`;
+  const markup = `${background}<g data-layer="pipes">${pipeMarkup}<g data-layer="pipe-bridges">${pipeBridgeMarkup}</g></g><g data-layer="foundation-outline">${outline}</g><g data-layer="foundation-structures">${foundationAndBeltMarkup}</g><g data-layer="structures">${otherStructureMarkup}</g>${signals}${filterOverlay}${edgeFade}`;
   return {
     model,
     markup,
