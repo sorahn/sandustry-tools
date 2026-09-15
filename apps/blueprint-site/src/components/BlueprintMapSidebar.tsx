@@ -347,6 +347,8 @@ export function BlueprintMapSidebar({
                 structureType={selected?.type}
                 customShape={customShape}
                 outlineShape={outlineShape}
+                previewCells={pipeBridge ? 10 : 8}
+                previewMode={pipeBridge ? "pipeBridge" : "standard"}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
