@@ -52,6 +52,8 @@ export {
   PUMP_STRUCTURE_TYPE,
   pipeSpriteIndexFor,
   preparePipeTopology,
+  connectedPipeStructureIndices,
+  pipeNetworkDirections,
   type PipeBridgeAxis,
   type PipeDirection,
   type PipeTopology,

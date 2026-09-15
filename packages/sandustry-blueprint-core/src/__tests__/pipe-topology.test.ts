@@ -4,7 +4,9 @@ import { describe, test } from "bun:test";
 import { blueprintCatalog, decodeBlueprint, renderBlueprintToSvg, type Blueprint } from "..";
 import {
   PIPE_STRUCTURE_TYPE,
+  connectedPipeStructureIndices,
   pipeSpriteIndexFor,
+  pipeNetworkDirections,
   prepareBlueprint,
   preparePipeTopology,
 } from "../prepare";
@@ -122,6 +124,45 @@ describe("pipe topology preparation", () => {
     assert.equal(pipeSpriteIndexFor(3, 0, 0), 9);
   });
 
+  test("connects normal pipe routes without joining bridge overpasses", () => {
+    const prepared = prepareBlueprint({
+      name: "network",
+      signalLinks: null,
+      data: [
+        { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 2 } },
+        { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 8 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 4,
+          y: 4,
+          data: {
+            pipeConnectionMask: 2,
+            pipeBridgeConnectionMask: 1,
+            pipeBridgeAxis: "horizontal",
+          },
+        },
+        { type: PIPE_STRUCTURE_TYPE, x: 8, y: 4, data: { pipeConnectionMask: 8 } },
+      ],
+    });
+    assert.deepEqual(connectedPipeStructureIndices(prepared, 0), [0, 1]);
+    assert.deepEqual(connectedPipeStructureIndices(prepared, 2), [2, 3]);
+  });
+
+  test("uses an axis-only bridge's axis for network membership", () => {
+    const encoded = readFileSync(
+      new URL("../../tests/visual/blueprints/pipeworks.txt", import.meta.url),
+      "utf8",
+    ).trim();
+    const prepared = prepareBlueprint(decodeBlueprint(encoded));
+    const bridge = prepared.preparedStructures[110].pipeTopology!;
+    assert.deepEqual(pipeNetworkDirections(bridge), ["east", "west"]);
+    const network = connectedPipeStructureIndices(prepared, 110);
+    assert.ok(network.includes(114));
+    assert.ok(network.includes(118));
+    assert.ok(!network.includes(109));
+    assert.ok(!network.includes(112));
+  });
+
   test("renders the native pipe sheet and bridge asset", () => {
     const encoded = readFileSync(
       new URL("../../tests/visual/blueprints/pipeworks.txt", import.meta.url),
@@ -145,6 +186,90 @@ describe("pipe topology preparation", () => {
     assert.ok(
       svg.indexOf('data-layer="foundation-structures"') < svg.indexOf('data-layer="structures"'),
     );
+  });
+
+  test("renders one alpha-derived outline layer for a selected pipe network", () => {
+    const svg = renderBlueprintToSvg(
+      {
+        name: "highlight",
+        signalLinks: null,
+        data: [
+          { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 2 } },
+          { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 8 } },
+        ],
+      },
+      { catalog: blueprintCatalog(), pipeNetworkHighlightIndices: [0, 1], showGrid: false },
+    ).svg;
+    assert.match(svg, /data-layer="pipe-network-highlight"/);
+    assert.match(svg, /feMorphology/);
+    assert.match(svg, /flood-color="#facc15"/);
+    const highlight = svg.slice(svg.indexOf('data-layer="pipe-network-highlight"'));
+    assert.match(highlight, /data-pipe-highlight-frame=/);
+    assert.doesNotMatch(highlight, /pipe-highlight-clip|catalog\/pipes\.png/);
+  });
+
+  test("highlights a bridge without outlining its underlying pipe sprite", () => {
+    const svg = renderBlueprintToSvg(
+      {
+        name: "bridge highlight",
+        signalLinks: null,
+        data: [
+          {
+            type: PIPE_STRUCTURE_TYPE,
+            x: 0,
+            y: 0,
+            data: { pipeConnectionMask: 5, pipeBridgeAxis: "horizontal" },
+          },
+        ],
+      },
+      { catalog: blueprintCatalog(), pipeNetworkHighlightIndices: [0], showGrid: false },
+    ).svg;
+    const highlight = svg.slice(svg.indexOf('data-layer="pipe-network-highlight"'));
+    assert.doesNotMatch(highlight, /catalog\/pipes\.png/);
+    assert.match(highlight, /catalog\/pipe_bridge\.png/);
+  });
+
+  test("keeps masked pipe segments that are not rendered as overpasses", () => {
+    const svg = renderBlueprintToSvg(
+      {
+        name: "masked pipe segment",
+        signalLinks: null,
+        data: [
+          {
+            type: PIPE_STRUCTURE_TYPE,
+            x: 0,
+            y: 0,
+            data: { pipeConnectionMask: 8, pipeBridgeConnectionMask: 2 },
+          },
+        ],
+      },
+      { catalog: blueprintCatalog(), pipeNetworkHighlightIndices: [0], showGrid: false },
+    ).svg;
+    const highlight = svg.slice(svg.indexOf('data-layer="pipe-network-highlight"'));
+    assert.match(highlight, /data-pipe-highlight-frame=/);
+    assert.doesNotMatch(highlight, /pipe-highlight-clip|catalog\/pipes\.png/);
+    assert.doesNotMatch(highlight, /catalog\/pipe_bridge\.png/);
+  });
+
+  test("renders cell outlines for attached non-pipe structures", () => {
+    const svg = renderBlueprintToSvg(
+      {
+        name: "attached endpoint",
+        signalLinks: null,
+        data: [
+          { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 0 } },
+          { type: 24, x: 0, y: 0 },
+        ],
+      },
+      {
+        catalog: blueprintCatalog(),
+        pipeNetworkHighlightIndices: [0],
+        pipeNetworkHighlightCellIndices: [1],
+        showGrid: false,
+      },
+    ).svg;
+    assert.match(svg, /data-layer="pipe-network-highlight"/);
+    assert.match(svg, /data-structure-index="1"[^>]*fill="#ffffff"/);
   });
 
   test("renders a pipe-specific fallback for malformed topology", () => {

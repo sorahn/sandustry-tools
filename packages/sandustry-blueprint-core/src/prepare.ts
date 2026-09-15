@@ -42,6 +42,19 @@ export type PipeTopologyDiagnostic = {
   message: string;
 };
 
+/** Directions that belong to the network carried by a pipe segment. */
+export function pipeNetworkDirections(topology: PipeTopology): PipeDirection[] {
+  if (topology.kind === "bridge") {
+    if (topology.bridgeAxis) {
+      return topology.bridgeAxis === "horizontal" ? ["east", "west"] : ["north", "south"];
+    }
+    if (topology.bridgeDirections.length) {
+      return [...new Set([...topology.connectedDirections, ...topology.bridgeDirections])];
+    }
+  }
+  return topology.connectedDirections;
+}
+
 /** Used only to keep unknown structures visible as one blueprint block. */
 export const UNKNOWN_STRUCTURE_FOOTPRINT = { width: 4, height: 4 } as const;
 
@@ -838,6 +851,67 @@ export function preparePipeTopology(
         : "eligible",
     ...(hasInvalidData ? { fallback: "invalid-data" as const } : {}),
   };
+}
+
+/**
+ * Returns the pipe segment indices connected to a selected segment.
+ * Bridge directions are intentionally excluded: a bridge passes over another
+ * route and does not join that route to its own network.
+ */
+export function connectedPipeStructureIndices(
+  preparedBlueprint: Pick<PreparedBlueprint, "preparedStructures">,
+  selectedIndex: number,
+) {
+  const selected = preparedBlueprint.preparedStructures[selectedIndex];
+  if (!selected?.pipeTopology) return [];
+
+  const byAnchor = new Map(
+    preparedBlueprint.preparedStructures
+      .filter((prepared) => prepared.pipeTopology)
+      .map(
+        (prepared) => [`${prepared.structure.x},${prepared.structure.y}`, prepared.index] as const,
+      ),
+  );
+  const offsets = {
+    north: [0, -PIPE_GRID_STEP],
+    east: [PIPE_GRID_STEP, 0],
+    south: [0, PIPE_GRID_STEP],
+    west: [-PIPE_GRID_STEP, 0],
+  } as const;
+  const opposite = {
+    north: "south",
+    east: "west",
+    south: "north",
+    west: "east",
+  } as const;
+  const neighbors = (index: number) => {
+    const prepared = preparedBlueprint.preparedStructures[index];
+    if (!prepared?.pipeTopology) return [];
+    const directions = pipeNetworkDirections(prepared.pipeTopology);
+    return directions.flatMap((direction) => {
+      const [dx, dy] = offsets[direction];
+      const neighbor = byAnchor.get(`${prepared.structure.x + dx},${prepared.structure.y + dy}`);
+      if (neighbor === undefined) return [];
+      const neighborTopology = preparedBlueprint.preparedStructures[neighbor].pipeTopology;
+      return neighborTopology &&
+        pipeNetworkDirections(neighborTopology).includes(opposite[direction])
+        ? [neighbor]
+        : [];
+    });
+  };
+
+  const connected = new Set<number>([selectedIndex]);
+  const queue = [selectedIndex];
+  while (queue.length) {
+    const current = queue.pop()!;
+    for (const neighbor of neighbors(current)) {
+      if (!connected.has(neighbor)) {
+        connected.add(neighbor);
+        queue.push(neighbor);
+      }
+    }
+  }
+  return [...connected].sort((left, right) => left - right);
 }
 
 function pipePositionSet(blueprint: Blueprint) {

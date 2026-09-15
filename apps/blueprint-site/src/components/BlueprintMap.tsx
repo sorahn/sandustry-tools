@@ -6,6 +6,9 @@ import {
   renderBlueprintToSvg,
   renderFilterOverlaySvg,
   clusterFilterStructures,
+  connectedPipeStructureIndices,
+  LIQUID_VENT_STRUCTURE_TYPE,
+  PUMP_STRUCTURE_TYPE,
   type FilterOverlayCluster,
   tileColor,
   structureLabel,
@@ -256,6 +259,35 @@ export function BlueprintMap({
     [blueprint, cell, padding],
   );
   const { preparedBlueprint, minX, minY, width, height } = mapModel;
+  const selectedPipeNetworkIndices = useMemo(
+    () =>
+      controlledSelectedIndex === null || selectedIndex === null
+        ? []
+        : connectedPipeStructureIndices(preparedBlueprint, selectedIndex),
+    [controlledSelectedIndex, preparedBlueprint, selectedIndex],
+  );
+  const selectedPipeNetworkCellIndices = useMemo(() => {
+    if (!selectedPipeNetworkIndices.length) return [];
+    const networkAnchors = new Set(
+      selectedPipeNetworkIndices.map((index) => {
+        const structure = blueprint.data[index];
+        return `${structure.x},${structure.y}`;
+      }),
+    );
+    const attachedStructures = preparedBlueprint.preparedStructures.flatMap((prepared) => {
+      const { structure } = prepared;
+      return (structure.type === PUMP_STRUCTURE_TYPE ||
+        structure.type === LIQUID_VENT_STRUCTURE_TYPE) &&
+        networkAnchors.has(`${structure.x},${structure.y}`)
+        ? [prepared.index]
+        : [];
+    });
+    return attachedStructures;
+  }, [blueprint.data, preparedBlueprint, selectedPipeNetworkIndices]);
+  const selectedPipePixelIndices = useMemo(
+    () => selectedPipeNetworkIndices,
+    [selectedPipeNetworkIndices],
+  );
   const baseRender = useMemo(
     () =>
       renderBlueprintToSvg(blueprint, {
@@ -273,6 +305,8 @@ export function BlueprintMap({
         showFoundationOutlines: foundationOutlinesVisible,
         showSignalLinks: signalLinksVisible,
         showFilterOverlay: false,
+        pipeNetworkHighlightIndices: selectedPipePixelIndices,
+        pipeNetworkHighlightCellIndices: selectedPipeNetworkCellIndices,
       }),
     [
       blueprint,
@@ -285,6 +319,8 @@ export function BlueprintMap({
       showSprites,
       signalLinksVisible,
       spritesVisible,
+      selectedPipePixelIndices,
+      selectedPipeNetworkCellIndices,
     ],
   );
 
