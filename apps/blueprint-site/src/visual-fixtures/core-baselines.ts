@@ -36,8 +36,8 @@ function loadRawBaselines(): Record<string, string> {
     const fs = req("node:fs");
     const path = req("node:path");
     const dir = path.resolve(
-      import.meta.dirname,
-      "../../../../packages/sandustry-blueprint-core/tests/visual/blueprints",
+      process.cwd(),
+      "packages/sandustry-blueprint-core/tests/visual/blueprints",
     );
     const result: Record<string, string> = {};
     for (const file of fs.readdirSync(dir).sort()) {

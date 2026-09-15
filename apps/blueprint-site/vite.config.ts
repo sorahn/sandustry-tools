@@ -31,6 +31,11 @@ function gitInfo() {
 export default defineConfig(({ command, mode }) => ({
   base: command === "serve" || mode === "preview" ? "/" : "/sandustry-tools/",
   plugins: [react(), tailwindcss()],
+  build: {
+    // The route catalog and shared renderer intentionally ship in one client
+    // bundle; keep this known size from being reported as a build warning.
+    chunkSizeWarningLimit: 1100,
+  },
   define: {
     __GIT_INFO__: JSON.stringify(gitInfo()),
   },

@@ -2,14 +2,16 @@
 
 import { spawn } from "node:child_process";
 import { build } from "esbuild";
+import { readdirSync } from "node:fs";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, rename, readdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, rename, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
 
-const visualRoot = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(visualRoot, "../../../..");
+// The documented visual commands run from the repository root. Using cwd here
+// also avoids Bun resolving import.meta.url through its temporary module path.
+const root = process.cwd();
+const visualRoot = path.join(root, "packages/sandustry-blueprint-core/tests/visual");
 const outputRoot = path.join(root, "artifacts/visual/blueprint-core");
 const blueprintRoot = path.join(visualRoot, "blueprints");
 const baselineRoot = path.join(visualRoot, "baselines");
@@ -35,7 +37,9 @@ async function visualJobs() {
       baseline: path.join(visualRoot, "catalog-baseline.png"),
     },
   ];
-  const files = (await readdir(blueprintRoot)).filter((file) => file.endsWith(".txt")).sort();
+  const files = readdirSync(blueprintRoot)
+    .filter((file) => file.endsWith(".txt"))
+    .sort();
   for (const file of files) {
     const name = path.basename(file, ".txt");
     const input = (await readFile(path.join(blueprintRoot, file), "utf8")).trim();

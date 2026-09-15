@@ -9,7 +9,9 @@ import {
 import generatedCatalog from "./structure-catalog.json" with { type: "json" };
 
 /** Package-owned sprite root for Node renderers. */
-export const BLUEPRINT_ASSET_ROOT = new URL("../assets/", import.meta.url);
+const BLUEPRINT_ASSET_PATH = ["..", "assets", ""].join("/");
+const BLUEPRINT_MODULE_URL = import.meta.url;
+export const BLUEPRINT_ASSET_ROOT = new URL(BLUEPRINT_ASSET_PATH, BLUEPRINT_MODULE_URL);
 
 export type { CatalogEntry, CatalogRenderAsset, RenderMetadata };
 
