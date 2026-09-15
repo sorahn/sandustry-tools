@@ -61,7 +61,7 @@ describe("StructureThumbnail", () => {
     );
 
     expect(html).toContain('x="0"');
-    expect(html).toContain('y="-16"');
+    expect(html).toContain('y="-32"');
   });
 
   test("renders custom shape outline and mask for prefab terrain", () => {

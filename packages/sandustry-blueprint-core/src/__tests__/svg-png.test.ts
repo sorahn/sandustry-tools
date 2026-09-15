@@ -141,6 +141,49 @@ describe("SVG and PNG adapters", () => {
     expect(result).toContain(">Mac</text>");
   });
 
+  test("preserves horizontal sheets while supporting explicit multi-row sheets", () => {
+    const result = renderBlueprintToSvg(
+      {
+        name: "Sprite sheets",
+        data: [
+          { type: "legacy-sheet", x: 0, y: 0 },
+          { type: "multi-row-sheet", x: 4, y: 0 },
+        ],
+        signalLinks: null,
+      },
+      {
+        padding: 1,
+        cell: 8,
+        showGrid: false,
+        catalog: {
+          get: (type) => ({
+            footprint: { width: 4, height: 4 },
+            renderAsset:
+              type === "legacy-sheet"
+                ? {
+                    path: "legacy.png",
+                    sourceSize: { width: 64, height: 16 },
+                    frame: { width: 16, height: 16 },
+                    frameIndex: 3,
+                    clip: true,
+                  }
+                : {
+                    path: "multi-row.png",
+                    sourceSize: { width: 32, height: 32 },
+                    frame: { width: 16, height: 16 },
+                    frameIndex: 3,
+                    frameColumns: 2,
+                    clip: true,
+                  },
+          }),
+        },
+      },
+    ).svg;
+
+    expect(result).toContain('<image href="legacy.png" x="-88" y="8" width="128" height="32"');
+    expect(result).toContain('<image href="multi-row.png" x="8" y="-24" width="64" height="64"');
+  });
+
   test("renders outlines below foundations and belts, then structures and signals", () => {
     const result = renderBlueprintToSvg(
       {

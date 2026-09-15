@@ -252,8 +252,8 @@ function renderStructure(
           offsetY * renderPixelScale(model.cell)
         : top + offsetY * renderPixelScale(model.cell);
     const frameColumns = asset.frameColumns ?? 1;
-    const frameColumn = frameIndex % frameColumns;
-    const frameRow = Math.floor(frameIndex / frameColumns);
+    const frameColumn = frameColumns > 1 ? frameIndex % frameColumns : frameIndex;
+    const frameRow = frameColumns > 1 ? Math.floor(frameIndex / frameColumns) : 0;
     const frameImageX = imageX - frameColumn * visualWidth;
     const frameImageY = imageY - (frameColumns > 1 ? frameRow * visualHeight : 0);
     const href = options.assetUrl

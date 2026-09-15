@@ -89,6 +89,17 @@ Run the smallest relevant checks, then the affected project checks. Each
 test-bearing package or app owns a test script; the root test script runs all
 test-bearing projects. Keep the root test project list current when adding one.
 
+After changing the blueprint core renderer, rebuild the core package before
+running PNG visual snapshots:
+
+    npm --workspace packages/sandustry-blueprint-core run build
+    bun test packages/sandustry-blueprint-core/tests/visual/png-snapshots.test.ts
+
+The PNG adapter renders through @sandustry/blueprint-node, which imports the
+core package entrypoint from generated dist output. A TypeScript check does not
+refresh dist, so running PNG snapshots without the build can silently test stale
+renderer code.
+
 The integration test starts a local host on 127.0.0.1:4173 and connects to the
 game. Always request elevated permission before running:
 

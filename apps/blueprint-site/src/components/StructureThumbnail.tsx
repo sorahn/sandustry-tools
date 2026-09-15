@@ -283,7 +283,8 @@ export function StructureThumbnail({
   const imageX = boxOffsetX - frameColumn * frameWidth - cropX;
   const imageY = boxOffsetY - frameRow * frameHeight - cropY;
 
-  const href = `${import.meta.env.BASE_URL}${asset.path}`;
+  const baseUrl = import.meta.env?.BASE_URL ?? "";
+  const href = `${baseUrl}${asset.path}`;
   const cx = bboxWidth / 2;
   const cy = bboxHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;

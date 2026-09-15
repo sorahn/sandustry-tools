@@ -38,6 +38,10 @@ function loadRawBaselines(): Record<string, string> {
     const candidates = [
       path.resolve(process.cwd(), "packages/sandustry-blueprint-core/tests/visual/blueprints"),
       path.resolve(process.cwd(), "tests/visual/blueprints"),
+      path.resolve(
+        process.cwd(),
+        "../../packages/sandustry-blueprint-core/tests/visual/blueprints",
+      ),
     ];
     const dir = candidates.find((candidate: string) => fs.existsSync(candidate));
     if (!dir) {
