@@ -63,6 +63,14 @@ export type ConnectedPipeNetwork = {
   bridgeUnderlayIndices: number[];
 };
 
+export type SelectedPipeNetwork = ConnectedPipeNetwork & {
+  pumpIndices: number[];
+  ventIndices: number[];
+  endpointCount: number;
+  widthTiles: number;
+  heightTiles: number;
+};
+
 /** Used only to keep unknown structures visible as one blueprint block. */
 export const UNKNOWN_STRUCTURE_FOOTPRINT = { width: 4, height: 4 } as const;
 
@@ -967,6 +975,60 @@ export function connectedPipeStructureIndices(
   selectedIndex: number,
 ) {
   return connectedPipeNetwork(preparedBlueprint, selectedIndex).structureIndices;
+}
+
+/** Resolves a pipe network from a pipe or a pump/vent attached at its anchor. */
+export function selectedPipeNetwork(
+  preparedBlueprint: Pick<PreparedBlueprint, "preparedStructures">,
+  selectedIndex: number,
+): SelectedPipeNetwork | null {
+  const selected = preparedBlueprint.preparedStructures[selectedIndex];
+  if (!selected) return null;
+  const selectedType = selected.structure.type;
+  const isAttachment =
+    selectedType === PUMP_STRUCTURE_TYPE || selectedType === LIQUID_VENT_STRUCTURE_TYPE;
+  const seed = selected.pipeTopology
+    ? selected
+    : isAttachment
+      ? preparedBlueprint.preparedStructures.find(
+          (prepared) =>
+            prepared.pipeTopology &&
+            prepared.structure.x === selected.structure.x &&
+            prepared.structure.y === selected.structure.y,
+        )
+      : undefined;
+  if (!seed) return null;
+
+  const network = connectedPipeNetwork(preparedBlueprint, seed.index);
+  const networkAnchors = new Set(
+    network.structureIndices.map((index) => {
+      const structure = preparedBlueprint.preparedStructures[index].structure;
+      return `${structure.x},${structure.y}`;
+    }),
+  );
+  const attachedIndices = (type: number) =>
+    preparedBlueprint.preparedStructures.flatMap((prepared) =>
+      prepared.structure.type === type &&
+      networkAnchors.has(`${prepared.structure.x},${prepared.structure.y}`)
+        ? [prepared.index]
+        : [],
+    );
+  const pipeStructures = network.structureIndices.map(
+    (index) => preparedBlueprint.preparedStructures[index],
+  );
+  const minX = Math.min(...pipeStructures.map(({ structure }) => structure.x));
+  const minY = Math.min(...pipeStructures.map(({ structure }) => structure.y));
+  const maxX = Math.max(...pipeStructures.map(({ structure }) => structure.x));
+  const maxY = Math.max(...pipeStructures.map(({ structure }) => structure.y));
+  return {
+    ...network,
+    pumpIndices: attachedIndices(PUMP_STRUCTURE_TYPE),
+    ventIndices: attachedIndices(LIQUID_VENT_STRUCTURE_TYPE),
+    endpointCount: pipeStructures.filter(({ pipeTopology }) => pipeTopology?.kind === "endpoint")
+      .length,
+    widthTiles: (maxX - minX) / PIPE_GRID_STEP + 1,
+    heightTiles: (maxY - minY) / PIPE_GRID_STEP + 1,
+  };
 }
 
 function pipePositionSet(blueprint: Blueprint) {

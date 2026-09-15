@@ -3,13 +3,16 @@ import { readFileSync } from "node:fs";
 import { describe, test } from "bun:test";
 import { blueprintCatalog, decodeBlueprint, renderBlueprintToSvg, type Blueprint } from "..";
 import {
+  LIQUID_VENT_STRUCTURE_TYPE,
   PIPE_STRUCTURE_TYPE,
+  PUMP_STRUCTURE_TYPE,
   connectedPipeNetwork,
   connectedPipeStructureIndices,
   pipeSpriteIndexFor,
   pipeNetworkDirections,
   prepareBlueprint,
   preparePipeTopology,
+  selectedPipeNetwork,
 } from "../prepare";
 
 describe("pipe topology preparation", () => {
@@ -192,6 +195,55 @@ describe("pipe topology preparation", () => {
     assert.ok(network.includes(118));
     assert.ok(!network.includes(109));
     assert.ok(!network.includes(112));
+  });
+
+  test("resolves the same network from attached pumps and liquid vents", () => {
+    const prepared = prepareBlueprint({
+      name: "attachments",
+      signalLinks: null,
+      data: [
+        { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 2 } },
+        { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 10 } },
+        { type: PIPE_STRUCTURE_TYPE, x: 8, y: 0, data: { pipeConnectionMask: 8 } },
+        { type: PUMP_STRUCTURE_TYPE, x: 0, y: 0 },
+        { type: LIQUID_VENT_STRUCTURE_TYPE, x: 8, y: 0 },
+      ],
+    });
+
+    const expected = {
+      structureIndices: [0, 1, 2],
+      bridgeIndices: [],
+      bridgeUnderlayIndices: [],
+      pumpIndices: [3],
+      ventIndices: [4],
+      endpointCount: 2,
+      widthTiles: 3,
+      heightTiles: 1,
+    };
+    assert.deepEqual(selectedPipeNetwork(prepared, 0), expected);
+    assert.deepEqual(selectedPipeNetwork(prepared, 3), expected);
+    assert.deepEqual(selectedPipeNetwork(prepared, 4), expected);
+  });
+
+  test("does not resolve a pipe network from an unrelated structure", () => {
+    const prepared = prepareBlueprint({
+      name: "unrelated",
+      signalLinks: null,
+      data: [{ type: 1, x: 0, y: 0 }],
+    });
+
+    assert.equal(selectedPipeNetwork(prepared, 0), null);
+  });
+
+  test("measures the selected pipeworks junction in pipe tiles", () => {
+    const encoded = readFileSync(
+      new URL("../../tests/visual/blueprints/pipeworks.txt", import.meta.url),
+      "utf8",
+    ).trim();
+    const network = selectedPipeNetwork(prepareBlueprint(decodeBlueprint(encoded)), 69);
+
+    assert.equal(network?.widthTiles, 5);
+    assert.equal(network?.heightTiles, 4);
   });
 
   test("renders the native pipe sheet and bridge asset", () => {
