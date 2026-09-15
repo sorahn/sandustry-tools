@@ -4,6 +4,7 @@ import { describe, test } from "bun:test";
 import { blueprintCatalog, decodeBlueprint, renderBlueprintToSvg, type Blueprint } from "..";
 import {
   PIPE_STRUCTURE_TYPE,
+  connectedPipeNetwork,
   connectedPipeStructureIndices,
   pipeSpriteIndexFor,
   pipeNetworkDirections,
@@ -148,6 +149,36 @@ describe("pipe topology preparation", () => {
     assert.deepEqual(connectedPipeStructureIndices(prepared, 2), [2, 3]);
   });
 
+  test("continues an underpassing route without joining the bridge route", () => {
+    const prepared = prepareBlueprint({
+      name: "crossing lanes",
+      signalLinks: null,
+      data: [
+        { type: PIPE_STRUCTURE_TYPE, x: 0, y: -4, data: { pipeConnectionMask: 4 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 0,
+          y: 0,
+          data: { pipeConnectionMask: 5, pipeBridgeAxis: "horizontal" },
+        },
+        { type: PIPE_STRUCTURE_TYPE, x: 0, y: 4, data: { pipeConnectionMask: 1 } },
+        { type: PIPE_STRUCTURE_TYPE, x: -4, y: 0, data: { pipeConnectionMask: 2 } },
+        { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 8 } },
+      ],
+    });
+
+    assert.deepEqual(connectedPipeNetwork(prepared, 0), {
+      structureIndices: [0, 1, 2],
+      bridgeIndices: [],
+      bridgeUnderlayIndices: [1],
+    });
+    assert.deepEqual(connectedPipeNetwork(prepared, 1), {
+      structureIndices: [1, 3, 4],
+      bridgeIndices: [1],
+      bridgeUnderlayIndices: [],
+    });
+  });
+
   test("uses an axis-only bridge's axis for network membership", () => {
     const encoded = readFileSync(
       new URL("../../tests/visual/blueprints/pipeworks.txt", import.meta.url),
@@ -227,6 +258,33 @@ describe("pipe topology preparation", () => {
     const highlight = svg.slice(svg.indexOf('data-layer="pipe-network-highlight"'));
     assert.doesNotMatch(highlight, /catalog\/pipes\.png/);
     assert.match(highlight, /catalog\/pipe_bridge\.png/);
+  });
+
+  test("highlights the uninterrupted pipe below a bridge without the overpass", () => {
+    const svg = renderBlueprintToSvg(
+      {
+        name: "bridge underlay highlight",
+        signalLinks: null,
+        data: [
+          {
+            type: PIPE_STRUCTURE_TYPE,
+            x: 0,
+            y: 0,
+            data: { pipeConnectionMask: 5, pipeBridgeAxis: "horizontal" },
+          },
+        ],
+      },
+      {
+        catalog: blueprintCatalog(),
+        pipeNetworkHighlightIndices: [0],
+        pipeNetworkHighlightBridgeIndices: [],
+        pipeNetworkHighlightUnderlayIndices: [0],
+        showGrid: false,
+      },
+    ).svg;
+    const highlight = svg.slice(svg.indexOf('data-layer="pipe-network-highlight"'));
+    assert.match(highlight, /data-pipe-highlight-frame=/);
+    assert.doesNotMatch(highlight, /catalog\/pipe_bridge\.png/);
   });
 
   test("keeps masked pipe segments that are not rendered as overpasses", () => {

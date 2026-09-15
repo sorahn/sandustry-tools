@@ -44,6 +44,10 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   filterActiveClusterKey?: string;
   /** Add an alpha-derived outline around the selected pipe sprite group. */
   pipeNetworkHighlightIndices?: readonly number[];
+  /** Axis-bearing bridge records represented by their visible overpass. */
+  pipeNetworkHighlightBridgeIndices?: readonly number[];
+  /** Axis-bearing bridge records represented by their uninterrupted pipe below. */
+  pipeNetworkHighlightUnderlayIndices?: readonly number[];
   /** Add cell-based outlines for structures attached to the selected pipe network. */
   pipeNetworkHighlightCellIndices?: readonly number[];
   model?: BlueprintRenderModel;
@@ -382,13 +386,19 @@ function renderPipeHighlightSprite(
   model: BlueprintRenderModel,
   index: number,
   options: BlueprintSvgRenderOptions,
+  includeBridgeUnderlay = false,
 ) {
   const prepared = model.preparedBlueprint.preparedStructures[index];
   const asset = prepared.sprite?.asset;
   // Only an actual overpass has a separate bridge sprite. Records with a
   // bridge connection mask but no bridge axis still draw their ordinary pipe
   // segment; omitting those would erase the two pipe ends around a crossing.
-  if (prepared.pipeTopology?.kind === "bridge" && prepared.pipeTopology.bridgeAxis) return "";
+  if (
+    !includeBridgeUnderlay &&
+    prepared.pipeTopology?.kind === "bridge" &&
+    prepared.pipeTopology.bridgeAxis
+  )
+    return "";
   if (!asset?.path || prepared.pipeTopology?.fallback || options.showSprites === false) {
     return renderStructure(model, index, options);
   }
@@ -469,6 +479,10 @@ export function renderBlueprintToSvg(
     .map(({ index }) => renderPipeBridge(model, index, options))
     .join("");
   const highlightedPipeIndices = new Set(options.pipeNetworkHighlightIndices ?? []);
+  const highlightedBridgeIndices = options.pipeNetworkHighlightBridgeIndices
+    ? new Set(options.pipeNetworkHighlightBridgeIndices)
+    : highlightedPipeIndices;
+  const highlightedUnderlayIndices = new Set(options.pipeNetworkHighlightUnderlayIndices ?? []);
   const highlightedCellIndices = new Set(options.pipeNetworkHighlightCellIndices ?? []);
   const cellHighlightMarkup = [...highlightedCellIndices]
     .map((index) => {
@@ -491,10 +505,17 @@ export function renderBlueprintToSvg(
           highlightedPipeIndices.size
             ? pipeStructures
                 .filter(({ index }) => highlightedPipeIndices.has(index))
-                .map(({ index }) => renderPipeHighlightSprite(model, index, options))
+                .map(({ index }) =>
+                  renderPipeHighlightSprite(
+                    model,
+                    index,
+                    options,
+                    highlightedUnderlayIndices.has(index),
+                  ),
+                )
                 .join("") +
               pipeStructures
-                .filter(({ index }) => highlightedPipeIndices.has(index))
+                .filter(({ index }) => highlightedBridgeIndices.has(index))
                 .map(({ index }) => renderPipeHighlightBridge(model, index, options))
                 .join("")
             : ""

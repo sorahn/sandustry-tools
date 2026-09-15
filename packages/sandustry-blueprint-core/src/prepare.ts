@@ -55,6 +55,14 @@ export function pipeNetworkDirections(topology: PipeTopology): PipeDirection[] {
   return topology.connectedDirections;
 }
 
+export type ConnectedPipeNetwork = {
+  structureIndices: number[];
+  /** Axis-bearing bridge records traversed along the visible overpass. */
+  bridgeIndices: number[];
+  /** Axis-bearing bridge records traversed along the uninterrupted pipe below. */
+  bridgeUnderlayIndices: number[];
+};
+
 /** Used only to keep unknown structures visible as one blueprint block. */
 export const UNKNOWN_STRUCTURE_FOOTPRINT = { width: 4, height: 4 } as const;
 
@@ -853,17 +861,15 @@ export function preparePipeTopology(
   };
 }
 
-/**
- * Returns the pipe segment indices connected to a selected segment.
- * Bridge directions are intentionally excluded: a bridge passes over another
- * route and does not join that route to its own network.
- */
-export function connectedPipeStructureIndices(
+/** Returns a lane-aware connected pipe network for a selected segment. */
+export function connectedPipeNetwork(
   preparedBlueprint: Pick<PreparedBlueprint, "preparedStructures">,
   selectedIndex: number,
-) {
+): ConnectedPipeNetwork {
   const selected = preparedBlueprint.preparedStructures[selectedIndex];
-  if (!selected?.pipeTopology) return [];
+  if (!selected?.pipeTopology) {
+    return { structureIndices: [], bridgeIndices: [], bridgeUnderlayIndices: [] };
+  }
 
   const byAnchor = new Map(
     preparedBlueprint.preparedStructures
@@ -884,34 +890,83 @@ export function connectedPipeStructureIndices(
     south: "north",
     west: "east",
   } as const;
-  const neighbors = (index: number) => {
+  type Lane = "pipe" | "bridge";
+  type State = { index: number; lane: Lane };
+  const laneDirections = (topology: PipeTopology, lane: Lane): PipeDirection[] => {
+    if (!topology.bridgeAxis) return pipeNetworkDirections(topology);
+    if (lane === "bridge") {
+      return topology.bridgeAxis === "horizontal" ? ["east", "west"] : ["north", "south"];
+    }
+    return topology.connectedDirections;
+  };
+  const acceptingLanes = (topology: PipeTopology, direction: PipeDirection): Lane[] => {
+    if (!topology.bridgeAxis) {
+      return pipeNetworkDirections(topology).includes(direction) ? ["pipe"] : [];
+    }
+    const lanes: Lane[] = [];
+    if (laneDirections(topology, "bridge").includes(direction)) lanes.push("bridge");
+    if (laneDirections(topology, "pipe").includes(direction)) lanes.push("pipe");
+    return lanes;
+  };
+  const neighbors = ({ index, lane }: State) => {
     const prepared = preparedBlueprint.preparedStructures[index];
     if (!prepared?.pipeTopology) return [];
-    const directions = pipeNetworkDirections(prepared.pipeTopology);
+    const directions = laneDirections(prepared.pipeTopology, lane);
     return directions.flatMap((direction) => {
       const [dx, dy] = offsets[direction];
       const neighbor = byAnchor.get(`${prepared.structure.x + dx},${prepared.structure.y + dy}`);
       if (neighbor === undefined) return [];
       const neighborTopology = preparedBlueprint.preparedStructures[neighbor].pipeTopology;
-      return neighborTopology &&
-        pipeNetworkDirections(neighborTopology).includes(opposite[direction])
-        ? [neighbor]
+      return neighborTopology
+        ? acceptingLanes(neighborTopology, opposite[direction]).map((neighborLane) => ({
+            index: neighbor,
+            lane: neighborLane,
+          }))
         : [];
     });
   };
 
-  const connected = new Set<number>([selectedIndex]);
-  const queue = [selectedIndex];
+  const initial: State = {
+    index: selectedIndex,
+    lane: selected.pipeTopology.bridgeAxis ? "bridge" : "pipe",
+  };
+  const stateKey = ({ index, lane }: State) => `${index}:${lane}`;
+  const connected = new Map<string, State>([[stateKey(initial), initial]]);
+  const queue = [initial];
   while (queue.length) {
     const current = queue.pop()!;
     for (const neighbor of neighbors(current)) {
-      if (!connected.has(neighbor)) {
-        connected.add(neighbor);
+      const key = stateKey(neighbor);
+      if (!connected.has(key)) {
+        connected.set(key, neighbor);
         queue.push(neighbor);
       }
     }
   }
-  return [...connected].sort((left, right) => left - right);
+  const states = [...connected.values()];
+  const sortedUniqueIndices = (values: number[]) =>
+    [...new Set(values)].sort((left, right) => left - right);
+  return {
+    structureIndices: sortedUniqueIndices(states.map(({ index }) => index)),
+    bridgeIndices: sortedUniqueIndices(
+      states.flatMap(({ index, lane }) => (lane === "bridge" ? [index] : [])),
+    ),
+    bridgeUnderlayIndices: sortedUniqueIndices(
+      states.flatMap(({ index, lane }) =>
+        lane === "pipe" && preparedBlueprint.preparedStructures[index].pipeTopology?.bridgeAxis
+          ? [index]
+          : [],
+      ),
+    ),
+  };
+}
+
+/** Returns the structure indices in the selected lane-aware pipe network. */
+export function connectedPipeStructureIndices(
+  preparedBlueprint: Pick<PreparedBlueprint, "preparedStructures">,
+  selectedIndex: number,
+) {
+  return connectedPipeNetwork(preparedBlueprint, selectedIndex).structureIndices;
 }
 
 function pipePositionSet(blueprint: Blueprint) {
