@@ -35,10 +35,14 @@ function loadRawBaselines(): Record<string, string> {
     const req = (import.meta as Record<string, any>)["require"];
     const fs = req("node:fs");
     const path = req("node:path");
-    const dir = path.resolve(
-      process.cwd(),
-      "packages/sandustry-blueprint-core/tests/visual/blueprints",
-    );
+    const candidates = [
+      path.resolve(process.cwd(), "packages/sandustry-blueprint-core/tests/visual/blueprints"),
+      path.resolve(process.cwd(), "tests/visual/blueprints"),
+    ];
+    const dir = candidates.find((candidate: string) => fs.existsSync(candidate));
+    if (!dir) {
+      throw new Error(`Unable to locate core visual baselines. Tried: ${candidates.join(", ")}`);
+    }
     const result: Record<string, string> = {};
     for (const file of fs.readdirSync(dir).sort()) {
       if (file.endsWith(".txt")) {
