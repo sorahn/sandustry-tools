@@ -13,3 +13,4 @@ node_modules/
 .repo-rag/
 *-PLAN.md
 .sandustry-save
+.tmp

@@ -7,10 +7,12 @@ import {
   resolveElement,
   normalizeElementList,
   MATTER_TYPE,
+  selectedPipeNetwork as resolveSelectedPipeNetwork,
   isFilterStructure,
   customShapeFromStructure,
   isFoundationStructure,
   type FilterOverlayCluster,
+  type PreparedBlueprint,
   type PreparedStructure,
 } from "@daryl.roberts/sandustry-blueprint-core";
 import { structureFootprint, structureTopY } from "../utils/blueprint-map";
@@ -32,6 +34,7 @@ export type BlueprintMapSidebarProps = {
   selected: BlueprintStructure | null;
   selectedIndex?: number | null;
   preparedStructure?: PreparedStructure | null;
+  preparedBlueprint?: PreparedBlueprint | null;
   totalStructures?: number;
   blueprint?: Blueprint;
   activeFilterCluster?: FilterOverlayCluster | null;
@@ -70,10 +73,20 @@ function matterBadgeTone(matterType?: number): BadgeTone {
   }
 }
 
+function tileSpanLabel(tileSpan: number) {
+  const tileCount = Math.ceil(tileSpan);
+  return `${tileCount} ${tileCount === 1 ? "tile" : "tiles"}`;
+}
+
+function countLabel(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
 export function BlueprintMapSidebar({
   selected,
   selectedIndex,
   preparedStructure,
+  preparedBlueprint,
   totalStructures,
   blueprint,
   activeFilterCluster,
@@ -134,8 +147,19 @@ export function BlueprintMapSidebar({
 
   const sprite = preparedStructure?.sprite;
   const asset = sprite?.asset ?? entry?.renderAsset;
-  const frameIndex = sprite?.frameIndex ?? asset?.frameIndex ?? 0;
-  const rotation = sprite?.rotation ?? asset?.rotation ?? 0;
+  const pipeBridge = preparedStructure?.pipeTopology?.bridgeAxis ? asset?.pipeBridge : undefined;
+  const thumbnailAsset = pipeBridge
+    ? {
+        ...pipeBridge,
+        frame: { width: pipeBridge.sourceSize.width, height: pipeBridge.sourceSize.height },
+      }
+    : asset;
+  const frameIndex = pipeBridge ? 0 : (sprite?.frameIndex ?? asset?.frameIndex ?? 0);
+  const rotation = pipeBridge
+    ? preparedStructure?.pipeTopology?.bridgeAxis === "vertical"
+      ? -90
+      : 0
+    : (sprite?.rotation ?? asset?.rotation ?? 0);
   const lightColor = preparedStructure?.lightColor;
 
   // Connected signals
@@ -186,6 +210,14 @@ export function BlueprintMapSidebar({
   const dataRecord = selected?.data as Record<string, unknown> | undefined;
   const passThrough = Boolean(dataRecord?.filterPassThrough);
 
+  const selectedNetwork = useMemo(
+    () =>
+      preparedBlueprint && selectedIndex !== null && selectedIndex !== undefined
+        ? resolveSelectedPipeNetwork(preparedBlueprint, selectedIndex)
+        : null,
+    [preparedBlueprint, selectedIndex],
+  );
+
   // Mod / Custom source element (e.g. Test Blocks Infinite Source)
   const sourceElementId = dataRecord?.elementId ?? dataRecord?.elementType;
   const sourceElement =
@@ -221,7 +253,7 @@ export function BlueprintMapSidebar({
             {/* Header: Sprite Thumbnail + Title + Type/Category */}
             <div className="flex items-start gap-3 rounded-lg border border-slate-800 bg-black/40 p-2.5">
               <StructureThumbnail
-                asset={asset}
+                asset={thumbnailAsset}
                 frameIndex={frameIndex}
                 rotation={rotation}
                 lightColor={lightColor}
@@ -230,6 +262,8 @@ export function BlueprintMapSidebar({
                 structureType={selected?.type}
                 customShape={customShape}
                 outlineShape={outlineShape}
+                previewCells={pipeBridge ? 10 : 8}
+                previewMode={pipeBridge ? "pipeBridge" : "standard"}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
@@ -522,6 +556,47 @@ export function BlueprintMapSidebar({
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : null}
+
+            {selectedNetwork ? (
+              <div className="rounded-lg border border-slate-800 bg-black/30 p-2.5 space-y-2">
+                <div className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                  Highlighted pipe network
+                </div>
+                <div className="rounded border border-slate-800/80 bg-slate-950/70 px-2.5 py-2 text-[11px] text-slate-300">
+                  <div className="flex gap-2">
+                    <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-sm border border-dashed border-cyan-400" />
+                    <div className="min-w-0 space-y-1">
+                      <div>
+                        <span className="font-semibold text-slate-200">Network:</span>{" "}
+                        {countLabel(selectedNetwork.structureIndices.length, "pipe")} ·{" "}
+                        {countLabel(selectedNetwork.endpointCount, "endpoint")} ·{" "}
+                        {countLabel(selectedNetwork.pumpIndices.length, "pump")} ·{" "}
+                        {countLabel(selectedNetwork.ventIndices.length, "vent")}
+                      </div>
+                      <div className="text-slate-400">
+                        <span className="font-semibold text-slate-300">Bounds:</span>{" "}
+                        {tileSpanLabel(selectedNetwork.widthTiles)} wide ×{" "}
+                        {tileSpanLabel(selectedNetwork.heightTiles)} high ·{" "}
+                        {countLabel(selectedNetwork.bridgeIndices.length, "bridge")} ·{" "}
+                        {countLabel(
+                          selectedNetwork.bridgeUnderlayIndices.length,
+                          "underpass",
+                          "underpasses",
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {preparedStructure?.pipeTopology &&
+                preparedBlueprint?.pipeDiagnostics.some(
+                  (diagnostic) => diagnostic.structureIndex === preparedStructure.index,
+                ) ? (
+                  <div className="text-[10px] text-amber-300">
+                    Some pipe data was malformed; the map is showing a fallback.
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

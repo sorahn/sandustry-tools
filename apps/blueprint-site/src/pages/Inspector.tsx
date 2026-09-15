@@ -15,6 +15,7 @@ import {
 import { debugComponent } from "../components/DebugComponentWrapper";
 import { BlueprintMap } from "../components/BlueprintMap";
 import { BlueprintInspectorSidebar } from "../components/BlueprintInspectorSidebar";
+import { blueprintCatalog } from "../utils/catalog";
 import { AppWorkspaceShell } from "../components/AppWorkspaceShell";
 import { GlobalFileDropOverlay } from "../components/GlobalFileDropOverlay";
 import { PersistentCheckbox } from "../components/PersistentCheckbox";
@@ -467,7 +468,7 @@ export function BlueprintInspectorPage({
   };
 
   const preparedBlueprint = useMemo(
-    () => (blueprint ? prepareBlueprint(blueprint) : null),
+    () => (blueprint ? prepareBlueprint(blueprint, { catalog: blueprintCatalog() }) : null),
     [blueprint],
   );
   const preparedStructure =
@@ -554,6 +555,7 @@ export function BlueprintInspectorPage({
             selected={selectedStructure}
             selectedIndex={selectedIndex}
             preparedStructure={preparedStructure}
+            preparedBlueprint={preparedBlueprint}
             activeFilterCluster={activeFilterCluster}
             matchingFiltersCount={activeFilterCluster ? matchingFiltersCount : undefined}
             highlightMatchingFilters={highlightMatchingFilters}

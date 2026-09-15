@@ -6,9 +6,18 @@ images are trimmed to the rendered map bounds, without the site navigation,
 test controls, or viewport chrome. Current images and ImageMagick diffs are
 written under `artifacts/visual/blueprint-core/`.
 
-Visual fixture helpers use the core source by default so ordinary runs exercise
-the current working tree. To exercise the publishable package entrypoint,
-build core first and set `BLUEPRINT_CORE_TEST_DIST=1`:
+SVG fixture helpers use the core source by default. PNG snapshots render through
+`@sandustry/blueprint-node`, which imports the core package entrypoint from
+generated `dist` output. After changing the core renderer, always rebuild core
+before running PNG snapshots; a TypeScript check alone does not refresh `dist`:
+
+```sh
+npm --workspace @daryl.roberts/sandustry-blueprint-core run build
+bun test packages/sandustry-blueprint-core/tests/visual/png-snapshots.test.ts
+```
+
+To make the direct core fixture imports use the publishable package entrypoint
+as well, build core first and set `BLUEPRINT_CORE_TEST_DIST=1`:
 
 ```sh
 npm --workspace @daryl.roberts/sandustry-blueprint-core run build

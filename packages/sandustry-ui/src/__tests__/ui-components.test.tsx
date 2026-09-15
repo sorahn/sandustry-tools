@@ -528,6 +528,9 @@ describe("@sandustry/ui component suite", () => {
     expect(tileHtml).toContain("12, 34");
     expect(tileHtml).toContain("Top-left");
     expect(tileHtml).toContain("border-[var(--sd-color-border-subtle,#242424)]");
+    expect(tileHtml.match(/Position/g)).toHaveLength(1);
+    expect(tileHtml).toContain('slot="label"');
+    expect(tileHtml).toContain('slot="subValue"');
 
     const customTileHtml = renderToStaticMarkup(
       <PropertyTile label="Custom">

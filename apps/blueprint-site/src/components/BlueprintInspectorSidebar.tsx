@@ -3,6 +3,7 @@ import cx from "clsx";
 import {
   structureLabel,
   type PreparedStructure,
+  type PreparedBlueprint,
   type FilterOverlayCluster,
 } from "@daryl.roberts/sandustry-blueprint-core";
 import { Button, SegmentedControl } from "@sandustry/ui";
@@ -18,6 +19,7 @@ export type BlueprintInspectorSidebarProps = {
   selected: Blueprint["data"][number] | null;
   selectedIndex: number | null;
   preparedStructure?: PreparedStructure | null;
+  preparedBlueprint?: PreparedBlueprint | null;
   activeFilterCluster?: FilterOverlayCluster | null;
   matchingFiltersCount?: number;
   highlightMatchingFilters?: boolean;
@@ -38,6 +40,7 @@ export function BlueprintInspectorSidebar({
   selected,
   selectedIndex,
   preparedStructure,
+  preparedBlueprint,
   activeFilterCluster,
   matchingFiltersCount,
   highlightMatchingFilters,
@@ -77,6 +80,7 @@ export function BlueprintInspectorSidebar({
             selected={selected}
             selectedIndex={selectedIndex}
             preparedStructure={preparedStructure}
+            preparedBlueprint={preparedBlueprint}
             totalStructures={blueprint.data.length}
             blueprint={blueprint}
             activeFilterCluster={activeFilterCluster}

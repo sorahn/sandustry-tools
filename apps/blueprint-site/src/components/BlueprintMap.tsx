@@ -6,6 +6,7 @@ import {
   renderBlueprintToSvg,
   renderFilterOverlaySvg,
   clusterFilterStructures,
+  selectedPipeNetwork as resolveSelectedPipeNetwork,
   type FilterOverlayCluster,
   tileColor,
   structureLabel,
@@ -256,6 +257,20 @@ export function BlueprintMap({
     [blueprint, cell, padding],
   );
   const { preparedBlueprint, minX, minY, width, height } = mapModel;
+  const selectedPipeNetwork = useMemo(
+    () =>
+      controlledSelectedIndex === null || selectedIndex === null
+        ? null
+        : resolveSelectedPipeNetwork(preparedBlueprint, selectedIndex),
+    [controlledSelectedIndex, preparedBlueprint, selectedIndex],
+  );
+  const selectedPipeNetworkCellIndices = useMemo(
+    () =>
+      selectedPipeNetwork
+        ? [...selectedPipeNetwork.pumpIndices, ...selectedPipeNetwork.ventIndices]
+        : [],
+    [selectedPipeNetwork],
+  );
   const baseRender = useMemo(
     () =>
       renderBlueprintToSvg(blueprint, {
@@ -273,6 +288,10 @@ export function BlueprintMap({
         showFoundationOutlines: foundationOutlinesVisible,
         showSignalLinks: signalLinksVisible,
         showFilterOverlay: false,
+        pipeNetworkHighlightIndices: selectedPipeNetwork?.structureIndices,
+        pipeNetworkHighlightBridgeIndices: selectedPipeNetwork?.bridgeIndices,
+        pipeNetworkHighlightUnderlayIndices: selectedPipeNetwork?.bridgeUnderlayIndices,
+        pipeNetworkHighlightCellIndices: selectedPipeNetworkCellIndices,
       }),
     [
       blueprint,
@@ -285,6 +304,10 @@ export function BlueprintMap({
       showSprites,
       signalLinksVisible,
       spritesVisible,
+      selectedPipeNetwork?.structureIndices,
+      selectedPipeNetwork?.bridgeIndices,
+      selectedPipeNetwork?.bridgeUnderlayIndices,
+      selectedPipeNetworkCellIndices,
     ],
   );
 
@@ -1082,6 +1105,7 @@ export function BlueprintMap({
           preparedStructure={
             selectedIndex !== null ? preparedBlueprint.preparedStructures[selectedIndex] : null
           }
+          preparedBlueprint={preparedBlueprint}
           totalStructures={blueprint.data.length}
           blueprint={blueprint}
           activeFilterCluster={activeFilterCluster}

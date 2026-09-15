@@ -2,6 +2,75 @@ import type { Blueprint, BlueprintStructure, BlueprintType, SignalLink } from ".
 
 export type BlueprintCoordinate = { x: number; y: number };
 
+/** Native structure ids used by the vanilla pipe family. */
+export const PIPE_STRUCTURE_TYPE = 23;
+export const PUMP_STRUCTURE_TYPE = 24;
+export const LIQUID_VENT_STRUCTURE_TYPE = 25;
+export const PIPE_GRID_STEP = 4;
+
+export type PipeDirection = "north" | "east" | "south" | "west";
+export type PipeBridgeAxis = "horizontal" | "vertical";
+export type PipeTopologyKind =
+  | "isolated"
+  | "endpoint"
+  | "straight"
+  | "corner"
+  | "tee"
+  | "cross"
+  | "bridge";
+
+export type PipeTopology = {
+  kind: PipeTopologyKind;
+  connectionMask: number;
+  spriteIndex: number;
+  bridgeConnectionMask: number;
+  bridgeAxis?: PipeBridgeAxis;
+  connectedDirections: PipeDirection[];
+  bridgeDirections: PipeDirection[];
+  source: "serialized" | "inferred";
+  /** The native grid anchor used by fixed-cadence pipe decorations. */
+  gridAnchor: BlueprintCoordinate;
+  /** Junctions and bridge pieces suppress the normal grid bulb at this cell. */
+  gridBulb: "eligible" | "suppressed";
+  /** Serialized pipe data was malformed and is being shown with a safe fallback. */
+  fallback?: "invalid-data";
+};
+
+export type PipeTopologyDiagnostic = {
+  structureIndex: number;
+  field: "pipeConnectionMask" | "pipeBridgeConnectionMask" | "pipeBridgeAxis";
+  message: string;
+};
+
+/** Directions that belong to the network carried by a pipe segment. */
+export function pipeNetworkDirections(topology: PipeTopology): PipeDirection[] {
+  if (topology.kind === "bridge") {
+    if (topology.bridgeAxis) {
+      return topology.bridgeAxis === "horizontal" ? ["east", "west"] : ["north", "south"];
+    }
+    if (topology.bridgeDirections.length) {
+      return [...new Set([...topology.connectedDirections, ...topology.bridgeDirections])];
+    }
+  }
+  return topology.connectedDirections;
+}
+
+export type ConnectedPipeNetwork = {
+  structureIndices: number[];
+  /** Axis-bearing bridge records traversed along the visible overpass. */
+  bridgeIndices: number[];
+  /** Axis-bearing bridge records traversed along the uninterrupted pipe below. */
+  bridgeUnderlayIndices: number[];
+};
+
+export type SelectedPipeNetwork = ConnectedPipeNetwork & {
+  pumpIndices: number[];
+  ventIndices: number[];
+  endpointCount: number;
+  widthTiles: number;
+  heightTiles: number;
+};
+
 /** Used only to keep unknown structures visible as one blueprint block. */
 export const UNKNOWN_STRUCTURE_FOOTPRINT = { width: 4, height: 4 } as const;
 
@@ -33,6 +102,7 @@ export type RenderAsset = {
   sourceCrop?: { x: number; y: number; width: number; height: number };
   frame?: { width: number; height: number };
   frameIndex?: number;
+  frameColumns?: number;
   scale?: string | { mode: string; factor?: number };
   clip?: boolean;
   offset?: { x?: number; y?: number };
@@ -45,6 +115,11 @@ export type RenderAsset = {
     edgeFrame?: number;
     interiorFrame?: number;
     sideRotation?: number;
+  };
+  pipeBridge?: {
+    path: string;
+    sourceSize: { width: number; height: number };
+    frame?: { width: number; height: number };
   };
   [key: string]: unknown;
 };
@@ -91,6 +166,7 @@ export type PreparedStructure = {
   z: number;
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
   sprite?: PreparedSprite;
+  pipeTopology?: PipeTopology;
 };
 
 export type UnderlyingCell = { x: number; y: number };
@@ -100,6 +176,7 @@ export type PreparedBlueprint = Blueprint & {
   signalCoordinateOffset: BlueprintCoordinate;
   preparedStructures: PreparedStructure[];
   preparedSignalLinks: PreparedSignalLink[];
+  pipeDiagnostics: PipeTopologyDiagnostic[];
 };
 
 export type PrepareBlueprintOptions = {
@@ -641,10 +718,333 @@ function wirePath(from: BlueprintCoordinate, to: BlueprintCoordinate, straight: 
   };
 }
 
+const PIPE_DIRECTION_BITS: Array<[PipeDirection, number]> = [
+  ["north", 1],
+  ["east", 2],
+  ["south", 4],
+  ["west", 8],
+];
+
+/** Native pipe mask-to-sprite order from the 0.5.7 renderer. */
+export const PIPE_SPRITE_INDEX_BY_MASK: Readonly<Record<number, number>> = {
+  0: 0,
+  2: 1,
+  8: 2,
+  10: 3,
+  4: 4,
+  6: 5,
+  12: 6,
+  14: 7,
+  1: 8,
+  3: 9,
+  9: 10,
+  11: 11,
+  5: 12,
+  7: 13,
+  13: 14,
+  15: 15,
+};
+
+export function pipeSpriteIndexFor(mask: number, x: number, y: number) {
+  let spriteIndex = PIPE_SPRITE_INDEX_BY_MASK[mask] ?? 0;
+  // The native renderer selects two alternate connector/bulb frames from the
+  // absolute pipe-grid position, so translating a blueprint can change the
+  // decoration without changing its topology.
+  if (spriteIndex === 3 && (x / PIPE_GRID_STEP) % 2 !== 0) spriteIndex = 16;
+  if (spriteIndex === 12 && (y / PIPE_GRID_STEP) % 2 === 0) spriteIndex = 17;
+  return spriteIndex;
+}
+
+function pipeDirections(mask: number) {
+  return PIPE_DIRECTION_BITS.filter(([, bit]) => (mask & bit) !== 0).map(
+    ([direction]) => direction,
+  );
+}
+
+function pipeMaskKind(mask: number): PipeTopologyKind {
+  const count = pipeDirections(mask).length;
+  if (count === 0) return "isolated";
+  if (count === 1) return "endpoint";
+  if (count === 2) return mask === 5 || mask === 10 ? "straight" : "corner";
+  if (count === 3) return "tee";
+  return "cross";
+}
+
+function pipeData(structure: BlueprintStructure) {
+  return typeof structure.data === "object" && structure.data !== null
+    ? (structure.data as Record<string, unknown>)
+    : undefined;
+}
+
+function validPipeMask(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 15;
+}
+
+function validPipeBridgeAxis(value: unknown): value is PipeBridgeAxis {
+  return value === "horizontal" || value === "vertical";
+}
+
+function inferredPipeMask(structure: BlueprintStructure, pipePositions: Set<string> | undefined) {
+  if (!pipePositions) return 0;
+  let mask = 0;
+  for (const [bit, dx, dy] of [
+    [1, 0, -PIPE_GRID_STEP],
+    [2, PIPE_GRID_STEP, 0],
+    [4, 0, PIPE_GRID_STEP],
+    [8, -PIPE_GRID_STEP, 0],
+  ] as const) {
+    if (pipePositions.has(`${structure.x + dx},${structure.y + dy}`)) mask |= bit;
+  }
+  return mask;
+}
+
+/**
+ * Converts native pipe state into a renderer-neutral topology description.
+ * The native data remains untouched; missing masks are inferred only from
+ * neighboring pipe anchors on the native four-pixel grid.
+ */
+export function preparePipeTopology(
+  structure: BlueprintStructure,
+  structureIndex = -1,
+  pipePositions?: Set<string>,
+  diagnostics: PipeTopologyDiagnostic[] = [],
+): PipeTopology | undefined {
+  if (structure.type !== PIPE_STRUCTURE_TYPE) return undefined;
+  const data = pipeData(structure);
+  const hasMask = data !== undefined && "pipeConnectionMask" in data;
+  const rawMask = data?.pipeConnectionMask;
+  const connectionMask = validPipeMask(rawMask)
+    ? rawMask
+    : hasMask
+      ? 0
+      : inferredPipeMask(structure, pipePositions);
+  if (hasMask && !validPipeMask(rawMask)) {
+    diagnostics.push({
+      structureIndex,
+      field: "pipeConnectionMask",
+      message: "Expected an integer mask from 0 through 15; using 0.",
+    });
+  }
+
+  const hasBridgeMask = data !== undefined && "pipeBridgeConnectionMask" in data;
+  const rawBridgeMask = data?.pipeBridgeConnectionMask;
+  const bridgeConnectionMask = validPipeMask(rawBridgeMask) ? rawBridgeMask : hasBridgeMask ? 0 : 0;
+  if (hasBridgeMask && !validPipeMask(rawBridgeMask)) {
+    diagnostics.push({
+      structureIndex,
+      field: "pipeBridgeConnectionMask",
+      message: "Expected an integer mask from 0 through 15; using 0.",
+    });
+  }
+
+  const rawAxis = data?.pipeBridgeAxis;
+  const bridgeAxis = validPipeBridgeAxis(rawAxis) ? rawAxis : undefined;
+  if (rawAxis !== undefined && !validPipeBridgeAxis(rawAxis)) {
+    diagnostics.push({
+      structureIndex,
+      field: "pipeBridgeAxis",
+      message: "Expected 'horizontal' or 'vertical'; ignoring the value.",
+    });
+  }
+  const hasInvalidData =
+    (hasMask && !validPipeMask(rawMask)) ||
+    (hasBridgeMask && !validPipeMask(rawBridgeMask)) ||
+    (rawAxis !== undefined && !validPipeBridgeAxis(rawAxis));
+  const kind = bridgeAxis || bridgeConnectionMask !== 0 ? "bridge" : pipeMaskKind(connectionMask);
+  return {
+    kind,
+    connectionMask,
+    spriteIndex: pipeSpriteIndexFor(connectionMask, structure.x, structure.y),
+    bridgeConnectionMask,
+    bridgeAxis,
+    connectedDirections: pipeDirections(connectionMask),
+    bridgeDirections: pipeDirections(bridgeConnectionMask),
+    source: hasMask ? "serialized" : "inferred",
+    gridAnchor: { x: structure.x, y: structure.y },
+    gridBulb:
+      kind === "corner" || kind === "tee" || kind === "cross" || kind === "bridge"
+        ? "suppressed"
+        : "eligible",
+    ...(hasInvalidData ? { fallback: "invalid-data" as const } : {}),
+  };
+}
+
+/** Returns a lane-aware connected pipe network for a selected segment. */
+export function connectedPipeNetwork(
+  preparedBlueprint: Pick<PreparedBlueprint, "preparedStructures">,
+  selectedIndex: number,
+): ConnectedPipeNetwork {
+  const selected = preparedBlueprint.preparedStructures[selectedIndex];
+  if (!selected?.pipeTopology) {
+    return { structureIndices: [], bridgeIndices: [], bridgeUnderlayIndices: [] };
+  }
+
+  const byAnchor = new Map(
+    preparedBlueprint.preparedStructures
+      .filter((prepared) => prepared.pipeTopology)
+      .map(
+        (prepared) => [`${prepared.structure.x},${prepared.structure.y}`, prepared.index] as const,
+      ),
+  );
+  const offsets = {
+    north: [0, -PIPE_GRID_STEP],
+    east: [PIPE_GRID_STEP, 0],
+    south: [0, PIPE_GRID_STEP],
+    west: [-PIPE_GRID_STEP, 0],
+  } as const;
+  const opposite = {
+    north: "south",
+    east: "west",
+    south: "north",
+    west: "east",
+  } as const;
+  type Lane = "pipe" | "bridge";
+  type State = { index: number; lane: Lane };
+  const laneDirections = (topology: PipeTopology, lane: Lane): PipeDirection[] => {
+    if (!topology.bridgeAxis) return pipeNetworkDirections(topology);
+    if (lane === "bridge") {
+      return topology.bridgeAxis === "horizontal" ? ["east", "west"] : ["north", "south"];
+    }
+    return topology.connectedDirections;
+  };
+  const acceptingLanes = (topology: PipeTopology, direction: PipeDirection): Lane[] => {
+    if (!topology.bridgeAxis) {
+      return pipeNetworkDirections(topology).includes(direction) ? ["pipe"] : [];
+    }
+    const lanes: Lane[] = [];
+    if (laneDirections(topology, "bridge").includes(direction)) lanes.push("bridge");
+    if (laneDirections(topology, "pipe").includes(direction)) lanes.push("pipe");
+    return lanes;
+  };
+  const neighbors = ({ index, lane }: State) => {
+    const prepared = preparedBlueprint.preparedStructures[index];
+    if (!prepared?.pipeTopology) return [];
+    const directions = laneDirections(prepared.pipeTopology, lane);
+    return directions.flatMap((direction) => {
+      const [dx, dy] = offsets[direction];
+      const neighbor = byAnchor.get(`${prepared.structure.x + dx},${prepared.structure.y + dy}`);
+      if (neighbor === undefined) return [];
+      const neighborTopology = preparedBlueprint.preparedStructures[neighbor].pipeTopology;
+      return neighborTopology
+        ? acceptingLanes(neighborTopology, opposite[direction]).map((neighborLane) => ({
+            index: neighbor,
+            lane: neighborLane,
+          }))
+        : [];
+    });
+  };
+
+  const initial: State = {
+    index: selectedIndex,
+    lane: selected.pipeTopology.bridgeAxis ? "bridge" : "pipe",
+  };
+  const stateKey = ({ index, lane }: State) => `${index}:${lane}`;
+  const connected = new Map<string, State>([[stateKey(initial), initial]]);
+  const queue = [initial];
+  while (queue.length) {
+    const current = queue.pop()!;
+    for (const neighbor of neighbors(current)) {
+      const key = stateKey(neighbor);
+      if (!connected.has(key)) {
+        connected.set(key, neighbor);
+        queue.push(neighbor);
+      }
+    }
+  }
+  const states = [...connected.values()];
+  const sortedUniqueIndices = (values: number[]) =>
+    [...new Set(values)].sort((left, right) => left - right);
+  return {
+    structureIndices: sortedUniqueIndices(states.map(({ index }) => index)),
+    bridgeIndices: sortedUniqueIndices(
+      states.flatMap(({ index, lane }) => (lane === "bridge" ? [index] : [])),
+    ),
+    bridgeUnderlayIndices: sortedUniqueIndices(
+      states.flatMap(({ index, lane }) =>
+        lane === "pipe" && preparedBlueprint.preparedStructures[index].pipeTopology?.bridgeAxis
+          ? [index]
+          : [],
+      ),
+    ),
+  };
+}
+
+/** Returns the structure indices in the selected lane-aware pipe network. */
+export function connectedPipeStructureIndices(
+  preparedBlueprint: Pick<PreparedBlueprint, "preparedStructures">,
+  selectedIndex: number,
+) {
+  return connectedPipeNetwork(preparedBlueprint, selectedIndex).structureIndices;
+}
+
+/** Resolves a pipe network from a pipe or a pump/vent attached at its anchor. */
+export function selectedPipeNetwork(
+  preparedBlueprint: Pick<PreparedBlueprint, "preparedStructures">,
+  selectedIndex: number,
+): SelectedPipeNetwork | null {
+  const selected = preparedBlueprint.preparedStructures[selectedIndex];
+  if (!selected) return null;
+  const selectedType = selected.structure.type;
+  const isAttachment =
+    selectedType === PUMP_STRUCTURE_TYPE || selectedType === LIQUID_VENT_STRUCTURE_TYPE;
+  const seed = selected.pipeTopology
+    ? selected
+    : isAttachment
+      ? preparedBlueprint.preparedStructures.find(
+          (prepared) =>
+            prepared.pipeTopology &&
+            prepared.structure.x === selected.structure.x &&
+            prepared.structure.y === selected.structure.y,
+        )
+      : undefined;
+  if (!seed) return null;
+
+  const network = connectedPipeNetwork(preparedBlueprint, seed.index);
+  const networkAnchors = new Set(
+    network.structureIndices.map((index) => {
+      const structure = preparedBlueprint.preparedStructures[index].structure;
+      return `${structure.x},${structure.y}`;
+    }),
+  );
+  const attachedIndices = (type: number) =>
+    preparedBlueprint.preparedStructures.flatMap((prepared) =>
+      prepared.structure.type === type &&
+      networkAnchors.has(`${prepared.structure.x},${prepared.structure.y}`)
+        ? [prepared.index]
+        : [],
+    );
+  const pipeStructures = network.structureIndices.map(
+    (index) => preparedBlueprint.preparedStructures[index],
+  );
+  const minX = Math.min(...pipeStructures.map(({ structure }) => structure.x));
+  const minY = Math.min(...pipeStructures.map(({ structure }) => structure.y));
+  const maxX = Math.max(...pipeStructures.map(({ structure }) => structure.x));
+  const maxY = Math.max(...pipeStructures.map(({ structure }) => structure.y));
+  return {
+    ...network,
+    pumpIndices: attachedIndices(PUMP_STRUCTURE_TYPE),
+    ventIndices: attachedIndices(LIQUID_VENT_STRUCTURE_TYPE),
+    endpointCount: pipeStructures.filter(({ pipeTopology }) => pipeTopology?.kind === "endpoint")
+      .length,
+    widthTiles: (maxX - minX) / PIPE_GRID_STEP + 1,
+    heightTiles: (maxY - minY) / PIPE_GRID_STEP + 1,
+  };
+}
+
+function pipePositionSet(blueprint: Blueprint) {
+  const positions = new Set<string>();
+  for (const structure of blueprint.data) {
+    if (structure.type === PIPE_STRUCTURE_TYPE) positions.add(`${structure.x},${structure.y}`);
+  }
+  return positions;
+}
+
 export function prepareBlueprint(
   blueprint: Blueprint,
   options: PrepareBlueprintOptions = {},
 ): PreparedBlueprint {
+  const pipePositions = pipePositionSet(blueprint);
+  const pipeDiagnostics: PipeTopologyDiagnostic[] = [];
   const resolveSignalPoints =
     options.resolveSignalPoints ??
     ((type: BlueprintType) =>
@@ -659,6 +1059,7 @@ export function prepareBlueprint(
   }
   const preparedStructures = blueprint.data.map((structure, index) => {
     const catalogEntry = options.catalog?.get(structure.type);
+    const pipeTopology = preparePipeTopology(structure, index, pipePositions, pipeDiagnostics);
     const customShape = customShapeFromStructure(structure);
     const shape = customShape ?? catalogEntry?.shape;
     const footprint = shape
@@ -688,10 +1089,12 @@ export function prepareBlueprint(
       sprite: renderAsset
         ? {
             asset: renderAsset,
-            frameIndex: spriteIndexFor(structure) ?? renderAsset.frameIndex ?? 0,
+            frameIndex:
+              spriteIndexFor(structure) ?? pipeTopology?.spriteIndex ?? renderAsset.frameIndex ?? 0,
             rotation: renderAsset.rotation ?? 0,
           }
         : undefined,
+      pipeTopology,
     };
   });
   prepareSprites(preparedStructures);
@@ -740,5 +1143,12 @@ export function prepareBlueprint(
       path: wirePath(from.point, to.point, sourceType === "signalBuffer"),
     };
   });
-  return { ...blueprint, bounds, signalCoordinateOffset, preparedStructures, preparedSignalLinks };
+  return {
+    ...blueprint,
+    bounds,
+    signalCoordinateOffset,
+    preparedStructures,
+    preparedSignalLinks,
+    pipeDiagnostics,
+  };
 }

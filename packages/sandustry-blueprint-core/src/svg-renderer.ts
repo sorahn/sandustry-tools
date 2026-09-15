@@ -3,6 +3,7 @@ import {
   renderAnchorEdge,
   renderAnchorOffsetCells,
   renderPixelScale,
+  NATIVE_PIXELS_PER_CELL,
   renderScaleFactor,
   renderScaleMode,
   structureLabel,
@@ -41,6 +42,14 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   filterOverlayViewport?: FilterOverlayViewport;
   filterClusters?: FilterOverlayCluster[];
   filterActiveClusterKey?: string;
+  /** Add an alpha-derived outline around the selected pipe sprite group. */
+  pipeNetworkHighlightIndices?: readonly number[];
+  /** Axis-bearing bridge records represented by their visible overpass. */
+  pipeNetworkHighlightBridgeIndices?: readonly number[];
+  /** Axis-bearing bridge records represented by their uninterrupted pipe below. */
+  pipeNetworkHighlightUnderlayIndices?: readonly number[];
+  /** Add cell-based outlines for structures attached to the selected pipe network. */
+  pipeNetworkHighlightCellIndices?: readonly number[];
   model?: BlueprintRenderModel;
 };
 
@@ -185,11 +194,14 @@ function renderStructure(
   const labelLineHeight = labelFontSize * 1.15;
   const labelY = top + tileHeight / 2 - ((lines.length - 1) * labelLineHeight) / 2;
   let output = `<g data-structure-index="${index}">`;
+  const isPipe = prepared.pipeTopology !== undefined;
   const customAsset =
     isCustomShape && options.useCustomShapeAsset !== false
       ? options.catalog?.get(11)?.renderAsset
       : undefined;
-  const asset = prepared.sprite?.asset ?? customAsset;
+  const asset = prepared.pipeTopology?.fallback
+    ? undefined
+    : (prepared.sprite?.asset ?? customAsset);
   const usesFallbackAsset = asset !== undefined && prepared.sprite?.asset === undefined;
   const isUnknown = entry === undefined;
   const unknownBorderInset = 1;
@@ -198,7 +210,13 @@ function renderStructure(
     if (isUnknown) {
       output += `<rect x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}" fill="#172033"/>`;
     }
-    output += `<rect x="${number(left + (isUnknown ? unknownBorderInset : 0))}" y="${number(top + (isUnknown ? unknownBorderInset : 0))}" width="${number(tileWidth - (isUnknown ? unknownBorderInset * 2 : 0))}" height="${number(tileHeight - (isUnknown ? unknownBorderInset * 2 : 0))}" rx="${isUnknown ? "0" : "5"}" fill="${isUnknown ? "transparent" : isCustomShape ? "transparent" : tileColor(prepared.structure.type)}" stroke="${isUnknown ? "#f0b429" : isCustomShape ? "none" : "#8491a3"}" stroke-width="${isUnknown ? String(unknownBorderWidth) : "1.5"}"${isUnknown ? ' stroke-dasharray="4 3" shape-rendering="crispEdges"' : ""}/>`;
+    if (isPipe) {
+      const inset = Math.max(1, model.cell / 4);
+      output += `<rect data-pipe-fallback="segment" x="${number(left + inset)}" y="${number(top + inset)}" width="${number(tileWidth - inset * 2)}" height="${number(tileHeight - inset * 2)}" fill="#263241" stroke="#f0b429" stroke-width="${number(Math.max(1, model.cell / 8))}" stroke-dasharray="${number(model.cell / 2)} ${number(model.cell / 3)}"/>`;
+    }
+    if (!isPipe) {
+      output += `<rect x="${number(left + (isUnknown ? unknownBorderInset : 0))}" y="${number(top + (isUnknown ? unknownBorderInset : 0))}" width="${number(tileWidth - (isUnknown ? unknownBorderInset * 2 : 0))}" height="${number(tileHeight - (isUnknown ? unknownBorderInset * 2 : 0))}" rx="${isUnknown ? "0" : "5"}" fill="${isUnknown ? "transparent" : isCustomShape ? "transparent" : tileColor(prepared.structure.type)}" stroke="${isUnknown ? "#f0b429" : isCustomShape ? "none" : "#8491a3"}" stroke-width="${isUnknown ? String(unknownBorderWidth) : "1.5"}"${isUnknown ? ' stroke-dasharray="4 3" shape-rendering="crispEdges"' : ""}/>`;
+    }
     if (isUnknown) {
       output += `<path d="M ${number(left + model.cell)} ${number(top + model.cell)} L ${number(left + tileWidth - model.cell)} ${number(top + tileHeight - model.cell)} M ${number(left + tileWidth - model.cell)} ${number(top + model.cell)} L ${number(left + model.cell)} ${number(top + tileHeight - model.cell)}" stroke="#f0b429" stroke-width="2" opacity=".65"/>`;
     }
@@ -237,6 +255,11 @@ function renderStructure(
           renderAnchorOffsetCells(asset.anchor) * model.cell +
           offsetY * renderPixelScale(model.cell)
         : top + offsetY * renderPixelScale(model.cell);
+    const frameColumns = asset.frameColumns ?? 1;
+    const frameColumn = frameColumns > 1 ? frameIndex % frameColumns : frameIndex;
+    const frameRow = frameColumns > 1 ? Math.floor(frameIndex / frameColumns) : 0;
+    const frameImageX = imageX - frameColumn * visualWidth;
+    const frameImageY = imageY - (frameColumns > 1 ? frameRow * visualHeight : 0);
     const href = options.assetUrl
       ? options.assetUrl(asset.path)
       : `${options.assetBaseUrl ?? ""}${asset.path}`;
@@ -246,9 +269,9 @@ function renderStructure(
     if (usesFallbackAsset && isCustomShape) {
       output += `<defs><mask id="custom-shape-mask-${index}" maskUnits="userSpaceOnUse" x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}"><rect x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}" fill="black"/>${renderShapeRects(shape, left, top, model.cell, "white")}</mask></defs>`;
     }
-    output += `<image href="${escapeXml(href)}" x="${number(imageX - frameIndex * visualWidth)}" y="${number(imageY - (asset.sourceCrop?.y ?? 0) * sourceScale)}" width="${number(visualWidth * (sourceWidth / frameWidth))}" height="${number(imageHeight)}" preserveAspectRatio="none"${(asset.clip ?? sourceWidth > frameWidth) ? ` clip-path="url(#asset-clip-${index})"` : ""}${usesFallbackAsset && isCustomShape ? ` mask="url(#custom-shape-mask-${index})"` : ""}${transform} style="image-rendering:pixelated"/>`;
+    output += `<image href="${escapeXml(href)}" x="${number(frameImageX)}" y="${number(frameImageY - (asset.sourceCrop?.y ?? 0) * sourceScale)}" width="${number(visualWidth * (sourceWidth / frameWidth))}" height="${number(imageHeight)}" preserveAspectRatio="none"${(asset.clip ?? sourceWidth > frameWidth) ? ` clip-path="url(#asset-clip-${index})"` : ""}${usesFallbackAsset && isCustomShape ? ` mask="url(#custom-shape-mask-${index})"` : ""}${transform} style="image-rendering:pixelated"/>`;
     if (asset.clip ?? sourceWidth > frameWidth) {
-      output = `<clipPath id="asset-clip-${index}"><rect x="${number(imageX)}" y="${number(asset.sourceCrop ? imageY : 0)}" width="${number(visualWidth)}" height="${number(asset.sourceCrop ? visualHeight : model.height)}"/></clipPath>${output}`;
+      output = `<clipPath id="asset-clip-${index}"><rect x="${number(imageX)}" y="${number(frameColumns > 1 || asset.sourceCrop ? imageY : 0)}" width="${number(visualWidth)}" height="${number(frameColumns > 1 || asset.sourceCrop ? visualHeight : model.height)}"/></clipPath>${output}`;
     }
     if (prepared.lightColor) {
       output += [4, 7, 10]
@@ -270,6 +293,156 @@ function renderStructure(
   return `${output}</g>`;
 }
 
+function renderPipeBridge(
+  model: BlueprintRenderModel,
+  index: number,
+  options: BlueprintSvgRenderOptions,
+) {
+  const prepared = model.preparedBlueprint.preparedStructures[index];
+  const topology = prepared.pipeTopology;
+  const bridge = prepared.sprite?.asset.pipeBridge;
+  if (!topology?.bridgeAxis || options.showSprites === false) return "";
+  const left = (prepared.structure.x - model.minX + model.paddingX) * model.cell;
+  const top = (prepared.topY - model.minY + model.padding) * model.cell;
+  const pipeBlock = prepared.footprint.width * model.cell;
+  if (!bridge) {
+    const centerX = left + pipeBlock / 2;
+    const centerY = top + pipeBlock / 2;
+    const arm = pipeBlock * 1.5;
+    const path =
+      topology.bridgeAxis === "horizontal"
+        ? `M ${number(centerX - arm)} ${number(centerY)} H ${number(centerX + arm)}`
+        : `M ${number(centerX)} ${number(centerY - arm)} V ${number(centerY + arm)}`;
+    return `<g data-structure-index="${index}" data-pipe-fallback="bridge"><path d="${path}" stroke="#263241" stroke-width="${number(Math.max(2, model.cell / 2))}" stroke-linecap="square"/><path d="${path}" stroke="#f0b429" stroke-width="${number(Math.max(1, model.cell / 8))}" stroke-dasharray="${number(model.cell / 2)} ${number(model.cell / 3)}"/></g>`;
+  }
+  const scale = renderPixelScale(model.cell);
+  const frameWidth = bridge.frame?.width ?? 16;
+  const frameHeight = bridge.frame?.height ?? 16;
+  const width = frameWidth * scale * 3;
+  const height = frameHeight * scale;
+  const href = options.assetUrl
+    ? options.assetUrl(bridge.path)
+    : `${options.assetBaseUrl ?? ""}${bridge.path}`;
+  if (topology.bridgeAxis === "horizontal") {
+    return `<image href="${escapeXml(href)}" x="${number(left - pipeBlock)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>`;
+  }
+  const centerX = left + pipeBlock / 2;
+  const centerY = top + pipeBlock / 2;
+  return `<g data-structure-index="${index}"><image href="${escapeXml(href)}" x="${number(left - pipeBlock)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" preserveAspectRatio="none" transform="rotate(-90 ${number(centerX)} ${number(centerY)})" style="image-rendering:pixelated"/></g>`;
+}
+
+// One 16-bit alpha mask per row for each 16x16 frame in catalog/pipes.png.
+// Keeping the highlight geometry independent from the sprite sheet avoids a
+// Chromium repaint bug where clipped neighboring frames can enter a filtered
+// group's SourceAlpha.
+const PIPE_FRAME_ALPHA_ROWS = [
+  [0, 0, 0, 0, 0, 2016, 2016, 2016, 2016, 2016, 2016, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 65504, 65504, 65504, 65504, 65504, 65504, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 2047, 2047, 2047, 2047, 2047, 2047, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 2016, 65535, 65535, 65535, 65535, 65535, 65535, 2016, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016],
+  [0, 0, 0, 0, 0, 65472, 65504, 65504, 65504, 65504, 65504, 2016, 2016, 2016, 2016, 2016],
+  [0, 0, 0, 0, 0, 1023, 2047, 2047, 2047, 2047, 2047, 2016, 2016, 2016, 2016, 2016],
+  [0, 0, 0, 0, 0, 65535, 65535, 65535, 65535, 65535, 65535, 2016, 2016, 2016, 2016, 2016],
+  [2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 0, 0, 0, 0, 0],
+  [2016, 2016, 2016, 2016, 2016, 65504, 65504, 65504, 65504, 65504, 65472, 0, 0, 0, 0, 0],
+  [2016, 2016, 2016, 2016, 2016, 2047, 2047, 2047, 2047, 2047, 1023, 0, 0, 0, 0, 0],
+  [2016, 2016, 2016, 2016, 2016, 65535, 65535, 65535, 65535, 65535, 65535, 0, 0, 0, 0, 0],
+  [2016, 2016, 2016, 2016, 2016, 4080, 4080, 4080, 4080, 4080, 4080, 2016, 2016, 2016, 2016, 2016],
+  [
+    2016, 2016, 2016, 2016, 2016, 65504, 65504, 65504, 65504, 65504, 65504, 2016, 2016, 2016, 2016,
+    2016,
+  ],
+  [2016, 2016, 2016, 2016, 2016, 2047, 2047, 2047, 2047, 2047, 2047, 2016, 2016, 2016, 2016, 2016],
+  [
+    2016, 2016, 2016, 2016, 2016, 65535, 65535, 65535, 65535, 65535, 65535, 2016, 2016, 2016, 2016,
+    2016,
+  ],
+  [0, 0, 0, 0, 0, 65535, 65535, 65535, 65535, 65535, 65535, 0, 0, 0, 0, 0],
+  [2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016],
+] as const;
+
+const PIPE_FRAME_ALPHA_PATHS = PIPE_FRAME_ALPHA_ROWS.map((rows) =>
+  rows
+    .flatMap((mask, y) => {
+      const runs: string[] = [];
+      let x = 0;
+      while (x < 16) {
+        if ((mask & (1 << x)) === 0) {
+          x += 1;
+          continue;
+        }
+        const start = x;
+        while (x < 16 && (mask & (1 << x)) !== 0) x += 1;
+        const width = x - start;
+        runs.push(`M${start} ${y}h${width}v1h-${width}z`);
+      }
+      return runs;
+    })
+    .join(""),
+);
+
+function renderPipeHighlightSprite(
+  model: BlueprintRenderModel,
+  index: number,
+  options: BlueprintSvgRenderOptions,
+  includeBridgeUnderlay = false,
+) {
+  const prepared = model.preparedBlueprint.preparedStructures[index];
+  const asset = prepared.sprite?.asset;
+  // Only an actual overpass has a separate bridge sprite. Records with a
+  // bridge connection mask but no bridge axis still draw their ordinary pipe
+  // segment; omitting those would erase the two pipe ends around a crossing.
+  if (
+    !includeBridgeUnderlay &&
+    prepared.pipeTopology?.kind === "bridge" &&
+    prepared.pipeTopology.bridgeAxis
+  )
+    return "";
+  if (!asset?.path || prepared.pipeTopology?.fallback || options.showSprites === false) {
+    return renderStructure(model, index, options);
+  }
+  const frameWidth = asset.frame?.width ?? 16;
+  const frameHeight = asset.frame?.height ?? 16;
+  const frameIndex = prepared.sprite?.frameIndex ?? asset.frameIndex ?? 0;
+  const scale = renderPixelScale(model.cell);
+  const left = (prepared.structure.x - model.minX + model.paddingX) * model.cell;
+  const top = (prepared.topY - model.minY + model.padding) * model.cell;
+  const alphaPath =
+    frameWidth === 16 && frameHeight === 16 ? PIPE_FRAME_ALPHA_PATHS[frameIndex] : undefined;
+  if (!alphaPath) return renderStructure(model, index, options);
+  return `<path data-structure-index="${index}" data-pipe-highlight-frame="${frameIndex}" d="${alphaPath}" fill="#ffffff" transform="translate(${number(left)} ${number(top)}) scale(${number(scale)})"/>`;
+}
+
+function renderPipeHighlightBridge(
+  model: BlueprintRenderModel,
+  index: number,
+  options: BlueprintSvgRenderOptions,
+) {
+  const prepared = model.preparedBlueprint.preparedStructures[index];
+  const topology = prepared.pipeTopology;
+  const bridge = prepared.sprite?.asset.pipeBridge;
+  if (!topology?.bridgeAxis || !bridge || options.showSprites === false) {
+    return renderPipeBridge(model, index, options);
+  }
+  const scale = renderPixelScale(model.cell);
+  const frameWidth = bridge.sourceSize.width;
+  const frameHeight = bridge.sourceSize.height;
+  const width = frameWidth * scale;
+  const height = frameHeight * scale;
+  const pipeBlock = prepared.footprint.width * model.cell;
+  const left = (prepared.structure.x - model.minX + model.paddingX) * model.cell;
+  const top = (prepared.topY - model.minY + model.padding) * model.cell;
+  const href = options.assetUrl
+    ? options.assetUrl(bridge.path)
+    : `${options.assetBaseUrl ?? ""}${bridge.path}`;
+  const image = `<svg x="${number(left - pipeBlock)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" viewBox="0 0 ${number(frameWidth)} ${number(frameHeight)}" preserveAspectRatio="none" overflow="hidden"><image href="${escapeXml(href)}" x="0" y="0" width="${number(frameWidth)}" height="${number(frameHeight)}" preserveAspectRatio="none" style="image-rendering:pixelated"/></svg>`;
+  if (topology.bridgeAxis === "horizontal") return image;
+  const centerX = left + pipeBlock / 2;
+  const centerY = top + pipeBlock / 2;
+  return `<g transform="rotate(-90 ${number(centerX)} ${number(centerY)})">${image}</g>`;
+}
+
 export function renderBlueprintToSvg(
   blueprint: import("./index.js").Blueprint,
   options: BlueprintSvgRenderOptions = {},
@@ -280,18 +453,74 @@ export function renderBlueprintToSvg(
   const showFoundationOutlines = options.showFoundationOutlines ?? true;
   const showSignalLinks = options.showSignalLinks ?? true;
   const showEdgeFade = options.showEdgeFade ?? false;
-  const foundationAndBeltStructures = model.renderStructures.filter(({ index }) =>
-    isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
+  const isPipeStructure = (index: number) =>
+    model.preparedBlueprint.preparedStructures[index].pipeTopology !== undefined;
+  const foundationAndBeltStructures = model.renderStructures.filter(
+    ({ index }) =>
+      !isPipeStructure(index) &&
+      isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
   );
   const otherStructures = model.renderStructures.filter(
-    ({ index }) => !isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
+    ({ index }) =>
+      !isPipeStructure(index) &&
+      !isFoundationStructure(model.preparedBlueprint.preparedStructures[index]),
   );
+  const pipeStructures = model.renderStructures.filter(({ index }) => isPipeStructure(index));
+  const pipeMarkup = pipeStructures
+    .map(({ index }) => renderStructure(model, index, options))
+    .join("");
   const foundationAndBeltMarkup = foundationAndBeltStructures
     .map(({ index }) => renderStructure(model, index, options))
     .join("");
   const otherStructureMarkup = otherStructures
     .map(({ index }) => renderStructure(model, index, options))
     .join("");
+  const pipeBridgeMarkup = pipeStructures
+    .map(({ index }) => renderPipeBridge(model, index, options))
+    .join("");
+  const highlightedPipeIndices = new Set(options.pipeNetworkHighlightIndices ?? []);
+  const highlightedBridgeIndices = options.pipeNetworkHighlightBridgeIndices
+    ? new Set(options.pipeNetworkHighlightBridgeIndices)
+    : highlightedPipeIndices;
+  const highlightedUnderlayIndices = new Set(options.pipeNetworkHighlightUnderlayIndices ?? []);
+  const highlightedCellIndices = new Set(options.pipeNetworkHighlightCellIndices ?? []);
+  const cellHighlightMarkup = [...highlightedCellIndices]
+    .map((index) => {
+      const prepared = model.preparedBlueprint.preparedStructures[index];
+      if (!prepared) return "";
+      const left = (prepared.structure.x - model.minX + model.paddingX) * model.cell;
+      const top = (prepared.topY - model.minY + model.padding) * model.cell;
+      const width = prepared.pipeTopology
+        ? NATIVE_PIXELS_PER_CELL * model.cell
+        : prepared.footprint.width * model.cell;
+      const height = prepared.pipeTopology
+        ? NATIVE_PIXELS_PER_CELL * model.cell
+        : prepared.footprint.height * model.cell;
+      return `<rect data-structure-index="${index}" x="${number(left)}" y="${number(top)}" width="${number(width)}" height="${number(height)}" fill="#ffffff"/>`;
+    })
+    .join("");
+  const pipeNetworkHighlightMarkup =
+    highlightedPipeIndices.size || highlightedCellIndices.size
+      ? `<defs><filter id="pipe-network-outline" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="2" result="dilated"/><feFlood flood-color="#facc15" result="color"/><feComposite in="color" in2="dilated" operator="in" result="outline"/><feComposite in="outline" in2="SourceAlpha" operator="out"/></filter></defs><g data-layer="pipe-network-highlight" filter="url(#pipe-network-outline)">${
+          highlightedPipeIndices.size
+            ? pipeStructures
+                .filter(({ index }) => highlightedPipeIndices.has(index))
+                .map(({ index }) =>
+                  renderPipeHighlightSprite(
+                    model,
+                    index,
+                    options,
+                    highlightedUnderlayIndices.has(index),
+                  ),
+                )
+                .join("") +
+              pipeStructures
+                .filter(({ index }) => highlightedBridgeIndices.has(index))
+                .map(({ index }) => renderPipeHighlightBridge(model, index, options))
+                .join("")
+            : ""
+        }${cellHighlightMarkup}</g>`
+      : "";
   const foundationPath = showFoundationOutlines
     ? foundationOutlinePath(
         model.preparedBlueprint.preparedStructures,
@@ -331,7 +560,7 @@ export function renderBlueprintToSvg(
       })
     : "";
   const edgeFade = showEdgeFade && includeBackground ? renderEdgeFade(model) : "";
-  const markup = `${background}${outline}<g>${foundationAndBeltMarkup}</g><g>${otherStructureMarkup}</g>${signals}${filterOverlay}${edgeFade}`;
+  const markup = `${background}<g data-layer="pipes">${pipeMarkup}<g data-layer="pipe-bridges">${pipeBridgeMarkup}</g></g><g data-layer="foundation-outline">${outline}</g><g data-layer="foundation-structures">${foundationAndBeltMarkup}</g><g data-layer="structures">${otherStructureMarkup}</g>${pipeNetworkHighlightMarkup}${signals}${filterOverlay}${edgeFade}`;
   return {
     model,
     markup,

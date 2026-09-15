@@ -43,6 +43,9 @@ export type StructureThumbnailProps = {
   structureType?: BlueprintType;
   customShape?: number[][];
   outlineShape?: number[][];
+  /** Number of 8px preview cells in the square thumbnail canvas. */
+  previewCells?: number;
+  previewMode?: "standard" | "pipeBridge";
   className?: string;
 };
 
@@ -56,12 +59,16 @@ export function StructureThumbnail({
   structureType,
   customShape,
   outlineShape,
+  previewCells = 8,
+  previewMode = "standard",
   className = "",
 }: StructureThumbnailProps) {
   const rawId = useId();
   const gridId = `thumb-grid-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const canvasSize = previewCells * 8;
 
-  const containerClasses = `relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-700/80 shadow-md ${className}`;
+  const containerClasses = `relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-700/80 shadow-md ${className}`;
+  const containerStyle = { width: `${canvasSize}px`, height: `${canvasSize}px` };
 
   const renderGridBackground = (
     originX: number,
@@ -69,7 +76,10 @@ export function StructureThumbnail({
     cellSize: number,
     blockSize: number,
   ) => (
-    <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 64 64">
+    <svg
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      viewBox={`0 0 ${canvasSize} ${canvasSize}`}
+    >
       <defs>
         <pattern
           id={`${gridId}-cell`}
@@ -102,10 +112,10 @@ export function StructureThumbnail({
           />
         </pattern>
       </defs>
-      <rect width="64" height="64" fill="#33a8ff" />
+      <rect width={canvasSize} height={canvasSize} fill="#33a8ff" />
       <g opacity="0.25">
-        <rect width="64" height="64" fill={`url(#${gridId}-cell)`} />
-        <rect width="64" height="64" fill={`url(#${gridId}-block)`} />
+        <rect width={canvasSize} height={canvasSize} fill={`url(#${gridId}-cell)`} />
+        <rect width={canvasSize} height={canvasSize} fill={`url(#${gridId}-block)`} />
       </g>
     </svg>
   );
@@ -120,21 +130,27 @@ export function StructureThumbnail({
     const cellSize = 8;
     const renderedWidth = shapeCols * cellSize;
     const renderedHeight = shapeRows * cellSize;
-    const originX = Math.round((64 - renderedWidth) / 2);
-    const originY = Math.round((64 - renderedHeight) / 2);
+    const originX = Math.round((canvasSize - renderedWidth) / 2);
+    const originY = Math.round((canvasSize - renderedHeight) / 2);
     const blockSize = 32;
 
     const outlinePath = shapeOutlinePath(customShape, originX, originY, cellSize);
 
-    const transform = rotation ? `rotate(${rotation} 32 32)` : undefined;
+    const transform = rotation
+      ? `rotate(${rotation} ${canvasSize / 2} ${canvasSize / 2})`
+      : undefined;
 
     return (
-      <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
+      <div className={containerClasses} style={{ ...containerStyle, backgroundColor: "#33a8ff" }}>
         {renderGridBackground(originX, originY, cellSize, blockSize)}
         <svg
           className="relative z-10 shrink-0 overflow-hidden"
-          viewBox="0 0 64 64"
-          style={{ width: "64px", height: "64px", imageRendering: "pixelated" }}
+          viewBox={`0 0 ${canvasSize} ${canvasSize}`}
+          style={{
+            width: `${canvasSize}px`,
+            height: `${canvasSize}px`,
+            imageRendering: "pixelated",
+          }}
           aria-label={name}
         >
           <defs>
@@ -143,10 +159,10 @@ export function StructureThumbnail({
               maskUnits="userSpaceOnUse"
               x="0"
               y="0"
-              width="64"
-              height="64"
+              width={canvasSize}
+              height={canvasSize}
             >
-              <rect width="64" height="64" fill="black" />
+              <rect width={canvasSize} height={canvasSize} fill="black" />
               {customShape.map((row, r) =>
                 row.map((val, c) =>
                   val > 0 ? (
@@ -207,10 +223,10 @@ export function StructureThumbnail({
   if (!asset?.path) {
     const renderedWidth = footprint.width * 8;
     const renderedHeight = footprint.height * 8;
-    const originX = Math.round((64 - Math.min(renderedWidth, 48)) / 2);
-    const originY = Math.round((64 - Math.min(renderedHeight, 48)) / 2);
+    const originX = Math.round((canvasSize - Math.min(renderedWidth, canvasSize - 16)) / 2);
+    const originY = Math.round((canvasSize - Math.min(renderedHeight, canvasSize - 16)) / 2);
     return (
-      <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
+      <div className={containerClasses} style={{ ...containerStyle, backgroundColor: "#33a8ff" }}>
         {renderGridBackground(originX, originY, 8, 32)}
         <span className="relative z-10 rounded bg-slate-950/60 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-100 shadow-sm">
           {footprint.width}×{footprint.height}
@@ -261,26 +277,35 @@ export function StructureThumbnail({
   const boxOffsetX = (bboxWidth - cropWidth) / 2;
   const boxOffsetY = (bboxHeight - cropHeight) / 2;
 
-  const imageX = boxOffsetX - frameIndex * frameWidth - cropX;
-  const imageY = boxOffsetY - cropY;
+  const frameColumns = asset.frameColumns ?? 1;
+  const frameColumn = frameColumns > 1 ? frameIndex % frameColumns : frameIndex;
+  const frameRow = frameColumns > 1 ? Math.floor(frameIndex / frameColumns) : 0;
+  const imageX = boxOffsetX - frameColumn * frameWidth - cropX;
+  const imageY = boxOffsetY - frameRow * frameHeight - cropY;
 
-  const href = `${import.meta.env.BASE_URL}${asset.path}`;
+  const baseUrl = import.meta.env?.BASE_URL ?? "";
+  const href = `${baseUrl}${asset.path}`;
   const cx = bboxWidth / 2;
   const cy = bboxHeight / 2;
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
   const maxDim = Math.max(bboxWidth, bboxHeight);
-  const scale = maxDim <= 28 ? 2 : Math.min(56 / bboxWidth, 56 / bboxHeight);
+  const scale =
+    previewMode === "pipeBridge"
+      ? canvasSize / maxDim
+      : maxDim <= 28
+        ? 2
+        : Math.min(56 / bboxWidth, 56 / bboxHeight);
   const renderedWidth = bboxWidth * scale;
   const renderedHeight = bboxHeight * scale;
-  const fpPxWidth = (footprint?.width || 4) * 4;
-  const fpPxHeight = (footprint?.height || 4) * 4;
-  const originX = Math.round((64 - fpPxWidth * scale) / 2);
-  const originY = Math.round((64 - fpPxHeight * scale) / 2);
-  const cellSize = 4 * scale;
+  const cellSize = canvasSize / previewCells;
+  const fpPxWidth = (footprint?.width || 4) * cellSize;
+  const fpPxHeight = (footprint?.height || 4) * cellSize;
+  const originX = Math.round((canvasSize - fpPxWidth) / 2);
+  const originY = Math.round((canvasSize - fpPxHeight) / 2);
   const blockSize = cellSize * 4;
 
   return (
-    <div className={containerClasses} style={{ backgroundColor: "#33a8ff" }}>
+    <div className={containerClasses} style={{ ...containerStyle, backgroundColor: "#33a8ff" }}>
       {renderGridBackground(originX, originY, cellSize, blockSize)}
       <svg
         viewBox={`0 0 ${bboxWidth} ${bboxHeight}`}
@@ -320,7 +345,7 @@ export function StructureThumbnail({
       {outlineShape ? (
         <svg
           className="pointer-events-none absolute inset-0 z-20 h-full w-full"
-          viewBox="0 0 64 64"
+          viewBox={`0 0 ${canvasSize} ${canvasSize}`}
           aria-hidden="true"
         >
           <path

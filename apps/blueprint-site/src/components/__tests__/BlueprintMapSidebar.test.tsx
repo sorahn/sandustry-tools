@@ -12,6 +12,41 @@ describe("BlueprintMapSidebar", () => {
     );
   });
 
+  test("renders statistics for a pipe network selected through an attached vent", () => {
+    const blueprint: Blueprint = {
+      name: "Pipe network",
+      signalLinks: [],
+      data: [
+        { type: 23, x: 0, y: 0, data: { pipeConnectionMask: 2 } },
+        { type: 23, x: 4, y: 0, data: { pipeConnectionMask: 10 } },
+        { type: 23, x: 8, y: 0, data: { pipeConnectionMask: 8 } },
+        { type: 24, x: 0, y: 0 },
+        { type: 25, x: 8, y: 0 },
+      ],
+    };
+    const preparedBlueprint = prepareBlueprint(blueprint);
+
+    const html = renderToStaticMarkup(
+      <BlueprintMapSidebar
+        selected={blueprint.data[4]}
+        selectedIndex={4}
+        totalStructures={blueprint.data.length}
+        blueprint={blueprint}
+        preparedBlueprint={preparedBlueprint}
+        preparedStructure={preparedBlueprint.preparedStructures[4]}
+        debugOptions={null}
+      />,
+    );
+
+    expect(html).toContain("Highlighted pipe network");
+    expect(html).toContain("Network:");
+    expect(html).toContain("3 pipes · 2 endpoints · 1 pump · 1 vent");
+    expect(html).toContain("Bounds:");
+    expect(html).toContain("3 tiles wide × 1 tile high");
+    expect(html).toContain("0 bridges · 0 underpasses");
+    expect(html).not.toContain("Pipe topology");
+  });
+
   test("renders rich filter details with element names, swatches, and matter phases", () => {
     const blueprint: Blueprint = {
       name: "Test blueprint",
