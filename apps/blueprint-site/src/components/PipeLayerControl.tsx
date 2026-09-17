@@ -17,7 +17,7 @@ export function PipeLayerControl({
       title={`${action} pipe layer`}
       onClick={() => onActiveChange(!active)}
       className={cx(
-        "group flex w-[4.5rem] flex-col items-center gap-1 rounded border bg-slate-950/85 p-1.5 font-mono shadow-lg backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
+        "group flex w-fit flex-col items-center gap-1 rounded border bg-slate-950/85 p-1.5 font-mono shadow-lg backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:ring-yellow-400/80 focus-visible:outline-none",
         active
           ? "border-yellow-400 text-yellow-300"
           : "border-slate-700/80 text-slate-300 hover:border-slate-500 hover:text-white",
