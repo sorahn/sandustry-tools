@@ -19,6 +19,7 @@ import { debugComponent } from "./DebugComponentWrapper";
 import { MapDebugOptions } from "./MapDebugOptions";
 import { BlueprintMapSidebar } from "./BlueprintMapSidebar";
 import { BlueprintMapViewportControls } from "./BlueprintMapViewportControls";
+import { PipeLayerControl } from "./PipeLayerControl";
 import {
   BlueprintMapEdgeFadeLayer,
   BlueprintMapGridLayer,
@@ -73,6 +74,7 @@ export function BlueprintMap({
   showPngBackground,
   showFilters = false,
   showPipeMode = false,
+  onShowPipeModeChange,
   captureOnly,
   showDebugOptions = true,
   fitPolicy,
@@ -98,6 +100,7 @@ export function BlueprintMap({
   showPngBackground: boolean;
   showFilters?: boolean;
   showPipeMode?: boolean;
+  onShowPipeModeChange?: (value: boolean) => void;
   captureOnly?: boolean;
   showDebugOptions?: boolean;
   fitPolicy?: FitPolicy;
@@ -913,6 +916,11 @@ export function BlueprintMap({
                   }
           }
         >
+          {!captureOnly && onShowPipeModeChange ? (
+            <div className="absolute right-3 bottom-3 z-20">
+              <PipeLayerControl active={showPipeMode} onActiveChange={onShowPipeModeChange} />
+            </div>
+          ) : null}
           <svg
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}

@@ -693,6 +693,10 @@ export function BlueprintInspectorPage({
             showPngBackground={showPngBackground}
             showFilters={showFilters}
             showPipeMode={showPipeMode}
+            onShowPipeModeChange={(value) => {
+              setShowPipeMode(value);
+              writeStoredBoolean(SHOW_PIPE_MODE_KEY, value);
+            }}
             fitPolicy={fitPolicy}
             policySelection={policySelection}
             onPolicySelectionChange={(selection) => {
@@ -707,14 +711,6 @@ export function BlueprintInspectorPage({
             onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
             viewportControlsExtra={
               <>
-                <PersistentCheckbox
-                  boxed
-                  size="small"
-                  label="pipes"
-                  storageKey={SHOW_PIPE_MODE_KEY}
-                  defaultChecked={showPipeMode}
-                  onCheckedChange={setShowPipeMode}
-                />
                 <PersistentCheckbox
                   boxed
                   size="small"
