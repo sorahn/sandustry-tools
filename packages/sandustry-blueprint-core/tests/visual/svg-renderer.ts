@@ -6,14 +6,22 @@ export function catalogVisualBlueprint() {
   return encodeBlueprint(catalogVisualFixture);
 }
 
-export function renderVisualBlueprintSvg(input: string, showEdgeFade = false) {
+export function renderVisualBlueprintSvg(
+  input: string,
+  options: {
+    showFoundationOutlines?: boolean;
+    showEdgeFade?: boolean;
+    showPipeModeOverlay?: boolean;
+  } = {},
+) {
   return renderBlueprintToSvg(decodeBlueprint(input), {
     catalog: blueprintCatalog(),
     assetBaseUrl: "",
     includeBackground: true,
     showGrid: true,
-    showFoundationOutlines: true,
+    showFoundationOutlines: options.showFoundationOutlines ?? true,
     showSignalLinks: true,
-    showEdgeFade,
+    showEdgeFade: options.showEdgeFade,
+    showPipeModeOverlay: options.showPipeModeOverlay,
   }).svg;
 }

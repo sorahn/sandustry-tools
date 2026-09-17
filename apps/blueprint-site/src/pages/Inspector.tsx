@@ -67,7 +67,7 @@ import {
   subscribeToSaveDatabase,
   type StoredSaveSummary,
 } from "../utils/save-db";
-import { BLUEPRINT_VISUAL_FIXTURES } from "../visual-fixtures/catalog";
+import { BLUEPRINT_VISUAL_FIXTURES, type BlueprintVisualFixture } from "../visual-fixtures/catalog";
 
 export function SavedBlueprintInspectorPage() {
   const router = useRouter();
@@ -369,7 +369,8 @@ export function BlueprintInspectorPage({
   }, [remember]);
 
   const inspect = () => inspectValue(encoded, true);
-  const loadTestBlueprint = (nextBlueprint: Blueprint) => {
+  const loadTestFixture = (fixture: BlueprintVisualFixture) => {
+    const nextBlueprint = fixture.blueprint;
     userInitiatedRef.current = true;
     setMapReady(true);
     const nextEncoded = encodeBlueprint(nextBlueprint);
@@ -379,6 +380,7 @@ export function BlueprintInspectorPage({
     setBlueprint(nextBlueprint);
     setSummary(summarizeBlueprint(nextEncoded, nextBlueprint));
     setMessage(`Loaded test blueprint ${nextBlueprint.name}.`);
+    setShowPipeMode(fixture.layers?.includes("pipes") ?? false);
     if (remember) writeStorageValue(SAVED_BLUEPRINT_KEY, nextEncoded);
   };
   const loadSavedBlueprint = (record: SaveBlueprintRecord, fileName: string) => {
@@ -608,7 +610,7 @@ export function BlueprintInspectorPage({
                 {initialEncoded === undefined ? (
                   <FromSavedGame
                     onSelectFixture={(fixture) => {
-                      loadTestBlueprint(fixture);
+                      loadTestFixture(fixture);
                       setImportOpen(false);
                     }}
                     onSelectSavedBlueprint={(saveId, blueprintId) => {
@@ -760,7 +762,7 @@ export function BlueprintInspectorPage({
           <PageHeader title={title}>{description}</PageHeader>
           {initialEncoded === undefined ? (
             <FromSavedGame
-              onSelectFixture={loadTestBlueprint}
+              onSelectFixture={loadTestFixture}
               onSelectSavedBlueprint={(saveId, blueprintId) =>
                 navigate({
                   to: "/save/$saveId/blueprint/$blueprintId",
@@ -858,7 +860,7 @@ export function FromSavedGame({
   onSelectFixture,
   onSelectSavedBlueprint,
 }: {
-  onSelectFixture?: (blueprint: Blueprint) => void;
+  onSelectFixture?: (fixture: BlueprintVisualFixture) => void;
   onSelectSavedBlueprint?: (saveId: string, blueprintId: string) => void;
 }) {
   const [saved, setSaved] = useState<StoredSaveSummary[] | null>(null);
@@ -897,7 +899,7 @@ export function FromSavedGame({
                 const fixture = BLUEPRINT_VISUAL_FIXTURES.find(
                   (candidate) => candidate.id === fixtureId,
                 );
-                if (fixture) onSelectFixture?.(fixture.blueprint);
+                if (fixture) onSelectFixture?.(fixture);
                 return;
               }
               const [saveId, blueprintId] = value.split("/");

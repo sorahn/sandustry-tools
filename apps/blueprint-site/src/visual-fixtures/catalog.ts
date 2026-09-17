@@ -35,6 +35,7 @@ export type BlueprintVisualFixture = {
   id: string;
   label: string;
   blueprint: Blueprint;
+  layers?: readonly "pipes"[];
 };
 
 export const BLUEPRINT_VISUAL_FIXTURES: BlueprintVisualFixture[] = [

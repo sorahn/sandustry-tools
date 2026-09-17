@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { describe, test } from "bun:test";
 import { catalogVisualBlueprint, renderVisualBlueprintSvg } from "./svg-renderer";
+import { parseVisualFixtureFilename } from "./fixture-metadata.mjs";
 
 const visualRoot = path.dirname(fileURLToPath(import.meta.url));
 const blueprintRoot = path.join(visualRoot, "blueprints");
@@ -12,14 +13,21 @@ const snapshotRoot = path.join(visualRoot, "svg");
 // environment flag for this test's baseline replacement mode.
 const update = process.env.UPDATE_SVG_SNAPSHOTS === "1";
 const fixtures = [
-  { name: "catalog", input: catalogVisualBlueprint() },
+  {
+    name: "catalog",
+    outputName: "catalog",
+    input: catalogVisualBlueprint(),
+    renderOptions: {},
+  },
   ...(await readdir(blueprintRoot))
-    // pipe-layer is an opt-in native pipe-mode fixture, not an ordinary baseline.
-    .filter((file) => file.endsWith(".txt") && file !== "pipe-layer.txt")
+    .filter((file) => file.endsWith(".txt"))
     .sort()
-    .map(async (file) => ({
-      name: path.basename(file, ".txt"),
-      input: (await readFile(path.join(blueprintRoot, file), "utf8")).trim(),
+    .map(parseVisualFixtureFilename)
+    .map(async (fixture) => ({
+      name: fixture.id,
+      outputName: fixture.outputName,
+      input: (await readFile(path.join(blueprintRoot, fixture.filename), "utf8")).trim(),
+      renderOptions: fixture.renderOptions,
     })),
 ];
 
@@ -30,8 +38,11 @@ describe("blueprint SVG snapshots", () => {
   for (const fixture of resolvedFixtures) {
     test(fixture.name, async () => {
       assert.ok(fixture.input, `SVG fixture is empty: ${fixture.name}`);
-      const snapshotPath = path.join(snapshotRoot, `${fixture.name}.svg`);
-      const actual = `${renderVisualBlueprintSvg(fixture.input, fixture.name === "edge-fade").trim()}\n`;
+      const snapshotPath = path.join(snapshotRoot, `${fixture.outputName}.svg`);
+      const actual = `${renderVisualBlueprintSvg(fixture.input, {
+        ...fixture.renderOptions,
+        showEdgeFade: fixture.name === "edge-fade",
+      }).trim()}\n`;
       if (update) {
         await writeFile(snapshotPath, actual);
         return;

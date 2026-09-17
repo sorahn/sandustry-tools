@@ -7,6 +7,7 @@ import { existsSync } from "node:fs";
 import { copyFile, mkdir, rename, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { parseVisualFixtureFilename } from "./fixture-metadata.mjs";
 
 // The documented visual commands run from the repository root. Using cwd here
 // also avoids Bun resolving import.meta.url through its temporary module path.
@@ -33,26 +34,30 @@ async function visualJobs() {
   const jobs = [
     {
       name: "catalog",
+      id: "catalog",
+      outputName: "catalog",
       input: undefined,
       baseline: path.join(visualRoot, "catalog-baseline.png"),
+      renderOptions: {},
     },
   ];
   const files = readdirSync(blueprintRoot)
     .filter((file) => file.endsWith(".txt"))
     .sort();
   for (const file of files) {
-    const name = path.basename(file, ".txt");
+    const fixture = parseVisualFixtureFilename(file);
     const input = (await readFile(path.join(blueprintRoot, file), "utf8")).trim();
     if (!input) throw new Error(`Visual blueprint is empty: ${file}`);
     jobs.push({
-      name,
+      ...fixture,
       input,
-      baseline: name === "pipe-layer" ? null : path.join(baselineRoot, `${name}.png`),
-      pipeMode: name === "pipe-layer",
+      baseline: path.join(baselineRoot, `${fixture.outputName}.png`),
     });
   }
   if (!only) return jobs;
-  const selected = jobs.filter((job) => job.name === only);
+  const selected = jobs.filter(
+    (job) => job.name === only || job.id === only || job.outputName === only,
+  );
   if (selected.length === 0) {
     throw new Error(`unknown visual snapshot '${only}'; expected catalog or a blueprint filename`);
   }
@@ -72,14 +77,19 @@ async function loadNodeRenderer() {
   return import(bundlePath);
 }
 
-async function capture(renderer, job, currentPath) {
+async function capture(renderer, job, currentPath, svgPath) {
   const input = job.input ?? renderer.catalogVisualBlueprint();
+  const renderOptions = {
+    ...job.renderOptions,
+    showFoundationOutlines: !noOutlines,
+    showEdgeFade: job.name === "edge-fade",
+  };
+  const svg = renderer.renderVisualBlueprintSvg(input, renderOptions);
+  await writeFile(svgPath, `${svg.trim()}\n`);
   const png = await renderer.renderVisualBlueprint(
     input,
     path.join(root, "apps/blueprint-site/public"),
-    !noOutlines,
-    job.name === "edge-fade",
-    job.pipeMode,
+    renderOptions,
   );
   await writeFile(currentPath, png);
   const trimmedPath = `${currentPath}.trim.png`;
@@ -126,12 +136,14 @@ async function run() {
   for (const job of jobs) {
     const currentPath = path.join(
       outputRoot,
-      `${job.name}${noOutlines ? "-no-outlines" : ""}-current.png`,
+      `${job.outputName}${noOutlines ? "-no-outlines" : ""}-current.png`,
     );
-    await capture(renderer, job, currentPath);
-    if (!job.baseline) {
-      console.log(`  rendered ${job.name} pipe mode without a baseline: ${currentPath}`);
-    } else if (update) {
+    const svgPath = path.join(
+      outputRoot,
+      `${job.outputName}${noOutlines ? "-no-outlines" : ""}-current.svg`,
+    );
+    await capture(renderer, job, currentPath, svgPath);
+    if (update) {
       await copyFile(currentPath, job.baseline);
       console.log(`  updated ${job.name} baseline`);
     } else if (!existsSync(job.baseline)) {

@@ -21,10 +21,30 @@ describe("pipe topology preparation", () => {
       name: "masks",
       signalLinks: null,
       data: [
-        { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 0 } },
-        { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 1 } },
-        { type: PIPE_STRUCTURE_TYPE, x: 8, y: 0, data: { pipeConnectionMask: 5 } },
-        { type: PIPE_STRUCTURE_TYPE, x: 12, y: 0, data: { pipeConnectionMask: 3 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 0,
+          y: 0,
+          data: { pipeConnectionMask: 0 },
+        },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 4,
+          y: 0,
+          data: { pipeConnectionMask: 1 },
+        },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 8,
+          y: 0,
+          data: { pipeConnectionMask: 5 },
+        },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 12,
+          y: 0,
+          data: { pipeConnectionMask: 3 },
+        },
         {
           type: PIPE_STRUCTURE_TYPE,
           x: 16,
@@ -62,7 +82,12 @@ describe("pipe topology preparation", () => {
       signalLinks: null,
       data: [
         { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0 },
-        { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 10 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 4,
+          y: 0,
+          data: { pipeConnectionMask: 10 },
+        },
       ],
     };
     const topology = prepareBlueprint(blueprint).preparedStructures[0].pipeTopology;
@@ -133,8 +158,18 @@ describe("pipe topology preparation", () => {
       name: "network",
       signalLinks: null,
       data: [
-        { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 2 } },
-        { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 8 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 0,
+          y: 0,
+          data: { pipeConnectionMask: 2 },
+        },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 4,
+          y: 0,
+          data: { pipeConnectionMask: 8 },
+        },
         {
           type: PIPE_STRUCTURE_TYPE,
           x: 4,
@@ -145,7 +180,12 @@ describe("pipe topology preparation", () => {
             pipeBridgeAxis: "horizontal",
           },
         },
-        { type: PIPE_STRUCTURE_TYPE, x: 8, y: 4, data: { pipeConnectionMask: 8 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 8,
+          y: 4,
+          data: { pipeConnectionMask: 8 },
+        },
       ],
     });
     assert.deepEqual(connectedPipeStructureIndices(prepared, 0), [0, 1]);
@@ -157,16 +197,36 @@ describe("pipe topology preparation", () => {
       name: "crossing lanes",
       signalLinks: null,
       data: [
-        { type: PIPE_STRUCTURE_TYPE, x: 0, y: -4, data: { pipeConnectionMask: 4 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 0,
+          y: -4,
+          data: { pipeConnectionMask: 4 },
+        },
         {
           type: PIPE_STRUCTURE_TYPE,
           x: 0,
           y: 0,
           data: { pipeConnectionMask: 5, pipeBridgeAxis: "horizontal" },
         },
-        { type: PIPE_STRUCTURE_TYPE, x: 0, y: 4, data: { pipeConnectionMask: 1 } },
-        { type: PIPE_STRUCTURE_TYPE, x: -4, y: 0, data: { pipeConnectionMask: 2 } },
-        { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 8 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 0,
+          y: 4,
+          data: { pipeConnectionMask: 1 },
+        },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: -4,
+          y: 0,
+          data: { pipeConnectionMask: 2 },
+        },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 4,
+          y: 0,
+          data: { pipeConnectionMask: 8 },
+        },
       ],
     });
 
@@ -202,9 +262,24 @@ describe("pipe topology preparation", () => {
       name: "attachments",
       signalLinks: null,
       data: [
-        { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 2 } },
-        { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 10 } },
-        { type: PIPE_STRUCTURE_TYPE, x: 8, y: 0, data: { pipeConnectionMask: 8 } },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 0,
+          y: 0,
+          data: { pipeConnectionMask: 2 },
+        },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 4,
+          y: 0,
+          data: { pipeConnectionMask: 10 },
+        },
+        {
+          type: PIPE_STRUCTURE_TYPE,
+          x: 8,
+          y: 0,
+          data: { pipeConnectionMask: 8 },
+        },
         { type: PUMP_STRUCTURE_TYPE, x: 0, y: 0 },
         { type: LIQUID_VENT_STRUCTURE_TYPE, x: 8, y: 0 },
       ],
@@ -271,9 +346,9 @@ describe("pipe topology preparation", () => {
     );
   });
 
-  test("renders the special pipe-layer fixture with native pipe-mode colors", () => {
+  test("renders the pipe-layer fixture with native pipe-mode colors", () => {
     const encoded = readFileSync(
-      new URL("../../tests/visual/blueprints/pipe-layer.txt", import.meta.url),
+      new URL("../../tests/visual/blueprints/pipe-layer[pipes].txt", import.meta.url),
       "utf8",
     ).trim();
     const svg = renderBlueprintToSvg(decodeBlueprint(encoded), {
@@ -310,11 +385,25 @@ describe("pipe topology preparation", () => {
         name: "highlight",
         signalLinks: null,
         data: [
-          { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 2 } },
-          { type: PIPE_STRUCTURE_TYPE, x: 4, y: 0, data: { pipeConnectionMask: 8 } },
+          {
+            type: PIPE_STRUCTURE_TYPE,
+            x: 0,
+            y: 0,
+            data: { pipeConnectionMask: 2 },
+          },
+          {
+            type: PIPE_STRUCTURE_TYPE,
+            x: 4,
+            y: 0,
+            data: { pipeConnectionMask: 8 },
+          },
         ],
       },
-      { catalog: blueprintCatalog(), pipeNetworkHighlightIndices: [0, 1], showGrid: false },
+      {
+        catalog: blueprintCatalog(),
+        pipeNetworkHighlightIndices: [0, 1],
+        showGrid: false,
+      },
     ).svg;
     assert.match(svg, /data-layer="pipe-network-highlight"/);
     assert.match(svg, /feMorphology/);
@@ -338,7 +427,11 @@ describe("pipe topology preparation", () => {
           },
         ],
       },
-      { catalog: blueprintCatalog(), pipeNetworkHighlightIndices: [0], showGrid: false },
+      {
+        catalog: blueprintCatalog(),
+        pipeNetworkHighlightIndices: [0],
+        showGrid: false,
+      },
     ).svg;
     const highlight = svg.slice(svg.indexOf('data-layer="pipe-network-highlight"'));
     assert.doesNotMatch(highlight, /catalog\/pipes\.png/);
@@ -386,7 +479,11 @@ describe("pipe topology preparation", () => {
           },
         ],
       },
-      { catalog: blueprintCatalog(), pipeNetworkHighlightIndices: [0], showGrid: false },
+      {
+        catalog: blueprintCatalog(),
+        pipeNetworkHighlightIndices: [0],
+        showGrid: false,
+      },
     ).svg;
     const highlight = svg.slice(svg.indexOf('data-layer="pipe-network-highlight"'));
     assert.match(highlight, /data-pipe-highlight-frame=/);
@@ -400,7 +497,12 @@ describe("pipe topology preparation", () => {
         name: "attached endpoint",
         signalLinks: null,
         data: [
-          { type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 0 } },
+          {
+            type: PIPE_STRUCTURE_TYPE,
+            x: 0,
+            y: 0,
+            data: { pipeConnectionMask: 0 },
+          },
           { type: 24, x: 0, y: 0 },
         ],
       },
@@ -447,7 +549,14 @@ describe("pipe topology preparation", () => {
       {
         name: "missing pipe asset",
         signalLinks: null,
-        data: [{ type: PIPE_STRUCTURE_TYPE, x: 0, y: 0, data: { pipeConnectionMask: 0 } }],
+        data: [
+          {
+            type: PIPE_STRUCTURE_TYPE,
+            x: 0,
+            y: 0,
+            data: { pipeConnectionMask: 0 },
+          },
+        ],
       },
       { catalog, showGrid: false },
     ).svg;

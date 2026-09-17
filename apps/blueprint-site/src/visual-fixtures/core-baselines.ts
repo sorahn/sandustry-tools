@@ -29,6 +29,18 @@ function extractBaseName(pathOrFilename: string): string {
   return match ? match[1] : pathOrFilename;
 }
 
+function parseFixtureName(pathOrFilename: string) {
+  const basename = extractBaseName(pathOrFilename);
+  const match = basename.match(/^(.+?)(?:\[([a-z][a-z0-9-]*(?:,[a-z][a-z0-9-]*)*)\])?$/);
+  if (!match) throw new Error(`Invalid visual fixture filename: ${pathOrFilename}`);
+  const layers = match[2]?.split(",") ?? [];
+  const unknownLayers = layers.filter((layer) => layer !== "pipes");
+  if (unknownLayers.length) {
+    throw new Error(`Unknown visual fixture layer: ${unknownLayers.join(", ")}`);
+  }
+  return { name: match[1], layers: layers as "pipes"[] };
+}
+
 function loadRawBaselines(): Record<string, string> {
   // Bun test runner:
   if (typeof Bun !== "undefined") {
@@ -69,12 +81,13 @@ export function getCoreVisualBaselines(): BlueprintVisualFixture[] {
   const raw = loadRawBaselines();
   const entries: BlueprintVisualFixture[] = [];
   for (const [key, source] of Object.entries(raw)) {
-    const name = extractBaseName(key);
+    const { name, layers } = parseFixtureName(key);
     const label = formatLabel(name);
     entries.push({
-      id: `baseline-${name}`,
-      label: `Baseline: ${label}`,
+      id: `baseline-${name}${layers.length ? `[${layers.join(",")}]` : ""}`,
+      label: `Baseline: ${label}${layers.length ? ` · ${layers.map(formatLabel).join(", ")}` : ""}`,
       blueprint: decodeBlueprint((source as string).trim()),
+      layers,
     });
   }
   return entries.sort((a, b) => a.id.localeCompare(b.id));

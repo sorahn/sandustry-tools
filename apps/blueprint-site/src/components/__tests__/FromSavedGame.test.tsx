@@ -23,6 +23,11 @@ test("renders Test Fixtures optgroup at top of FromSavedGame in DEV mode", () =>
     expect(html).toContain(`value="fixture:${fixture.id}"`);
     expect(html).toContain(fixture.label);
   }
+  const pipeLayer = BLUEPRINT_VISUAL_FIXTURES.find(
+    (fixture) => fixture.id === "baseline-pipe-layer[pipes]",
+  );
+  expect(pipeLayer?.layers).toEqual(["pipes"]);
+  expect(pipeLayer?.label).toContain("Pipes");
 });
 
 test("formats save optgroup labels as <World Name> [Save Name]", () => {

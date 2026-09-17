@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, test } from "bun:test";
 import { catalogVisualBlueprint, renderVisualBlueprint } from "./node-renderer";
+import { parseVisualFixtureFilename } from "./fixture-metadata.mjs";
 
 const visualRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(visualRoot, "../../../..");
@@ -18,17 +19,21 @@ const update = process.env.UPDATE_PNG_SNAPSHOTS === "1";
 const fixtures = [
   {
     name: "catalog",
+    outputName: "catalog",
     input: catalogVisualBlueprint(),
     baseline: path.join(visualRoot, "catalog-baseline.png"),
+    renderOptions: {},
   },
   ...(await readdir(blueprintRoot))
-    // pipe-layer is an opt-in native pipe-mode fixture, not an ordinary baseline.
-    .filter((file) => file.endsWith(".txt") && file !== "pipe-layer.txt")
+    .filter((file) => file.endsWith(".txt"))
     .sort()
-    .map(async (file) => ({
-      name: path.basename(file, ".txt"),
-      input: (await readFile(path.join(blueprintRoot, file), "utf8")).trim(),
-      baseline: path.join(baselineRoot, `${path.basename(file, ".txt")}.png`),
+    .map(parseVisualFixtureFilename)
+    .map(async (fixture) => ({
+      name: fixture.id,
+      outputName: fixture.outputName,
+      input: (await readFile(path.join(blueprintRoot, fixture.filename), "utf8")).trim(),
+      baseline: path.join(baselineRoot, `${fixture.outputName}.png`),
+      renderOptions: fixture.renderOptions,
     })),
 ];
 
@@ -37,7 +42,9 @@ await mkdir(outputRoot, { recursive: true });
 
 function runMagick(args: string[]) {
   return new Promise<{ code: number; stderr: string }>((resolve, reject) => {
-    const child = spawn("magick", args, { stdio: ["ignore", "ignore", "pipe"] });
+    const child = spawn("magick", args, {
+      stdio: ["ignore", "ignore", "pipe"],
+    });
     let stderr = "";
     child.stderr.on("data", (chunk) => {
       stderr += chunk;
@@ -51,14 +58,17 @@ describe("blueprint PNG snapshots", () => {
   for (const fixture of resolvedFixtures) {
     test(fixture.name, async () => {
       assert.ok(fixture.input, `PNG fixture is empty: ${fixture.name}`);
-      const currentPath = path.join(outputRoot, `${fixture.name}-bun-current.png`);
-      const trimmedPath = path.join(outputRoot, `${fixture.name}-bun-trimmed.png`);
-      const diffPath = path.join(outputRoot, `${fixture.name}-bun-diff.png`);
+      const currentPath = path.join(outputRoot, `${fixture.outputName}-bun-current.png`);
+      const trimmedPath = path.join(outputRoot, `${fixture.outputName}-bun-trimmed.png`);
+      const diffPath = path.join(outputRoot, `${fixture.outputName}-bun-diff.png`);
       const png = await renderVisualBlueprint(
         fixture.input,
         path.join(repoRoot, "apps/blueprint-site/public"),
-        true,
-        fixture.name === "edge-fade",
+        {
+          ...fixture.renderOptions,
+          showFoundationOutlines: true,
+          showEdgeFade: fixture.name === "edge-fade",
+        },
       );
       await writeFile(currentPath, png);
 

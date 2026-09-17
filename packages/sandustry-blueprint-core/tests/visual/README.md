@@ -28,13 +28,33 @@ Put one encoded blueprint per file in `packages/sandustry-blueprint-core/tests/v
 `packages/sandustry-blueprint-core/tests/visual/blueprints/thermal-line.txt`. Both v2 binary strings and v2 text
 strings are accepted.
 
-`pipe-layer.txt` is intentionally excluded from the ordinary SVG and PNG
-baselines. It renders with the native-style pipe-mode overlay when selected
-through the visual renderer and writes a current artifact without requiring or
-updating a baseline:
+Add a global layer in square brackets before `.txt` to render a fixture with
+that layer enabled. The currently supported layer is `pipes`:
+
+```text
+pipe-layer[pipes].txt
+```
+
+It renders with the native-style pipe-mode overlay in both the SVG and PNG
+snapshot suites. It can be selected by its base name, tagged name, or artifact
+name:
 
 ```sh
 npm run visual:render -- --only pipe-layer
+```
+
+That command writes both formats under `artifacts/visual/blueprint-core/`:
+
+```text
+pipe-layer-pipes-current.png
+pipe-layer-pipes-current.svg
+```
+
+Its checked-in snapshots use the matching layer-qualified name:
+
+```text
+baselines/pipe-layer-pipes.png
+svg/pipe-layer-pipes.svg
 ```
 
 Do not update checked-in baselines during ordinary test runs. A mismatch is a
