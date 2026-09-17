@@ -11,6 +11,8 @@ describe("PipeLayerControl", () => {
     expect(html).toContain('aria-label="Show pipe layer"');
     expect(html).toContain('aria-pressed="false"');
     expect(html).toContain("Pipes");
+    expect(html).toContain('src="/catalog/img__pipes_icon.png"');
+    expect(html).toContain("image-rendering:pixelated");
     expect(html).not.toContain("✓");
   });
 

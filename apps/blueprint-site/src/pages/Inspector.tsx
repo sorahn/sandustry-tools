@@ -668,7 +668,7 @@ export function BlueprintInspectorPage({
           </Button>
         </div>
 
-        <div className="absolute bottom-1 left-3 z-30">
+        <div className="absolute bottom-3 left-3 z-30">
           <ShortcutHelper>
             <ShortcutHelperItem
               hotkey={

@@ -30,27 +30,11 @@ export function PipeLayerControl({
         )}
         aria-hidden="true"
       >
-        <svg viewBox="0 0 56 40" className="h-full w-full" role="presentation">
-          <rect width="56" height="40" fill="#33a8ff" />
-          <path d="M0 10H56M0 20H56M0 30H56M14 0V40M28 0V40M42 0V40" stroke="#168bd7" />
-          <path
-            d="M8 28H28V8M28 28H48"
-            fill="none"
-            stroke="#111827"
-            strokeWidth="8"
-            strokeLinecap="square"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M8 28H28V8M28 28H48"
-            fill="none"
-            stroke="#777c80"
-            strokeWidth="4"
-            strokeLinecap="square"
-            strokeLinejoin="round"
-          />
-          <path d="M8 24V32M24 8H32M48 24V32" stroke="#ffe700" strokeWidth="5" />
-        </svg>
+        <img
+          src={`${import.meta.env?.BASE_URL ?? "/"}catalog/img__pipes_icon.png`}
+          alt=""
+          className="size-8 [image-rendering:pixelated]"
+        />
         {active ? (
           <span className="absolute top-0.5 right-0.5 flex size-3 items-center justify-center rounded-full bg-yellow-400 text-[9px] leading-none font-bold text-slate-950">
             ✓
