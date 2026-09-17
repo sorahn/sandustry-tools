@@ -375,7 +375,7 @@ describe("pipe topology preparation", () => {
     }).svg;
     assert.match(
       viewportSvg,
-      /data-pipe-mode-scrim="true" x="-32" y="-32" width="[^\"]+" height="[^\"]+"/,
+      /data-pipe-mode-scrim="true" x="-32" y="-32" width="[^"]+" height="[^"]+"/,
     );
   });
 
