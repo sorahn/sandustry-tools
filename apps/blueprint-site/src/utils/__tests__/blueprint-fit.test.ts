@@ -65,6 +65,43 @@ describe("blueprint initial-fit policies", () => {
     expect(result.viewportHeight).toBe(502);
   });
 
+  test("fits and centers blueprints inside asymmetric control insets", () => {
+    const result = solveInitialFit(
+      {
+        contentWidth: 400,
+        contentHeight: 400,
+        viewportWidth: 800,
+        viewportHeight: 502,
+        marginPx: 48,
+        viewportInsets: { top: 60, bottom: 80 },
+      },
+      DEFAULT_FIT_POLICY,
+    );
+
+    expect(result.zoom).toBeCloseTo(362 / 496);
+    expect(result.pan.x).toBe(0);
+    expect(result.pan.y).toBeCloseTo(10 / result.zoom);
+    expect(result.overflow).toEqual({ horizontal: false, vertical: false });
+  });
+
+  test("accounts for horizontal control insets when fitting and positioning", () => {
+    const result = solveInitialFit(
+      {
+        contentWidth: 700,
+        contentHeight: 200,
+        viewportWidth: 800,
+        viewportHeight: 502,
+        marginPx: 20,
+        viewportInsets: { left: 20, right: 100 },
+      },
+      DEFAULT_FIT_POLICY,
+    );
+
+    expect(result.zoom).toBeCloseTo(680 / 740);
+    expect(result.pan.x).toBeCloseTo(40 / result.zoom);
+    expect(result.pan.y).toBe(0);
+  });
+
   test("exposes the current policy as the default preset", () => {
     expect(FIT_POLICY_PRESETS.default).toBe(DEFAULT_FIT_POLICY);
     expect(DEFAULT_FIT_POLICY.initialZoom).toBe("continuous");

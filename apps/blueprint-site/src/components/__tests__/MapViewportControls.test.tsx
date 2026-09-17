@@ -65,6 +65,21 @@ describe("MapViewportControls", () => {
     expect(html).toContain("disabled");
   });
 
+  test("disables Fit when pan matches the control-safe fitted position", () => {
+    const html = renderToStaticMarkup(
+      <MapViewportControls
+        zoom={0.8}
+        measuredFitZoom={0.8}
+        measuredFitPan={{ x: 0, y: 24 }}
+        fitMode={true}
+        pan={{ x: 0, y: 24 }}
+        onFit={() => {}}
+      />,
+    );
+
+    expect(html).toContain("disabled");
+  });
+
   test("respects explicit fitDisabled prop", () => {
     const htmlDisabled = renderToStaticMarkup(
       <MapViewportControls zoom={1} fitDisabled={true} onFit={() => {}} />,

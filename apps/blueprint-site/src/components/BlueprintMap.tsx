@@ -56,6 +56,7 @@ import { createBrowserPngPlatform, createImageResolver } from "../utils/png-plat
 import {
   resolveFitSpacing,
   solveInitialFit,
+  type FitInsets,
   type FitPolicy,
   type FitPolicyPreset,
   type FitSpacing,
@@ -64,6 +65,7 @@ import {
 const MAP_FIT_ZOOM_MIN = 0.25;
 const MAP_FIT_ZOOM_MAX = 2;
 const MAP_FIT_MARGIN_CELLS_TOTAL = 24;
+const EMPTY_FIT_INSETS: FitInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 export function BlueprintMap({
   blueprint,
@@ -91,6 +93,8 @@ export function BlueprintMap({
   highlightMatchingFilters: controlledHighlightMatchingFilters,
   onHighlightMatchingFiltersChange: controlledOnHighlightMatchingFiltersChange,
   viewportControlsExtra,
+  viewportTopLeftControls,
+  viewportBottomLeftControls,
 }: {
   blueprint: Blueprint;
   remember: boolean;
@@ -117,6 +121,8 @@ export function BlueprintMap({
   highlightMatchingFilters?: boolean;
   onHighlightMatchingFiltersChange?: (value: boolean) => void;
   viewportControlsExtra?: ReactNode;
+  viewportTopLeftControls?: ReactNode;
+  viewportBottomLeftControls?: ReactNode;
 }) {
   const [uncontrolledIndex, setUncontrolledIndex] = useState<number | null>(null);
   const selectedIndex =
@@ -213,7 +219,12 @@ export function BlueprintMap({
   const [mapSizeReady, setMapSizeReady] = useState(
     () => captureOnly || readStoredMapView(blueprintKey, zoomLevels) !== null,
   );
+  const [fitControlInsets, setFitControlInsets] = useState<FitInsets>(EMPTY_FIT_INSETS);
   const svgRef = useRef<SVGSVGElement>(null);
+  const topRightControlsRef = useRef<HTMLDivElement>(null);
+  const topLeftControlsRef = useRef<HTMLDivElement>(null);
+  const bottomRightControlsRef = useRef<HTMLDivElement>(null);
+  const bottomLeftControlsRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
     pointerId: number;
     lastX: number;
@@ -264,6 +275,50 @@ export function BlueprintMap({
   const { preparedBlueprint, minX, minY, width, height } = mapModel;
   const { viewportRef, viewportSize, hoverMarkerRef, updateHoverBlock, clearHoverBlock } =
     useBlueprintMapViewport({ cell, minX, minY, padding, width, height });
+  useLayoutEffect(() => {
+    if (captureOnly) {
+      setFitControlInsets(EMPTY_FIT_INSETS);
+      return;
+    }
+    const viewport = viewportRef.current;
+    const topRight = topRightControlsRef.current?.firstElementChild as HTMLDivElement | null;
+    const topControls = [topLeftControlsRef.current, topRight].filter(
+      (element): element is HTMLDivElement => element !== null,
+    );
+    const bottomControls = [bottomLeftControlsRef.current, bottomRightControlsRef.current].filter(
+      (element): element is HTMLDivElement => element !== null,
+    );
+    if (!viewport) return;
+
+    const updateInsets = () => {
+      const viewportRect = viewport.getBoundingClientRect();
+      const top = topControls.reduce(
+        (inset, element) =>
+          Math.max(inset, element.getBoundingClientRect().bottom - viewportRect.top),
+        0,
+      );
+      const bottom = bottomControls.reduce(
+        (inset, element) =>
+          Math.max(inset, viewportRect.bottom - element.getBoundingClientRect().top),
+        0,
+      );
+      const next = {
+        top: Math.max(0, Math.min(viewportRect.height, top)),
+        right: 0,
+        bottom: Math.max(0, Math.min(viewportRect.height, bottom)),
+        left: 0,
+      };
+      setFitControlInsets((current) =>
+        current.top === next.top && current.bottom === next.bottom ? current : next,
+      );
+    };
+
+    updateInsets();
+    const observer = new ResizeObserver(updateInsets);
+    observer.observe(viewport);
+    for (const element of [...topControls, ...bottomControls]) observer.observe(element);
+    return () => observer.disconnect();
+  }, [captureOnly, viewportSize.height, viewportSize.width]);
   const pipeModeScrimBleed = showPipeMode
     ? Math.ceil(
         Math.max(viewportSize.width || width, viewportSize.height || height) /
@@ -411,24 +466,7 @@ export function BlueprintMap({
   const currentViewportHeight =
     (fullHeight ? viewportRef.current?.clientHeight || viewportSize.height : 0) ||
     defaultViewportHeight;
-  const measuredFitZoom = fitPolicy
-    ? (() => {
-        const solvedZoom = solveInitialFit(
-          {
-            contentWidth: width,
-            contentHeight: height,
-            viewportWidth,
-            viewportHeight: currentViewportHeight,
-            marginPx,
-          },
-          fitPolicy,
-        ).zoom;
-        return fitPolicy.initialZoom === "continuous"
-          ? solvedZoom
-          : snapMapZoom(solvedZoom, zoomLevels);
-      })()
-    : legacyMeasuredFitZoom;
-  const aspectRatioViewportHeight = fitPolicy
+  const measuredFitResult = fitPolicy
     ? solveInitialFit(
         {
           contentWidth: width,
@@ -436,10 +474,19 @@ export function BlueprintMap({
           viewportWidth,
           viewportHeight: currentViewportHeight,
           marginPx,
+          viewportInsets: fitControlInsets,
         },
         fitPolicy,
-      ).viewportHeight
-    : legacyAspectRatioViewportHeight;
+      )
+    : null;
+  const measuredFitZoom = measuredFitResult
+    ? fitPolicy?.initialZoom === "continuous"
+      ? measuredFitResult.zoom
+      : snapMapZoom(measuredFitResult.zoom, zoomLevels)
+    : legacyMeasuredFitZoom;
+  const measuredFitPan = measuredFitResult?.pan ?? { x: 0, y: 0 };
+  const aspectRatioViewportHeight =
+    measuredFitResult?.viewportHeight ?? legacyAspectRatioViewportHeight;
 
   const { filterClusters, filterClusterByStructureIndex } = useMemo(() => {
     const clusters = clusterFilterStructures(preparedBlueprint.preparedStructures);
@@ -646,27 +693,34 @@ export function BlueprintMap({
     }
     fitModeRef.current = true;
     const availableWidth = viewportRef.current?.clientWidth || viewportSize.width;
-    const solvedZoom = solveInitialFit(
+    const solved = solveInitialFit(
       {
         contentWidth: width,
         contentHeight: height,
         viewportWidth: availableWidth || width,
         viewportHeight: viewportRef.current?.clientHeight || defaultViewportHeight,
         marginPx,
+        viewportInsets: fitControlInsets,
       },
       fitPolicy,
-    ).zoom;
+    );
+    const solvedZoom = solved.zoom;
     setZoom(
       fitPolicy.initialZoom === "continuous" ? solvedZoom : snapMapZoom(solvedZoom, zoomLevels),
     );
-    setPan({ x: 0, y: 0 });
+    setPan(solved.pan);
   };
   useLayoutEffect(() => {
     if (captureOnly) return;
     const sidebarVisibilityChanged = previousSidebarVisibilityRef.current !== showSidebar;
     previousSidebarVisibilityRef.current = showSidebar;
     const stored = remember ? readStoredMapView(blueprintKey, zoomLevels) : null;
-    if (!sidebarVisibilityChanged && stored?.viewportWidth === viewportSize.width) return;
+    if (
+      !sidebarVisibilityChanged &&
+      stored?.viewportWidth === viewportSize.width &&
+      stored?.fit !== true
+    )
+      return;
     if (!viewportSize.width || !viewportSize.height) return;
     if (!viewportRef.current) return;
     if (!fitModeRef.current) {
@@ -679,6 +733,8 @@ export function BlueprintMap({
     blueprintKey,
     captureOnly,
     fitPolicy,
+    fitControlInsets.bottom,
+    fitControlInsets.top,
     remember,
     showSidebar,
     viewportSize.height,
@@ -833,12 +889,18 @@ export function BlueprintMap({
           className={fullHeight ? "pointer-events-none absolute inset-0 z-20" : "sticky z-20 h-0"}
           style={fullHeight ? undefined : { top: stickyTop ?? `${siteHeaderHeight}px` }}
         >
-          <div className={fullHeight ? "pointer-events-auto" : undefined}>
+          {viewportTopLeftControls ? (
+            <div ref={topLeftControlsRef} className="pointer-events-auto absolute top-3 left-3">
+              {viewportTopLeftControls}
+            </div>
+          ) : null}
+          <div ref={topRightControlsRef} className={fullHeight ? "pointer-events-auto" : undefined}>
             <BlueprintMapViewportControls
               zoom={zoom}
               minZoom={minZoom}
               maxZoom={maxZoom}
               measuredFitZoom={measuredFitZoom}
+              measuredFitPan={measuredFitPan}
               fitMode={fitModeRef.current}
               pan={pan}
               extraActions={viewportControlsExtra}
@@ -925,8 +987,13 @@ export function BlueprintMap({
                   }
           }
         >
+          {!captureOnly && viewportBottomLeftControls ? (
+            <div ref={bottomLeftControlsRef} className="absolute bottom-3 left-3 z-20">
+              {viewportBottomLeftControls}
+            </div>
+          ) : null}
           {!captureOnly && onShowPipeModeChange ? (
-            <div className="absolute right-3 bottom-3 z-20">
+            <div ref={bottomRightControlsRef} className="absolute right-3 bottom-3 z-20">
               <PipeLayerControl active={showPipeMode} onActiveChange={onShowPipeModeChange} />
             </div>
           ) : null}

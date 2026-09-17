@@ -7,6 +7,7 @@ export type MapViewportControlsProps = PropsWithChildren<{
   minZoom?: number;
   maxZoom?: number;
   measuredFitZoom?: number;
+  measuredFitPan?: { x: number; y: number };
   fitMode?: boolean;
   pan?: { x: number; y: number };
   fitDisabled?: boolean;
@@ -24,6 +25,7 @@ export function MapViewportControls({
   minZoom = 0.125,
   maxZoom = 8,
   measuredFitZoom,
+  measuredFitPan,
   fitMode,
   pan,
   fitDisabled: explicitFitDisabled,
@@ -41,7 +43,9 @@ export function MapViewportControls({
     (Boolean(fitMode) &&
       measuredFitZoom !== undefined &&
       Math.abs(zoom - measuredFitZoom) < 0.001 &&
-      (!pan || (pan.x === 0 && pan.y === 0)));
+      (!pan ||
+        (Math.abs(pan.x - (measuredFitPan?.x ?? 0)) < 0.001 &&
+          Math.abs(pan.y - (measuredFitPan?.y ?? 0)) < 0.001)));
 
   return (
     <div

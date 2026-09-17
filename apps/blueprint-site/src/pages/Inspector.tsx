@@ -656,33 +656,6 @@ export function BlueprintInspectorPage({
           </>
         }
       >
-        {/* Floating Canvas View Controls */}
-        <div className="absolute top-3 left-3 z-30 flex items-center gap-2 rounded border border-slate-700/80 bg-slate-950/80 p-1.5 backdrop-blur shadow-md">
-          <Button
-            size="small"
-            variant="quiet"
-            onClick={() => setImportOpen(true)}
-            className="text-xs"
-          >
-            Change blueprint
-          </Button>
-        </div>
-
-        <div className="absolute bottom-3 left-3 z-30">
-          <ShortcutHelper>
-            <ShortcutHelperItem
-              hotkey={
-                <>
-                  <Keycap size="sm">{primaryModifierKey()}</Keycap>
-                  <span className="text-white/50">+</span>
-                  <Keycap size="sm">V</Keycap>
-                </>
-              }
-              label="Paste blueprint"
-            />
-          </ShortcutHelper>
-        </div>
-
         {mapReady ? (
           <BlueprintMap
             blueprint={blueprint}
@@ -709,6 +682,32 @@ export function BlueprintInspectorPage({
             onSelectedIndexChange={setSelectedIndex}
             highlightMatchingFilters={highlightMatchingFilters}
             onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
+            viewportTopLeftControls={
+              <div className="flex items-center gap-2 rounded border border-slate-700/80 bg-slate-950/80 p-1.5 backdrop-blur shadow-md">
+                <Button
+                  size="small"
+                  variant="quiet"
+                  onClick={() => setImportOpen(true)}
+                  className="text-xs"
+                >
+                  Change blueprint
+                </Button>
+              </div>
+            }
+            viewportBottomLeftControls={
+              <ShortcutHelper>
+                <ShortcutHelperItem
+                  hotkey={
+                    <>
+                      <Keycap size="sm">{primaryModifierKey()}</Keycap>
+                      <span className="text-white/50">+</span>
+                      <Keycap size="sm">V</Keycap>
+                    </>
+                  }
+                  label="Paste blueprint"
+                />
+              </ShortcutHelper>
+            }
             viewportControlsExtra={
               <>
                 <PersistentCheckbox

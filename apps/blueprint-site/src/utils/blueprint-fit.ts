@@ -6,6 +6,7 @@ import {
 
 export type FitSpacing = number | string;
 export type FitGeometry = { padding: FitSpacing; margin: FitSpacing };
+export type FitInsets = { top: number; right: number; bottom: number; left: number };
 export type FitGrid = {
   extendToViewport: boolean;
 };
@@ -43,6 +44,7 @@ export type FitInput = {
   viewportWidth: number;
   viewportHeight: number;
   marginPx: number;
+  viewportInsets?: Partial<FitInsets>;
 };
 
 export type FitResult = {
@@ -152,12 +154,22 @@ function largestFittingZoom(levels: readonly number[], maxZoom: number, minZoom:
 }
 
 export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): FitResult {
+  const insets: FitInsets = {
+    top: Math.max(0, input.viewportInsets?.top ?? 0),
+    right: Math.max(0, input.viewportInsets?.right ?? 0),
+    bottom: Math.max(0, input.viewportInsets?.bottom ?? 0),
+    left: Math.max(0, input.viewportInsets?.left ?? 0),
+  };
   const fitWidth = input.contentWidth + input.marginPx * 2;
   const fitHeight = input.contentHeight + input.marginPx * 2;
   const defaultHeight = aspectViewportHeight(input.viewportWidth, policy, input);
-  const availableHeight = policy.viewport.allowHeightGrowth ? defaultHeight : input.viewportHeight;
+  const availableWidth = Math.max(1, input.viewportWidth - insets.left - insets.right);
+  const baseAvailableHeight = policy.viewport.allowHeightGrowth
+    ? defaultHeight
+    : input.viewportHeight;
+  const availableHeight = Math.max(1, baseAvailableHeight - insets.top - insets.bottom);
   const widthLimit =
-    policy.fit.width === "required" ? input.viewportWidth / fitWidth : Number.POSITIVE_INFINITY;
+    policy.fit.width === "required" ? availableWidth / fitWidth : Number.POSITIVE_INFINITY;
   const heightLimit = availableHeight / fitHeight;
   const useHeightConstraint =
     policy.zoom.selection !== "largest-width-fitting" &&
@@ -181,7 +193,7 @@ export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): F
   // Height follows the fitted blueprint bounds and their minimum padding. Do
   // not reuse horizontal free space here: doing so makes the viewport height
   // track the blueprint's aspect ratio instead of its required footprint.
-  const requiredHeight = fitHeight * zoom + MAP_VIEWPORT_BORDER_SIZE;
+  const requiredHeight = fitHeight * zoom + insets.top + insets.bottom + MAP_VIEWPORT_BORDER_SIZE;
   const viewportHeight = policy.viewport.allowHeightGrowth
     ? policy.viewport.neverShrinkHeight
       ? Math.max(input.viewportHeight, defaultHeight, requiredHeight)
@@ -191,10 +203,13 @@ export function solveInitialFit(input: FitInput, policy = DEFAULT_FIT_POLICY): F
   return {
     zoom,
     viewportHeight,
-    pan: { x: 0, y: 0 },
+    pan: {
+      x: (insets.right - insets.left) / (2 * zoom),
+      y: (insets.bottom - insets.top) / (2 * zoom),
+    },
     overflow: {
-      horizontal: fitWidth * zoom > input.viewportWidth,
-      vertical: fitHeight * zoom > viewportHeight,
+      horizontal: fitWidth * zoom > availableWidth,
+      vertical: fitHeight * zoom > Math.max(1, viewportHeight - insets.top - insets.bottom),
     },
   };
 }
