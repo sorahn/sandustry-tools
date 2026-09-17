@@ -1,7 +1,7 @@
 # Blueprint visual regression tests
 
-The catalog fixture and every `.txt` file in `blueprints/` render through the
-actual blueprint site and capture a PNG with headless Chrome. The current
+The catalog fixture and ordinary `.txt` files in `blueprints/` render through
+the actual blueprint site and capture a PNG with headless Chrome. The current
 images are trimmed to the rendered map bounds, without the site navigation,
 test controls, or viewport chrome. Current images and ImageMagick diffs are
 written under `artifacts/visual/blueprint-core/`.
@@ -27,6 +27,15 @@ BLUEPRINT_CORE_TEST_DIST=1 bun test packages/sandustry-blueprint-core/tests/visu
 Put one encoded blueprint per file in `packages/sandustry-blueprint-core/tests/visual/blueprints/`, for example
 `packages/sandustry-blueprint-core/tests/visual/blueprints/thermal-line.txt`. Both v2 binary strings and v2 text
 strings are accepted.
+
+`pipe-layer.txt` is intentionally excluded from the ordinary SVG and PNG
+baselines. It renders with the native-style pipe-mode overlay when selected
+through the visual renderer and writes a current artifact without requiring or
+updating a baseline:
+
+```sh
+npm run visual:render -- --only pipe-layer
+```
 
 Do not update checked-in baselines during ordinary test runs. A mismatch is a
 signal to inspect the renderer, catalog, asset metadata, or fixture. Only

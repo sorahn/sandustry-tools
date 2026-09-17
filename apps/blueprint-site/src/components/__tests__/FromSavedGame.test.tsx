@@ -18,7 +18,7 @@ test("renders Test Fixtures optgroup at top of FromSavedGame in DEV mode", () =>
   expect(testFixturesIndex).toBeGreaterThan(placeholderIndex);
 
   // The catalog fixture plus all core visual fixtures are present.
-  expect(BLUEPRINT_VISUAL_FIXTURES.length).toBe(17);
+  expect(BLUEPRINT_VISUAL_FIXTURES.length).toBe(18);
   for (const fixture of BLUEPRINT_VISUAL_FIXTURES) {
     expect(html).toContain(`value="fixture:${fixture.id}"`);
     expect(html).toContain(fixture.label);

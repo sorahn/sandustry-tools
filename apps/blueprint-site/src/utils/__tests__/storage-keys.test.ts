@@ -12,6 +12,7 @@ import {
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_NAMES_KEY,
   SHOW_PNG_BACKGROUND_KEY,
+  SHOW_PIPE_MODE_KEY,
   SHOW_SIGNAL_LINKS_KEY,
   SHOW_SPRITES_KEY,
 } from "../storage-keys";
@@ -26,6 +27,7 @@ describe("site storage keys", () => {
       SHOW_GRID_KEY,
       SHOW_PNG_BACKGROUND_KEY,
       SHOW_FILTERS_KEY,
+      SHOW_PIPE_MODE_KEY,
       HIGHLIGHT_MATCHING_FILTERS_KEY,
       SHOW_DEBUG_CELLS_KEY,
       SHOW_NAMES_KEY,

@@ -271,6 +271,28 @@ describe("pipe topology preparation", () => {
     );
   });
 
+  test("renders the special pipe-layer fixture with native pipe-mode colors", () => {
+    const encoded = readFileSync(
+      new URL("../../tests/visual/blueprints/pipe-layer.txt", import.meta.url),
+      "utf8",
+    ).trim();
+    const svg = renderBlueprintToSvg(decodeBlueprint(encoded), {
+      catalog: blueprintCatalog(),
+      showGrid: false,
+      showPipeModeOverlay: true,
+    }).svg;
+
+    assert.match(svg, /data-layer="pipe-mode"/);
+    assert.match(svg, /fill="#000000" fill-opacity="\.55"/);
+    assert.match(svg, /data-pipe-mode-attachment="pump"[^>]*fill="rgb\(50 220 90\)"/);
+    assert.match(svg, /data-pipe-mode-attachment="vent"[^>]*fill="rgb\(255 150 40\)"/);
+    assert.equal(svg.match(/data-pipe-mode-endpoint="true"/g)?.length, 40);
+    assert.match(svg, /data-pipe-mode-endpoint="true"[^>]*fill="#ffe700"/);
+    assert.match(svg, /id="pipe-mode-asset-clip-/);
+    const definitionIds = [...svg.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
+    assert.equal(new Set(definitionIds).size, definitionIds.length);
+  });
+
   test("renders one alpha-derived outline layer for a selected pipe network", () => {
     const svg = renderBlueprintToSvg(
       {

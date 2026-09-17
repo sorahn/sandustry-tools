@@ -14,7 +14,8 @@ const update = process.env.UPDATE_SVG_SNAPSHOTS === "1";
 const fixtures = [
   { name: "catalog", input: catalogVisualBlueprint() },
   ...(await readdir(blueprintRoot))
-    .filter((file) => file.endsWith(".txt"))
+    // pipe-layer is an opt-in native pipe-mode fixture, not an ordinary baseline.
+    .filter((file) => file.endsWith(".txt") && file !== "pipe-layer.txt")
     .sort()
     .map(async (file) => ({
       name: path.basename(file, ".txt"),

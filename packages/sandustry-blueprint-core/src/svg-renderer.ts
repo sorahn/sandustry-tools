@@ -12,7 +12,12 @@ import {
   type BlueprintRenderModel,
   type BlueprintRenderOptions,
 } from "./render-model.js";
-import { foundationOutlinePath, isFoundationStructure } from "./prepare.js";
+import {
+  foundationOutlinePath,
+  isFoundationStructure,
+  LIQUID_VENT_STRUCTURE_TYPE,
+  PUMP_STRUCTURE_TYPE,
+} from "./prepare.js";
 
 import {
   renderFilterOverlaySvg,
@@ -34,6 +39,8 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   showNames?: boolean;
   showFoundationOutlines?: boolean;
   showSignalLinks?: boolean;
+  /** Reproduce the native pipe-mode dimmer, tile tints, and endpoint markers. */
+  showPipeModeOverlay?: boolean;
   /** Add a six-cell edge fade to exports with a visible background. */
   showEdgeFade?: boolean;
   showFilterOverlay?: boolean;
@@ -174,6 +181,7 @@ function renderStructure(
   model: BlueprintRenderModel,
   index: number,
   options: BlueprintSvgRenderOptions,
+  definitionPrefix = "",
 ) {
   const prepared = model.preparedBlueprint.preparedStructures[index];
   const entry = options.catalog?.get(prepared.structure.type);
@@ -267,11 +275,11 @@ function renderStructure(
       ? ` transform="rotate(${number(prepared.sprite.rotation)} ${number(left + tileWidth / 2)} ${number(top + tileHeight / 2)})"`
       : "";
     if (usesFallbackAsset && isCustomShape) {
-      output += `<defs><mask id="custom-shape-mask-${index}" maskUnits="userSpaceOnUse" x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}"><rect x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}" fill="black"/>${renderShapeRects(shape, left, top, model.cell, "white")}</mask></defs>`;
+      output += `<defs><mask id="${definitionPrefix}custom-shape-mask-${index}" maskUnits="userSpaceOnUse" x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}"><rect x="${number(left)}" y="${number(top)}" width="${number(tileWidth)}" height="${number(tileHeight)}" fill="black"/>${renderShapeRects(shape, left, top, model.cell, "white")}</mask></defs>`;
     }
-    output += `<image href="${escapeXml(href)}" x="${number(frameImageX)}" y="${number(frameImageY - (asset.sourceCrop?.y ?? 0) * sourceScale)}" width="${number(visualWidth * (sourceWidth / frameWidth))}" height="${number(imageHeight)}" preserveAspectRatio="none"${(asset.clip ?? sourceWidth > frameWidth) ? ` clip-path="url(#asset-clip-${index})"` : ""}${usesFallbackAsset && isCustomShape ? ` mask="url(#custom-shape-mask-${index})"` : ""}${transform} style="image-rendering:pixelated"/>`;
+    output += `<image href="${escapeXml(href)}" x="${number(frameImageX)}" y="${number(frameImageY - (asset.sourceCrop?.y ?? 0) * sourceScale)}" width="${number(visualWidth * (sourceWidth / frameWidth))}" height="${number(imageHeight)}" preserveAspectRatio="none"${(asset.clip ?? sourceWidth > frameWidth) ? ` clip-path="url(#${definitionPrefix}asset-clip-${index})"` : ""}${usesFallbackAsset && isCustomShape ? ` mask="url(#${definitionPrefix}custom-shape-mask-${index})"` : ""}${transform} style="image-rendering:pixelated"/>`;
     if (asset.clip ?? sourceWidth > frameWidth) {
-      output = `<clipPath id="asset-clip-${index}"><rect x="${number(imageX)}" y="${number(frameColumns > 1 || asset.sourceCrop ? imageY : 0)}" width="${number(visualWidth)}" height="${number(frameColumns > 1 || asset.sourceCrop ? visualHeight : model.height)}"/></clipPath>${output}`;
+      output = `<clipPath id="${definitionPrefix}asset-clip-${index}"><rect x="${number(imageX)}" y="${number(frameColumns > 1 || asset.sourceCrop ? imageY : 0)}" width="${number(visualWidth)}" height="${number(frameColumns > 1 || asset.sourceCrop ? visualHeight : model.height)}"/></clipPath>${output}`;
     }
     if (prepared.lightColor) {
       output += [4, 7, 10]
@@ -443,6 +451,56 @@ function renderPipeHighlightBridge(
   return `<g transform="rotate(-90 ${number(centerX)} ${number(centerY)})">${image}</g>`;
 }
 
+function renderPipeModeOverlay(
+  model: BlueprintRenderModel,
+  pipeStructures: BlueprintRenderModel["renderStructures"],
+  options: BlueprintSvgRenderOptions,
+) {
+  const pipeAnchors = new Set(
+    pipeStructures.map(({ structure }) => `${structure.x},${structure.y}`),
+  );
+  const attachmentMarkup = model.renderStructures
+    .filter(
+      ({ structure }) =>
+        structure.type === PUMP_STRUCTURE_TYPE || structure.type === LIQUID_VENT_STRUCTURE_TYPE,
+    )
+    .map(({ index, structure }) => {
+      const prepared = model.preparedBlueprint.preparedStructures[index];
+      const left = (structure.x - model.minX + model.paddingX) * model.cell;
+      const top = (prepared.topY - model.minY + model.padding) * model.cell;
+      const tileSize = NATIVE_PIXELS_PER_CELL * model.cell;
+      const tint = structure.type === PUMP_STRUCTURE_TYPE ? "rgb(50 220 90)" : "rgb(255 150 40)";
+      const overlay = pipeAnchors.has(`${structure.x},${structure.y}`)
+        ? `<rect data-pipe-mode-attachment="${structure.type === PUMP_STRUCTURE_TYPE ? "pump" : "vent"}" x="${number(left)}" y="${number(top)}" width="${number(tileSize)}" height="${number(tileSize)}" fill="${tint}" fill-opacity=".62"/>`
+        : "";
+      return `${renderStructure(model, index, options, "pipe-mode-")}${overlay}`;
+    })
+    .join("");
+  const pipeMarkup = pipeStructures
+    .map(({ index }) => {
+      const prepared = model.preparedBlueprint.preparedStructures[index];
+      const topology = prepared.pipeTopology!;
+      const left = (prepared.structure.x - model.minX + model.paddingX) * model.cell;
+      const top = (prepared.topY - model.minY + model.padding) * model.cell;
+      const tileSize = NATIVE_PIXELS_PER_CELL * model.cell;
+      const isEndpoint = topology.kind === "endpoint" || topology.kind === "isolated";
+      const tintOpacity = topology.bridgeAxis ? ".4" : isEndpoint ? ".08" : ".2";
+      const centerInset = (tileSize - model.cell) / 2;
+      const endpoint = isEndpoint
+        ? `<rect data-pipe-mode-endpoint="true" x="${number(left + centerInset)}" y="${number(top + centerInset)}" width="${number(model.cell)}" height="${number(model.cell)}" fill="#ffe700"/>`
+        : "";
+      return `<g data-pipe-mode-structure-index="${index}"><rect x="${number(left)}" y="${number(top)}" width="${number(tileSize)}" height="${number(tileSize)}" fill="#ffffff" fill-opacity="${tintOpacity}"/>${renderStructure(model, index, options, "pipe-mode-")}${endpoint}</g>`;
+    })
+    .join("");
+  const bridgeMarkup = pipeStructures
+    .filter(
+      ({ index }) => model.preparedBlueprint.preparedStructures[index].pipeTopology?.bridgeAxis,
+    )
+    .map(({ index }) => renderPipeBridge(model, index, options))
+    .join("");
+  return `<g data-layer="pipe-mode"><rect width="${number(model.width)}" height="${number(model.height)}" fill="#000000" fill-opacity=".55" pointer-events="none"/>${attachmentMarkup}${pipeMarkup}<g data-layer="pipe-mode-bridges">${bridgeMarkup}</g></g>`;
+}
+
 export function renderBlueprintToSvg(
   blueprint: import("./index.js").Blueprint,
   options: BlueprintSvgRenderOptions = {},
@@ -452,6 +510,7 @@ export function renderBlueprintToSvg(
   const showGrid = options.showGrid ?? true;
   const showFoundationOutlines = options.showFoundationOutlines ?? true;
   const showSignalLinks = options.showSignalLinks ?? true;
+  const showPipeModeOverlay = options.showPipeModeOverlay ?? false;
   const showEdgeFade = options.showEdgeFade ?? false;
   const isPipeStructure = (index: number) =>
     model.preparedBlueprint.preparedStructures[index].pipeTopology !== undefined;
@@ -544,6 +603,9 @@ export function renderBlueprintToSvg(
     ? `<path d="${escapeXml(foundationPath)}" fill="none" stroke="#000000" stroke-width="${number(renderPixelScale(model.cell))}" stroke-linecap="butt" stroke-linejoin="miter"/>`
     : "";
   const signals = showSignalLinks ? renderSignalLinks(model) : "";
+  const pipeModeOverlay = showPipeModeOverlay
+    ? renderPipeModeOverlay(model, pipeStructures, options)
+    : "";
   const showFilterOverlay = options.showFilterOverlay ?? false;
   const filterOverlay = showFilterOverlay
     ? renderFilterOverlaySvg(model.preparedBlueprint, {
@@ -560,7 +622,10 @@ export function renderBlueprintToSvg(
       })
     : "";
   const edgeFade = showEdgeFade && includeBackground ? renderEdgeFade(model) : "";
-  const markup = `${background}<g data-layer="pipes">${pipeMarkup}<g data-layer="pipe-bridges">${pipeBridgeMarkup}</g></g><g data-layer="foundation-outline">${outline}</g><g data-layer="foundation-structures">${foundationAndBeltMarkup}</g><g data-layer="structures">${otherStructureMarkup}</g>${pipeNetworkHighlightMarkup}${signals}${filterOverlay}${edgeFade}`;
+  const interactiveOverlays = showPipeModeOverlay
+    ? `${signals}${pipeModeOverlay}${pipeNetworkHighlightMarkup}`
+    : `${pipeNetworkHighlightMarkup}${signals}`;
+  const markup = `${background}<g data-layer="pipes">${pipeMarkup}<g data-layer="pipe-bridges">${pipeBridgeMarkup}</g></g><g data-layer="foundation-outline">${outline}</g><g data-layer="foundation-structures">${foundationAndBeltMarkup}</g><g data-layer="structures">${otherStructureMarkup}</g>${interactiveOverlays}${filterOverlay}${edgeFade}`;
   return {
     model,
     markup,

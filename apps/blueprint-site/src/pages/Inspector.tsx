@@ -53,6 +53,7 @@ import {
   SHOW_GRID_KEY,
   SHOW_MAP_SIDEBAR_KEY,
   SHOW_PNG_BACKGROUND_KEY,
+  SHOW_PIPE_MODE_KEY,
 } from "../utils/storage-keys";
 import { FIT_POLICY_PRESETS, type FitPolicyPreset } from "../utils/blueprint-fit";
 import { primaryModifierKey } from "../utils/platform";
@@ -256,6 +257,9 @@ export function BlueprintInspectorPage({
     readStoredBoolean(SHOW_PNG_BACKGROUND_KEY, false),
   );
   const [showFilters, setShowFilters] = useState(() => readStoredBoolean(SHOW_FILTERS_KEY, false));
+  const [showPipeMode, setShowPipeMode] = useState(() =>
+    readStoredBoolean(SHOW_PIPE_MODE_KEY, false),
+  );
   const [policySelection, setPolicySelection] = useState<"legacy" | FitPolicyPreset>(() => {
     const stored = readStorageValue(POLICY_TESTER_SELECTION_KEY);
     if (stored && Object.prototype.hasOwnProperty.call(FIT_POLICY_PRESETS, stored)) {
@@ -688,6 +692,7 @@ export function BlueprintInspectorPage({
             showGrid={showGrid}
             showPngBackground={showPngBackground}
             showFilters={showFilters}
+            showPipeMode={showPipeMode}
             fitPolicy={fitPolicy}
             policySelection={policySelection}
             onPolicySelectionChange={(selection) => {
@@ -702,6 +707,14 @@ export function BlueprintInspectorPage({
             onHighlightMatchingFiltersChange={handleHighlightMatchingFiltersChange}
             viewportControlsExtra={
               <>
+                <PersistentCheckbox
+                  boxed
+                  size="small"
+                  label="pipes"
+                  storageKey={SHOW_PIPE_MODE_KEY}
+                  defaultChecked={showPipeMode}
+                  onCheckedChange={setShowPipeMode}
+                />
                 <PersistentCheckbox
                   boxed
                   size="small"

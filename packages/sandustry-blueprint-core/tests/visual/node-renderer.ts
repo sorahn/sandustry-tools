@@ -16,6 +16,7 @@ export function renderVisualBlueprint(
   assetRoot: string,
   showFoundationOutlines = true,
   showEdgeFade = false,
+  showPipeModeOverlay = false,
 ) {
   return renderBlueprintStringToNodePng(input, {
     assetRoot,
@@ -28,5 +29,6 @@ export function renderVisualBlueprint(
     showFoundationOutlines,
     showSignalLinks: true,
     showEdgeFade,
+    showPipeModeOverlay,
   });
 }

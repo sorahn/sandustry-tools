@@ -72,6 +72,7 @@ export function BlueprintMap({
   showGrid,
   showPngBackground,
   showFilters = false,
+  showPipeMode = false,
   captureOnly,
   showDebugOptions = true,
   fitPolicy,
@@ -96,6 +97,7 @@ export function BlueprintMap({
   showGrid: boolean;
   showPngBackground: boolean;
   showFilters?: boolean;
+  showPipeMode?: boolean;
   captureOnly?: boolean;
   showDebugOptions?: boolean;
   fitPolicy?: FitPolicy;
@@ -287,6 +289,7 @@ export function BlueprintMap({
         showNames,
         showFoundationOutlines: foundationOutlinesVisible,
         showSignalLinks: signalLinksVisible,
+        showPipeModeOverlay: showPipeMode,
         showFilterOverlay: false,
         pipeNetworkHighlightIndices: selectedPipeNetwork?.structureIndices,
         pipeNetworkHighlightBridgeIndices: selectedPipeNetwork?.bridgeIndices,
@@ -303,6 +306,7 @@ export function BlueprintMap({
       showNames,
       showSprites,
       signalLinksVisible,
+      showPipeMode,
       spritesVisible,
       selectedPipeNetwork?.structureIndices,
       selectedPipeNetwork?.bridgeIndices,
@@ -735,6 +739,7 @@ export function BlueprintMap({
       showGrid,
       showFoundationOutlines: true,
       showSignalLinks: true,
+      showPipeModeOverlay: showPipeMode,
       showEdgeFade: true,
     });
     const scale = exportScale / renderPixelScale(cell);

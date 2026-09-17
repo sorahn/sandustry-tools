@@ -47,7 +47,8 @@ async function visualJobs() {
     jobs.push({
       name,
       input,
-      baseline: path.join(baselineRoot, `${name}.png`),
+      baseline: name === "pipe-layer" ? null : path.join(baselineRoot, `${name}.png`),
+      pipeMode: name === "pipe-layer",
     });
   }
   if (!only) return jobs;
@@ -78,6 +79,7 @@ async function capture(renderer, job, currentPath) {
     path.join(root, "apps/blueprint-site/public"),
     !noOutlines,
     job.name === "edge-fade",
+    job.pipeMode,
   );
   await writeFile(currentPath, png);
   const trimmedPath = `${currentPath}.trim.png`;
@@ -127,7 +129,9 @@ async function run() {
       `${job.name}${noOutlines ? "-no-outlines" : ""}-current.png`,
     );
     await capture(renderer, job, currentPath);
-    if (update) {
+    if (!job.baseline) {
+      console.log(`  rendered ${job.name} pipe mode without a baseline: ${currentPath}`);
+    } else if (update) {
       await copyFile(currentPath, job.baseline);
       console.log(`  updated ${job.name} baseline`);
     } else if (!existsSync(job.baseline)) {

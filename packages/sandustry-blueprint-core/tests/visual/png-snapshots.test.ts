@@ -22,7 +22,8 @@ const fixtures = [
     baseline: path.join(visualRoot, "catalog-baseline.png"),
   },
   ...(await readdir(blueprintRoot))
-    .filter((file) => file.endsWith(".txt"))
+    // pipe-layer is an opt-in native pipe-mode fixture, not an ordinary baseline.
+    .filter((file) => file.endsWith(".txt") && file !== "pipe-layer.txt")
     .sort()
     .map(async (file) => ({
       name: path.basename(file, ".txt"),
