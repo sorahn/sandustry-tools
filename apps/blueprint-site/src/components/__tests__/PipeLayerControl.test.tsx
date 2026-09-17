@@ -13,6 +13,8 @@ describe("PipeLayerControl", () => {
     expect(html).toContain("Pipes");
     expect(html).toContain('src="/catalog/img__pipes_icon.png"');
     expect(html).toContain("image-rendering:pixelated");
+    expect(html).toContain("size-10");
+    expect(html).not.toContain("h-10 w-full");
     expect(html).not.toContain("✓");
   });
 

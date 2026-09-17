@@ -291,6 +291,17 @@ describe("pipe topology preparation", () => {
     assert.match(svg, /id="pipe-mode-asset-clip-/);
     const definitionIds = [...svg.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
     assert.equal(new Set(definitionIds).size, definitionIds.length);
+
+    const viewportSvg = renderBlueprintToSvg(decodeBlueprint(encoded), {
+      catalog: blueprintCatalog(),
+      showGrid: false,
+      showPipeModeOverlay: true,
+      pipeModeScrimBleed: 32,
+    }).svg;
+    assert.match(
+      viewportSvg,
+      /data-pipe-mode-scrim="true" x="-32" y="-32" width="[^\"]+" height="[^\"]+"/,
+    );
   });
 
   test("renders one alpha-derived outline layer for a selected pipe network", () => {

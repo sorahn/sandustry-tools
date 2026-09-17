@@ -262,6 +262,15 @@ export function BlueprintMap({
     [blueprint, cell, padding],
   );
   const { preparedBlueprint, minX, minY, width, height } = mapModel;
+  const { viewportRef, viewportSize, hoverMarkerRef, updateHoverBlock, clearHoverBlock } =
+    useBlueprintMapViewport({ cell, minX, minY, padding, width, height });
+  const pipeModeScrimBleed = showPipeMode
+    ? Math.ceil(
+        Math.max(viewportSize.width || width, viewportSize.height || height) /
+          Math.max(minZoom, 0.125) +
+          Math.max(width, height),
+      )
+    : undefined;
   const selectedPipeNetwork = useMemo(
     () =>
       controlledSelectedIndex === null || selectedIndex === null
@@ -293,6 +302,7 @@ export function BlueprintMap({
         showFoundationOutlines: foundationOutlinesVisible,
         showSignalLinks: signalLinksVisible,
         showPipeModeOverlay: showPipeMode,
+        pipeModeScrimBleed,
         showFilterOverlay: false,
         pipeNetworkHighlightIndices: selectedPipeNetwork?.structureIndices,
         pipeNetworkHighlightBridgeIndices: selectedPipeNetwork?.bridgeIndices,
@@ -310,6 +320,7 @@ export function BlueprintMap({
       showSprites,
       signalLinksVisible,
       showPipeMode,
+      pipeModeScrimBleed,
       spritesVisible,
       selectedPipeNetwork?.structureIndices,
       selectedPipeNetwork?.bridgeIndices,
@@ -362,8 +373,6 @@ export function BlueprintMap({
     const hit = structureSpatialMap.get(`${cellX},${cellY}`);
     setSelectedIndex(hit ?? null);
   };
-  const { viewportRef, viewportSize, hoverMarkerRef, updateHoverBlock, clearHoverBlock } =
-    useBlueprintMapViewport({ cell, minX, minY, padding, width, height });
   const viewportWidth = viewportRef.current?.clientWidth || viewportSize.width || width;
   const defaultViewportHeight = viewportHeightForWidth(viewportWidth);
   const legacyFitWidth = width + MAP_FIT_MARGIN_CELLS_TOTAL * cell;
@@ -936,7 +945,7 @@ export function BlueprintMap({
               transform: `translate3d(-50%, -50%, 0) translate3d(${-pan.x * zoom}px, ${-pan.y * zoom}px, 0)`,
               willChange: "transform",
               zIndex: viewportGridEnabled ? 1 : undefined,
-              overflow: viewportGridEnabled ? "visible" : undefined,
+              overflow: viewportGridEnabled || showPipeMode ? "visible" : undefined,
               cursor: dragRef.current ? "grabbing" : "grab",
               touchAction: "none",
               userSelect: "none",

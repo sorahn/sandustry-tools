@@ -25,7 +25,7 @@ export function PipeLayerControl({
     >
       <span
         className={cx(
-          "relative flex h-10 w-full items-center justify-center overflow-hidden rounded-sm border transition-colors",
+          "relative flex size-10 items-center justify-center overflow-hidden rounded-sm border transition-colors",
           active ? "border-yellow-400/80" : "border-slate-600 group-hover:border-slate-400",
         )}
         aria-hidden="true"

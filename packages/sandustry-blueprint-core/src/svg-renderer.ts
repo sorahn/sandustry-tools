@@ -41,6 +41,8 @@ export type BlueprintSvgRenderOptions = BlueprintRenderOptions & {
   showSignalLinks?: boolean;
   /** Reproduce the native pipe-mode dimmer, tile tints, and endpoint markers. */
   showPipeModeOverlay?: boolean;
+  /** Extend the pipe-mode dimmer beyond the rendered map in model units. */
+  pipeModeScrimBleed?: number;
   /** Add a six-cell edge fade to exports with a visible background. */
   showEdgeFade?: boolean;
   showFilterOverlay?: boolean;
@@ -498,7 +500,8 @@ function renderPipeModeOverlay(
     )
     .map(({ index }) => renderPipeBridge(model, index, options))
     .join("");
-  return `<g data-layer="pipe-mode"><rect width="${number(model.width)}" height="${number(model.height)}" fill="#000000" fill-opacity=".55" pointer-events="none"/>${attachmentMarkup}${pipeMarkup}<g data-layer="pipe-mode-bridges">${bridgeMarkup}</g></g>`;
+  const scrimBleed = Math.max(0, options.pipeModeScrimBleed ?? 0);
+  return `<g data-layer="pipe-mode"><rect data-pipe-mode-scrim="true" x="${number(-scrimBleed)}" y="${number(-scrimBleed)}" width="${number(model.width + scrimBleed * 2)}" height="${number(model.height + scrimBleed * 2)}" fill="#000000" fill-opacity=".55" pointer-events="none"/>${attachmentMarkup}${pipeMarkup}<g data-layer="pipe-mode-bridges">${bridgeMarkup}</g></g>`;
 }
 
 export function renderBlueprintToSvg(
