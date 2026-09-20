@@ -1,6 +1,6 @@
 # Sandustry Mods
 
-This repository is a Sandustry v1 mods monorepo. The primary mod,
+This repository is a Sandustry Early Access mods monorepo. The primary mod,
 `test-blocks`, adds two creative utility structures to the `production`
 building category:
 
