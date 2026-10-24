@@ -31,6 +31,40 @@ plans in `Sandustry/Plans/` are historical archive material. Research notes in
 `Sandustry/Notes/` remain living technical context and can continue to be
 updated with new discoveries.
 
+## Sandustry documentation and types
+
+The template uses two ignored Git clones under `packages/sandustry-mod-template/`:
+
+- `docs/`: `https://github.com/sandustry-modding/sandustry-modding.github.io.git`
+- `SandustryTypes/`: `https://github.com/sandustry-modding/SandustryTypes.git`
+
+For an existing checkout, update each clean clone with `git pull --ff-only` from
+its directory. Record the revisions used for compatibility work in the Obsidian
+update plan. These repositories have independent versions; a types package
+version is not the supported game version.
+
+After cloning the types, install the template's locked dependencies from its
+directory with `npm ci --ignore-scripts --workspaces=false`. This links the local
+types package without running the full game setup. Verify with `npm run typecheck`
+and `npm test`. Run `npm run docs` there to serve the documentation on
+`http://127.0.0.1:3000` (`PORT` overrides the port).
+
+For agent research, read `docs/llms.txt`, then `docs/okf/consume.md`, one matching
+domain index, and one relevant concept. The `skills/sandustry-*/` entrypoints
+route to these domains. Template tooling lives in its README and `docs/modkit/`.
+Run `npm run repo-rag:index` after fetching reference updates to refresh search.
+
+Our mods currently compile against `types/sandustry.d.ts`; the template compiles
+against the upstream declarations with separate main/worker ambients. Do not
+load both declarations of `sandkit` into the same compiler project. Adoption of
+upstream types requires reconciling the public signatures and our engine-state
+extensions, then verifying affected mods. Browser projects keep their independent
+types and dependency boundaries.
+
+The full template `npm run setup` also refreshes its game extract and prepares
+local links/debug saves. Use that separately when intending to update the runtime
+test environment.
+
 ## Packaging
 
 The root Makefile builds all active mods. Use a short mod name to target one

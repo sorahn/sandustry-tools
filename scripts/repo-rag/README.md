@@ -49,7 +49,11 @@ Inspect it with `codex mcp get sandustry-repo-rag` and remove it with
 or removing a server so the client reloads its MCP inventory.
 
 The corpus is controlled by `corpus-config.json`. `index --changed` compares
-content hashes and is safe to run repeatedly. `repo-rag:refresh-docs`
+content hashes and is safe to run repeatedly. The template's ignored `docs/`
+and `SandustryTypes/src/` clones are explicitly indexed as community documentation
+and upstream declarations. Clone or update them before refreshing the index;
+the index does not fetch their repositories. The official API HTML remains a
+separate source. `repo-rag:refresh-docs`
 conditionally fetches the official Sandkit HTML into the ignored
 `.repo-rag/cache/` directory. Every changed response also preserves a
 timestamped HTML and metadata snapshot in

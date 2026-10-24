@@ -31,7 +31,8 @@ test("external snapshots use filesystem-safe timestamp names", () => {
 
 test("corpus manifest includes the Sandustry research sources", () => {
   const sourceIds = config.sources.map((source: { id: string }) => source.id);
-  expect(sourceIds).toContain("sandustry-api-reference-material");
+  expect(sourceIds).toContain("community-sandkit-docs");
+  expect(sourceIds).toContain("upstream-sandkit-types");
   expect(sourceIds).toContain("local-sandustry-types");
   expect(sourceIds).toContain("project-docs");
   expect(config.globalExclude).toContain("**/node_modules/**");

@@ -24,12 +24,36 @@
         "shared/**/*.{ts,tsx,js,jsx,md}",
         "scripts/**/*.{ts,tsx,js,jsx,mjs,md,json}"
       ],
-      "exclude": ["**/node_modules/**", "**/dist/**", "**/build/**"]
+      "exclude": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "packages/sandustry-mod-template/docs/**",
+        "packages/sandustry-mod-template/SandustryTypes/**"
+      ]
     },
     {
       "id": "project-docs",
       "authority": "repository-documentation",
-      "include": ["README.md", "AGENTS.md", "*.md"]
+      "include": ["README.md", "AGENTS.md", "*.md", "skills/**/*.md"]
+    },
+    {
+      "id": "community-sandkit-docs",
+      "authority": "community-api-docs",
+      "include": [
+        "packages/sandustry-mod-template/docs/llms.txt",
+        "packages/sandustry-mod-template/docs/*.md",
+        "packages/sandustry-mod-template/docs/okf/**/*.md",
+        "packages/sandustry-mod-template/docs/api/**/*.md",
+        "packages/sandustry-mod-template/docs/modkit/**/*.md",
+        "packages/sandustry-mod-template/docs/guides/**/*.md"
+      ],
+      "exclude": ["packages/sandustry-mod-template/docs/full.md"]
+    },
+    {
+      "id": "upstream-sandkit-types",
+      "authority": "upstream-type-declarations",
+      "include": ["packages/sandustry-mod-template/SandustryTypes/src/**/*.d.ts"]
     },
     {
       "id": "local-sandustry-types",

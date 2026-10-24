@@ -30,7 +30,15 @@ For native bundle patches:
   repository reference bundles.
 
 Use packages/sandustry-mod-template/ and its extracted sources as the runtime
-API reference. Keep unstable private engine internals local to diagnostic code.
+API reference. For upstream documentation, read its docs/llms.txt, then
+docs/okf/consume.md, one matching domain index, and one relevant concept.
+Template tooling is documented in its README.md and docs/modkit/.
+Domain skills live in skills/sandustry-*/ and route to the docs clone; do not
+restore the removed template .cursor/skills paths.
+SandustryTypes/src/ contains upstream declarations; types/sandustry.d.ts remains
+the active mod compiler contract until its migration is verified. Upstream docs
+and package versions do not establish compatibility with the installed game.
+Keep unstable private engine internals local to diagnostic code.
 Treat first-party bundled mods as supported content; do not assume base-game
 catalogs are complete, and retain fallbacks for unresolved mod definitions.
 

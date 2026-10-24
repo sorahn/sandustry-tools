@@ -10,6 +10,7 @@ const projects = [
       "scripts/test-catalog-invariants.test.ts",
       "scripts/bump-version.test.ts",
       "scripts/procgen",
+      "scripts/repo-rag",
     ],
   },
   {
