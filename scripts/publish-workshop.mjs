@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { homedir, tmpdir } from "node:os";
+import { runModTests } from "./test/mod-tests.mjs";
 
 const [modDirArgument, contentDirArgument] = process.argv.slice(2);
 if (!modDirArgument || !contentDirArgument) {
@@ -32,6 +33,13 @@ if (
 
 if (!existsSync(contentDir)) {
   console.error(`Workshop content directory does not exist: ${contentDir}`);
+  process.exit(1);
+}
+
+try {
+  runModTests(modDir, { root });
+} catch (error) {
+  console.error(`Publishing stopped: ${error.message}`);
   process.exit(1);
 }
 

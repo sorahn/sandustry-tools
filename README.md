@@ -86,7 +86,21 @@ make publish MOD=zoom-hotkeys
 `publish` requires exactly one `MOD=<name>` and uses `steamcmd` from your PATH.
 Before publishing, it runs the selected mod's `check` target and then forces a
 fresh build so the uploaded package is produced after validation.
-It reads the most recent account from Steam's `loginusers.vdf` and passes that
+The publisher then runs that mod's unit tests with Bun and its integration tests
+through the extracted-game harness before invoking SteamCMD. Any test failure or
+missing integration-test prerequisite stops the upload. Integration tests run
+without the interactive `SEARCH` filter. Mods without automated tests are
+reported explicitly and continue with their existing build/static checks.
+Run the same selected-mod tests without uploading with:
+
+```sh
+node scripts/test/mod-tests.mjs mods/diagonal-delete
+```
+
+Integration tests require the game extraction and Chrome/Chromium, and start a
+local loopback host. Run them with elevated permission when required by the sandbox.
+
+The publisher reads the most recent account from Steam's `loginusers.vdf` and passes that
 account to SteamCMD with `+login`. Steam client login and SteamCMD credentials
 are separate; the first publish may prompt for the Steam password and Steam
 Guard code. If the mod has an entry in `workshop-published-ids.json`, it

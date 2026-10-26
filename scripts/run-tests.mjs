@@ -9,6 +9,7 @@ const projects = [
       "test",
       "scripts/test-catalog-invariants.test.ts",
       "scripts/bump-version.test.ts",
+      "scripts/test/mod-tests.test.ts",
       "scripts/procgen",
       "scripts/repo-rag",
     ],
