@@ -31,6 +31,43 @@ export const catalogVisualFixture: Blueprint = {
   ],
 };
 
+// A synthetic preview for the captured 0.6 definitions. Real exported layouts
+// will verify paired endpoints, group walls, pipe topology, and saved states.
+export const sandustry06VisualFixture: Blueprint = {
+  name: "Sandustry 0.6 structures",
+  signalLinks: null,
+  data: [
+    "electrolyzer",
+    "grinder",
+    "electromagnet",
+    "hologramProjector",
+    "nickelMold",
+    "powerCell",
+    "fuelCell",
+    "goldWell",
+    "balancer",
+    "advancedFilterLeftMk2",
+    "advancedFilterRightMk2",
+    "clearingFrameLeftMk2",
+    "clearingFrameRightMk2",
+    "quantumPortalMk2",
+    "quantumPortalMk2Exit",
+    "thermalTeleporter",
+    "thermalTeleporterExit",
+    "gasPipe",
+    "gasPump",
+    "gasVent",
+    "reductionChamber",
+    "reductionChamberWall",
+    "cargoIntake",
+    "calderaStratacore",
+    "wedge",
+    "wedge90",
+    "wedge180",
+    "wedge270",
+  ].map((type, index) => ({ type, x: (index % 7) * 6, y: Math.floor(index / 7) * 7 })),
+};
+
 export type BlueprintVisualFixture = {
   id: string;
   label: string;
@@ -40,5 +77,6 @@ export type BlueprintVisualFixture = {
 
 export const BLUEPRINT_VISUAL_FIXTURES: BlueprintVisualFixture[] = [
   { id: "catalog", label: "Catalog visual regression", blueprint: catalogVisualFixture },
+  { id: "sandustry-0.6", label: "Sandustry 0.6 structures", blueprint: sandustry06VisualFixture },
   ...CORE_VISUAL_BASELINES,
 ];

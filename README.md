@@ -195,6 +195,13 @@ This preserves previously verified entries and sprites. The versioned capture in
 extraction stops if the installed bundle differs. The ordinary full extraction
 also includes these additions and synchronizes the package-owned catalog.
 
+The visual fixture picker includes a synthetic “Sandustry 0.6 structures” preview.
+Its IDs, footprints, sprite frames, and offsets come from the isolated game runtime.
+Real in-game exports are still needed for rotations, connected gas pipes and
+bridges, chamber walls, linked portal/relay endpoints, and charged/active states.
+Capture both directions of Advanced Filter Mk.2 and Clearing Frame Mk.2, a complete
+Reaction Chamber, and connected networks rather than only isolated tiles.
+
 The dev runner starts Sandustry when it is not already running and owns that
 process. `make dev` enables `TAKEOVER=1` and `DEBUG=1` by default so it can
 take over an already-running game and open debug ports (pass `TAKEOVER=0` or
