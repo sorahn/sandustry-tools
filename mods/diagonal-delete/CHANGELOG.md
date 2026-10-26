@@ -1,5 +1,9 @@
 # Diagonal Delete changelog
 
+## 0.1.4
+
+- Updated for Sandustry 0.6.0.
+
 ## 0.1.0
 
 - Added the standalone diagonal structure-deletion tool.
