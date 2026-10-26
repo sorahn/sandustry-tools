@@ -188,6 +188,13 @@ explicitly. The watcher discovers Sandustry through `SANDUSTRY`,
 by native catalog extraction. The catalog extractor uses `@electron/asar` and
 does not require a checked-in game bundle.
 
+To add the captured Sandustry 0.6 structures to both the shared blueprint core
+and the site's catalog/assets, run `npm run catalog:extract -- --additions-only`.
+This preserves previously verified entries and sprites. The versioned capture in
+`scripts/catalog/sandustry-0.6.json` records the source build and renderer hash;
+extraction stops if the installed bundle differs. The ordinary full extraction
+also includes these additions and synchronizes the package-owned catalog.
+
 The dev runner starts Sandustry when it is not already running and owns that
 process. `make dev` enables `TAKEOVER=1` and `DEBUG=1` by default so it can
 take over an already-running game and open debug ports (pass `TAKEOVER=0` or

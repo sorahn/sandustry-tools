@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { extractFile, listPackage } from "@electron/asar";
 import { assertCatalogInvariants } from "./catalog-invariants.mjs";
@@ -15,6 +16,12 @@ const f8Path = path.join(referenceRoot, "f8-results.json");
 const menuPath = path.join(referenceRoot, "building-menu.html");
 const catalogPath = path.join(root, "apps/blueprint-site/src/structure-catalog.json");
 const assetRoot = path.join(root, "apps/blueprint-site/public/catalog");
+const coreRoot = path.join(root, "packages/sandustry-blueprint-core");
+const additionsOnly = process.argv.includes("--additions-only");
+const supplement = JSON.parse(
+  fs.readFileSync(path.join(root, "scripts/catalog/sandustry-0.6.json"), "utf8"),
+);
+const additions = new Map(supplement.entries.map((entry) => [entry.type, entry]));
 
 // `shape` in a runtime definition is not enough to identify the red cells
 // shown when structure sprites are disabled. Native structures use the
@@ -327,13 +334,36 @@ function capturedMenuAssets() {
 if (!fs.existsSync(asarPath)) {
   throw new Error(`Steam ASAR not found: ${asarPath}`);
 }
-if (!fs.existsSync(f8Path)) throw new Error(`F8 catalog not found: ${f8Path}`);
+if (!additionsOnly && !fs.existsSync(f8Path)) throw new Error(`F8 catalog not found: ${f8Path}`);
+
+const bundleHash = createHash("sha256")
+  .update(extractFile(asarPath, "dist/js/bundle.js"))
+  .digest("hex");
+if (bundleHash !== supplement.bundleSha256) {
+  throw new Error(
+    "Installed game bundle differs from the 0.6 catalog capture; recapture before extracting.",
+  );
+}
 
 const files = new Set(listPackage(asarPath).map((value) => value.replace(/^\/+/, "")));
-const blueprintCatalog = JSON.parse(fs.readFileSync(f8Path, "utf8"));
+const blueprintCatalog = JSON.parse(fs.readFileSync(additionsOnly ? catalogPath : f8Path, "utf8"));
+const mergedEntries = new Map(blueprintCatalog.entries.map((entry) => [entry.type, entry]));
+for (const {
+  assetSource: _assetSource,
+  renderAsset: _renderAsset,
+  ...entry
+} of additions.values()) {
+  mergedEntries.set(entry.type, entry);
+}
 const menuAssets = capturedMenuAssets();
+const supportingAssets = supplement.supportingAssets ?? [];
+const additionAssets = new Set([
+  ...supplement.entries.map((entry) => entry.assetSource),
+  ...supportingAssets,
+]);
 const requested = [...files.keys()].filter(
   (value) =>
+    (!additionsOnly || additionAssets.has(value)) &&
     (value.startsWith("dist/img/") || value.startsWith("dist/mods/")) &&
     /\.(png|webp|jpg|jpeg)$/i.test(value),
 );
@@ -356,7 +386,30 @@ const assetByStem = new Map(assets.map((asset) => [assetStem(asset.source), asse
 const assetBySource = new Map(assets.map((asset) => [asset.source, asset.file]));
 const catalogWithAssets = {
   ...blueprintCatalog,
-  entries: blueprintCatalog.entries.map((entry) => {
+  generatedAt: supplement.capturedAt,
+  supplements: [
+    {
+      gameVersion: supplement.gameVersion,
+      steamBuildId: supplement.steamBuildId,
+      capturedAt: supplement.capturedAt,
+    },
+  ],
+  entries: [...mergedEntries.values()].map((entry) => {
+    const addition = additions.get(entry.type);
+    if (addition) {
+      const assetPath = assetBySource.get(addition.assetSource);
+      const asset = assets.find((candidate) => candidate.file === assetPath);
+      if (!assetPath || !asset?.size) {
+        throw new Error(`Missing 0.6 sprite for ${entry.type}: ${addition.assetSource}`);
+      }
+      return {
+        ...entry,
+        renderAsset: { path: assetPath, sourceSize: asset.size, ...addition.renderAsset },
+      };
+    }
+    if (additionsOnly) {
+      return entry;
+    }
     const metadata = hasRawShape(entry) ? { rawShape: true } : {};
     const imageName = findImageName(entry, blueprintCatalog.entries);
     const renderImageAsset =
@@ -409,12 +462,21 @@ const usedAssetFiles = new Set([
   // This deprecated bundled-mod entry is intentionally supplied by the
   // browser catalog because its runtime definition is not captured.
   "catalog/mods__signalCounter4.png",
+  ...supportingAssets.map((source) => `catalog/${safeAssetName(source)}`),
 ]);
 for (const asset of assets) {
   if (!usedAssetFiles.has(asset.file))
     fs.rmSync(path.join(assetRoot, path.basename(asset.file)), { force: true });
 }
-const usedAssets = assets.filter((asset) => usedAssetFiles.has(asset.file));
+const manifestPath = path.join(assetRoot, "manifest.json");
+const previousAssets = additionsOnly
+  ? JSON.parse(fs.readFileSync(manifestPath, "utf8")).assets
+  : [];
+const replacedSources = new Set(assets.map((asset) => asset.source));
+const usedAssets = [
+  ...previousAssets.filter((asset) => !replacedSources.has(asset.source)),
+  ...assets.filter((asset) => usedAssetFiles.has(asset.file)),
+];
 
 fs.writeFileSync(catalogPath, `${JSON.stringify(catalogWithAssets, null, 2)}\n`);
 fs.writeFileSync(
@@ -422,12 +484,22 @@ fs.writeFileSync(
   `${JSON.stringify(
     {
       generatedAt: new Date().toISOString(),
-      source: "local Sandustry app.asar + building-menu.html",
+      source: "local Sandustry app.asar + captured structure definitions",
       assets: usedAssets,
     },
     null,
     2,
   )}\n`,
 );
+// Browser and Node consumers share the package catalog; keep both asset roots
+// current without replacing previously verified sprites in additions-only mode.
+fs.copyFileSync(catalogPath, path.join(coreRoot, "src/structure-catalog.json"));
+const coreAssets = path.join(coreRoot, "assets/catalog");
+fs.mkdirSync(coreAssets, { recursive: true });
+for (const asset of assets.filter((candidate) => usedAssetFiles.has(candidate.file))) {
+  const name = path.basename(asset.file);
+  fs.copyFileSync(path.join(assetRoot, name), path.join(coreAssets, name));
+}
+fs.copyFileSync(manifestPath, path.join(coreAssets, "manifest.json"));
 console.log(`wrote static catalog: ${catalogPath}`);
 console.log(`extracted ${assets.length} of ${requested.length} native image assets`);

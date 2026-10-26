@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-27T04:46:04.952Z",
-  "source": "local Sandustry app.asar + building-menu.html",
+  "generatedAt": "2026-10-26T05:48:19.096Z",
+  "source": "local Sandustry app.asar + captured structure definitions",
   "assets": [
     {
       "source": "dist/img/block.png",
@@ -105,15 +105,6 @@
       "source": "dist/img/liquid_vent.png",
       "file": "catalog/img__liquid_vent.png",
       "bytes": 232,
-      "size": {
-        "width": 16,
-        "height": 16
-      }
-    },
-    {
-      "source": "dist/img/pipes_icon.png",
-      "file": "catalog/img__pipes_icon.png",
-      "bytes": 332,
       "size": {
         "width": 16,
         "height": 16
@@ -693,6 +684,258 @@
       "size": {
         "width": 64,
         "height": 64
+      }
+    },
+    {
+      "source": "dist/img/pipes_icon.png",
+      "file": "catalog/img__pipes_icon.png",
+      "bytes": 332,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/advanced_filter_left_mk2.png",
+      "file": "catalog/mods__advanced_filter_left_mk2.png",
+      "bytes": 467,
+      "size": {
+        "width": 72,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/advanced_filter_right_mk2.png",
+      "file": "catalog/mods__advanced_filter_right_mk2.png",
+      "bytes": 474,
+      "size": {
+        "width": 72,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/balancer.png",
+      "file": "catalog/mods__balancer.png",
+      "bytes": 452,
+      "size": {
+        "width": 96,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/caldera_stratacore.png",
+      "file": "catalog/mods__caldera_stratacore.png",
+      "bytes": 405,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/cargo_intake.png",
+      "file": "catalog/mods__cargo_intake.png",
+      "bytes": 236,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/clearing_frame_left_mk2.png",
+      "file": "catalog/mods__clearing_frame_left_mk2.png",
+      "bytes": 543,
+      "size": {
+        "width": 64,
+        "height": 20
+      }
+    },
+    {
+      "source": "dist/mods/clearing_frame_right_mk2.png",
+      "file": "catalog/mods__clearing_frame_right_mk2.png",
+      "bytes": 485,
+      "size": {
+        "width": 64,
+        "height": 20
+      }
+    },
+    {
+      "source": "dist/mods/electrolyzer.png",
+      "file": "catalog/mods__electrolyzer.png",
+      "bytes": 325,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/electromagnet.png",
+      "file": "catalog/mods__electromagnet.png",
+      "bytes": 405,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/fuel_cell.png",
+      "file": "catalog/mods__fuel_cell.png",
+      "bytes": 485,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/gas_pipe_bridge.png",
+      "file": "catalog/mods__gas_pipe_bridge.png",
+      "bytes": 364,
+      "size": {
+        "width": 48,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/gas_pipes_icon.png",
+      "file": "catalog/mods__gas_pipes_icon.png",
+      "bytes": 256,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/gas_pipes.png",
+      "file": "catalog/mods__gas_pipes.png",
+      "bytes": 837,
+      "size": {
+        "width": 96,
+        "height": 48
+      }
+    },
+    {
+      "source": "dist/mods/gas_pump.png",
+      "file": "catalog/mods__gas_pump.png",
+      "bytes": 256,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/gas_vent.png",
+      "file": "catalog/mods__gas_vent.png",
+      "bytes": 303,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/gold_well.png",
+      "file": "catalog/mods__gold_well.png",
+      "bytes": 177,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/grinder.png",
+      "file": "catalog/mods__grinder.png",
+      "bytes": 480,
+      "size": {
+        "width": 48,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/hologram_projector.png",
+      "file": "catalog/mods__hologram_projector.png",
+      "bytes": 248,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/nickel_mold.png",
+      "file": "catalog/mods__nickel_mold.png",
+      "bytes": 250,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/power_cell.png",
+      "file": "catalog/mods__power_cell.png",
+      "bytes": 649,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/quantum_portal_mk2_exit.png",
+      "file": "catalog/mods__quantum_portal_mk2_exit.png",
+      "bytes": 364,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/quantum_portal_mk2.png",
+      "file": "catalog/mods__quantum_portal_mk2.png",
+      "bytes": 387,
+      "size": {
+        "width": 18,
+        "height": 18
+      }
+    },
+    {
+      "source": "dist/mods/reduction_chamber_wall.png",
+      "file": "catalog/mods__reduction_chamber_wall.png",
+      "bytes": 493,
+      "size": {
+        "width": 32,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/reduction_chamber.png",
+      "file": "catalog/mods__reduction_chamber.png",
+      "bytes": 470,
+      "size": {
+        "width": 64,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/thermal_teleporter_exit.png",
+      "file": "catalog/mods__thermal_teleporter_exit.png",
+      "bytes": 251,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/thermal_teleporter.png",
+      "file": "catalog/mods__thermal_teleporter.png",
+      "bytes": 251,
+      "size": {
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "source": "dist/mods/wedge.png",
+      "file": "catalog/mods__wedge.png",
+      "bytes": 158,
+      "size": {
+        "width": 16,
+        "height": 16
       }
     }
   ]

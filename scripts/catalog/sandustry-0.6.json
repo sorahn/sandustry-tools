@@ -1,0 +1,1398 @@
+{
+  "gameVersion": "0.6.0",
+  "steamBuildId": "26169939",
+  "capturedAt": "2026-10-26T05:43:11.843Z",
+  "bundleSha256": "b39cd21fa2dbfd24252f7cc745d7003df808158b9022aee672165f5574dc2324",
+  "verification": "Registered IDs, shapes, render sizes, offsets and sprite files captured from the exact extracted game in an isolated Chromium host. In-game blueprint exports still required for serialization, linked data and topology verification.",
+  "entries": [
+    {
+      "type": "hologramProjector",
+      "name": "Hologram Projector",
+      "nameKey": "structures|hologramProjector|name",
+      "descriptionKey": "structures|hologramProjector|description",
+      "category": "special",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15]
+      ],
+      "buildModes": [
+        {
+          "type": "single"
+        }
+      ],
+      "variants": [
+        {
+          "id": "hologramProjector",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.hologramProjector:hologramProjector",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.7,
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/hologram_projector.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "gasPipe",
+      "name": "Gas Pipe",
+      "nameKey": "structures|gasPipe|name",
+      "descriptionKey": "structures|gasPipe|description",
+      "category": "fluids",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "line",
+          "directions": ["horizontal", "vertical"]
+        }
+      ],
+      "variants": [
+        {
+          "id": "gasPipe",
+          "angles": [-180, -90, 0, 90, 180]
+        }
+      ],
+      "render": {
+        "imageName": "native.gasPipes:pipes",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.1,
+        "ui": {
+          "imageName": "native.gasPipes:pipesIcon",
+          "size": {
+            "width": 16,
+            "height": 16
+          }
+        }
+      },
+      "rotations": [-180, -90, 0, 90, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending; isolated frame only until gas topology is supported",
+      "assetSource": "dist/mods/gas_pipes.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true,
+        "sourceCrop": {
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        }
+      }
+    },
+    {
+      "type": "gasPump",
+      "name": "Gas Pump",
+      "nameKey": "structures|gasPump|name",
+      "descriptionKey": "structures|gasPump|description",
+      "category": "fluids",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "single"
+        },
+        {
+          "type": "line",
+          "directions": ["horizontal", "vertical"]
+        },
+        {
+          "type": "rectangle"
+        }
+      ],
+      "variants": [
+        {
+          "id": "gasPump",
+          "angles": [-180, -90, 0, 90, 180]
+        }
+      ],
+      "render": {
+        "imageName": "native.gasPipes:pump",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.7
+      },
+      "rotations": [-180, -90, 0, 90, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/gas_pump.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "gasVent",
+      "name": "Gas Vent",
+      "nameKey": "structures|gasVent|name",
+      "descriptionKey": "structures|gasVent|description",
+      "category": "fluids",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "single"
+        },
+        {
+          "type": "line",
+          "directions": ["horizontal", "vertical"]
+        },
+        {
+          "type": "rectangle"
+        }
+      ],
+      "variants": [
+        {
+          "id": "gasVent",
+          "angles": [-180, -90, 0, 90, 180]
+        }
+      ],
+      "render": {
+        "imageName": "native.gasPipes:vent",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.7
+      },
+      "rotations": [-180, -90, 0, 90, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/gas_vent.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "cargoIntake",
+      "name": "Cargo Intake",
+      "nameKey": "structures|cargoIntake|name",
+      "descriptionKey": "structures|cargoIntake|description",
+      "category": "production",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "single"
+        }
+      ],
+      "variants": [
+        {
+          "id": "cargoIntake",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.cargoIntake:cargoIntake",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.7,
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/cargo_intake.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "goldWell",
+      "name": "Gold Well",
+      "nameKey": "structures|goldWell|name",
+      "descriptionKey": "structures|goldWell|description",
+      "category": "special",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "single"
+        }
+      ],
+      "variants": [
+        {
+          "id": "goldWell",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.goldWell:goldWell",
+        "size": {
+          "width": 16,
+          "height": 16
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/gold_well.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "calderaStratacore",
+      "name": "Caldera Stratacore",
+      "nameKey": "structures|calderaStratacore|name",
+      "descriptionKey": "structures|calderaStratacore|description",
+      "category": "production",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "single"
+        }
+      ],
+      "variants": [
+        {
+          "id": "calderaStratacore",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.caldera:pyroclasm",
+        "size": {
+          "width": 18,
+          "height": 18
+        },
+        "offset": {
+          "x": -1,
+          "y": -1
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/caldera_stratacore.png",
+      "renderAsset": {
+        "frame": {
+          "width": 18,
+          "height": 18
+        },
+        "clip": true,
+        "offset": {
+          "x": -1,
+          "y": -1
+        }
+      }
+    },
+    {
+      "type": "electrolyzer",
+      "name": "Electrolyzer",
+      "nameKey": "structures|electrolyzer|name",
+      "descriptionKey": "structures|electrolyzer|description",
+      "category": "production",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "line",
+          "directions": ["horizontal", "vertical"]
+        },
+        {
+          "type": "rectangle"
+        }
+      ],
+      "variants": [
+        {
+          "id": "electrolyzer",
+          "angles": [-180, -90, 0, 90, 180]
+        }
+      ],
+      "render": {
+        "imageName": "native.electrolyzer:electrolyzer",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.7,
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [-180, -90, 0, 90, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/electrolyzer.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "grinder",
+      "name": "Grinder",
+      "nameKey": "structures|grinder|name",
+      "descriptionKey": "structures|grinder|description",
+      "category": "production",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [16, 0, 0, 16],
+        [15, 0, 0, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15]
+      ],
+      "buildModes": [
+        {
+          "type": "line",
+          "directions": ["horizontal"]
+        }
+      ],
+      "variants": [
+        {
+          "id": "grinder",
+          "angles": [0, 180]
+        }
+      ],
+      "render": {
+        "imageName": "native.grinder:grinder",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "spritesheet": {
+          "frameSize": {
+            "width": 16,
+            "height": 16
+          },
+          "frames": 3,
+          "intervalMs": 100
+        },
+        "z": 0.7,
+        "ambienceGroup": "grinders",
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [0, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/grinder.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "electromagnet",
+      "name": "Electromagnet",
+      "nameKey": "structures|electromagnet|name",
+      "descriptionKey": "structures|electromagnet|description",
+      "category": "production",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15]
+      ],
+      "buildModes": [
+        {
+          "type": "single"
+        }
+      ],
+      "variants": [
+        {
+          "id": "electromagnet",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.electromagnet:electromagnet",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.7,
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/electromagnet.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "reductionChamber",
+      "name": "Reaction Chamber",
+      "nameKey": "structures|reductionChamber|name",
+      "descriptionKey": "structures|reductionChamber|description",
+      "category": "production",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "rectangle",
+          "placementGroup": true
+        }
+      ],
+      "variants": [
+        {
+          "id": "reductionChamber",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.reductionChamber:reductionChamber",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.7,
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/reduction_chamber.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "reductionChamberWall",
+      "name": "Reaction Chamber Wall",
+      "nameKey": "structures|reductionChamberWall|name",
+      "descriptionKey": "structures|reductionChamberWall|description",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15]
+      ],
+      "render": {
+        "imageName": "native.reductionChamber:reductionChamberWall",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "placementGroupInterior": {
+          "imageName": "native.reductionChamber:reductionChamber",
+          "size": {
+            "width": 16,
+            "height": 16
+          },
+          "defaultSpritesheetIndex": 0
+        }
+      },
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/reduction_chamber_wall.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "nickelMold",
+      "name": "Nickel Mold",
+      "nameKey": "structures|nickelMold|name",
+      "descriptionKey": "structures|nickelMold|description",
+      "category": "energy",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "rectangle"
+        },
+        {
+          "type": "line",
+          "directions": ["horizontal", "vertical"]
+        }
+      ],
+      "variants": [
+        {
+          "id": "nickelMold",
+          "angles": [0, 90, 180, 270]
+        }
+      ],
+      "render": {
+        "imageName": "native.nickelMold:nickelMold",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [0, 90, 180, 270],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/nickel_mold.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "powerCell",
+      "name": "Power Cell",
+      "nameKey": "structures|powerCell|name",
+      "descriptionKey": "structures|powerCell|description",
+      "category": "energy",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "variants": [
+        {
+          "id": "powerCell",
+          "angles": [0, 90, 180, 270]
+        }
+      ],
+      "render": {
+        "imageName": "native.nickelMold:powerCell",
+        "size": {
+          "width": 16,
+          "height": 16
+        }
+      },
+      "rotations": [0, 90, 180, 270],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/power_cell.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "fuelCell",
+      "name": "Fuel Cell",
+      "nameKey": "structures|fuelCell|name",
+      "descriptionKey": "structures|fuelCell|description",
+      "category": "energy",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "rectangle"
+        }
+      ],
+      "variants": [
+        {
+          "id": "fuelCell",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.fuelCell:fuelCell",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "z": 0.7,
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/fuel_cell.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "thermalTeleporter",
+      "name": "Thermal Relay",
+      "nameKey": "structures|thermalTeleporter|name",
+      "descriptionKey": "structures|thermalTeleporter|description",
+      "category": "thermal",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15]
+      ],
+      "buildModes": [
+        {
+          "type": "pair",
+          "minDistanceTiles": 2,
+          "maxDistanceTiles": 32
+        }
+      ],
+      "variants": [
+        {
+          "id": "thermalTeleporter",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.thermalTeleporter:entrance",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "offset": {
+          "x": 0,
+          "y": 0
+        },
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/thermal_teleporter.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true,
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "type": "thermalTeleporterExit",
+      "name": "Thermal Relay",
+      "nameKey": "structures|thermalTeleporter|name",
+      "descriptionKey": "structures|thermalTeleporter|description",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15]
+      ],
+      "render": {
+        "imageName": "native.thermalTeleporter:exit",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "offset": {
+          "x": 0,
+          "y": 0
+        },
+        "ui": {
+          "outline": true
+        }
+      },
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/thermal_teleporter_exit.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true,
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "type": "balancer",
+      "name": "Balancer",
+      "nameKey": "structures|balancer|name",
+      "descriptionKey": "structures|balancer|description",
+      "category": "logistics",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15],
+        [15, 15, 15, 15]
+      ],
+      "buildModes": [
+        {
+          "type": "line",
+          "directions": ["horizontal"]
+        }
+      ],
+      "variants": [
+        {
+          "id": "balancer",
+          "angles": [-180, 0, 180]
+        }
+      ],
+      "render": {
+        "imageName": "native.balancer:balancer",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "offset": {
+          "x": 0,
+          "y": 0
+        },
+        "ui": {
+          "outline": true
+        }
+      },
+      "rotations": [-180, 0, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/balancer.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true,
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "type": "wedge",
+      "name": "Wedge",
+      "nameKey": "structures|wedge|name",
+      "descriptionKey": "structures|wedge|description",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [0, 0, 0, 15],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]
+      ],
+      "render": {
+        "imageName": "native.wedge:wedge",
+        "size": {
+          "width": 16,
+          "height": 16
+        }
+      },
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/wedge.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true
+      }
+    },
+    {
+      "type": "wedge90",
+      "name": "Wedge",
+      "nameKey": "structures|wedge|name",
+      "descriptionKey": "structures|wedge|description",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 15]
+      ],
+      "render": {
+        "imageName": "native.wedge:wedge",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "rotationDegrees": 90
+      },
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/wedge.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true,
+        "rotation": 90
+      }
+    },
+    {
+      "type": "wedge180",
+      "name": "Wedge",
+      "nameKey": "structures|wedge|name",
+      "descriptionKey": "structures|wedge|description",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [15, 0, 0, 0]
+      ],
+      "render": {
+        "imageName": "native.wedge:wedge",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "rotationDegrees": 180
+      },
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/wedge.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true,
+        "rotation": 180
+      }
+    },
+    {
+      "type": "wedge270",
+      "name": "Wedge",
+      "nameKey": "structures|wedge|name",
+      "descriptionKey": "structures|wedge|description",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "registered shape",
+      "shape": [
+        [15, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]
+      ],
+      "render": {
+        "imageName": "native.wedge:wedge",
+        "size": {
+          "width": 16,
+          "height": 16
+        },
+        "rotationDegrees": 270
+      },
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/wedge.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 16
+        },
+        "clip": true,
+        "rotation": 270
+      }
+    },
+    {
+      "type": "advancedFilterRightMk2",
+      "name": "Advanced Filter Mk.2",
+      "nameKey": "structures|advancedFilterMk2|name",
+      "descriptionKey": "structures|advancedFilterMk2|description",
+      "category": "logistics",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "line",
+          "directions": ["horizontal"]
+        },
+        {
+          "type": "line",
+          "directions": ["vertical"]
+        }
+      ],
+      "variants": [
+        {
+          "id": "advancedFilterLeftMk2",
+          "angles": [-180, 180]
+        },
+        {
+          "id": "advancedFilterRightMk2",
+          "angles": [0]
+        },
+        {
+          "id": "filterWallMk2",
+          "angles": [-90, 90]
+        }
+      ],
+      "render": {
+        "imageName": "native.advancedFilterMk2:right",
+        "size": {
+          "width": 18,
+          "height": 18
+        },
+        "offset": {
+          "x": -1,
+          "y": -1
+        },
+        "spritesheet": {
+          "frameSize": {
+            "width": 18,
+            "height": 18
+          },
+          "frames": 4,
+          "intervalMs": 100,
+          "transportFrames": {
+            "pass": "beltsMk2",
+            "run": "right"
+          }
+        },
+        "z": 0.85,
+        "ui": {
+          "outline": true,
+          "size": {
+            "width": 16,
+            "height": 16
+          },
+          "width": "18px",
+          "height": "18px",
+          "offset": {
+            "x": 0,
+            "y": 0
+          }
+        }
+      },
+      "rotations": [-180, -90, 0, 90, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/advanced_filter_right_mk2.png",
+      "renderAsset": {
+        "frame": {
+          "width": 18,
+          "height": 18
+        },
+        "clip": true,
+        "offset": {
+          "x": -1,
+          "y": -1
+        }
+      }
+    },
+    {
+      "type": "advancedFilterLeftMk2",
+      "name": "Advanced Filter Mk.2",
+      "nameKey": "structures|advancedFilterMk2|name",
+      "descriptionKey": "structures|advancedFilterMk2|description",
+      "category": "logistics",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "variants": [
+        {
+          "id": "advancedFilterLeftMk2",
+          "angles": [-180, 180]
+        },
+        {
+          "id": "advancedFilterRightMk2",
+          "angles": [0]
+        },
+        {
+          "id": "filterWallMk2",
+          "angles": [-90, 90]
+        }
+      ],
+      "render": {
+        "imageName": "native.advancedFilterMk2:left",
+        "size": {
+          "width": 18,
+          "height": 18
+        },
+        "offset": {
+          "x": -1,
+          "y": -1
+        },
+        "spritesheet": {
+          "frameSize": {
+            "width": 18,
+            "height": 18
+          },
+          "frames": 4,
+          "intervalMs": 100,
+          "transportFrames": {
+            "pass": "beltsMk2",
+            "run": "left"
+          }
+        },
+        "z": 0.85
+      },
+      "rotations": [-180, -90, 0, 90, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/advanced_filter_left_mk2.png",
+      "renderAsset": {
+        "frame": {
+          "width": 18,
+          "height": 18
+        },
+        "clip": true,
+        "offset": {
+          "x": -1,
+          "y": -1
+        }
+      }
+    },
+    {
+      "type": "quantumPortalMk2",
+      "name": "Conveyor Portal Mk.2",
+      "nameKey": "structures|quantumPortalMk2|name",
+      "descriptionKey": "structures|quantumPortalMk2|description",
+      "category": "logistics",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "pair",
+          "minDistanceTiles": 2,
+          "maxDistanceTiles": 5,
+          "minAngleDegrees": 0,
+          "maxAngleDegrees": 180
+        }
+      ],
+      "variants": [
+        {
+          "id": "quantumPortalMk2",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.quantumPortalMk2:entrance",
+        "size": {
+          "width": 18,
+          "height": 18
+        },
+        "offset": {
+          "x": -1,
+          "y": -1
+        }
+      },
+      "rotations": [0],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/quantum_portal_mk2.png",
+      "renderAsset": {
+        "frame": {
+          "width": 18,
+          "height": 18
+        },
+        "clip": true,
+        "offset": {
+          "x": -1,
+          "y": -1
+        }
+      }
+    },
+    {
+      "type": "quantumPortalMk2Exit",
+      "name": "Conveyor Portal Mk.2 Exit",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "render": {
+        "imageName": "native.quantumPortalMk2:exit",
+        "size": {
+          "width": 18,
+          "height": 18
+        },
+        "offset": {
+          "x": -1,
+          "y": -1
+        }
+      },
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/quantum_portal_mk2_exit.png",
+      "renderAsset": {
+        "frame": {
+          "width": 18,
+          "height": 18
+        },
+        "clip": true,
+        "offset": {
+          "x": -1,
+          "y": -1
+        }
+      }
+    },
+    {
+      "type": "clearingFrameLeftMk2",
+      "name": "Clearing Frame Mk.2",
+      "category": "logistics",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "variants": [
+        {
+          "id": "clearingFrameLeftMk2",
+          "angles": [-180, 180]
+        },
+        {
+          "id": "clearingFrameRightMk2",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.clearingFrameMk2:left",
+        "size": {
+          "width": 16,
+          "height": 20
+        },
+        "offset": {
+          "x": 0,
+          "y": -4
+        },
+        "z": 0.5,
+        "ambienceGroup": "clearingFrames",
+        "spritesheet": {
+          "frameSize": {
+            "width": 16,
+            "height": 20
+          },
+          "frames": 2,
+          "intervalMs": 100,
+          "transportFrames": {
+            "pass": "clearingFramesMk2",
+            "run": "left"
+          }
+        },
+        "ui": {
+          "size": {
+            "width": 16,
+            "height": 16
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          }
+        }
+      },
+      "rotations": [-180, 0, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/clearing_frame_left_mk2.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 20
+        },
+        "clip": true,
+        "offset": {
+          "x": 0,
+          "y": -4
+        }
+      }
+    },
+    {
+      "type": "clearingFrameRightMk2",
+      "name": "Clearing Frame Mk.2",
+      "nameKey": "structures|clearingFrameRightMk2|name",
+      "descriptionKey": "structures|clearingFrameRightMk2|description",
+      "category": "logistics",
+      "footprint": {
+        "width": 4,
+        "height": 4
+      },
+      "footprintSource": "native default 4x4 cells",
+      "buildModes": [
+        {
+          "type": "line",
+          "directions": ["horizontal"]
+        },
+        {
+          "type": "rectangleDirectional"
+        }
+      ],
+      "variants": [
+        {
+          "id": "clearingFrameLeftMk2",
+          "angles": [-180, 180]
+        },
+        {
+          "id": "clearingFrameRightMk2",
+          "angles": [0]
+        }
+      ],
+      "render": {
+        "imageName": "native.clearingFrameMk2:right",
+        "size": {
+          "width": 16,
+          "height": 20
+        },
+        "offset": {
+          "x": 0,
+          "y": -4
+        },
+        "z": 0.5,
+        "ambienceGroup": "clearingFrames",
+        "spritesheet": {
+          "frameSize": {
+            "width": 16,
+            "height": 20
+          },
+          "frames": 2,
+          "intervalMs": 100,
+          "transportFrames": {
+            "pass": "clearingFramesMk2",
+            "run": "right"
+          }
+        },
+        "ui": {
+          "outline": true,
+          "size": {
+            "width": 16,
+            "height": 16
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          }
+        }
+      },
+      "rotations": [-180, 0, 180],
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
+      "assetSource": "dist/mods/clearing_frame_right_mk2.png",
+      "renderAsset": {
+        "frame": {
+          "width": 16,
+          "height": 20
+        },
+        "clip": true,
+        "offset": {
+          "x": 0,
+          "y": -4
+        }
+      }
+    }
+  ],
+  "supportingAssets": ["dist/mods/gas_pipe_bridge.png", "dist/mods/gas_pipes_icon.png"]
+}
