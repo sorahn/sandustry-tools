@@ -1,5 +1,9 @@
 # Filtered Laser Lenses changelog
 
+## 0.1.6
+
+- Updated for Sandustry 0.6.0.
+
 ## 0.1.5
 
 - Updated to Sandustry 0.5.6 using declarative hooks and native laser effects.
