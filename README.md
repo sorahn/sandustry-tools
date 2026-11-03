@@ -195,12 +195,16 @@ This preserves previously verified entries and sprites. The versioned capture in
 extraction stops if the installed bundle differs. The ordinary full extraction
 also includes these additions and synchronizes the package-owned catalog.
 
-The visual fixture picker includes a synthetic “Sandustry 0.6 structures” preview.
-Its IDs, footprints, sprite frames, and offsets come from the isolated game runtime.
-Real in-game exports are still needed for rotations, connected gas pipes and
-bridges, chamber walls, linked portal/relay endpoints, and charged/active states.
-Capture both directions of Advanced Filter Mk.2 and Clearing Frame Mk.2, a complete
-Reaction Chamber, and connected networks rather than only isolated tiles.
+The visual fixture picker includes the “Sandustry 0.6 structures” preview,
+native gas-pipe/bridge examples, and Silicon Mixer v2 from SandustryVault #251.
+Gas and liquid pipes share frame and bridge rendering rules while keeping their
+networks and attached pumps/vents separate. Native fixture provenance and the
+public mixer export are recorded under the blueprint core's `tests/fixtures/`.
+
+The mixer verifies serialization of Mk.2 portal links and chamber-group metadata;
+it does not prove those structures can be placed correctly through every copy
+path. Full chamber placement, Thermal Relay pairs, charged/active states, Gold
+Well placement, and the rocket/landing rig still need dedicated in-game checks.
 
 The dev runner starts Sandustry when it is not already running and owns that
 process. `make dev` enables `TAKEOVER=1` and `DEBUG=1` by default so it can

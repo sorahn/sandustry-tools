@@ -6977,7 +6977,7 @@
         }
       },
       "rotations": [-180, -90, 0, 90, 180],
-      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending; isolated frame only until gas topology is supported",
+      "source": "Sandustry 0.6.0 build 26169939 isolated runtime definition; blueprint export pending",
       "renderAsset": {
         "path": "catalog/mods__gas_pipes.png",
         "sourceSize": {
@@ -6989,11 +6989,20 @@
           "height": 16
         },
         "clip": true,
-        "sourceCrop": {
-          "x": 0,
-          "y": 0,
-          "width": 16,
-          "height": 16
+        "frameColumns": 6,
+        "animation": {
+          "topology": "pipe"
+        },
+        "pipeBridge": {
+          "path": "catalog/mods__gas_pipe_bridge.png",
+          "sourceSize": {
+            "width": 48,
+            "height": 16
+          },
+          "frame": {
+            "width": 16,
+            "height": 16
+          }
         }
       }
     },

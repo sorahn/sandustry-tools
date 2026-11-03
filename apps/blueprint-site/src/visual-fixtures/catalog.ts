@@ -1,5 +1,7 @@
 import type { Blueprint } from "@daryl.roberts/sandustry-blueprint-core";
+import { decodeBlueprint } from "@daryl.roberts/sandustry-blueprint-core";
 import { CORE_VISUAL_BASELINES } from "./core-baselines";
+import newBuildingExamples from "./new-building-examples.json";
 
 // The catalog baseline is assembled from the captured native/mod catalog
 // rather than stored as a standalone blueprint string.
@@ -78,5 +80,16 @@ export type BlueprintVisualFixture = {
 export const BLUEPRINT_VISUAL_FIXTURES: BlueprintVisualFixture[] = [
   { id: "catalog", label: "Catalog visual regression", blueprint: catalogVisualFixture },
   { id: "sandustry-0.6", label: "Sandustry 0.6 structures", blueprint: sandustry06VisualFixture },
+  {
+    id: "gas-pipes-0.6",
+    label: "Gas pipes and bridge",
+    blueprint: newBuildingExamples.gas,
+    layers: ["pipes"],
+  },
+  {
+    id: "silicon-mixer-v2",
+    label: "Silicon Mixer v2 (SandustryVault #251)",
+    blueprint: decodeBlueprint(newBuildingExamples.mixer.blueprint),
+  },
   ...CORE_VISUAL_BASELINES,
 ];

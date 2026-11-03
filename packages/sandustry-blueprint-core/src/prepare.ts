@@ -8,6 +8,20 @@ export const PUMP_STRUCTURE_TYPE = 24;
 export const LIQUID_VENT_STRUCTURE_TYPE = 25;
 export const PIPE_GRID_STEP = 4;
 
+function pipeSegmentType(type: BlueprintType): BlueprintType | undefined {
+  if (
+    type === PIPE_STRUCTURE_TYPE ||
+    type === PUMP_STRUCTURE_TYPE ||
+    type === LIQUID_VENT_STRUCTURE_TYPE
+  ) {
+    return PIPE_STRUCTURE_TYPE;
+  }
+  if (type === "gasPipe" || type === "gasPump" || type === "gasVent") {
+    return "gasPipe";
+  }
+  return undefined;
+}
+
 export type PipeDirection = "north" | "east" | "south" | "west";
 export type PipeBridgeAxis = "horizontal" | "vertical";
 export type PipeTopologyKind =
@@ -809,7 +823,7 @@ export function preparePipeTopology(
   pipePositions?: Set<string>,
   diagnostics: PipeTopologyDiagnostic[] = [],
 ): PipeTopology | undefined {
-  if (structure.type !== PIPE_STRUCTURE_TYPE) return undefined;
+  if (pipeSegmentType(structure.type) !== structure.type) return undefined;
   const data = pipeData(structure);
   const hasMask = data !== undefined && "pipeConnectionMask" in data;
   const rawMask = data?.pipeConnectionMask;
@@ -854,7 +868,10 @@ export function preparePipeTopology(
   return {
     kind,
     connectionMask,
-    spriteIndex: pipeSpriteIndexFor(connectionMask, structure.x, structure.y),
+    // Native bridge centers omit the decorative straight-pipe bulb in both families.
+    spriteIndex: bridgeAxis
+      ? PIPE_SPRITE_INDEX_BY_MASK[connectionMask]
+      : pipeSpriteIndexFor(connectionMask, structure.x, structure.y),
     bridgeConnectionMask,
     bridgeAxis,
     connectedDirections: pipeDirections(connectionMask),
@@ -881,7 +898,9 @@ export function connectedPipeNetwork(
 
   const byAnchor = new Map(
     preparedBlueprint.preparedStructures
-      .filter((prepared) => prepared.pipeTopology)
+      .filter(
+        (prepared) => prepared.pipeTopology && prepared.structure.type === selected.structure.type,
+      )
       .map(
         (prepared) => [`${prepared.structure.x},${prepared.structure.y}`, prepared.index] as const,
       ),
@@ -985,14 +1004,15 @@ export function selectedPipeNetwork(
   const selected = preparedBlueprint.preparedStructures[selectedIndex];
   if (!selected) return null;
   const selectedType = selected.structure.type;
-  const isAttachment =
-    selectedType === PUMP_STRUCTURE_TYPE || selectedType === LIQUID_VENT_STRUCTURE_TYPE;
+  const segmentType = pipeSegmentType(selectedType);
+  const isAttachment = segmentType !== undefined && selectedType !== segmentType;
   const seed = selected.pipeTopology
     ? selected
     : isAttachment
       ? preparedBlueprint.preparedStructures.find(
           (prepared) =>
             prepared.pipeTopology &&
+            prepared.structure.type === segmentType &&
             prepared.structure.x === selected.structure.x &&
             prepared.structure.y === selected.structure.y,
         )
@@ -1006,7 +1026,7 @@ export function selectedPipeNetwork(
       return `${structure.x},${structure.y}`;
     }),
   );
-  const attachedIndices = (type: number) =>
+  const attachedIndices = (type: BlueprintType) =>
     preparedBlueprint.preparedStructures.flatMap((prepared) =>
       prepared.structure.type === type &&
       networkAnchors.has(`${prepared.structure.x},${prepared.structure.y}`)
@@ -1022,8 +1042,10 @@ export function selectedPipeNetwork(
   const maxY = Math.max(...pipeStructures.map(({ structure }) => structure.y));
   return {
     ...network,
-    pumpIndices: attachedIndices(PUMP_STRUCTURE_TYPE),
-    ventIndices: attachedIndices(LIQUID_VENT_STRUCTURE_TYPE),
+    pumpIndices: attachedIndices(segmentType === "gasPipe" ? "gasPump" : PUMP_STRUCTURE_TYPE),
+    ventIndices: attachedIndices(
+      segmentType === "gasPipe" ? "gasVent" : LIQUID_VENT_STRUCTURE_TYPE,
+    ),
     endpointCount: pipeStructures.filter(({ pipeTopology }) => pipeTopology?.kind === "endpoint")
       .length,
     widthTiles: (maxX - minX) / PIPE_GRID_STEP + 1,
@@ -1032,9 +1054,16 @@ export function selectedPipeNetwork(
 }
 
 function pipePositionSet(blueprint: Blueprint) {
-  const positions = new Set<string>();
+  const positions = new Map<BlueprintType, Set<string>>();
   for (const structure of blueprint.data) {
-    if (structure.type === PIPE_STRUCTURE_TYPE) positions.add(`${structure.x},${structure.y}`);
+    if (pipeSegmentType(structure.type) === structure.type) {
+      let family = positions.get(structure.type);
+      if (!family) {
+        family = new Set<string>();
+        positions.set(structure.type, family);
+      }
+      family.add(`${structure.x},${structure.y}`);
+    }
   }
   return positions;
 }
@@ -1059,7 +1088,12 @@ export function prepareBlueprint(
   }
   const preparedStructures = blueprint.data.map((structure, index) => {
     const catalogEntry = options.catalog?.get(structure.type);
-    const pipeTopology = preparePipeTopology(structure, index, pipePositions, pipeDiagnostics);
+    const pipeTopology = preparePipeTopology(
+      structure,
+      index,
+      pipePositions.get(structure.type),
+      pipeDiagnostics,
+    );
     const customShape = customShapeFromStructure(structure);
     const shape = customShape ?? catalogEntry?.shape;
     const footprint = shape

@@ -65,7 +65,7 @@ describe("pipe topology preparation", () => {
     assert.deepEqual(prepared.preparedStructures[4].pipeTopology, {
       kind: "bridge",
       connectionMask: 5,
-      spriteIndex: 17,
+      spriteIndex: 12,
       bridgeConnectionMask: 8,
       bridgeAxis: "horizontal",
       connectedDirections: ["north", "south"],

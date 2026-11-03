@@ -1,0 +1,365 @@
+{
+  "gameVersion": "0.6.0",
+  "steamBuildId": "26169939",
+  "source": "Exact extracted game, isolated empty test world. Buildings placed through the native builder and serialized via api.blueprints.serializeStructures. Gas connections/bridge restored through native pipes.restoreSnapshots before serialization; not a physical copy/paste UI test.",
+  "samples": [
+    {
+      "type": "hologramProjector",
+      "x": 600,
+      "y": 600,
+      "data": {
+        "hologramActive": false
+      }
+    },
+    {
+      "type": "gasPump",
+      "x": 616,
+      "y": 600,
+      "data": {
+        "connectedVents": []
+      }
+    },
+    {
+      "type": "gasVent",
+      "x": 624,
+      "y": 600
+    },
+    {
+      "type": "cargoIntake",
+      "x": 632,
+      "y": 600,
+      "data": {}
+    },
+    {
+      "type": "calderaStratacore",
+      "x": 648,
+      "y": 600
+    },
+    {
+      "type": "electrolyzer",
+      "x": 600,
+      "y": 608,
+      "data": {
+        "showNoEnergyOverlay": false
+      }
+    },
+    {
+      "type": "grinder",
+      "x": 608,
+      "y": 608,
+      "data": {
+        "showNoEnergyOverlay": false
+      }
+    },
+    {
+      "type": "electromagnet",
+      "x": 616,
+      "y": 608,
+      "data": {
+        "fieldActive": false,
+        "phaseEndAtMs": 0,
+        "showNoEnergyOverlay": false
+      }
+    },
+    {
+      "type": "reductionChamber",
+      "x": 624,
+      "y": 608,
+      "data": {
+        "spriteIndex": 0
+      }
+    },
+    {
+      "type": "reductionChamberWall",
+      "x": 632,
+      "y": 608,
+      "data": {
+        "spriteIndex": 0
+      }
+    },
+    {
+      "type": "nickelMold",
+      "x": 640,
+      "y": 608
+    },
+    {
+      "type": "powerCell",
+      "x": 648,
+      "y": 608,
+      "data": {
+        "storedEnergy": 0,
+        "maxEnergy": 20000
+      }
+    },
+    {
+      "type": "fuelCell",
+      "x": 600,
+      "y": 616,
+      "data": {
+        "spriteIndex": 0
+      }
+    },
+    {
+      "type": "thermalTeleporter",
+      "x": 608,
+      "y": 616,
+      "data": {
+        "temperature": 0
+      }
+    },
+    {
+      "type": "thermalTeleporterExit",
+      "x": 616,
+      "y": 616,
+      "data": {
+        "temperature": 0
+      }
+    },
+    {
+      "type": "balancer",
+      "x": 624,
+      "y": 616,
+      "data": {
+        "spriteIndex": 0
+      }
+    },
+    {
+      "type": "wedge",
+      "x": 632,
+      "y": 616
+    },
+    {
+      "type": "wedge90",
+      "x": 640,
+      "y": 616
+    },
+    {
+      "type": "wedge180",
+      "x": 648,
+      "y": 616
+    },
+    {
+      "type": "wedge270",
+      "x": 600,
+      "y": 624
+    },
+    {
+      "type": "advancedFilterRightMk2",
+      "x": 608,
+      "y": 624,
+      "filter": {
+        "mode": "allow",
+        "elementType": 1,
+        "affectsLiquid": true,
+        "affectsGas": true
+      }
+    },
+    {
+      "type": "advancedFilterLeftMk2",
+      "x": 616,
+      "y": 624,
+      "filter": {
+        "mode": "allow",
+        "elementType": 1,
+        "affectsLiquid": true,
+        "affectsGas": true
+      }
+    },
+    {
+      "type": "quantumPortalMk2",
+      "x": 624,
+      "y": 624
+    },
+    {
+      "type": "quantumPortalMk2Exit",
+      "x": 632,
+      "y": 624
+    },
+    {
+      "type": "clearingFrameLeftMk2",
+      "x": 640,
+      "y": 624
+    },
+    {
+      "type": "clearingFrameRightMk2",
+      "x": 648,
+      "y": 624
+    }
+  ],
+  "gas": [
+    {
+      "type": "gasPipe",
+      "x": 600,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 2,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 1
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 604,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 14,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 7
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 608,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 8,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 2
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 604,
+      "y": 684,
+      "data": {
+        "pipeConnectionMask": 5,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 12
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 604,
+      "y": 688,
+      "data": {
+        "pipeConnectionMask": 11,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 11
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 600,
+      "y": 688,
+      "data": {
+        "pipeConnectionMask": 2,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 1
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 608,
+      "y": 688,
+      "data": {
+        "pipeConnectionMask": 8,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 2
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 640,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 0,
+        "pipeBridgeConnectionMask": 2,
+        "pipeSpriteIndex": 0
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 644,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 5,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 12,
+        "pipeBridgeAxis": "horizontal"
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 648,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 0,
+        "pipeBridgeConnectionMask": 8,
+        "pipeSpriteIndex": 0
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 644,
+      "y": 676,
+      "data": {
+        "pipeConnectionMask": 4,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 4
+      }
+    },
+    {
+      "type": "gasPipe",
+      "x": 644,
+      "y": 684,
+      "data": {
+        "pipeConnectionMask": 1,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 8
+      }
+    }
+  ],
+  "liquidBridge": [
+    {
+      "type": 23,
+      "x": 680,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 0,
+        "pipeBridgeConnectionMask": 2,
+        "pipeSpriteIndex": 0
+      }
+    },
+    {
+      "type": 23,
+      "x": 684,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 5,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 12,
+        "pipeBridgeAxis": "horizontal"
+      }
+    },
+    {
+      "type": 23,
+      "x": 688,
+      "y": 680,
+      "data": {
+        "pipeConnectionMask": 0,
+        "pipeBridgeConnectionMask": 8,
+        "pipeSpriteIndex": 0
+      }
+    },
+    {
+      "type": 23,
+      "x": 684,
+      "y": 676,
+      "data": {
+        "pipeConnectionMask": 4,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 4
+      }
+    },
+    {
+      "type": 23,
+      "x": 684,
+      "y": 684,
+      "data": {
+        "pipeConnectionMask": 1,
+        "pipeBridgeConnectionMask": 0,
+        "pipeSpriteIndex": 8
+      }
+    }
+  ]
+}
