@@ -28,6 +28,37 @@ Put one encoded blueprint per file in `packages/sandustry-blueprint-core/tests/v
 `packages/sandustry-blueprint-core/tests/visual/blueprints/thermal-line.txt`. Both v2 binary strings and v2 text
 strings are accepted.
 
+The generated 0.6 fixtures are:
+
+- `gas-pipeworks` and `gas-pipe-layer[pipes]`: exact copies of the liquid
+  fixtures' coordinates, data and links, replacing only pipe/pump/vent types
+  and the blueprint name.
+- `kitchen-sink-0.6`: new 0.6 buildings first, followed by older catalog
+  samples, the native landing-pad construction layout and a gas pipe network.
+- `kitchen-sink-0.6-part-2`: the remaining catalog samples. Together the two
+  parts cover all 119 catalog IDs, including directional variants. The native
+  v2 encoding supports at most 64 distinct types per blueprint.
+
+Regenerate the encoded fixtures (without changing any visual baselines) with:
+
+```sh
+bun packages/sandustry-blueprint-core/tests/visual/generate-0.6-fixtures.ts
+```
+
+Building samples use a six-tile pitch, leaving at least one tile of clearance
+even around the largest sprites. The landing-pad parts and gas network remain
+connected assemblies, separated from the samples and each other. Repeated
+build angles mapping to the same structure ID are represented once; all distinct
+directional IDs, including four wedges and both portal endpoints, are present.
+
+These are synthetic renderer fixtures, not verified native copy/paste exports.
+Sample defaults come from the captured 0.6 runtime where available. The pad's
+42 parts come from the exact installed build's `native.testFlight` construction
+table; its capture provenance is in `../fixtures/native-0.6-landing-pad.json`.
+The native pad protects its parts from selection, and its scripted world art
+(landing rig and spaceship) is not portable blueprint content and is excluded.
+Standalone portal endpoints are catalog samples, not configured working pairs.
+
 Add a global layer in square brackets before `.txt` to render a fixture with
 that layer enabled. The currently supported layer is `pipes`:
 

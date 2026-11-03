@@ -1,0 +1,220 @@
+{
+  "gameVersion": "0.6.0",
+  "steamBuildId": "26169939",
+  "bundleSha256": "b39cd21fa2dbfd24252f7cc745d7003df808158b9022aee672165f5574dc2324",
+  "source": "native.testFlight landing-site construction table mP in exact extracted dist/js/bundle.js; offsets multiplied by native snapGridCellSize=4. Scripted world sprites are excluded. Protected site parts may not be selectable in native copy UI.",
+  "widthCells": 32,
+  "heightCells": 64,
+  "data": [
+    {
+      "type": 11,
+      "x": 0,
+      "y": 60
+    },
+    {
+      "type": 11,
+      "x": 4,
+      "y": 60
+    },
+    {
+      "type": 11,
+      "x": 8,
+      "y": 60
+    },
+    {
+      "type": 11,
+      "x": 12,
+      "y": 60
+    },
+    {
+      "type": 11,
+      "x": 16,
+      "y": 60
+    },
+    {
+      "type": 11,
+      "x": 20,
+      "y": 60
+    },
+    {
+      "type": 11,
+      "x": 24,
+      "y": 60
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 60
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 8
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 12
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 16
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 20
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 24
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 28
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 32
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 36
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 40
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 44
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 48
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 52
+    },
+    {
+      "type": 11,
+      "x": 28,
+      "y": 56
+    },
+    {
+      "type": 11,
+      "x": 0,
+      "y": 16
+    },
+    {
+      "type": 11,
+      "x": 0,
+      "y": 20
+    },
+    {
+      "type": 11,
+      "x": 4,
+      "y": 20
+    },
+    {
+      "type": 11,
+      "x": 8,
+      "y": 20
+    },
+    {
+      "type": 11,
+      "x": 8,
+      "y": 16
+    },
+    {
+      "type": 11,
+      "x": 8,
+      "y": 12
+    },
+    {
+      "type": 12,
+      "x": 4,
+      "y": 56
+    },
+    {
+      "type": 11,
+      "x": 8,
+      "y": 56
+    },
+    {
+      "type": 11,
+      "x": 12,
+      "y": 56
+    },
+    {
+      "type": 11,
+      "x": 16,
+      "y": 56
+    },
+    {
+      "type": 11,
+      "x": 20,
+      "y": 56
+    },
+    {
+      "type": 14,
+      "x": 24,
+      "y": 56
+    },
+    {
+      "type": "critterFence",
+      "x": 12,
+      "y": 16
+    },
+    {
+      "type": "critterFence",
+      "x": 16,
+      "y": 16
+    },
+    {
+      "type": "critterFence",
+      "x": 20,
+      "y": 16
+    },
+    {
+      "type": "critterFence",
+      "x": 24,
+      "y": 16
+    },
+    {
+      "type": "critterFence",
+      "x": 20,
+      "y": 48
+    },
+    {
+      "type": "critterFence",
+      "x": 24,
+      "y": 48
+    },
+    {
+      "type": "gasVent",
+      "x": 24,
+      "y": 36
+    },
+    {
+      "type": "gasVent",
+      "x": 24,
+      "y": 40
+    },
+    {
+      "type": "cargoIntake",
+      "x": 4,
+      "y": 16
+    }
+  ]
+}
