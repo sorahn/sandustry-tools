@@ -138,8 +138,11 @@ for initial fit configuration.
 Keep commit messages short, lowercase, and minimally punctuated. Run commands
 that write Git metadata with elevated permission from the start.
 
-Do not commit changes automatically or preemptively. Always wait for explicit
-user review and approval before creating a commit.
+Commit completed, verified work as you go without waiting for a separate user
+request. Keep commits small and focused, grouping related implementation,
+tests, and documentation together. Preserve unrelated worktree changes.
+This authorizes local commits; pushing, publishing, and deploying still require
+user authorization.
 
 Use rg for repository search. Avoid destructive commands unless explicitly
 requested and the exact target is known. Preserve unrelated worktree changes.
