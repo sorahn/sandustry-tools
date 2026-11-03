@@ -33,11 +33,9 @@ The generated 0.6 fixtures are:
 - `gas-pipeworks` and `gas-pipe-layer[pipes]`: exact copies of the liquid
   fixtures' coordinates, data and links, replacing only pipe/pump/vent types
   and the blueprint name.
-- `kitchen-sink-0.6`: new 0.6 buildings first, followed by older catalog
-  samples, the native landing-pad construction layout and a gas pipe network.
-- `kitchen-sink-0.6-part-2`: the remaining catalog samples. Together the two
-  parts cover all 119 catalog IDs, including directional variants. The native
-  v2 encoding supports at most 64 distinct types per blueprint.
+- `kitchen-sink-0.6`: only the new 0.6 building IDs and their distinct
+  directional variants, the native landing-pad construction layout and a gas
+  pipe network. Older building types appear only where needed for the pad.
 
 Regenerate the encoded fixtures (without changing any visual baselines) with:
 
@@ -45,8 +43,7 @@ Regenerate the encoded fixtures (without changing any visual baselines) with:
 bun packages/sandustry-blueprint-core/tests/visual/generate-0.6-fixtures.ts
 ```
 
-Building samples use a six-tile pitch, leaving at least one tile of clearance
-even around the largest sprites. The landing-pad parts and gas network remain
+Building samples use a six-tile pitch, leaving at least one tile of clearance. The landing-pad parts and gas network remain
 connected assemblies, separated from the samples and each other. Repeated
 build angles mapping to the same structure ID are represented once; all distinct
 directional IDs, including four wedges and both portal endpoints, are present.

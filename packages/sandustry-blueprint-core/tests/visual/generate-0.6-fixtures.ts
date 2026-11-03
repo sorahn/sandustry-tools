@@ -36,10 +36,10 @@ export function gasVariant(blueprint: Blueprint): Blueprint {
   };
 }
 
-export function kitchenSink06(part: 1 | 2): Blueprint {
-  // Every catalog ID includes the distinct directional variants. Angles that
+export function kitchenSink06(): Blueprint {
+  // Include new building IDs and their distinct directional variants. Angles that
   // resolve to the same ID do not persist as separate blueprint rotations.
-  // A six-tile pitch also leaves room for the largest sprite (the void rift).
+  // Keep a generous gap between individual building samples.
   const columns = 12;
   const pitch = 24;
   const newTypes = new Set<BlueprintType>(
@@ -48,12 +48,7 @@ export function kitchenSink06(part: 1 | 2): Blueprint {
       ...(entry.variants ?? []).map((variant) => variant.id),
     ]),
   );
-  const ordered = [
-    ...CATALOG.filter((entry) => newTypes.has(entry.type)),
-    ...CATALOG.filter((entry) => !newTypes.has(entry.type)),
-  ];
-  // Leave room in part one for the pad and network types not in its samples.
-  const entries = part === 1 ? ordered.slice(0, 57) : ordered.slice(57);
+  const entries = CATALOG.filter((entry) => newTypes.has(entry.type));
   const data: Blueprint["data"] = entries.map((entry, index) => {
     const sample = native.samples.find((record) => record.type === entry.type);
     return {
@@ -64,23 +59,20 @@ export function kitchenSink06(part: 1 | 2): Blueprint {
     };
   });
   const assemblyY = Math.ceil(entries.length / columns) * pitch + 8;
-  if (part === 1) {
-    data.push(...landingPad.data.map((part) => ({ ...part, y: part.y + assemblyY })));
-    // Keep the pad and pipe network intact, with four tiles between assemblies.
-    data.push(
-      ...gasVariant(read("pipeworks")).data.map((part) => ({
-        ...part,
-        x: part.x + landingPad.widthCells + 16,
-        y: part.y + assemblyY,
-      })),
-    );
-  }
-  return { name: `Sandustry 0.6 kitchen sink ${part}`, data, signalLinks: null };
+  data.push(...landingPad.data.map((part) => ({ ...part, y: part.y + assemblyY })));
+  // Keep the pad and pipe network intact, with four tiles between assemblies.
+  data.push(
+    ...gasVariant(read("pipeworks")).data.map((part) => ({
+      ...part,
+      x: part.x + landingPad.widthCells + 16,
+      y: part.y + assemblyY,
+    })),
+  );
+  return { name: "Sandustry 0.6 new buildings", data, signalLinks: null };
 }
 
 if (import.meta.main) {
   write("gas-pipeworks", gasVariant(read("pipeworks")));
   write("gas-pipe-layer[pipes]", gasVariant(read("pipe-layer[pipes]")));
-  write("kitchen-sink-0.6", kitchenSink06(1));
-  write("kitchen-sink-0.6-part-2", kitchenSink06(2));
+  write("kitchen-sink-0.6", kitchenSink06());
 }

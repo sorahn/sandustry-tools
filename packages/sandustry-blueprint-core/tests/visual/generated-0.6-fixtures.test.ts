@@ -26,32 +26,27 @@ test("gas baselines preserve liquid fixture geometry and metadata", () => {
   }
 });
 
-test("two 0.6 kitchen sinks cover every catalog ID and native directional form", () => {
-  const parts = [read("kitchen-sink-0.6"), read("kitchen-sink-0.6-part-2")];
-  const types = new Set(parts.flatMap((part) => part.data.map((record) => record.type)));
-  for (const entry of CATALOG) {
-    assert.ok(types.has(entry.type), `Missing catalog type: ${entry.type}`);
+const newTypes = new Set(
+  additions.entries.flatMap((entry) => [
+    entry.type,
+    ...(entry.variants ?? []).map((variant) => variant.id),
+  ]),
+);
+
+test("0.6 kitchen sink covers only new buildings, variants and assembly parts", () => {
+  const blueprint = read("kitchen-sink-0.6");
+  const samples = blueprint.data.slice(0, newTypes.size);
+  assert.deepEqual(new Set(samples.map((record) => record.type)), newTypes);
+  const allowed = new Set([...newTypes, ...landingPad.data.map((record) => record.type)]);
+  for (const record of blueprint.data) {
+    assert.ok(allowed.has(record.type as string), `Unexpected old building: ${record.type}`);
   }
-  for (const entry of additions.entries) {
-    assert.ok(parts[0].data.some((record) => record.type === entry.type));
-    for (const variant of entry.variants ?? []) {
-      assert.ok(
-        parts[0].data.some((record) => record.type === variant.id),
-        `Missing directional variant: ${variant.id}`,
-      );
-    }
-  }
-  for (const part of parts) {
-    assert.ok(new Set(part.data.map((record) => record.type)).size <= 64);
-    assert.deepEqual(decodeBlueprint(encodeBlueprint(part)), part);
-  }
+  assert.ok(new Set(blueprint.data.map((record) => record.type)).size <= 64);
+  assert.deepEqual(decodeBlueprint(encodeBlueprint(blueprint)), blueprint);
 });
 
 test("kitchen sink building samples have at least one tile of clearance", () => {
-  const samples = [
-    read("kitchen-sink-0.6").data.slice(0, 57),
-    read("kitchen-sink-0.6-part-2").data,
-  ];
+  const samples = [read("kitchen-sink-0.6").data.slice(0, newTypes.size)];
   for (const records of samples) {
     for (let i = 0; i < records.length; i++) {
       for (let j = i + 1; j < records.length; j++) {
@@ -72,7 +67,10 @@ test("kitchen sink building samples have at least one tile of clearance", () => 
 });
 
 test("landing pad preserves the native 42-part construction layout", () => {
-  const records = read("kitchen-sink-0.6").data.slice(57, 57 + landingPad.data.length);
+  const records = read("kitchen-sink-0.6").data.slice(
+    newTypes.size,
+    newTypes.size + landingPad.data.length,
+  );
   assert.equal(records.length, 42);
   const originY = Math.min(...records.map((record) => record.y)) - 8;
   assert.deepEqual(
