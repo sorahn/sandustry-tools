@@ -198,8 +198,18 @@ export function blueprintCatalog() {
               runtimeOffset &&
               (typeof runtimeOffset.x === "number" || typeof runtimeOffset.y === "number")
                 ? {
-                    x: typeof runtimeOffset.x === "number" ? runtimeOffset.x : undefined,
-                    y: typeof runtimeOffset.y === "number" ? runtimeOffset.y : undefined,
+                    // Extracted asset offsets already include native placement.
+                    // Use runtime metadata only for axes without an asset override.
+                    x:
+                      entry.renderAsset.offset?.x === undefined &&
+                      typeof runtimeOffset.x === "number"
+                        ? runtimeOffset.x
+                        : undefined,
+                    y:
+                      entry.renderAsset.offset?.y === undefined &&
+                      typeof runtimeOffset.y === "number"
+                        ? runtimeOffset.y
+                        : undefined,
                   }
                 : undefined,
             renderSize: catalogRenderSize(render),
