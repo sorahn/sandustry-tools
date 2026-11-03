@@ -67,11 +67,80 @@ async function assertSimulationPaused(): Promise<void> {
   assert.equal(paused, true, "The simulation should be paused during Apply");
 }
 
+test("Autofabulator grants exactly one registered tool on game ready", async () => {
+  const result = await game.evaluate(() => ({
+    count: sandkit.engine.state.store.player.inventory.filter(
+      (item) => item?.id === "sorahnAutofabulator",
+    ).length,
+    handler: typeof sandkit.api.items.getDefinitionById("sorahnAutofabulator")?.handleAction,
+    dimensions: sandkit.api.grid.getDimensions(),
+  }));
+  assert.equal(result.count, 1);
+  assert.equal(result.handler, "function");
+  assert.ok(
+    result.dimensions.widthCells >= 920 && result.dimensions.heightCells >= 920,
+    "Autofabulator fixtures need a clear test region within 920 cells",
+  );
+});
+
+test("Autofabulator cursor yields to C selection and resumes after release", async () => {
+  const original = await game.evaluate(() => {
+    const state = sandkit.engine.state;
+    const events = (state.session as any).rendering.pixi.app.renderer.events;
+    (globalThis as any).__autofabulatorOriginalCursor = events.cursorStyles.default;
+    const selected = sandkit.api.action.getSelected();
+    sandkit.api.ui.hotbar.selectAction({ id: "sorahnAutofabulator", type: 2 });
+    return selected;
+  });
+  await game.waitFor(
+    () => sandkit.api.action.getSelected()?.id,
+    (id) => id === "sorahnAutofabulator",
+  );
+  try {
+    const result = await game.evaluate(() => {
+      const state = sandkit.engine.state;
+      const pixi = (state.session as any).rendering.pixi;
+      const definition = sandkit.api.items.getDefinitionById("sorahnAutofabulator");
+      if (!definition?.afterRender) {
+        throw new Error("Autofabulator cursor renderer is unavailable");
+      }
+      definition.afterRender(state);
+      const equipped = pixi.app.renderer.events.cursorStyles.default === pixi.cursors.marquee;
+      // Run both key handlers and render callbacks in one synthetic input turn
+      // so the original cursor can be compared before native frames change it.
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "c", code: "KeyC", bubbles: true }));
+      try {
+        definition.afterRender(state);
+        const restored =
+          pixi.app.renderer.events.cursorStyles.default ===
+          (globalThis as any).__autofabulatorOriginalCursor;
+        return { equipped, restored };
+      } finally {
+        window.dispatchEvent(new KeyboardEvent("keyup", { key: "c", code: "KeyC", bubbles: true }));
+        definition.afterRender(state);
+      }
+    });
+    assert.deepEqual(result, { equipped: true, restored: true });
+    const resumed = await game.evaluate(() => {
+      const pixi = (sandkit.engine.state.session as any).rendering.pixi;
+      return pixi.app.renderer.events.cursorStyles.default === pixi.cursors.marquee;
+    });
+    assert.equal(resumed, true);
+  } finally {
+    await game.evaluate((selected) => {
+      if (selected) {
+        sandkit.api.ui.hotbar.selectAction(selected);
+      }
+      delete (globalThis as any).__autofabulatorOriginalCursor;
+    }, original);
+  }
+});
+
 test("Autofabulator takes priority over a Signal Button click", async () => {
   await game.resumeSimulation();
   const fixture = await game.evaluate(() => {
-    const x = 2400;
-    const y = 1612;
+    const x = 600;
+    const y = 612;
     const buttonType = sandkit.api.structures.getTypeById("signalButton");
     if (buttonType === null || buttonType === undefined) {
       throw new Error("signalButton is not registered in the extracted game");
@@ -89,7 +158,6 @@ test("Autofabulator takes priority over a Signal Button click", async () => {
         return originalButtonHandler?.(...args);
       });
     }
-    sandkit.api.player.inventory.addFromId("sorahnAutofabulator");
 
     sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
     return { x, y, buttonType };
@@ -122,7 +190,7 @@ test("Autofabulator takes priority over a Signal Button click", async () => {
       const match =
         itemImage ??
         [...document.querySelectorAll("*")].find((element) => element.textContent?.trim() === text);
-      const clickable = match?.closest<HTMLElement>(".cursor-pointer");
+      const clickable = match?.closest<HTMLElement>('button, [role="button"], .cursor-pointer');
       if (!clickable) throw new Error(`Could not find clickable menu entry: ${text}`);
       const rect = clickable.getBoundingClientRect();
       return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
@@ -163,7 +231,7 @@ test("Autofabulator preview includes solid foundations but not loose sand", asyn
   await dispatchKey("Escape");
   await game.resumeSimulation();
 
-  const origin = { x: 2500, y: 1700 };
+  const origin = { x: 660, y: 660 };
   await game.buildLayout({
     origin,
     cells: ["..", "ff"],
@@ -212,7 +280,7 @@ test("Autofabulator paints only the clicked canvas cell", async () => {
   await dispatchKey("Escape");
   await game.resumeSimulation();
 
-  const editorAnchor = { x: 2500, y: 1700 };
+  const editorAnchor = { x: 660, y: 660 };
   const anchorPoint = await game.evaluate(({ x, y }) => {
     const canvas = document.querySelector("canvas");
     if (!canvas) throw new Error("Game canvas was not found");
@@ -327,7 +395,7 @@ test("Autofabulator merges new cells into an existing prefab block", async () =>
   await dispatchKey("Escape");
   await game.resumeSimulation();
 
-  const origin = { x: 2800, y: 1900 };
+  const origin = { x: 720, y: 720 };
   const prefabType = await game.evaluate(({ x, y }) => {
     const cellIds = [
       [15, 0, 0, 0],
@@ -477,7 +545,7 @@ test("Autofabulator middle-click paints a Solidite cell", async () => {
   await dispatchKey("Escape");
   await game.resumeSimulation();
 
-  const origin = { x: 2900, y: 2000 };
+  const origin = { x: 780, y: 780 };
   await game.evaluate(async ({ x, y }) => {
     sandkit.api.player.setWorldPosition(x * 4 + 8, y * 4 + 8);
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -525,8 +593,8 @@ test("Autofabulator Apply path replaces an obstructing element with an sspp bloc
   await game.resumeSimulation();
 
   const origin = await game.evaluate(() => {
-    for (let y = 1600; y < 2000; y += 4) {
-      for (let x = 2200; x < 2600; x += 4) {
+    for (let y = 800; y < 840; y += 4) {
+      for (let x = 620; x < 660; x += 4) {
         const clear = Array.from({ length: 4 }, (_, row) =>
           Array.from(
             { length: 4 },
@@ -635,8 +703,8 @@ test("Autofabulator applies only dirty cells and ignores transparent-cell obstru
   await game.resumeSimulation();
 
   const origin = await game.evaluate(() => {
-    for (let y = 2200; y < 2600; y += 4) {
-      for (let x = 2700; x < 3100; x += 4) {
+    for (let y = 800; y < 840; y += 4) {
+      for (let x = 700; x < 740; x += 4) {
         const clear = Array.from({ length: 4 }, (_, row) =>
           Array.from(
             { length: 4 },
@@ -725,8 +793,8 @@ test("Autofabulator Apply path completes while the simulation is paused", async 
   await game.resumeSimulation();
 
   const origin = await game.evaluate(() => {
-    for (let y = 2600; y < 3000; y += 4) {
-      for (let x = 2200; x < 2600; x += 4) {
+    for (let y = 860; y < 900; y += 4) {
+      for (let x = 620; x < 660; x += 4) {
         const clear = Array.from({ length: 4 }, (_, row) =>
           Array.from(
             { length: 4 },
@@ -808,8 +876,8 @@ test("Autofabulator Apply path replaces an sspp block with s..p", async () => {
   await game.resumeSimulation();
 
   const origin = await game.evaluate(() => {
-    for (let y = 2100; y < 2500; y += 4) {
-      for (let x = 2200; x < 2600; x += 4) {
+    for (let y = 860; y < 900; y += 4) {
+      for (let x = 620; x < 660; x += 4) {
         const clear = Array.from({ length: 4 }, (_, row) =>
           Array.from(
             { length: 4 },
@@ -931,4 +999,119 @@ test("Autofabulator Apply path replaces an sspp block with s..p", async () => {
     (cellIds) => JSON.stringify(cellIds) === JSON.stringify(expected),
     { args: [origin], message: "Apply path did not replace sspp with s..p" },
   );
+});
+
+test("Autofabulator replacement preserves a prefab when 0.6 removal protection refuses it", async () => {
+  await dispatchKey("Escape");
+  await game.resumeSimulation();
+  const origin = { x: 820, y: 620 };
+  const type = await game.evaluate(({ x, y }) => {
+    const cellIds = [
+      [15, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ];
+    const data = {
+      __prefabulatorBlueprint: {
+        definition: {
+          shape: cellIds.map((row) => row.map((cell) => (cell ? 1 : 0))),
+          cellIds,
+        },
+      },
+    };
+    const localized = sandkit.api.blueprints.localizeStructures([
+      { type: "prefabTerrain_5", x: 0, y: 0, data, color: "#ffffff" },
+    ]);
+    const type = localized[0]?.type;
+    if (typeof type !== "string") {
+      throw new Error("Could not localize protected prefab fixture");
+    }
+    sandkit.api.structures.buildAtCell(x + 8, y + 8, type, { data });
+    return type;
+  }, origin);
+  await game.waitFor(
+    ({ x, y }) => sandkit.api.structures.getAtCell(x + 8, y + 8)?.type,
+    (actual) => actual === type,
+    { args: [origin], message: "Protected prefab fixture was not built" },
+  );
+
+  const result = await game.evaluate(({ x, y }) => {
+    const makeGrid = () =>
+      Array.from({ length: 5 }, () =>
+        Array.from({ length: 5 }, () =>
+          Array.from({ length: 4 }, () => Array<boolean>(4).fill(false)),
+        ),
+      );
+    const painted = makeGrid();
+    const solidite = makeGrid();
+    const initialPainted = makeGrid();
+    const dirty = makeGrid();
+    initialPainted[2][2][0][0] = true;
+    painted[2][2][0][0] = true;
+    painted[2][2][0][1] = true;
+    solidite[2][2][0][2] = true;
+    dirty[2][2][0][1] = true;
+    dirty[2][2][0][2] = true;
+    painted[2][3][0][0] = true;
+    dirty[2][3][0][0] = true;
+    const original = sandkit.api.structures.getAtCell(x + 8, y + 8);
+    const requests: Array<string | null> = [];
+    const dispose = sandkit.api.hooks.intercept?.(
+      "building:remove",
+      (payload: any, control: any) => {
+        if (payload.structure === original) {
+          requests.push(payload.requesterModId ?? null);
+          control.cancel();
+        }
+      },
+    );
+    if (typeof dispose !== "function") {
+      throw new Error("Removal protection hook is unavailable");
+    }
+    try {
+      const apply = (globalThis as any).__autofabulatorApply;
+      if (typeof apply !== "function") {
+        throw new Error("Autofabulator Apply test hook is unavailable");
+      }
+      apply({
+        originX: x,
+        originY: y,
+        painted,
+        solidite,
+        initialPainted,
+        initialSolidite: makeGrid(),
+        capturedSolidite: makeGrid(),
+        dirty,
+        occupied: makeGrid(),
+      });
+      const structures = Object.values(sandkit.engine.state.store.structures).filter(
+        (structure: any) => structure && structure.x === x + 8 && structure.y === y + 8,
+      );
+      return {
+        requests,
+        originalRetained: structures.includes(original as any),
+        structureCount: structures.length,
+        adjacentCell: sandkit.api.world.getCellIdAtCell(x + 12, y + 8),
+        row: Array.from({ length: 4 }, (_, column) =>
+          sandkit.api.world.getCellIdAtCell(x + 8 + column, y + 8),
+        ),
+      };
+    } finally {
+      dispose();
+    }
+  }, origin);
+  assert.deepEqual(
+    result.row,
+    [15, 0, 0, 0],
+    "Rejected replacement must leave prefab and Solidite cells unchanged",
+  );
+  assert.equal(result.originalRetained, true);
+  assert.equal(result.structureCount, 1);
+  assert.equal(
+    result.adjacentCell,
+    15,
+    "Unprotected blocks in the same edit should still be applied",
+  );
+  assert.deepEqual(result.requests, ["sorahn.sandustry-autofabulator"]);
 });

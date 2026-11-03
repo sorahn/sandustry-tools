@@ -1,5 +1,10 @@
 # Autofabulator changelog
 
+## 0.1.5
+
+- Updated for Sandustry 0.6.0.
+- Protected prefab blocks are now left unchanged when applying edits; other edited blocks still apply.
+
 ## 0.1.4
 
 - Fixed the Autofabulator cursor returning to the native marquee cursor while C-based marquee selection is active.

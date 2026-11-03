@@ -22,7 +22,12 @@ const internalStructureApi = engine.api as unknown as {
       type: string,
       options?: Record<string, unknown>,
     ) => SandustryStructure | null;
-    removeAt?: (state: unknown, x: number, y: number, options?: Record<string, unknown>) => void;
+    removeBetween?: (
+      state: unknown,
+      from: { x: number; y: number },
+      to: { x: number; y: number },
+      options?: Record<string, unknown>,
+    ) => void;
     beginBatchWrite?: () => void;
     endBatchWrite?: () => void;
     getConfig?: (type: string) => Record<string, unknown> | undefined;
@@ -712,30 +717,50 @@ function applyPrefabPattern(): void {
         typeof internalStructureApi.structures?.getConfig !== "function" ||
         typeof api.blueprints?.localizeStructures !== "function")) ||
     ((placements.some((placement) => placement.existing) || prefabRemovals.length > 0) &&
-      typeof internalStructureApi.structures?.removeAt !== "function")
+      typeof internalStructureApi.structures?.removeBetween !== "function")
   ) {
     api.ui.toast("Autofabulator placement is unavailable.");
     return;
   }
+  let skippedProtectedBlocks = false;
   const place = () => {
+    const blocked = new Set<string>();
+    const blockKey = (x: number, y: number) =>
+      `${Math.floor(x / CELLS_PER_BLOCK)},${Math.floor(y / CELLS_PER_BLOCK)}`;
     internalStructureApi.structures?.beginBatchWrite?.();
     try {
       for (const existing of [
         ...prefabRemovals,
         ...placements.flatMap((placement) => (placement.existing ? [placement.existing] : [])),
       ]) {
-        internalStructureApi.structures?.removeAt?.(engine.state, existing.x, existing.y, {
+        const position = { x: existing.x, y: existing.y };
+        // The single-cell engine helper drops requesterModId in 0.6. Use the
+        // range helper for this one position to retain removal ownership.
+        internalStructureApi.structures?.removeBetween?.(engine.state, position, position, {
           removeCells: true,
+          requesterModId: MOD_ID,
         });
+        // Removal can be refused by native protection hooks. Do not clear
+        // cells or place replacement terrain while the old prefab remains.
+        if (findPrefabStructureAtBlock(existing.x, existing.y)) {
+          blocked.add(blockKey(existing.x, existing.y));
+          skippedProtectedBlocks = true;
+        }
       }
+      const allowedPlacements = placements.filter(
+        (placement) => !blocked.has(blockKey(placement.x, placement.y)),
+      );
       for (const target of soliditeRemovals) {
+        if (blocked.has(blockKey(target.x, target.y))) {
+          continue;
+        }
         removeTerrainImmediately(target.x, target.y);
       }
       // Prefabulator structures reject blocked placement. Clear each target
       // with the mutation API matching its current cell kind so the native
       // builder can register a non-queued structure and element bookkeeping
       // remains consistent.
-      for (const placement of placements) {
+      for (const placement of allowedPlacements) {
         const cellIds = (
           placement.data.__prefabulatorBlueprint as {
             definition?: { cellIds?: number[][] };
@@ -758,7 +783,7 @@ function applyPrefabPattern(): void {
           }
         }
       }
-      for (const placement of placements) {
+      for (const placement of allowedPlacements) {
         const localized = api.blueprints.localizeStructures([
           {
             type: PREFAB_TERRAIN_TYPE,
@@ -792,6 +817,9 @@ function applyPrefabPattern(): void {
         }
       }
       for (const target of soliditePlacements) {
+        if (blocked.has(blockKey(target.x, target.y))) {
+          continue;
+        }
         replaceTerrainImmediately(target.x, target.y, "solidite");
       }
     } finally {
@@ -806,6 +834,9 @@ function applyPrefabPattern(): void {
     place();
   } finally {
     setSimulationPaused(wasPaused);
+  }
+  if (skippedProtectedBlocks) {
+    api.ui.toast("Protected blocks were left unchanged.");
   }
   closeEditor();
 }
