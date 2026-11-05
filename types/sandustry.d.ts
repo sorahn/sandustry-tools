@@ -149,6 +149,8 @@ interface SandustryStructureRender {
 interface SandustryStructureDefinition {
   id: string;
   blockGridType?: string | number;
+  /** Native 0.6 thermal membership for diffusion, absorption and consumption. */
+  thermalBuffer?: boolean;
   nameKey?: string;
   descriptionKey?: string;
   categoryKey?: string;
@@ -312,6 +314,11 @@ interface SandustryPropagationOptions {
 }
 
 interface SandustryApi {
+  thermal: {
+    isBuffer(structure: SandustryStructure): boolean;
+    getTemperature(structure: SandustryStructure): number;
+    adjustTemperature(structure: SandustryStructure, delta: number): number;
+  };
   random: SandustryRandom;
   blueprints: SandustryBlueprintApi;
   elements: {

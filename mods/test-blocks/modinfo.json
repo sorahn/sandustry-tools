@@ -8,8 +8,8 @@
   "entry": "entry.js",
   "description": "Adds an infinite Source block and a Trash block to the Misc buildings menu.",
   "gameVersion": {
-    "minimum": "0.5.6",
-    "maximum": "0.5.6"
+    "minimum": "0.6.0",
+    "maximum": "0.6.0"
   },
   "dependencies": [],
   "loadOrder": 9007199254740991,

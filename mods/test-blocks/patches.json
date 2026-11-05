@@ -1,26 +1,20 @@
 [
   {
-    "id": "thermal-source-consumption",
-    "file": "js/bundle.js",
-    "operation": "replace",
-    "find": "if(!o||o.type!==s)continue;",
-    "code": "if(!o||(o.type!==s&&!(globalThis.__sandustryTestBlocksThermalSource&&globalThis.__sandustryTestBlocksThermalSource(o.type,s))))continue;",
-    "expectedMatches": 1
-  },
-  {
     "id": "test-blocks-category-order",
     "file": "js/bundle.js",
     "operation": "replace",
-    "find": "\"production\",\"blocks\",\"economy\"",
-    "code": "\"production\",\"blocks\",\"testBlocks\",\"economy\"",
-    "expectedMatches": 1
+    "find": "[\"logistics\",\"production\",\"blocks\",\"economy\",\"lighting\",\"fluids\",\"special\",\"thermal\",\"energy\",\"logic\",\"misc\"]",
+    "code": "[\"logistics\",\"production\",\"blocks\",\"testBlocks\",\"economy\",\"lighting\",\"fluids\",\"special\",\"thermal\",\"energy\",\"logic\",\"misc\"]",
+    "expectedMatches": 1,
+    "atomicGroup": "test-blocks-category"
   },
   {
     "id": "test-blocks-category-label",
     "file": "js/bundle.js",
     "operation": "replace",
-    "find": "\"misc\",\"logic\",\"blocks\",\"construction\",\"debug\"",
-    "code": "\"misc\",\"logic\",\"blocks\",\"testBlocks\",\"construction\",\"debug\"",
-    "expectedMatches": 1
+    "find": "[\"misc\",\"logic\",\"blocks\",\"construction\",\"debug\",\"drones\",\"energy\",\"excavation\",\"logistics\",\"production\",\"tools\",\"transportation\",\"utility\",\"weapons\",\"economy\",\"fluids\",\"thermal\",\"lighting\",\"special\"]",
+    "code": "[\"misc\",\"logic\",\"blocks\",\"testBlocks\",\"construction\",\"debug\",\"drones\",\"energy\",\"excavation\",\"logistics\",\"production\",\"tools\",\"transportation\",\"utility\",\"weapons\",\"economy\",\"fluids\",\"thermal\",\"lighting\",\"special\"]",
+    "expectedMatches": 1,
+    "atomicGroup": "test-blocks-category"
   }
 ]

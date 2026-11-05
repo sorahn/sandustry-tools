@@ -2,6 +2,7 @@
 
 ## 0.1.18
 
+- Added Sandustry 0.6.0 support, including native heat and cold transfer.
 - Preserved Infinite Source element selections while copying or placing Sources, including core elements without string IDs.
 
 ## 0.1.17

@@ -85,7 +85,6 @@ const THERMAL_SOURCE_DEFAULT_TEMPERATURE = 1000;
 const CHILL_DEFAULT_TEMPERATURE = -1000;
 const THERMAL_SOURCE_MIN_TEMPERATURE = -1000;
 const THERMAL_SOURCE_MAX_TEMPERATURE = 1000;
-const THERMAL_SOURCE_EXCHANGE_RATE = 0.5;
 const DEFAULT_ELEMENT_ID = "sand";
 const LAST_ELEMENT_KEY = `${MOD_ID}.lastElement`;
 const BLACKLISTED_ELEMENT_IDS = new Set([
@@ -974,95 +973,26 @@ const processTrash = (structure: SandustryStructure) => {
   });
 };
 
-const thermalTemperature = (structure: SandustryStructure) => {
-  const heatTransfer = engine.api.heatTransfer;
-  return heatTransfer ? heatTransfer.ensureTemperature(structure) : 0;
-};
-
-const addThermalTemperature = (structure: SandustryStructure, delta: number) => {
-  const heatTransfer = engine.api.heatTransfer;
-  if (!heatTransfer || delta === 0) return;
-  heatTransfer.addTemperature(engine.state, structure, delta);
-};
-
-const thermalRingCells = (structure: SandustryStructure) => {
-  const cells: Array<{ x: number; y: number }> = [];
-  for (let index = 0; index < SIZE; index += 1) {
-    cells.push({ x: structure.x + index, y: structure.y - SIZE });
-    cells.push({ x: structure.x + index, y: structure.y + SIZE });
-    cells.push({ x: structure.x - SIZE, y: structure.y + index });
-    cells.push({ x: structure.x + SIZE, y: structure.y + index });
-  }
-  return cells;
-};
-
-const touchingThermalRelays = (sources: SandustryStructure[]) => {
-  const relays: SandustryStructure[] = [];
-  const seen = new Set<string>();
-  for (const source of sources) {
-    for (const cell of thermalRingCells(source)) {
-      const relay = safe(() => api.structures.getAtCell(cell.x, cell.y), null);
-      if (!relay || relay.type !== "thermalRelay" || relay.queued) continue;
-      const key = `${relay.x},${relay.y}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      relays.push(relay);
-    }
-  }
-  return relays;
-};
-
-const absorbThermalSurroundings = (structure: SandustryStructure) => {
-  const heatTransfer = engine.api.heatTransfer;
-  if (!heatTransfer?.absorbAdjacentElements) return;
-  const current = thermalTemperature(structure);
-  const delta = heatTransfer.absorbAdjacentElements(engine.state, structure, {
-    lavaDelta: 250,
-    snowDelta: -20,
-    currentTemperature: current,
-    minTemperature: THERMAL_SOURCE_MIN_TEMPERATURE,
-    maxTemperature: THERMAL_SOURCE_MAX_TEMPERATURE,
-    structSize: SIZE,
-  });
-  if (delta) addThermalTemperature(structure, delta);
-};
-
+// The native thermal-buffer scheduler handles absorption, relay diffusion and
+// machine consumption. These creative buffers only maintain their targets.
 const thermalSourceTick = () => {
-  const sources: SandustryStructure[] = [];
   for (const type of [THERMAL_SOURCE_ID, CHILL_ID]) {
     api.structures.forEachOfType(type, (structure) => {
-      try {
-        absorbThermalSurroundings(structure);
-        sources.push(structure);
-      } catch (error) {
-        console.error(`[${MOD_ID}] thermal source tick failed:`, error);
-      }
+      const defaultTemperature =
+        type === CHILL_ID ? CHILL_DEFAULT_TEMPERATURE : THERMAL_SOURCE_DEFAULT_TEMPERATURE;
+      const target =
+        typeof structure.data?.targetTemperature === "number"
+          ? structure.data.targetTemperature
+          : defaultTemperature;
+      const clampedTarget = Math.max(
+        THERMAL_SOURCE_MIN_TEMPERATURE,
+        Math.min(THERMAL_SOURCE_MAX_TEMPERATURE, target),
+      );
+      api.thermal.adjustTemperature(
+        structure,
+        clampedTarget - api.thermal.getTemperature(structure),
+      );
     });
-  }
-  if (sources.length === 0) return;
-
-  // Native machines can consume from this block through the bundle patch. A
-  // nearby native relay also trades with it using the game's 50% diffusion
-  // behavior, without replacing the native relay network.
-  for (const relay of touchingThermalRelays(sources)) {
-    const source = sources.find((candidate) =>
-      thermalRingCells(candidate).some((cell) => cell.x === relay.x && cell.y === relay.y),
-    );
-    if (!source) continue;
-    const move =
-      (thermalTemperature(source) - thermalTemperature(relay)) * THERMAL_SOURCE_EXCHANGE_RATE;
-    addThermalTemperature(source, -move);
-    addThermalTemperature(relay, move);
-  }
-
-  for (const source of sources) {
-    const target =
-      typeof source.data?.targetTemperature === "number"
-        ? source.data.targetTemperature
-        : source.type === CHILL_ID
-          ? CHILL_DEFAULT_TEMPERATURE
-          : THERMAL_SOURCE_DEFAULT_TEMPERATURE;
-    addThermalTemperature(source, target - thermalTemperature(source));
   }
 };
 
@@ -1140,14 +1070,6 @@ const registerPowerRemoval = () => {
   api.events.on("building:removed", (...args) => removePowerContribution(args.at(-1)));
 };
 
-// The native thermal consumers ask for the exact "thermalRelay" type. The
-// bundle patch calls this predicate so they can also consume from our source.
-Object.assign(globalThis, {
-  __sandustryTestBlocksThermalSource: (type: unknown, expected: unknown) =>
-    (type === THERMAL_SOURCE_ID || type === CHILL_ID) &&
-    (expected === "thermalRelay" || expected === type),
-});
-
 const registerTrashProcessor = () => {
   const trashType = api.structures.getTypeFromId?.(TRASH_ID) ?? TRASH_ID;
   api.structures.addProcessor(trashType, {
@@ -1222,6 +1144,7 @@ const setup = async () => {
 
   api.structures.register({
     id: THERMAL_SOURCE_ID,
+    thermalBuffer: true,
     nameKey: "structures|thermalSource|name",
     descriptionKey: "structures|thermalSource|description",
     categoryKey: TEST_BLOCKS_CATEGORY,
@@ -1263,6 +1186,7 @@ const setup = async () => {
 
   api.structures.register({
     id: CHILL_ID,
+    thermalBuffer: true,
     nameKey: "structures|chill|name",
     descriptionKey: "structures|chill|description",
     categoryKey: TEST_BLOCKS_CATEGORY,
@@ -1341,7 +1265,7 @@ const setup = async () => {
   });
 
   // These blocks are creative utility blocks, so they do not require a tech
-  // node before appearing in the Production build category.
+  // node before appearing in the Infinite Test Blocks category.
   api.player.buildings.unlockByType(SOURCE_ID);
   api.player.buildings.unlockByType(TRASH_ID);
   api.player.buildings.unlockByType(THERMAL_SOURCE_ID);
